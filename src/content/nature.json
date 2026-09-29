@@ -1,6 +1,12 @@
 {
   "note": "Arbres du pack Quaternius (CC0). Les mélanges d'essences sont des choix de style, pas l'inventaire réel. Les rues gardent les arbres simples.",
   "simplify": { "ratio": 0.5, "error": 0.02, "note": "Part des triangles gardés et écart de forme toléré (relatif à la taille du modèle), appliqués par npm run nature" },
+  "seasons": {
+    "families": ["CommonTree", "BirchTree", "Willow"],
+    "autumn": "Autumn",
+    "bare": "Dead",
+    "note": "Variantes du pack pour les feuillus : <Famille>_<n> devient <Famille>_Autumn_<n> (automne) ou <Famille>_Dead_<n> (branches nues, hiver). Les pins restent verts."
+  },
   "mixes": {
     "parc": {
       "scale": [2.8, 3.6],

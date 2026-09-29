@@ -5,6 +5,7 @@ import { PALETTE, rand } from './palette';
 import { planRoof, planSkeletonRoof, roofGeometry, skeletonRoofGeometry } from './roofs';
 import { buildGround, type Terrain } from './terrain';
 import { pointInRing } from './nature';
+import type { Foliage } from '../time/seasons';
 
 /**
  * Convention : un point OSM projeté [x, y] (est, nord) devient (x, hauteur, -y) dans Three.js.
@@ -13,7 +14,12 @@ import { pointInRing } from './nature';
 export interface NightUniforms { uNight: { value: number }; uLit: { value: number } }
 
 /** Arbres simples de la ville : emplacements, et masquage de ceux remplacés par des arbres modélisés. */
-export interface CityTrees { spots: Pt[]; hide(indices: number[]): void }
+export interface CityTrees {
+  spots: Pt[];
+  hide(indices: number[]): void;
+  /** Saison (itération 31) : feuillage vert, couleurs d'automne, ou petite couronne nue en hiver. */
+  setFoliage(f: Foliage): void;
+}
 
 export function buildCity(data: CityData, terrain: Terrain, opts: { hidden?: Set<number> } = {}): { group: THREE.Group; update(t: number): void; night: NightUniforms; trees: CityTrees } {
   const night: NightUniforms = { uNight: { value: 0 }, uLit: { value: 0.45 } };
@@ -276,7 +282,7 @@ function buildTrees(data: CityData, terrain: Terrain): CityTrees & { group: THRE
       if (pointInRing(x, y, a.outer)) { spots.push([x, y]); k++; }
     }
   }
-  if (!spots.length) return { group: null, spots, hide: () => {} };
+  if (!spots.length) return { group: null, spots, hide: () => {}, setFoliage: () => {} };
 
   const canopyGeo = new THREE.IcosahedronGeometry(3.4, 0);
   canopyGeo.translate(0, 7.5, 0);
@@ -285,23 +291,37 @@ function buildTrees(data: CityData, terrain: Terrain): CityTrees & { group: THRE
   const canopy = new THREE.InstancedMesh(canopyGeo, new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), spots.length);
   const trunk = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: PALETTE.trunk, roughness: 1 }), spots.length);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), c = new THREE.Color();
+  const base: THREE.Matrix4[] = [];
   spots.forEach(([x, y], i) => {
     const r = rand(i * 31 + 7);
     const scale = 0.8 + r * 0.6;
     q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r * Math.PI * 2);
     m.compose(p.set(x, terrain.heightAt(x, y), -y), q, s.setScalar(scale));
-    canopy.setMatrixAt(i, m);
+    base.push(m.clone());
     trunk.setMatrixAt(i, m);
-    canopy.setColorAt(i, c.set(PALETTE.canopy[i % PALETTE.canopy.length]));
   });
   canopy.castShadow = trunk.castShadow = true;
   const g = new THREE.Group();
   g.add(canopy, trunk);
   const zero = new THREE.Matrix4().makeScale(0, 0, 0);
+  const hidden = new Set<number>();
+  // Hiver : couronne réduite autour du haut du tronc (branches nues)
+  const shrink = new THREE.Matrix4().makeTranslation(0, 6.8, 0).multiply(new THREE.Matrix4().makeScale(0.62, 0.7, 0.62)).multiply(new THREE.Matrix4().makeTranslation(0, -7.5, 0));
+  const setFoliage = (f: Foliage) => {
+    const colors = f === 'autumn' ? PALETTE.canopyAutumn : f === 'bare' ? PALETTE.canopyBare : PALETTE.canopy;
+    spots.forEach((_, i) => {
+      canopy.setMatrixAt(i, hidden.has(i) ? zero : f === 'bare' ? m.multiplyMatrices(base[i], shrink) : base[i]);
+      canopy.setColorAt(i, c.set(colors[i % colors.length]));
+    });
+    canopy.instanceMatrix.needsUpdate = true;
+    if (canopy.instanceColor) canopy.instanceColor.needsUpdate = true;
+    canopy.computeBoundingSphere();
+  };
+  setFoliage('green');
   const hide = (indices: number[]) => {
-    for (const i of indices) { canopy.setMatrixAt(i, zero); trunk.setMatrixAt(i, zero); }
+    for (const i of indices) { hidden.add(i); canopy.setMatrixAt(i, zero); trunk.setMatrixAt(i, zero); }
     canopy.instanceMatrix.needsUpdate = trunk.instanceMatrix.needsUpdate = true;
     canopy.computeBoundingSphere(); trunk.computeBoundingSphere();
   };
-  return { group: g, spots, hide };
+  return { group: g, spots, hide, setFoliage };
 }

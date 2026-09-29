@@ -17,6 +17,8 @@ export const PALETTE = {
   monumentWall: '#ebe4d3',
   monumentRoof: '#6f7378',
   canopy: ['#6f9e55', '#7fae5f', '#5f8f4a', '#8bb86a'],
+  canopyAutumn: ['#d98a3d', '#e3a84e', '#c8703a', '#9fa352'], // automne (itération 31) ; un arbre sur 4 encore vert-jaune
+  canopyBare: ['#8b7866', '#7d6b5b', '#968474', '#86725f'], // hiver : petite couronne de branches nues
   trunk: '#7a5a42',
   poi: '#f4b73f',
   poiFound: '#2a9d8f',
