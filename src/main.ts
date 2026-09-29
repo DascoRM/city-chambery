@@ -17,6 +17,8 @@ import { placeCategory } from './scene/palette';
 import { installTwoFingerGestures } from './scene/touch';
 import { createAdaptiveResolution } from './scene/quality';
 import { createPerfHud } from './ui/perfhud';
+import { dataUrl } from './dataurl';
+import { setupPwa } from './pwa';
 import { createUi, showFatal } from './ui/ui';
 import { loadDiscovered, resetDiscovered, saveDiscovered } from './state/progress';
 
@@ -24,7 +26,7 @@ const app = document.getElementById('app')!;
 
 async function loadCity(): Promise<CityData | null> {
   try {
-    const res = await fetch(`${import.meta.env.BASE_URL}data/city.json`);
+    const res = await fetch(dataUrl('data/city.json'));
     if (!res.ok) return null;
     return (await res.json()) as CityData;
   } catch {
@@ -101,6 +103,8 @@ async function main() {
       ui.flash('Exploration remise à zéro');
     },
   });
+  // Mode hors-ligne (service worker, production uniquement)
+  setupPwa(ui.flash);
   // Cycle jour/nuit (16 h par défaut = rendu d'après-midi)
   const dayNight = createDayNight({
     scene, renderer, lights: stage.lights, size: stage.size, night: city.night,

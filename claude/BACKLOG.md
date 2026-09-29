@@ -29,8 +29,8 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 ## Architecture — à trancher avant d'ouvrir le diorama aux amis
 - ❓ **Back-end : pas nécessaire aujourd'hui.** Il le devient seulement pour : progression partagée entre appareils ou entre amis (comptes, classement), ajout de lieux par d'autres que Dasco sans redéployer, données qui changent souvent (événements, horaires). Pistes légères si besoin : PocketBase ou Supabase auto-hébergé sur le Pi (Coolify) ; pour les événements des bars, consommer l'API d'ACME plutôt que créer un back-end dédié
 - ✅ **Cache HTTP** : fait dans `deploy/nginx.conf` (itération 28) — `assets/` en cache 1 an, `index.html` / `city.json` / `.glb` revalidés (ETag, 304), gzip. Brotli : pas dans l'image nginx standard, à voir si besoin
-- 🟡 **Données versionnées** : la revalidation à chaque visite (nginx) évite déjà l'ancienne carte ; un numéro de version dans l'URL permettrait en plus un cache long (utile avec le mode hors-ligne)
-- ⬜ **Mode hors-ligne / rechargement instantané** (service worker, PWA) : garder `city.json` (1,4 Mo) et les modèles sur le téléphone — utile sur place, à Chambéry, avec peu de réseau
+- ✅ **Données versionnées** (itération 30) : empreinte des données calculée au build (`city.json?v=…`, `.glb?v=…`) ; nginx garde ces adresses en cache 1 an ; une modification des données change l'adresse
+- ✅ **Mode hors-ligne / rechargement instantané** (itération 30) : service worker (vite-plugin-pwa) qui garde site + `city.json` + modèles (2,4 Mo) dès la 1re visite ; bandeau « Mettre à jour » quand une nouvelle version est publiée ; carte installable (icône, manifeste). **Nécessite HTTPS** (domaine Coolify) : inactif sur `http://<ip>:3000`
 
 ## P2 — Plus beau, plus juste
 - ⬜ Relief : peindre aussi les places sur le sol la nuit (lueur perdue depuis qu'elles sont peintes sur le terrain)

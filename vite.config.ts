@@ -1,9 +1,32 @@
 import { defineConfig, type Plugin } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 import { readFile, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { createHash } from 'node:crypto';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const POIS_PATH = resolve(fileURLToPath(new URL('.', import.meta.url)), 'src/content/pois.json');
+const ROOT = fileURLToPath(new URL('.', import.meta.url));
+const POIS_PATH = resolve(ROOT, 'src/content/pois.json');
+
+/**
+ * Version des données : empreinte de public/data/city.json et de public/models/ (calculée au build).
+ * Ajoutée aux adresses (`city.json?v=…`) : les navigateurs peuvent garder ces fichiers en cache
+ * longtemps, et toute modification des données change l'adresse, donc force le rechargement.
+ */
+function dataVersion(): string {
+  const hash = createHash('sha1');
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir).sort()) {
+      const p = join(dir, name);
+      if (statSync(p).isDirectory()) walk(p);
+      else if (/\.(json|glb)$/.test(name)) hash.update(name).update(readFileSync(p));
+    }
+  };
+  walk(resolve(ROOT, 'public/data'));
+  walk(resolve(ROOT, 'public/models'));
+  return hash.digest('hex').slice(0, 10);
+}
 
 /**
  * Outil de placement (dev uniquement) : reçoit une position cliquée sur la carte
@@ -59,5 +82,53 @@ function poiPlacementApi(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [poiPlacementApi()],
+  define: { __DATA_VERSION__: JSON.stringify(dataVersion()) },
+  plugins: [
+    poiPlacementApi(),
+    // Mode hors-ligne (PWA) : un service worker garde le site, city.json et les modèles sur l'appareil.
+    // Actif seulement dans le build de production, et seulement en HTTPS (ou sur localhost).
+    VitePWA({
+      registerType: 'prompt', // nouvelle version → bandeau « Mettre à jour » (voir src/pwa.ts)
+      injectRegister: false,
+      includeAssets: ['icons/apple-touch-icon.png'],
+      manifest: {
+        name: 'Chambéry en diorama',
+        short_name: 'Chambéry',
+        description: "Maquette 3D du centre historique de Chambéry, à explorer comme un petit jeu",
+        lang: 'fr',
+        start_url: '.',
+        display: 'standalone',
+        background_color: '#f0dfc4',
+        theme_color: '#2d2622',
+        icons: [
+          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        // Tout est gardé dès la première visite : code, page, données (city.json ≈ 1,4 Mo), modèles
+        globPatterns: ['**/*.{js,css,html,json,glb,png,webmanifest}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        // Le cache du service worker ignore le paramètre ?v= (sa propre révision suffit)
+        ignoreURLParametersMatching: [/^v$/],
+        cleanupOutdatedCaches: true,
+        navigateFallback: 'index.html',
+        runtimeCaching: [
+          {
+            // Polices Google : feuille de style revérifiée en arrière-plan, fichiers gardés un an
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\//,
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'google-fonts-css' },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\//,
+            handler: 'CacheFirst',
+            options: { cacheName: 'google-fonts', expiration: { maxEntries: 20, maxAgeSeconds: 365 * 24 * 3600 }, cacheableResponse: { statuses: [0, 200] } },
+          },
+        ],
+      },
+      devOptions: { enabled: false }, // pas de service worker en dev (outil de placement, rechargement à chaud)
+    }),
+  ],
 });

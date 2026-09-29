@@ -1,0 +1,12 @@
+# Inutile pour construire le site (ou régénéré dans l'image)
+node_modules
+dist
+.git
+.DS_Store
+data/raw
+# Pack nature : seules les sources .obj servent à `npm run nature` (REFRESH_DATA=true)
+assets-src/quaternius-nature/fbx
+assets-src/quaternius-nature/Preview.jpg
+claude
+*.md
+!README.md

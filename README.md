@@ -333,6 +333,8 @@ src/
   scene/tiltshift.ts       Effet maquette (flou en demi-résolution)
   scene/quality.ts         Résolution adaptative (densité de pixels selon les images/s)
   ui/perfhud.ts            Compteur de performance (?debug)
+  pwa.ts                   Mode hors-ligne : service worker, bandeau « nouvelle version »
+  dataurl.ts               Adresses des données avec leur version (?v=)
   scene/models.ts          Chargement et placement des monuments
   scene/nature.ts          Arbres modélisés dans les parcs
   scene/models/            Monuments générés en code + éclairage de nuit partagé
@@ -343,6 +345,7 @@ src/
 public/data/city.json      Données générées (ne pas modifier à la main)
 public/models/             Fichiers glTF des monuments (export Blender)
 public/models/nature/      Arbres du pack nature convertis (.glb)
+public/icons/              Icônes de l'appli (mode hors-ligne, écran d'accueil)
 assets-src/                Sources des modèles (pack Quaternius en .obj/.fbx), pas servies par le site
 data/raw/                  Caches des téléchargements (non versionnés)
 claude/                    Suivi du projet : fonctionnalités, backlog, journal, décisions
@@ -378,10 +381,17 @@ dans Coolify, ou `docker compose build --no-cache`).
 | Fichier | Rôle |
 |---|---|
 | `Dockerfile` | Étape 1 : Node construit le site. Étape 2 : nginx sert `dist/` (image finale sans Node). Images arm64 et amd64, donc compatible avec le Raspberry Pi 5 |
-| `deploy/nginx.conf` | Compression gzip ; cache 1 an pour `assets/` (noms avec empreinte) ; `index.html`, `city.json` et `.glb` revérifiés à chaque visite (réponse 304 s'ils n'ont pas changé, jamais d'ancienne carte après une mise à jour) |
+| `deploy/nginx.conf` | Compression gzip ; cache 1 an pour `assets/` et pour les données appelées avec `?v=` ; `index.html`, `sw.js` et le manifeste revérifiés à chaque visite (réponse 304 s'ils n'ont pas changé) |
 | `docker-compose.yml` | Un service `web` (conteneur `city-chambery`) ; nginx écoute sur le port 80 du conteneur, publié sur le port **3000** de l'hôte (`'3000:80'`) ; argument `REFRESH_DATA` |
 | `deploy/refresh-data.sh` | Au build, si `REFRESH_DATA=true` : `npm run data` + `npm run nature`, avec retour aux données du dépôt en cas d'échec ou de données incomplètes |
 | `.dockerignore` | Exclut `node_modules`, `data/raw`, `claude/`, les `.fbx` du pack nature… (garde les `.obj` pour `npm run nature`) : contexte de build d'environ 4 Mo |
+
+**Cache et mode hors-ligne :**
+
+- **Code :** les fichiers `assets/` ont une empreinte dans leur nom ; nginx les garde en cache 1 an.
+- **Données et modèles :** ils sont chargés avec la version des données dans l'adresse (`city.json?v=…`, empreinte calculée au build par `vite.config.ts`), donc gardés en cache 1 an, et rechargés dès que les données changent.
+- **Hors-ligne (PWA) :** un service worker garde le site, les données et les modèles (≈ 2,4 Mo) dès la première visite. La carte s'ouvre ensuite sans réseau et peut s'installer sur l'écran d'accueil. Quand une nouvelle version est publiée, un bandeau propose « Mettre à jour ».
+- **HTTPS obligatoire** pour le hors-ligne : le service worker ne fonctionne qu'en HTTPS (domaine Coolify) ou sur localhost, pas sur `http://<ip-du-pi>:3000`. Il n'existe pas non plus en `npm run dev` ; pour le tester en local, lancer `npm run build && npm run preview`.
 
 **Avec Coolify :**
 
