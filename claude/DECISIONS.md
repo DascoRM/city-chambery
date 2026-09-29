@@ -1,0 +1,29 @@
+# Décisions
+
+| Date | Décision | Pourquoi | Alternatives écartées |
+|---|---|---|---|
+| 28/09/2026 | Three.js plutôt qu'une librairie de cartographie | Le rendu diorama (socle découpé, style maquette) est plus simple à maîtriser en 3D pure | MapLibre (rendu carte réaliste), CesiumJS (trop lourd) |
+| 28/09/2026 | Pas de backend, site 100 % statique | POC ; hébergeable partout (Pi/Coolify, Netlify) | API + PostGIS (plus tard si besoin) |
+| 28/09/2026 | Données OSM pré-calculées en un fichier `city.json` | Chargement rapide, pas d'appel Overpass côté utilisateur | Requête Overpass au chargement |
+| 28/09/2026 | Positions des lieux tirées d'OSM par leur nom, surchargeables avec `pos` | Ne jamais inventer de coordonnées | Coordonnées saisies à la main dès le départ |
+| 28/09/2026 | Hauteurs estimées quand OSM n'a rien | Débloquer le POC ; BD TOPO ensuite | Tout à hauteur fixe |
+| 28/09/2026 | Progression en localStorage, sans compte | Suffisant pour tester avec les amis | Comptes utilisateurs |
+| 28/09/2026 | Outil de placement branché sur le serveur Vite (écrit `pois.json`), chargé seulement en dev | Saisie des lieux sans copier-coller, zéro code en production | Copier-coller manuel seul ; back-office séparé |
+| 28/09/2026 | Toits en pente posés sur le rectangle orienté minimal, seulement pour les emprises quasi rectangulaires | Simple et robuste ; le squelette droit (toutes formes) est bien plus complexe | Squelette droit dès maintenant ; toits plats partout |
+| 28/09/2026 | Forme de toit choisie au hasard (déterministe) quand OSM ne la donne pas | 97 % des bâtiments n'ont pas de `roof:shape` | Même forme partout (monotone) |
+| 28/09/2026 | Squelette droit via `straight-skeleton` (CGAL/WASM), calculé dans le script de données | Algorithme robuste difficile à écrire soi-même ; précalcul = pas de WASM de 2 Mo dans l'app | Implémentation maison ; calcul dans le navigateur |
+| 28/09/2026 | Le script de données décide du type de toit, l'app se contente de dessiner | Une seule source de vérité, pas de logique dupliquée, données plus légères | Garder la décision côté app (obligeait à stocker tous les squelettes) |
+| 28/09/2026 | Tilt-shift en espace écran (bande horizontale) plutôt qu'un flou basé sur la profondeur | C'est le rendu « photo de maquette » classique, léger et prévisible | Profondeur de champ réelle (BokehPass) : plus coûteux, rendu moins typé maquette |
+| 28/09/2026 | Fenêtres calculées dans le shader plutôt que modélisées | Zéro géométrie ni donnée en plus ; suffisant à l'échelle du diorama | Modéliser les fenêtres ; textures de façade |
+| 28/09/2026 | Bars mis en avant par type de lieu, sans horaires réels | Simple pour le POC ; `opening_hours` OSM à parser plus tard | Parser les horaires dès maintenant |
+| 28/09/2026 | Monuments : tester d'abord une seule fontaine en formes codées, avec un système qui accepte ensuite un vrai glTF | Valider l'intérêt avant d'investir des heures de modélisation | Modéliser directement les 3 monuments dans Blender |
+| 28/09/2026 | Relief : RGE ALTI (IGN) avec repli par interpolation des sols BD TOPO ; zones au sol peintes sur une texture, rues drapées | Données officielles ; le repli garde un relief plausible hors ligne ; la texture évite de trianguler finement chaque parc | Relief plat ; modèle de terrain raster (GeoTIFF) plus lourd à décoder |
+| 28/09/2026 | Pack nature : sources .obj dans `assets-src/`, conversion en .glb d'un seul maillage à couleur par sommet, couleurs remplacées par la palette du diorama | Fichiers 5 à 10 fois plus légers, 1 appel de rendu par modèle (instanciation), arbres cohérents avec le reste de la ville | Charger les .obj/.fbx directement (plus lourds, plusieurs matériaux) ; garder les couleurs d'origine (trop sombres) |
+| 28/09/2026 | Arbres modélisés sur les emplacements existants, zone par zone (`nature.json`) | Pas de nouvelles données ; repli automatique sur les arbres simples ; charge maîtrisée | Remplacer tous les arbres de la ville d'un coup |
+| 28/09/2026 | La Leysse dessinée à l'air libre même sur ses tronçons couverts (réglable) | Demande de Dasco : rivière continue et lisible | Fidèle au terrain (rivière interrompue) ; tracé discret sous la chaussée |
+| 29/09/2026 | Ombres recalculées à la demande (soleil qui bouge), objets animés sans ombre | La scène est statique la plupart du temps : inutile de refaire la carte des ombres à chaque image | Ombres à chaque image (coût doublé) ; pas d'ombres du tout |
+| 29/09/2026 | Arbres simplifiés à 50 % à la conversion (meshoptimizer), réglable dans nature.json | Moitié moins de triangles, différence à peine visible | Garder les modèles complets ; niveaux de détail (plus complexe, pour plus tard) |
+| 29/09/2026 | Fiche des lieux positionnée avec left/top, jamais avec transform | Laisse transform libre pour les animations CSS | transform: translate (entrait en conflit avec l'animation de rebond) |
+| 29/09/2026 | Effet maquette permanent, sans interrupteur | Demande de Dasco : c'est l'identité visuelle du diorama | Bouton pour le couper (retiré) |
+| 29/09/2026 | Filtre des lieux par catégorie (une case par catégorie dans la légende), non mémorisé | Demande de Dasco ; une seule rangée de boutons | Case unique pour toute la couche (remplacée) ; menu de filtres séparé |
+| 28/09/2026 | Étiquettes en sprites (toujours face caméra) | Lisibles sous les arbres et sous tous les angles | Texte posé au sol (caché par les arbres) |

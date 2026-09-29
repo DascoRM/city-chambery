@@ -1,0 +1,174 @@
+[
+  {
+    "id": "elephants",
+    "title": "Fontaine des Éléphants",
+    "era": "1838",
+    "category": "monument",
+    "osm": {
+      "match": "fontaine des elephants",
+      "prefer": {
+        "amenity": "fountain",
+        "historic": "*"
+      }
+    },
+    "summary": "Le monument le plus célèbre de Chambéry, élevé en hommage au général de Boigne.",
+    "story": "Construite entre 1835 et 1838 et inaugurée le 10 décembre 1838, la fontaine rend hommage au général-comte Benoît de Boigne, mort en 1830. Savoyard parti chercher fortune, il fit carrière militaire en Inde puis légua une grande partie de sa fortune à sa ville natale. L'ensemble, dû au sculpteur grenoblois Pierre-Victor Sappey, superpose une fontaine, une colonne et une statue sur 17,65 mètres. Quatre éléphants en fonte, réunis par la croupe, rappellent ses campagnes indiennes.",
+    "anecdote": "Comme les éléphants sont soudés par l'arrière, on ne voit jamais leur postérieur : les Chambériens les surnomment « les Quatre sans cul ».",
+    "sources": [
+      {
+        "label": "Wikipédia — Fontaine des Éléphants",
+        "url": "https://fr.wikipedia.org/wiki/Fontaine_des_%C3%89l%C3%A9phants"
+      }
+    ]
+  },
+  {
+    "id": "chateau",
+    "title": "Château des Ducs de Savoie",
+    "era": "XIe – XVe siècle",
+    "category": "monument",
+    "osm": {
+      "match": "chateau des ducs de savoie",
+      "prefer": {
+        "historic": "castle"
+      }
+    },
+    "summary": "Siège du pouvoir des comtes puis ducs de Savoie quand Chambéry était leur capitale.",
+    "story": "Mentionné dès le XIe siècle, le château est acheté en 1295 par le comte Amédée V, qui le fait réaménager. Chambéry devient alors la capitale des comtes de Savoie. Au XVe siècle, Amédée VIII fait construire la Sainte-Chapelle. Le Saint-Suaire y arrive en 1502, échappe à un incendie en 1532, puis part en 1578 pour Turin, nouvelle capitale du duché. Depuis 1860 et le rattachement de la Savoie à la France, le château abrite la préfecture et les services du département.",
+    "anecdote": "Entre 1502 et 1578, le Saint-Suaire, aujourd'hui connu comme le « suaire de Turin », était gardé à Chambéry.",
+    "sources": [
+      {
+        "label": "Patrimoines Savoie — Comprendre le château",
+        "url": "https://patrimoines.savoie.fr/web/psp_21632/comprendre-le-chateau-des-ducs-de-savoie"
+      }
+    ]
+  },
+  {
+    "id": "cathedrale",
+    "title": "Cathédrale Saint-François-de-Sales",
+    "era": "vers 1420",
+    "category": "monument",
+    "osm": {
+      "match": "saint-francois-de-sales",
+      "prefer": {
+        "amenity": "place_of_worship"
+      }
+    },
+    "summary": "Une ancienne église franciscaine couverte du plus vaste ensemble de trompe-l'œil d'Europe.",
+    "story": "Tout commence vers 1420 par la chapelle du couvent des franciscains, consacrée en 1585. L'église devient cathédrale en 1779, à la création de l'évêché de Chambéry, et prend le nom de Saint-François-de-Sales en 1802. Au XIXe siècle, Fabrizio Sevesi, Casimir Vicario puis Bernard Sciolli couvrent ses voûtes de près de 6 000 m² de peintures en trompe-l'œil, présentées comme le plus vaste ensemble de ce type en Europe.",
+    "anecdote": "Le sous-sol étant marécageux, l'édifice repose sur environ 30 000 pilotis de mélèze.",
+    "sources": [
+      {
+        "label": "Wikipédia — Cathédrale Saint-François-de-Sales",
+        "url": "https://fr.wikipedia.org/wiki/Cath%C3%A9drale_Saint-Fran%C3%A7ois-de-Sales_de_Chamb%C3%A9ry"
+      }
+    ]
+  },
+  {
+    "id": "rue-de-boigne",
+    "title": "Rue de Boigne et ses portiques",
+    "era": "1822 – vers 1837",
+    "category": "rue",
+    "osm": {
+      "match": "rue de boigne",
+      "prefer": {
+        "highway": "*"
+      }
+    },
+    "summary": "Une rue à arcades à la mode de Turin, percée grâce au général de Boigne.",
+    "story": "Lancée en 1822, la rue relie le château à la fontaine et met près de quinze ans à être achevée. Le général de Boigne la finance par un don de 300 000 livres neuves du Piémont. Le chantier est dirigé par l'architecte tessinois Trivelli (parfois écrit Trivelly), beau-frère du général. Ses portiques, inspirés de ceux de Turin, alors capitale du royaume, protègent les boutiques et les passants en toute saison.",
+    "anecdote": "Se promener sous les arcades se dit encore « faire les portiques ».",
+    "sources": [
+      {
+        "label": "Les Amis du Vieux Chambéry — La rue de Boigne",
+        "url": "https://www.amisduvieuxchambery.org/la-rue-de-boigne"
+      }
+    ]
+  },
+  {
+    "id": "saint-leger",
+    "title": "Place Saint-Léger",
+    "era": "Moyen Âge",
+    "category": "place",
+    "osm": {
+      "match": "place saint-leger",
+      "prefer": {
+        "place": "square",
+        "highway": "pedestrian"
+      }
+    },
+    "summary": "La place allongée et colorée du cœur piéton de Chambéry.",
+    "story": "La place doit son nom à l'église Saint-Léger, mentionnée dès 1110 et aujourd'hui disparue. À l'origine, deux quais bordaient ici un canal de l'Albanne, couvert au XVIe siècle. En 1792, elle devient « place de la Liberté », avant de reprendre son nom. Longue d'environ 250 mètres, elle est pavée et rendue piétonne dans les années 1970, et ses façades colorées sont restaurées à partir de 1975.",
+    "anecdote": "Sous les pavés de la place coulait un canal de l'Albanne, couvert au XVIe siècle.",
+    "sources": [
+      {
+        "label": "Wikipédia — Place Saint-Léger",
+        "url": "https://fr.wikipedia.org/wiki/Place_Saint-L%C3%A9ger"
+      }
+    ]
+  },
+  {
+    "id": "theatre",
+    "title": "Théâtre Charles-Dullin",
+    "era": "1824",
+    "category": "culture",
+    "osm": {
+      "match": "dullin",
+      "prefer": {
+        "amenity": "theatre"
+      }
+    },
+    "summary": "Un théâtre à l'italienne né en 1824, reconstruit après un incendie.",
+    "story": "Conçu par l'architecte Trivelli, le théâtre est inauguré le 27 juillet 1824 par le roi Charles-Félix et la reine Marie-Christine. Dans la nuit du 12 au 13 février 1864, un incendie le détruit. Il est reconstruit entre 1864 et 1867 sur ses fondations d'origine. Il porte aujourd'hui le nom de Charles Dullin, acteur et metteur en scène savoyard mort en 1949.",
+    "anecdote": "Le rideau de scène peint par Luigi Vacca en 1824 a été sauvé des flammes en 1864. Il a été restauré en 2017 après une souscription publique.",
+    "sources": [
+      {
+        "label": "Wikipédia — Théâtre Charles-Dullin",
+        "url": "https://fr.wikipedia.org/wiki/Th%C3%A9%C3%A2tre_Charles-Dullin"
+      }
+    ]
+  },
+  {
+    "id": "carre-curial",
+    "title": "Carré Curial",
+    "era": "1801 – 1805",
+    "category": "monument",
+    "osm": {
+      "match": "carre curial",
+      "prefer": {}
+    },
+    "summary": "Une ancienne caserne napoléonienne devenue lieu de vie et de culture.",
+    "story": "Construit de 1801 à 1805 à l'emplacement d'un ancien couvent des Ursulines, le Carré Curial est une caserne organisée en carré autour d'une vaste cour d'exercice, sur un plan qui reprend celui des Invalides. Réhabilité à partir de 1980, il est inauguré en 1993 comme centre administratif, commercial et culturel. On y trouve notamment l'Espace Malraux et la médiathèque Jean-Jacques-Rousseau.",
+    "anecdote": "L'ancienne caserne accueille aujourd'hui des restaurants, des galeries d'art et des services publics.",
+    "sources": [
+      {
+        "label": "Wikipédia — Carré Curial",
+        "url": "https://fr.wikipedia.org/wiki/Carr%C3%A9_Curial"
+      }
+    ],
+    "pos": [
+      310,
+      -207.1
+    ]
+  },
+  {
+    "id": "musee-savoisien",
+    "title": "Musée savoisien",
+    "era": "XIIIe siècle",
+    "category": "culture",
+    "osm": {
+      "match": "musee savoisien",
+      "prefer": {
+        "tourism": "museum"
+      }
+    },
+    "summary": "L'histoire de la Savoie dans un ancien couvent franciscain.",
+    "story": "Le musée occupe un couvent franciscain du XIIIe siècle devenu ensuite résidence épiscopale puis archiépiscopale, à côté de la cathédrale. Ouvert au public en 1906, il ferme en 2015 pour une rénovation complète et rouvre le 29 avril 2023. Il conserve des objets de l'âge du Bronze et gallo-romains du lac du Bourget, des primitifs savoyards et d'étonnantes peintures murales profanes du XIIIe siècle venues du château de Cruet.",
+    "anecdote": "Les peintures murales de Cruet, du XIIIe siècle, illustrent des scènes de littérature courtoise.",
+    "sources": [
+      {
+        "label": "Wikipédia — Musée savoisien",
+        "url": "https://fr.wikipedia.org/wiki/Mus%C3%A9e_savoisien"
+      }
+    ]
+  }
+]

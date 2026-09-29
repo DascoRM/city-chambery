@@ -1,0 +1,147 @@
+:root {
+  --ink: #2d2622;
+  --muted: #7a6d63;
+  --paper: #fffaf1;
+  --line: rgba(60, 40, 25, 0.12);
+  --gold: #e3a52d;
+  --teal: #2a9d8f;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(50, 30, 15, 0.18), 0 2px 6px rgba(50, 30, 15, 0.08);
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--ink);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body {
+  background: radial-gradient(ellipse at 50% 35%, #fdf3e1 0%, #f0dfc4 55%, #d9c3a3 100%);
+}
+#app { position: fixed; inset: 0; }
+#app canvas { display: block; cursor: grab; touch-action: none; }
+#app canvas:active { cursor: grabbing; }
+
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; line-height: 1.1; }
+.eyebrow { margin: 0; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+
+/* HUD */
+.hud { position: absolute; top: 16px; left: 16px; padding: 14px 18px; width: 240px; }
+.hud h1 { font-size: 30px; }
+.hud .sub { margin: 2px 0 12px; color: var(--muted); font-size: 14px; }
+.progress .bar { height: 8px; background: #efe4d2; border-radius: 99px; overflow: hidden; }
+.progress .bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), var(--teal)); transition: width 0.6s ease; }
+.progress .count { margin: 6px 0 0; font-size: 13px; font-weight: 600; }
+
+/* Outils */
+.tools { position: absolute; left: 16px; bottom: 36px; display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  font: inherit; font-size: 14px; font-weight: 600; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 99px;
+  padding: 9px 14px; box-shadow: var(--shadow); cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { background: #fff; }
+.toggle input { accent-color: var(--teal); margin: 0; }
+.icon { border: 0; background: transparent; font-size: 16px; cursor: pointer; color: var(--muted); padding: 4px 6px; border-radius: 8px; }
+.icon:hover { background: #f1e7d7; }
+.link { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; padding: 8px 0 0; }
+
+/* Journal */
+.journal { position: absolute; left: 16px; bottom: 88px; width: 300px; max-height: 60vh; overflow: auto; padding: 14px 16px; }
+.journal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.journal h2 { font-size: 19px; }
+.journal ul { list-style: none; margin: 0; padding: 0; }
+.journal li > button, .journal li.locked { display: flex; gap: 10px; align-items: center; width: 100%; padding: 8px 6px; border: 0; background: none; text-align: left; font: inherit; color: inherit; border-radius: 10px; }
+.journal li > button { cursor: pointer; }
+.journal li > button:hover { background: #f5ecdd; }
+.journal li.locked { color: var(--muted); }
+.journal b { display: block; font-size: 14px; }
+.journal small { display: block; font-size: 12px; color: var(--muted); }
+.dot { width: 12px; height: 12px; border-radius: 3px; transform: rotate(45deg); background: #e6d9c4; flex: none; }
+.dot.found { background: var(--teal); }
+
+/* Fiche */
+.panel { position: absolute; top: 16px; right: 16px; bottom: 36px; width: min(400px, calc(100vw - 32px)); overflow: auto; padding: 22px 24px; }
+.panel .close { position: absolute; top: 12px; right: 12px; }
+.panel h2 { font-size: 28px; margin: 6px 0 10px; }
+.panel p { line-height: 1.6; font-size: 15px; }
+.panel .lead { font-size: 17px; color: #4b3f37; font-weight: 500; }
+.panel .new { color: var(--teal); }
+.anecdote { background: #fbf0d9; border-left: 4px solid var(--gold); border-radius: 10px; padding: 10px 14px; margin: 16px 0; }
+.anecdote p { margin: 4px 0 0; }
+.sources { font-size: 12px !important; color: var(--muted); }
+.sources a { color: var(--muted); }
+.muted { color: var(--muted); }
+
+/* Divers */
+.hint { position: absolute; left: 50%; top: 16px; transform: translateX(-50%); padding: 9px 16px; font-size: 13px; transition: opacity 0.6s; max-width: calc(100vw - 300px); text-align: center; }
+.hint.gone { opacity: 0; pointer-events: none; }
+.toast { position: absolute; left: 50%; bottom: 40px; transform: translate(-50%, 20px); background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 99px; font-weight: 600; font-size: 14px; opacity: 0; transition: all 0.35s; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.tooltip { position: fixed; left: 0; top: 0; background: var(--ink); color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 13px; font-weight: 600; pointer-events: none; }
+.attribution { position: absolute; right: 16px; bottom: 10px; font-size: 11px; color: #6c5a4b; }
+.fatal { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 24px 28px; max-width: 420px; }
+.fatal code, .panel code { background: #f1e7d7; padding: 1px 6px; border-radius: 6px; font-size: 0.9em; }
+
+/* Légende des lieux : une case par catégorie */
+.legend-box { gap: 4px; padding: 5px 6px; cursor: default; }
+.legend { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; padding: 4px 8px; border-radius: 99px; cursor: pointer; user-select: none; transition: opacity 0.2s, background 0.2s; }
+.legend:hover { background: #f5ecdd; }
+.legend input { accent-color: var(--cat); margin: 0; }
+.legend i { width: 10px; height: 10px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: inline-block; background: var(--cat); }
+.legend:has(input:not(:checked)) { opacity: 0.5; }
+.legend:has(input:not(:checked)) i { background: transparent; box-shadow: inset 0 0 0 2px var(--cat); }
+
+/* Fiche des bars, cafés, restaurants : à côté de l'épingle */
+.place-card {
+  /* position fixe : left / top sont écrits par le code (ui.ts, movePlaceCard) pour suivre l'épingle */
+  position: fixed; left: 0; top: 0; width: 250px; padding: 12px 14px 10px; z-index: 5;
+  border-left: 5px solid var(--cat, var(--muted)); pointer-events: auto;
+}
+.place-card .close { position: absolute; top: 6px; right: 6px; font-size: 13px; }
+.place-card.pop, .place-card.pop .pc-title { animation: pc-bounce 0.8s; }
+.pc-cat { margin: 0 22px 2px 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 700; color: var(--cat); display: flex; align-items: center; gap: 6px; }
+.pc-cat i { width: 10px; height: 10px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--cat); display: inline-block; }
+.pc-title { font-family: Fraunces, Georgia, serif; font-size: 19px; line-height: 1.15; margin: 2px 22px 6px 0; }
+.pc-line { margin: 3px 0; font-size: 13px; line-height: 1.4; }
+.pc-src { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
+@keyframes pc-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pc-bounce {
+  0% { transform: translateY(0) scale(1, 1); }
+  20% { transform: translateY(-7px) scale(0.98, 1.04); }
+  40% { transform: translateY(0) scale(1.03, 0.97); }
+  60% { transform: translateY(-3px) scale(1, 1); }
+  80% { transform: translateY(0) scale(1.01, 0.99); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .place-card.pop, .place-card.pop .pc-title { animation: none; }
+}
+
+/* Heure de la journée */
+.time { gap: 8px; padding: 6px 12px 6px 6px; cursor: default; }
+.time .play { width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; font-size: 11px; cursor: pointer; flex: none; }
+.time input { width: 110px; accent-color: var(--gold); }
+.time-label { font-variant-numeric: tabular-nums; min-width: 68px; }
+body { transition: background 0.4s; }
+body.is-night .attribution { color: #b8bfd8; }
+
+/* Mobile : la fiche devient un tiroir en bas */
+@media (max-width: 720px) {
+  .hud { width: auto; right: 16px; padding: 10px 14px; display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: center; }
+  .hud .eyebrow, .hud .sub { display: none; }
+  .hud h1 { font-size: 22px; }
+  .progress .count { font-size: 12px; margin-top: 4px; }
+  .hint { top: auto; bottom: 90px; max-width: calc(100vw - 32px); }
+  .panel { top: auto; left: 16px; right: 16px; bottom: 16px; width: auto; max-height: 62vh; }
+  .journal { right: 16px; width: auto; }
+  .attribution { left: 16px; right: auto; bottom: 6px; }
+  .attribution .long { display: none; }
+  .tools { bottom: 28px; }
+  .place-card { width: min(270px, calc(100vw - 24px)); }
+  .legend { font-size: 12px; }
+}

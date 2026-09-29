@@ -1,0 +1,359 @@
+# Chambéry en diorama — POC
+
+Maquette 3D du centre historique de Chambéry, à explorer comme un petit jeu :
+on tourne autour du socle, on clique sur les ✦ pour découvrir l'histoire des lieux,
+et le journal garde la trace des lieux découverts. Le diorama est construit à partir
+de données ouvertes (OpenStreetMap, IGN) : vrais contours de bâtiments, vraies hauteurs,
+vrai relief (≈ 92 m de dénivelé, RGE ALTI).
+
+**Hypothèse testée par le POC :** *explorer un quartier en diorama et découvrir son histoire
+point par point, c'est assez plaisant pour que mes amis y passent 10 minutes et en redemandent.*
+
+---
+
+## Sommaire
+
+1. [Démarrer](#démarrer)
+2. [Commandes dans l'application](#commandes-dans-lapplication)
+3. [D'où viennent les données](#doù-viennent-les-données)
+4. [Réglages du diorama](#réglages-du-diorama)
+5. [Gérer les lieux d'histoire](#gérer-les-lieux-dhistoire)
+6. [Monuments modélisés](#monuments-modélisés)
+7. [Arbres modélisés (pack nature)](#arbres-modélisés-pack-nature)
+8. [Outil de placement (mode dev)](#outil-de-placement-mode-dev)
+9. [Rendu : ce qui se passe à l'écran](#rendu--ce-qui-se-passe-à-lécran)
+10. [Structure du code](#structure-du-code)
+11. [Dépannage](#dépannage)
+12. [Limites connues](#limites-connues)
+13. [Licences](#licences)
+14. [Suivi du projet](#suivi-du-projet)
+
+---
+
+## Démarrer
+
+Prérequis : Node.js 20 ou plus récent.
+
+```bash
+npm install
+npm run data     # télécharge OSM + hauteurs BD TOPO + relief RGE ALTI (une à deux minutes selon les services)
+npm run dev      # http://localhost:5173
+```
+
+| Commande | Rôle |
+|---|---|
+| `npm run data` | Télécharge tout (OpenStreetMap, hauteurs BD TOPO, relief RGE ALTI) et écrit `public/data/city.json`. Les réponses brutes sont gardées dans `data/raw/` |
+| `npm run data -- --offline` | Reconstruit `city.json` depuis `data/raw/`, sans réseau (≈ 10 s). À lancer après une modification des scripts ou de `diorama.config.json` |
+| `npm run data -- --offline --bdtopo` | Idem, mais retélécharge seulement les hauteurs BD TOPO |
+| `npm run data -- --offline --relief` | Idem, mais retélécharge seulement le relief RGE ALTI |
+| `npm run dev` | Serveur de développement (avec l'outil de placement et les fiches brouillons) |
+| `npm run build` | Build statique de production dans `dist/` (sans outil de placement ni brouillons) |
+| `npm run preview` | Sert le build de production en local |
+
+Variables d'environnement utiles :
+
+| Variable | Effet |
+|---|---|
+| `OVERPASS_URL=https://overpass.kumi.systems/api/interpreter` | Autre serveur OpenStreetMap si celui par défaut est saturé |
+| `NO_BDTOPO=1` | Ne pas appeler le service BD TOPO (cache utilisé s'il existe, sinon hauteurs OSM ou estimées) |
+| `NO_ALTI=1` | Ne pas appeler le service de relief (cache utilisé s'il existe, sinon interpolation BD TOPO) |
+
+À la fin, `npm run data` affiche un bilan : nombre de bâtiments, combien ont une hauteur IGN,
+source et dénivelé du relief, types de toits, et quels lieux d'histoire ont été retrouvés dans OSM.
+
+---
+
+## Commandes dans l'application
+
+| Action | Souris | Tactile |
+|---|---|---|
+| Tourner | glisser | glisser à un doigt |
+| Se déplacer | clic droit + glisser | glisser à deux doigts |
+| Zoomer | molette | pincer |
+| Découvrir un lieu | clic sur une gemme ✦ | toucher une gemme |
+| Voir un bar / café / restaurant | survoler son épingle (la fiche s'affiche à côté) ; clic = la fiche reste ouverte | toucher l'épingle |
+| Fermer une fiche | Échap, ✕ ou clic dans le vide | ✕ ou toucher dans le vide |
+
+En bas à gauche :
+- **📜 Journal** : les lieux découverts (clic pour y voler) et les lieux mystère restants ;
+- **☑ Bars ☑ Cafés ☑ Restaurants** : légende des couleurs ; chaque case affiche ou masque sa catégorie (épingles et halos de nuit). Une catégorie décochée apparaît grisée, et sa fiche ouverte se ferme ;
+- **🕐 Heure** : curseur de 0 h à 24 h, **▶** pour faire défiler une journée en 2 minutes ;
+
+Les noms des parcs et de la Leysse apparaissent en s'approchant. La progression est gardée
+dans le navigateur (pas de compte) ; « Recommencer l'exploration » dans le journal la remet à zéro.
+
+---
+
+## D'où viennent les données
+
+Tout est calculé par `npm run data` (script `scripts/fetch-osm.mjs`), puis figé dans
+`public/data/city.json` : l'application ne fait aucun appel réseau vers ces services.
+
+| Donnée | Source | Détail |
+|---|---|---|
+| Bâtiments (contours), rues, chemins, rivière, parcs, arbres, bars/cafés/restaurants, noms | **OpenStreetMap** via l'API Overpass | Projetés en mètres autour du centre du socle, découpés au carré du diorama. Trottoirs séparés ignorés ; tronçons couverts (tunnel) ignorés, sauf les cours d'eau listés dans `showCoveredWater` |
+| Hauteur des bâtiments | **IGN BD TOPO** (couche `BDTOPO_V3:batiment`, service WFS de la Géoplateforme) | Chaque bâtiment OSM est associé au bâtiment BD TOPO qui recouvre le plus son emprise (36 points testés, au moins un tiers). On prend la hauteur à la gouttière (`hauteur`) et la hauteur du toit (`altitude_maximale_toit − altitude_minimale_sol`). ≈ 1 960 bâtiments sur 2 067 ; les autres gardent la hauteur OSM ou une estimation (3 à 5 niveaux) |
+| Relief du terrain | **IGN RGE ALTI** (service de calcul altimétrique, ressource `ign_rge_alti_wld`) | Grille d'altitudes au pas de 10 m (≈ 15 500 points, par lots de 150, moins de 4 requêtes/s). **Repli** si le service est injoignable : interpolation des altitudes de sol des bâtiments BD TOPO (moins précis : jusqu’à ≈ 40 m d’écart sur les collines). ≈ 92 m de dénivelé sur l’emprise |
+| Forme des toits | Tag OSM `roof:shape` quand il existe (≈ 3 %), sinon calculée | Voir [Rendu](#rendu--ce-qui-se-passe-à-lécran) |
+| Textes des lieux | Rédigés à la main (`src/content/pois.json`) | Chaque fiche cite ses sources |
+
+Caches dans `data/raw/` (non versionnés) : `overpass.json`, `bdtopo.json`, `terrain.json`.
+Supprimer un fichier force son retéléchargement au prochain `npm run data`.
+
+---
+
+## Réglages du diorama
+
+`diorama.config.json` (relancer `npm run data -- --offline` après modification ; si l'emprise
+change, relancer `npm run data` complet) :
+
+| Clé | Rôle |
+|---|---|
+| `bbox` | Emprise du socle (sud, ouest, nord, est, en degrés) |
+| `defaultLevelHeight` | Hauteur d'un étage pour les hauteurs estimées (m) |
+| `terrainStep` | Pas de la grille de relief (m). Plus petit = plus fin mais plus de points à télécharger |
+| `terrainExaggeration` | Exagération verticale du relief (1 = réel, 1.5 = plus marqué) |
+| `showCoveredWater` | Cours d'eau dessinés même là où ils sont couverts (nom OSM). Par défaut `["La Leysse"]` : la rivière passe sous les boulevards du centre, mais on l'affiche pour la lisibilité. `[]` = fidèle au terrain |
+
+---
+
+## Gérer les lieux d'histoire
+
+Les fiches sont dans `src/content/pois.json` :
+
+```json
+{
+  "id": "elephants",
+  "title": "Fontaine des Éléphants",
+  "era": "1838",
+  "category": "monument",
+  "osm": { "match": "fontaine des elephants", "prefer": { "amenity": "fountain" } },
+  "pos": [200.7, 69.7],
+  "summary": "Une phrase d'accroche.",
+  "story": "Le récit, 4 à 5 phrases.",
+  "anecdote": "Le « Le saviez-vous ? » (optionnel).",
+  "sources": [{ "label": "Wikipédia — …", "url": "https://…" }]
+}
+```
+
+Position d'un lieu, dans cet ordre :
+1. `pos` s'il est renseigné (mètres depuis le centre du socle : x vers l'est, y vers le nord) ;
+2. sinon l'élément OpenStreetMap dont le nom contient `osm.match` ; `osm.prefer` départage
+   plusieurs candidats (ex. `{ "amenity": "fountain" }`). ⚠️ Un nom peut être porté par un élément
+   sans rapport (ex. une station d'autopartage « Carré Curial ») : vérifier avec l'outil de placement.
+
+La gemme se pose automatiquement sur le relief. `"draft": true` = fiche brouillon (visible en dev,
+masquée en production). Chaque fait d'une fiche doit venir d'une source citée dans `sources`.
+
+---
+
+## Monuments modélisés
+
+Déclarés dans `src/content/models.json` :
+
+```json
+{ "id": "fontaine-elephants", "poi": "elephants", "source": "procedural:fontaine-elephants", "rotation": 37, "scale": 1.3, "hideOsm": [] }
+```
+
+| Clé | Rôle |
+|---|---|
+| `source` | `procedural:<nom>` (formes générées en code, `src/scene/models/`) ou `models/<fichier>.glb` (export Blender dans `public/models/`, voir le README de ce dossier) |
+| `poi` / `pos` | Position : celle du lieu `poi`, ou `pos` [x, y] en mètres. `pos [0, 0]` = modèle construit en coordonnées absolues (sur des contours OSM) |
+| `rotation`, `scale` | Degrés (0 = vers l'est) ; 1 = taille réelle |
+| `hideOsm` | Identifiants OSM des bâtiments masqués sous le monument |
+
+| Monument | Construit à partir de | Principales hypothèses |
+|---|---|---|
+| Fontaine des Éléphants | Bassin de 13 m (OSM), hauteur 17,65 m et statue 2,82 m (Wikipédia) | Proportions à l'œil, agrandie ×1,3, orientation |
+| Cathédrale Saint-François-de-Sales | Contour OSM ; nef 23 m sous voûtes, bas-côtés, abside, clocher au nord (Wikipédia) ; façade côté place Métropole | Position et hauteur du clocher, largeur de nef, toits |
+| Château des ducs de Savoie | 7 contours OSM nommés (3 tours, Sainte-Chapelle, Porterie, aile du Midi, Conseil départemental) ; côté esplanade, clôture sur le bord du jardin du château (OSM), portail là où l'allée de service entre (OSM), escalier sur son tracé OSM (`chateau-grille.ts`) | Hauteurs et toits (`CHATEAU_PARTS` dans `chateau.ts`) ; tour Yolande absente ; tracé exact, hauteurs et dessin de la grille et du portail, marches (le relief au pas de 10 m ne montre pas la montée de l'escalier) |
+| Carré Curial (+ médiathèque accolée) | Contours OSM (Carré avec sa cour, médiathèque way 209429258) ; gouttière 16,7 m et toit 5,4 m (BD TOPO) ; caserne de 1801-1805 autour d'une cour (Wikipédia) ; médiathèque : gouttière 18,3 m, toit plat (BD TOPO) | Étages, fenêtres, couleurs, aspect de la médiathèque |
+
+Tous les monuments suivent le relief et sont mis en lumière la nuit (`src/scene/models/lighting.ts`).
+
+---
+
+## Arbres modélisés (pack nature)
+
+Dans les parcs et le long de la Leysse, les arbres simples sont remplacés par des arbres low-poly
+du pack **Ultimate Nature Pack de Quaternius** (licence CC0 : domaine public). Les emplacements ne
+changent pas (arbres OSM + arbres semés) : seule la forme change. **Les rues gardent les arbres
+simples.** Si un modèle ne se charge pas, la zone garde ses arbres simples.
+
+| Endroit | Mélange | Contenu |
+|---|---|---|
+| Jardin botanique des Senteurs | `botanique` | Arbres classiques, bouleaux, pins et **saules** (le seul endroit avec des saules) |
+| 16 parcs et squares nommés (Verney, Esplanade du Château, Clos Savoiroux, Buttet du Bourget, Calamine…) | `parc` | Surtout des arbres classiques, un peu de bouleaux, quelques pins (≈ 9 %) |
+| Bords de la Leysse (arbres à moins de 15 m de la berge) | `berges` | Bouleaux uniquement |
+
+Environ 880 arbres modélisés, avec 18 modèles. Le mélange d'essences est un choix de style, pas
+l'inventaire réel : dans OSM, seuls 2 arbres sur 1 575 ont une espèce et 197 un type de feuillage.
+
+Tout se règle dans `src/content/nature.json` :
+
+```json
+{
+  "mixes": {
+    "berges": { "scale": [2.6, 3.2], "models": { "BirchTree_1": 1, "BirchTree_2": 1 } }
+  },
+  "zones": [
+    { "mix": "parc", "areas": ["Parc du Verney", "Square Pasteur"] },
+    { "mix": "berges", "water": "La Leysse", "distance": 15 }
+  ]
+}
+```
+
+| Clé | Rôle |
+|---|---|
+| `mixes.<nom>.models` | Modèles et leur poids (tirage déterministe : le même arbre au même endroit à chaque chargement) |
+| `mixes.<nom>.scale` | Plage d'échelle ; les arbres du pack mesurent 2,4 à 4,9 unités, donc ×3 ≈ 7 à 15 m |
+| `zones[].areas` | Noms exacts des espaces verts OSM (voir `areas` dans `city.json`) |
+| `zones[].water` + `distance` | Arbres à moins de `distance` mètres de la berge d'un cours d'eau (nom OSM, ex. « La Leysse ») |
+| Ordre des zones | Un arbre prend la **première** zone qui le contient |
+
+**Ajouter un modèle ou un parc :**
+
+1. Ajouter la zone, le mélange ou le modèle dans `src/content/nature.json`.
+2. `npm run nature` : convertit les `.obj` cités dans les mélanges (rangés dans `assets-src/quaternius-nature/obj/<catégorie>/`) en `.glb` dans `public/models/nature/` (≈ 10 à 25 Ko par arbre).
+3. Recharger la page.
+
+La conversion remplace les couleurs du pack, plus sombres, par la palette du diorama (`RECOLOR` dans
+`scripts/convert-nature.mjs`) et ne garde qu'un maillage à facettes avec une couleur par sommet.
+Elle **simplifie** aussi les modèles (meshoptimizer), réglé par `simplify` dans `nature.json` :
+`ratio` = part des triangles gardés (0,5 = la moitié), `error` = écart de forme toléré. Pour
+revenir aux modèles complets, retirer `simplify` puis relancer `npm run nature`. Après la mise à
+jour, lancer `npm install` une fois (nouvelles dépendances de conversion).
+
+Sources du pack : `assets-src/quaternius-nature/` (`obj/` et `fbx/`, rangés en `arbres`, `rochers`,
+`vegetation`, `bois`). Cactus, palmiers, maïs et blé ont été retirés (hors sujet pour Chambéry).
+Les `.blend` d'origine ont été supprimés (pack retéléchargeable sur quaternius.com).
+
+---
+
+## Outil de placement (mode dev)
+
+Disponible uniquement avec `npm run dev`.
+
+1. Appuie sur **P** ou sur le bouton **📍 Placement** (en haut à droite).
+2. Clique sur la carte : une épingle rose se pose (sur le relief) et le panneau affiche `pos` et les coordonnées GPS, chacun avec un bouton **Copier**.
+3. Dans **Affecter à**, choisis un lieu : sa gemme se déplace sur l'épingle. Reclique ailleurs pour ajuster.
+4. **Enregistrer dans pois.json** écrit la position dans le fichier ; la page se recharge en gardant la vue et l'outil ouvert.
+5. Nouveau lieu : **➕ Nouveau lieu…**, tape le titre (l'identifiant se remplit tout seul), enregistre. La fiche est créée en brouillon (« À rédiger ») : complète-la dans `pois.json`, puis retire `"draft": true`.
+
+Quand l'outil est actif, les clics n'ouvrent plus les fiches. **P** à nouveau pour le fermer.
+En production, ni le code de l'outil ni l'endpoint `/__dev/poi` du serveur Vite n'existent.
+
+---
+
+## Rendu : ce qui se passe à l'écran
+
+- **Socle** : sol en relief (maillage suivant la grille d'altitudes), bords qui épousent le profil du terrain (bande d'herbe + strates de terre), plinthe en bois. Parcs, places et plans d'eau sont peints sur une texture du sol ; rues, berges, rivière et ponts sont des rubans drapés sur le relief.
+- **Bâtiments** : contours OSM extrudés, posés sur le point le plus bas du terrain sous leur emprise. Couleurs pastel stables (dérivées de l'identifiant OSM).
+- **Toits** (décidés par `scripts/roofs.mjs`) : emprise quasi rectangulaire → deux pans, quatre pans ou pyramide ; forme irrégulière, en L, avec cour → toit à pans par *squelette droit* (librairie `straight-skeleton`) ; plats pour garages, abris, très grandes surfaces sans toit mesuré par BD TOPO. La hauteur du toit vient de BD TOPO quand elle existe.
+- **Eau** : matériau brillant animé, berges en pierre.
+- **Arbres** : ceux d'OSM + quelques-uns semés dans les parcs ; arbres modélisés (pack Quaternius) dans les parcs et le long de la Leysse (`nature.json`) ; les rues gardent les arbres simples.
+- **Ombres** : calculées une fois au chargement, puis seulement quand le soleil bouge (curseur d'heure, lecture ▶), pas à chaque image. Les gemmes et les épingles, qui bougent, ne projettent pas d'ombre.
+- **Jour / nuit** : soleil (lever 6 h, coucher 18 h), crépuscule, lune ; la nuit, fenêtres éclairées (calculées dans le shader), lueur des rues, bars/clubs/restaurants mis en avant par un halo.
+- **Bars, cafés, restaurants** : une épingle 3D (pointeur de carte) par lieu OSM, colorée par catégorie : violet = bar (bar, pub, biergarten, boîte de nuit), bleu = café (café, glacier), orange = restaurant (`PLACE_CATEGORIES` dans `src/scene/palette.ts`). L'épingle est posée sur le toit du bâtiment qui contient le point OSM (161 lieux sur 169 sont à l'intérieur d'un bâtiment), sinon au sol. Au survol, l'épingle rebondit et grossit, et une fiche apparaît à côté (catégorie, nom avec un petit rebond, cuisine, horaires OSM avec les jours en français). La fiche suit l'épingle quand la caméra bouge ; sur mobile, elle s'ouvre au toucher, au-dessus de l'épingle.
+- **Effet maquette** : flou tilt-shift en post-traitement, toujours actif (plus d'interrupteur), bande nette sur le point visé ; les noms restent nets.
+
+---
+
+## Structure du code
+
+```
+diorama.config.json        Emprise, hauteur d'étage, pas et exagération du relief
+vite.config.ts             Config Vite + endpoint dev /__dev/poi (écriture de pois.json)
+
+scripts/
+  fetch-osm.mjs            Pipeline : OSM → projection → découpage → BD TOPO → relief → toits → city.json
+  bdtopo.mjs               Hauteurs IGN BD TOPO (téléchargement WFS + association aux bâtiments OSM)
+  terrain.mjs              Relief RGE ALTI (ou interpolation BD TOPO)
+  roofs.mjs                Choix du toit de chaque bâtiment
+  convert-nature.mjs       Pack nature : .obj → .glb (npm run nature)
+
+src/
+  main.ts                  Assemblage : scène, calques, interactions, boucle de rendu
+  types.ts                 Types des données (city.json, lieux, monuments)
+  content/pois.json        Fiches d'histoire
+  content/models.json      Monuments modélisés
+  content/nature.json      Arbres modélisés : mélanges et zones
+  scene/stage.ts           Renderer, caméra « maquette », lumières, contrôles
+  scene/terrain.ts         Relief : maillage du sol, altitude en tout point, bords du socle
+  scene/city.ts            Rues, eau, bâtiments, arbres (posés sur le relief)
+  scene/roofs.ts           Dessin des toits
+  scene/markers.ts         Gemmes des lieux + épingles 3D et halos des bars, cafés, restaurants
+  scene/labels.ts          Noms des parcs et cours d'eau
+  scene/daynight.ts        Cycle jour/nuit
+  scene/tiltshift.ts       Effet maquette
+  scene/models.ts          Chargement et placement des monuments
+  scene/nature.ts          Arbres modélisés dans les parcs
+  scene/models/            Monuments générés en code + éclairage de nuit partagé
+  ui/ui.ts                 HUD, fiche, journal, toasts, contrôles
+  state/progress.ts        Progression et préférences (localStorage)
+  dev/placement.ts         Outil de placement (chargé seulement en dev)
+
+public/data/city.json      Données générées (ne pas modifier à la main)
+public/models/             Fichiers glTF des monuments (export Blender)
+public/models/nature/      Arbres du pack nature convertis (.glb)
+assets-src/                Sources des modèles (pack Quaternius en .obj/.fbx), pas servies par le site
+data/raw/                  Caches des téléchargements (non versionnés)
+claude/                    Suivi du projet : fonctionnalités, backlog, journal, décisions
+CLAUDE.md                  Consignes pour Claude quand il travaille sur le projet
+```
+
+Choix techniques : **Three.js** plutôt qu'une librairie de cartographie (rendu diorama plus
+simple à maîtriser en scène 3D pure) ; **pas de backend** : tout est statique, hébergeable
+n'importe où (Coolify sur le Pi, Netlify, GitHub Pages…) avec `npm run build`.
+Le détail des choix est dans [`claude/DECISIONS.md`](claude/DECISIONS.md).
+
+---
+
+## Dépannage
+
+| Symptôme | Cause probable / solution |
+|---|---|
+| « Données de la ville absentes » | Lancer `npm run data` |
+| Overpass répond 429 / 504 | Serveur saturé : réessayer, ou `OVERPASS_URL=…` (voir plus haut) |
+| `⚠ BD TOPO indisponible` | Service IGN injoignable : le cache est utilisé s'il existe, sinon hauteurs OSM/estimées. Réessayer avec `npm run data -- --offline --bdtopo` |
+| `relief interpolé depuis … altitudes de sol BD TOPO` | Service RGE ALTI injoignable : réessayer avec `npm run data -- --offline --relief` |
+| Un lieu d'histoire est mal placé | Outil de placement (touche P en dev) ou `osm.match` / `osm.prefer` plus précis |
+| Un monument a disparu | Vérifier que son contour OSM existe encore (identifiants dans `src/scene/models/*.ts`) |
+| Ça rame sur mobile | L'effet maquette est permanent (plus de bouton) : s'il pèse trop, voir le ticket « Tilt-shift » du backlog (l'alléger sur petits écrans) |
+
+---
+
+## Limites connues
+
+- **Hauteurs** : ≈ 105 bâtiments (surtout de petites annexes) n'ont pas de correspondant BD TOPO et gardent une hauteur estimée.
+- **Toits** : la forme ne vient d'OSM que pour ≈ 3 % des bâtiments ; le reste est un choix esthétique, pas la réalité.
+- **Relief** : un bâtiment sur une pente est posé sur son point le plus bas (côté amont un peu enterré). Tant que RGE ALTI n'a pas été téléchargé, le relief est interpolé et moins précis entre les bâtiments.
+- **Monuments** : versions « formes simples », proportions en partie supposées (voir le tableau plus haut).
+- **Positions des lieux** : celles trouvées automatiquement dans OSM sont approximatives ; à vérifier.
+- **Contenu** : 8 fiches rédigées à partir des sources citées ; à relire avant de montrer.
+- **Bars et cafés** : noms et horaires bruts d'OSM ; la nuit, ils s'allument selon leur type, pas selon leurs horaires.
+- **Soleil** : lever 6 h, coucher 18 h toute l'année (pas de saisons).
+- **Leysse** : dessinée à l'air libre sur toute sa longueur, y compris là où elle est couverte en réalité (sous les boulevards du centre ; un tronçon a été découvert en 2013 près du Palais de justice). Choix de lisibilité, réglable avec `showCoveredWater`.
+
+---
+
+## Licences
+
+- Données cartographiques © contributeurs OpenStreetMap, **ODbL** — attribution affichée en bas à droite.
+- Hauteurs BD TOPO et relief RGE ALTI © IGN, **Licence Ouverte Etalab 2.0** — attribution affichée quand ils sont utilisés.
+- Textes : reformulés, sources citées dans chaque fiche. Recopier des passages de Wikipédia imposerait la licence **CC BY-SA**.
+- Modèles nature : Ultimate Nature Pack by Quaternius, **CC0 1.0** (domaine public, aucune obligation ; crédit volontaire).
+- Librairies : Three.js (MIT), straight-skeleton (MIT), glTF-Transform (MIT, conversion uniquement).
+
+---
+
+## Suivi du projet
+
+Le dossier [`claude/`](claude/README.md) sert de mémoire au projet :
+
+| Fichier | Contenu |
+|---|---|
+| [FEATURES.md](claude/FEATURES.md) | Fonctionnalités livrées et leur état |
+| [BACKLOG.md](claude/BACKLOG.md) | Ce qui reste à faire, par priorité |
+| [CHANGELOG.md](claude/CHANGELOG.md) | Journal des itérations et des retours |
+| [DECISIONS.md](claude/DECISIONS.md) | Choix techniques et produit, avec leur justification |

@@ -1,0 +1,60 @@
+[
+  {
+    "id": "fontaine-elephants",
+    "poi": "elephants",
+    "source": "procedural:fontaine-elephants",
+    "rotation": 37,
+    "scale": 1.3,
+    "hideOsm": [],
+    "note": "Version test en formes simples. Pour un vrai modèle Blender : exporter en .glb dans public/models/ et remplacer source par \"models/fontaine-elephants.glb\"."
+  },
+  {
+    "id": "cathedrale",
+    "source": "procedural:cathedrale",
+    "pos": [
+      0,
+      0
+    ],
+    "rotation": 0,
+    "scale": 1,
+    "hideOsm": [
+      26543906
+    ],
+    "note": "Construite sur le contour OSM du bâtiment (coordonnées absolues, d'où pos [0, 0]). Emplacement et hauteur du clocher : hypothèses à vérifier."
+  },
+  {
+    "id": "chateau",
+    "source": "procedural:chateau",
+    "pos": [
+      0,
+      0
+    ],
+    "rotation": 0,
+    "scale": 1,
+    "hideOsm": [
+      101968404,
+      237985590,
+      101971080,
+      237985591,
+      237985594,
+      237985593,
+      237985592
+    ],
+    "note": "Chaque bâtiment est reconstruit sur son contour OSM (coordonnées absolues, d'où pos [0, 0]). Hauteurs et toits : hypothèses, réglables dans CHATEAU_PARTS (src/scene/models/chateau.ts)."
+  },
+  {
+    "id": "carre-curial",
+    "source": "procedural:carre-curial",
+    "pos": [
+      0,
+      0
+    ],
+    "rotation": 0,
+    "scale": 1,
+    "hideOsm": [
+      51756,
+      209429258
+    ],
+    "note": "Construit sur les contours OSM du Carré (relation 51756, avec sa cour) et de la médiathèque accolée (way 209429258), hauteurs BD TOPO. Étages, fenêtres et couleurs : hypothèses."
+  }
+]
