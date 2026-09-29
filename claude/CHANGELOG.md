@@ -1,5 +1,41 @@
 # Journal des itérations
 
+## Itération 31 — 29/09/2026
+
+**Demande de Dasco :** l'épic *Heure et saison* (jour/nuit à l'heure réelle, saisons, lever/coucher réels, lieux ouverts la nuit).
+
+**Changements :**
+- **Heure réelle** (`src/time/chambery.ts`, `src/time/clock.ts`) :
+  - par défaut, l'heure et la date de Chambéry (fuseau Europe/Paris, même depuis un appareil à l'étranger), relues chaque minute ;
+  - bouton **Direct** (rouge quand actif) ; le curseur ou ▶ passent en heure choisie, Direct y revient ;
+  - fréquence retenue pour les ombres : au plus une fois par minute en direct (le soleil n'y bouge que de ≈ 0,25°).
+- **Vraie course du soleil** (`src/time/sun.ts`, `daynight.ts`) : azimut et hauteur calculés pour la date et l'heure. Le soleil se lève à l'est-sud-est, passe au sud, se couche à l'ouest ; il est bas l'hiver. Lever et coucher affichés dans la barre (↑07:31 ↓19:21 aujourd'hui). La lumière ne descend pas sous 7° (ombres trop longues sinon).
+- **Saisons** (`src/time/seasons.ts`) :
+  - puce Auto → Printemps → Été → Automne → Hiver ; une saison choisie prend une date typique (course du soleil de la saison) ;
+  - feuillage : vert, automne (15 oct. – 30 nov.), branches nues (1er déc. – 14 mars) ;
+  - parcs : 26 variantes du pack Quaternius converties (`CommonTree/BirchTree/Willow` `_Autumn_n` et `_Dead_n`) ; `nature.json` gagne `seasons`, `convert-nature.mjs` les convertit et recolore l'orangé ; les pins ne changent pas ;
+  - arbres des rues : couronnes orangées à l'automne, petites couronnes brunes l'hiver.
+- **Nuit : seuls les lieux ouverts s'allument** (`src/time/openinghours.ts`) :
+  - lecture des horaires OSM : 104 / 106 lus. Les 2 non lus sont des textes libres ; ces lieux restent allumés, comme ceux sans horaires ;
+  - épingle sans lueur et sans halo quand le lieu est fermé ;
+  - fiche : « ● Ouvert à cette heure », « ● Fermé à cette heure » ou « Horaires inconnus ».
+
+**Vérifié :**
+- `tsc` et build OK.
+- Lever/coucher calculés comparés au calendrier solaire de Chambéry (calendriergratuit.fr) : 29/09 07:32 / 19:22 contre 07:32 / 19:21 ; 21/06 05:47 / 21:29 contre 05:47 / 21:28.
+- Horaires : 9 cas testés (après minuit, plusieurs plages, mois, jours `Su,Mo off`…).
+- Navigateur :
+  - direct à 22:31 → nuit ;
+  - 9 h : soleil à l'est ; 13 h 30 : au sud ; 17 h : à l'ouest ;
+  - automne et hiver : captures, arbres remplacés ;
+  - 22 h 30 : 85 lieux allumés sur 169 ; 2 h : 65 ;
+  - barre d'heure tenant sur iPhone 13 et iPhone SE.
+
+**Limites :**
+- Fériés, vacances scolaires et fermetures datées sont ignorés : l'horaire habituel du jour s'applique.
+- Pas de neige : le pack n'a pas de variante enneigée des feuillus utilisés.
+- Les dates de feuillage sont une approximation, pas une donnée.
+
 ## Itération 30 — 29/09/2026
 
 **Demande de Dasco :** cache HTTP, données versionnées, mode hors-ligne.

@@ -37,10 +37,13 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - 🟡 Monuments modélisés : fontaine, cathédrale, château et Carré Curial faits (formes simples) → décider si on passe certains en modèles Blender
 
 *Heure et saison*
-- ⬜ Gestion cycle jour/nuit - En fonction de l'horodatage du navigateur (ombres : aujourd'hui recalculées seulement quand le soleil bouge ; fréquence de recalcul en heure réelle à définir)
-- ⬜ Gestion des saisons - en fonction des dates du navigateur (le pack Quaternius a des versions automne / neige / arbres morts de chaque arbre)
-- ⬜ Option « heure réelle » (suivre l'heure de Chambéry) et saisons (lever/coucher du soleil réels)
-- ⬜ Nuit : n'allumer que les lieux ouverts à l'heure choisie (lecture du tag OSM `opening_hours`)
+- ✅ Gestion cycle jour/nuit - En fonction de l'horodatage du navigateur (itération 31 : heure de Chambéry relue chaque minute ; ombres recalculées au plus une fois par minute en direct)
+- ✅ Gestion des saisons - en fonction des dates du navigateur (itération 31 : variantes automne et branches nues du pack ; le pack n'a pas de version enneigée des feuillus utilisés)
+- ✅ Option « heure réelle » (suivre l'heure de Chambéry) et saisons (lever/coucher du soleil réels) (itération 31 : bouton Direct, puce saison)
+- ✅ Nuit : n'allumer que les lieux ouverts à l'heure choisie (lecture du tag OSM `opening_hours`) (itération 31 : 104 horaires sur 106 lus ; les 2 textes libres restent allumés)
+- ⬜ Hiver : neige au sol et sur les toits (non commencé)
+- ⬜ Horaires : jours fériés et vacances scolaires (aujourd'hui ignorés, l'horaire habituel du jour s'applique)
+- ⬜ Mobile très étroit (iPhone SE, 320 px) : la rangée Bars / Cafés / Restaurants dépasse de l'écran (constaté à l'itération 31, antérieur)
 
 
 *Refacto et stab*
