@@ -1,5 +1,32 @@
 # Journal des itérations
 
+## Itération 30 — 29/09/2026
+
+**Demande de Dasco :** cache HTTP, données versionnées, mode hors-ligne.
+
+**Changements :**
+- **Données versionnées :**
+  - `vite.config.ts` calcule au build une empreinte de `public/data/` et `public/models/`, injectée dans `__DATA_VERSION__` ;
+  - `src/dataurl.ts` ajoute `?v=empreinte` à `city.json`, aux arbres et aux monuments en glTF ;
+  - `deploy/nginx.conf` : une `map` sur `$arg_v` met les adresses avec `?v=` en cache 1 an (immutable) et laisse celles sans `?v=` revérifiées. Avec `REFRESH_DATA`, les données régénérées au build changent donc l'empreinte.
+- **Mode hors-ligne (PWA)**, avec `vite-plugin-pwa` et `workbox-window` en dépendances de dev :
+  - service worker en production uniquement : 33 fichiers (2,4 Mo : code, page, `city.json`, modèles, icônes) gardés dès la première visite ;
+  - `?v=` ignoré par le cache du service worker ;
+  - polices Google gardées en cache ;
+  - `src/pwa.ts` : message « ✓ Carte disponible hors-ligne », et bandeau « Nouvelle version de la carte disponible · Mettre à jour » (pas de rechargement forcé) ;
+  - manifeste, icônes (gemme sur socle, générées en PNG dans `public/icons/`), `theme-color`, `apple-touch-icon` : la carte est installable sur l'écran d'accueil ;
+  - nginx : `sw.js` et `manifest.webmanifest` toujours revérifiés, type `application/manifest+json`.
+
+**Vérifié** (build de production servi par nginx, avec la même configuration) :
+- en-têtes : `?v=` → cache 1 an ; sans `?v=` → no-cache ; `sw.js` et manifeste → no-cache ;
+- première visite → message hors-ligne, cache rempli ;
+- réseau coupé puis rechargement → carte complète, sans erreur ;
+- nouvelle version publiée → le bandeau apparaît.
+
+**Limites :**
+- Le service worker n'existe qu'en HTTPS ou sur localhost (règle des navigateurs) : rien sur `http://<ip-du-pi>:3000`, il faut passer par le domaine Coolify.
+- Brotli n'est pas fait (pas dans l'image nginx standard, gzip suffit).
+
 ## Itération 29 — 29/09/2026
 
 **Retour de Dasco :** testé depuis le serveur du Pi, sur le Mac : les **mouvements** saccadent (le chargement va bien). Suite de l'audit de performance, sans toucher aux monuments (toujours en attente).
