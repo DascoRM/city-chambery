@@ -94,6 +94,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   const tooltip = $<HTMLElement>('.tooltip');
   const hint = $<HTMLElement>('.hint');
   const needle = $<HTMLElement>('.compass .needle');
+  let lastHeading = '';
   const placeCard = $<HTMLElement>('.place-card');
   const placeBody = $<HTMLElement>('.place-body');
   let found = new Set<string>();
@@ -241,7 +242,10 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     showPlaceCard, hidePlaceCard, movePlaceCard,
     placeCardState: () => ({ place: shownPlace, pinned }),
     /** Oriente l'aiguille de la boussole (cap en degrés, 0 = nord en haut). */
-    setHeading: (deg: number) => { needle.style.transform = `rotate(${deg.toFixed(1)}deg)`; },
+    setHeading: (deg: number) => {
+      const v = `rotate(${deg.toFixed(1)}deg)`;
+      if (v !== lastHeading) { needle.style.transform = v; lastHeading = v; } // pas d'écriture si rien ne change
+    },
   };
 }
 

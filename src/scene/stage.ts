@@ -7,7 +7,7 @@ export function createStage(container: HTMLElement, bounds: CityData['bounds'], 
   // Pas d'anticrénelage ici : l'image passe par l'effet maquette (tiltshift.ts), qui a sa propre
   // cible de rendu anticrénelée (samples: 4). Celui du renderer ne servirait qu'à la copie finale.
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // ajustée ensuite par scene/quality.ts
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;

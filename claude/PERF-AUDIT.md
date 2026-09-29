@@ -39,12 +39,18 @@ image**, 60 fois par seconde, même quand rien ne bouge.
 | 2. Ombres à chaque image | ✅ itération 25 : `shadowMap.autoUpdate = false`, recalcul quand le soleil bouge ; gemmes et épingles sans ombre |
 | 3. Arbres modélisés | 🟡 itération 25 : simplifiés à 50 % (1,97 M → 0,99 M triangles) ; découpage par quartier à faire |
 | 4. Anticrénelage en double | ✅ itération 25 : `antialias: false` sur le renderer |
-| 5. Effet maquette sur mobile | ⬜ moins gourmand ou inactif, à trancher |
+| 5. Effet maquette (écrans haute densité, mobile) | 🟡 itération 29 : flou en demi-résolution, 1 passe finale au lieu de 3, anticrénelage ×2 si densité ≥ 1,5, densité plafonnée à 1,5 puis adaptative ; mobile : à trancher après mesure |
 | 6. Rendu continu à l'arrêt | ⬜ |
 | 7. Chargement | ⬜ P3 |
 
 Estimation par image, la plupart du temps (hors changement d'heure) : ≈ 2 400 appels de rendu et
 ≈ 1,5 M triangles, contre ≈ 4 800 et ≈ 4,7 M avant. Ce sont des comptes, pas des mesures de vitesse.
+
+**Itération 29 (retour de Dasco : mouvements saccadés sur Mac) :**
+- L'effet maquette gaspillait plus que prévu : `EffectComposer` dupliquait la cible de rendu anticrénelée ×4 en demi-flottant, et chaque passe (2 flous, étiquettes, sortie) travaillait en pleine résolution sur une cible anticrénelée.
+- Nouvelle chaîne : scène anticrénelée une fois, flou sur 1/4 des pixels, une passe finale.
+- Sur un écran Retina, densité 1,5 au lieu de 2 : 44 % de pixels en moins, et elle baisse encore automatiquement sous 40 images/s.
+- Le plus gros coût processeur restant est celui des monuments : 2 340 des ≈ 2 400 appels de rendu, en attente.
 
 ## Constats, du plus rentable au moins rentable
 

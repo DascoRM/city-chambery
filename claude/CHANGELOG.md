@@ -1,5 +1,25 @@
 # Journal des itérations
 
+## Itération 29 — 29/09/2026
+
+**Retour de Dasco :** testé depuis le serveur du Pi, sur le Mac : les **mouvements** saccadent (le chargement va bien). Suite de l'audit de performance, sans toucher aux monuments (toujours en attente).
+
+**Changements :**
+- `tiltshift.ts` réécrit, même rendu :
+  - scène anticrénelée dessinée une fois ;
+  - flou horizontal et vertical en **demi-résolution**, sans anticrénelage ;
+  - une seule passe finale (mélange net / flou + rendu des tons + sRGB) ;
+  - étiquettes dessinées par-dessus.
+  Avant : `EffectComposer` avec 4 passes plein écran, toutes sur des cibles anticrénelées ×4 en demi-flottant. Anticrénelage ×2 au lieu de ×4 quand la densité est ≥ 1,5.
+- Nouveau `quality.ts` : densité de pixels plafonnée à 1,5 (au lieu de 2), puis adaptée par pas de 0,25 selon les images/s (< 40 → baisse ; > 56 trois fois de suite → remonte).
+- Nouveau `perfhud.ts` : compteur `?debug` (images/s, pire image, appels et triangles cumulés sur toutes les passes, densité, taille du rendu).
+- Boussole : l'aiguille n'est réécrite que si l'angle change.
+
+**Vérifié :**
+- Rendu avant / après comparé pixel à pixel. Écart moyen : jour 0,4/255, vue moyenne 1,2/255, nuit 2,7/255. À l'œil, les images sont identiques ; les seules différences sont des fenêtres éclairées un peu plus douces dans les zones floues.
+- Compteur : 2 398 appels, 1,46 M triangles, densité 1,5 sur un écran de densité 2.
+- **Non mesuré :** le gain réel en images/s (pas de carte graphique dans l'environnement de Claude). À mesurer par Dasco avec `?debug` sur le Mac.
+
 ## Itération 28 — 29/09/2026
 
 **Demande de Dasco :** un docker compose pour lancer facilement le projet avec Coolify.

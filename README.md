@@ -297,7 +297,9 @@ En production, ni le code de l'outil ni l'endpoint `/__dev/poi` du serveur Vite 
 - **Ombres** : calculées une fois au chargement, puis seulement quand le soleil bouge (curseur d'heure, lecture ▶), pas à chaque image. Les gemmes et les épingles, qui bougent, ne projettent pas d'ombre.
 - **Jour / nuit** : soleil (lever 6 h, coucher 18 h), crépuscule, lune ; la nuit, fenêtres éclairées (calculées dans le shader), lueur des rues, bars/clubs/restaurants mis en avant par un halo.
 - **Bars, cafés, restaurants** : une épingle 3D (pointeur de carte) par lieu OSM, colorée par catégorie : violet = bar (bar, pub, biergarten, boîte de nuit), bleu = café (café, glacier), orange = restaurant (`PLACE_CATEGORIES` dans `src/scene/palette.ts`). L'épingle est posée sur le toit du bâtiment qui contient le point OSM (161 lieux sur 169 sont à l'intérieur d'un bâtiment), sinon au sol. Au survol, l'épingle rebondit et grossit, et une fiche apparaît à côté (catégorie, nom avec un petit rebond, cuisine, horaires OSM avec les jours en français). La fiche suit l'épingle quand la caméra bouge ; sur mobile, elle s'ouvre au toucher, au-dessus de l'épingle.
-- **Effet maquette** : flou tilt-shift en post-traitement, toujours actif (plus d'interrupteur), bande nette sur le point visé ; les noms restent nets.
+- **Effet maquette** : flou tilt-shift en post-traitement, toujours actif (plus d'interrupteur), bande nette sur le point visé ; les noms restent nets. Le flou est calculé en demi-résolution (`src/scene/tiltshift.ts`).
+- **Résolution** : densité de pixels plafonnée à 1,5, puis baissée automatiquement si les images/s chutent sous 40 (`src/scene/quality.ts`).
+- **Mesurer la fluidité** : ajouter `?debug` à l'adresse (ex. `http://localhost:3000/?debug`) affiche images/s, pire image, appels de rendu, triangles et densité.
 
 ---
 
@@ -328,7 +330,9 @@ src/
   scene/markers.ts         Gemmes des lieux + épingles 3D et halos des bars, cafés, restaurants
   scene/labels.ts          Noms des parcs et cours d'eau
   scene/daynight.ts        Cycle jour/nuit
-  scene/tiltshift.ts       Effet maquette
+  scene/tiltshift.ts       Effet maquette (flou en demi-résolution)
+  scene/quality.ts         Résolution adaptative (densité de pixels selon les images/s)
+  ui/perfhud.ts            Compteur de performance (?debug)
   scene/models.ts          Chargement et placement des monuments
   scene/nature.ts          Arbres modélisés dans les parcs
   scene/models/            Monuments générés en code + éclairage de nuit partagé
