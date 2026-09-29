@@ -23,32 +23,70 @@ point par point, c'est assez plaisant pour que mes amis y passent 10 minutes et 
 8. [Outil de placement (mode dev)](#outil-de-placement-mode-dev)
 9. [Rendu : ce qui se passe à l'écran](#rendu--ce-qui-se-passe-à-lécran)
 10. [Structure du code](#structure-du-code)
-11. [Dépannage](#dépannage)
-12. [Limites connues](#limites-connues)
-13. [Licences](#licences)
-14. [Suivi du projet](#suivi-du-projet)
+11. [Déployer (Docker, Coolify)](#déployer-docker-coolify)
+12. [Dépannage](#dépannage)
+13. [Limites connues](#limites-connues)
+14. [Licences](#licences)
+15. [Suivi du projet](#suivi-du-projet)
 
 ---
 
 ## Démarrer
 
-Prérequis : Node.js 20 ou plus récent.
+Prérequis : **Node.js 20+** (développement) et/ou **Docker** (production). Les données
+(`public/data/city.json`, `public/models/`) sont déjà dans le dépôt : pas besoin de les
+télécharger pour lancer le projet.
+
+### 1. Lancer en développement
 
 ```bash
-npm install
-npm run data     # télécharge OSM + hauteurs BD TOPO + relief RGE ALTI (une à deux minutes selon les services)
-npm run dev      # http://localhost:5173
+npm install          # une fois, puis après chaque changement de package.json
+npm run dev          # http://localhost:5173 (avec l'outil de placement et les brouillons)
 ```
+
+### 2. Lancer la version de production
+
+En local, sans Docker :
+
+```bash
+npm run build        # vérifie les types et construit le site dans dist/
+npm run preview      # sert dist/ sur http://localhost:4173
+```
+
+Avec Docker (même image que sur Coolify, nginx sur le port 3000) :
+
+```bash
+npm run docker:up    # = docker compose up --build -d → http://localhost:3000
+npm run docker:logs  # suivre les journaux du conteneur
+npm run docker:down  # arrêter et supprimer le conteneur
+```
+
+Sur le Pi avec Coolify : voir [Déployer (Docker, Coolify)](#déployer-docker-coolify).
+
+### 3. Régénérer les données (seulement si la carte doit changer)
+
+```bash
+npm run data                     # télécharge OSM + hauteurs BD TOPO + relief RGE ALTI (1 à 2 min)
+npm run data -- --offline        # reconstruit depuis data/raw/, sans réseau (≈ 10 s)
+npm run nature                   # reconvertit les arbres du pack nature (après modification de nature.json)
+```
+
+### Toutes les commandes
 
 | Commande | Rôle |
 |---|---|
+| `npm install` | Installe les dépendances. Après un changement de dépendances, commiter `package-lock.json` (sinon le build Docker échoue sur `npm ci`) |
+| `npm run dev` | Serveur de développement (avec l'outil de placement et les fiches brouillons) |
+| `npm run build` | Build statique de production dans `dist/` (sans outil de placement ni brouillons) |
+| `npm run preview` | Sert le build de production en local |
+| `npm run docker:up` | Construit l'image Docker et lance le conteneur en arrière-plan (http://localhost:3000) |
+| `npm run docker:logs` | Affiche les journaux du conteneur en continu |
+| `npm run docker:down` | Arrête et supprime le conteneur |
 | `npm run data` | Télécharge tout (OpenStreetMap, hauteurs BD TOPO, relief RGE ALTI) et écrit `public/data/city.json`. Les réponses brutes sont gardées dans `data/raw/` |
 | `npm run data -- --offline` | Reconstruit `city.json` depuis `data/raw/`, sans réseau (≈ 10 s). À lancer après une modification des scripts ou de `diorama.config.json` |
 | `npm run data -- --offline --bdtopo` | Idem, mais retélécharge seulement les hauteurs BD TOPO |
 | `npm run data -- --offline --relief` | Idem, mais retélécharge seulement le relief RGE ALTI |
-| `npm run dev` | Serveur de développement (avec l'outil de placement et les fiches brouillons) |
-| `npm run build` | Build statique de production dans `dist/` (sans outil de placement ni brouillons) |
-| `npm run preview` | Sert le build de production en local |
+| `npm run nature` | Convertit et simplifie les arbres du pack Quaternius (`assets-src/` → `public/models/nature/`) selon `src/content/nature.json` |
 
 Variables d'environnement utiles :
 
@@ -67,12 +105,16 @@ source et dénivelé du relief, types de toits, et quels lieux d'histoire ont é
 
 | Action | Souris | Tactile |
 |---|---|---|
-| Tourner | glisser | glisser à un doigt |
-| Se déplacer | clic droit + glisser | glisser à deux doigts |
-| Zoomer | molette | pincer |
+| Se déplacer | clic droit + glisser | glisser à un doigt |
+| Tourner | glisser | tourner deux doigts (torsion) |
+| Incliner la vue | glisser vers le haut / le bas | glisser deux doigts vers le haut / le bas |
+| Zoomer | molette | pincer / écarter, ou double toucher (zoom vers l'endroit touché) |
+| Remettre le nord en haut | clic sur la boussole (en bas à droite) | toucher la boussole (en haut à droite) |
 | Découvrir un lieu | clic sur une gemme ✦ | toucher une gemme |
 | Voir un bar / café / restaurant | survoler son épingle (la fiche s'affiche à côté) ; clic = la fiche reste ouverte | toucher l'épingle |
 | Fermer une fiche | Échap, ✕ ou clic dans le vide | ✕ ou toucher dans le vide |
+
+Zoom maximum : 70 m du point visé (120 m avant). De près, la caméra reste à au moins 30 m au-dessus du sol pour ne pas entrer dans les toits ni dans les collines. Gestes à deux doigts : `src/scene/touch.ts` ; réglages de la caméra : `src/scene/stage.ts`.
 
 En bas à gauche :
 - **📜 Journal** : les lieux découverts (clic pour y voler) et les lieux mystère restants ;
@@ -278,7 +320,8 @@ src/
   content/pois.json        Fiches d'histoire
   content/models.json      Monuments modélisés
   content/nature.json      Arbres modélisés : mélanges et zones
-  scene/stage.ts           Renderer, caméra « maquette », lumières, contrôles
+  scene/stage.ts           Renderer, caméra « maquette », lumières, contrôles, boussole (cap, retour au nord)
+  scene/touch.ts           Gestes tactiles à deux doigts (pincer, tourner, incliner)
   scene/terrain.ts         Relief : maillage du sol, altitude en tout point, bords du socle
   scene/city.ts            Rues, eau, bâtiments, arbres (posés sur le relief)
   scene/roofs.ts           Dessin des toits
@@ -306,6 +349,44 @@ Choix techniques : **Three.js** plutôt qu'une librairie de cartographie (rendu 
 simple à maîtriser en scène 3D pure) ; **pas de backend** : tout est statique, hébergeable
 n'importe où (Coolify sur le Pi, Netlify, GitHub Pages…) avec `npm run build`.
 Le détail des choix est dans [`claude/DECISIONS.md`](claude/DECISIONS.md).
+
+---
+
+## Déployer (Docker, Coolify)
+
+Le site est **statique** : `npm run build` produit `dist/`, servi par nginx dans une image Docker.
+
+**Régénération des données au build** : l'argument `REFRESH_DATA` (dans `docker-compose.yml`,
+`"true"` par défaut) fait lancer au build `npm run data` (OpenStreetMap, BD TOPO, RGE ALTI) puis
+`npm run nature`, via `deploy/refresh-data.sh`. Filet de sécurité :
+- si le téléchargement échoue (Overpass saturé, pas de réseau), le build continue avec le `city.json` du dépôt ;
+- si BD TOPO ou RGE ALTI n'ont pas répondu, le nouveau `city.json` est rejeté et on garde celui du dépôt. Sans ce contrôle, la carte serait publiée avec des hauteurs estimées et un relief interpolé, sans aucune erreur visible ;
+- durée : compter 1 à 2 minutes de plus par build.
+
+Avec `REFRESH_DATA: "false"`, le build est rapide et utilise les données du dépôt telles quelles.
+Les données téléchargées au build ne vont que dans l'image, pas dans le dépôt. Pour les versionner,
+lancer `npm run data` sur le Mac et commiter.
+
+Une nouvelle mise à jour des données demande un nouveau build. Docker réutilise son cache si aucun
+fichier n'a changé : pour forcer un rafraîchissement, reconstruire sans cache (option « no cache »
+dans Coolify, ou `docker compose build --no-cache`).
+
+| Fichier | Rôle |
+|---|---|
+| `Dockerfile` | Étape 1 : Node construit le site. Étape 2 : nginx sert `dist/` (image finale sans Node). Images arm64 et amd64, donc compatible avec le Raspberry Pi 5 |
+| `deploy/nginx.conf` | Compression gzip ; cache 1 an pour `assets/` (noms avec empreinte) ; `index.html`, `city.json` et `.glb` revérifiés à chaque visite (réponse 304 s'ils n'ont pas changé, jamais d'ancienne carte après une mise à jour) |
+| `docker-compose.yml` | Un service `web` (conteneur `city-chambery`) ; nginx écoute sur le port 80 du conteneur, publié sur le port **3000** de l'hôte (`'3000:80'`) ; argument `REFRESH_DATA` |
+| `deploy/refresh-data.sh` | Au build, si `REFRESH_DATA=true` : `npm run data` + `npm run nature`, avec retour aux données du dépôt en cas d'échec ou de données incomplètes |
+| `.dockerignore` | Exclut `node_modules`, `data/raw`, `claude/`, les `.fbx` du pack nature… (garde les `.obj` pour `npm run nature`) : contexte de build d'environ 4 Mo |
+
+**Avec Coolify :**
+
+1. Pousser le dépôt (avec `package-lock.json` à jour : après un changement de dépendances, lancer `npm install` puis commiter le lock, sinon `npm ci` échoue au build).
+2. Dans Coolify : *New Resource* → dépôt Git → type **Docker Compose** (fichier `docker-compose.yml`).
+3. Donner un domaine au service `web` (Coolify gère le HTTPS), puis *Deploy*.
+4. Pour mettre à jour : pousser sur la branche, puis redéployer (ou activer le déploiement automatique).
+
+**En local :** `npm run docker:up`, puis http://localhost:3000 (voir [Démarrer](#démarrer)).
 
 ---
 

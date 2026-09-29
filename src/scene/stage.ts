@@ -35,11 +35,14 @@ export function createStage(container: HTMLElement, bounds: CityData['bounds'], 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
-  controls.minDistance = 120;
+  controls.minDistance = 70; // assez près pour lire une rue (avant : 120) ; en dessous, un téléphone ne montre plus qu'un toit
   controls.maxDistance = Math.max(dist * 1.2, size * 3);
   controls.minPolarAngle = 0.12;
   controls.maxPolarAngle = 1.22; // on ne passe jamais sous le socle
   controls.screenSpacePanning = false;
+  // Tactile, comme une carte : un doigt déplace ; les gestes à deux doigts (pincer, tourner,
+  // incliner) sont gérés par scene/touch.ts, d'où TWO désactivé ici (-1 = aucun geste)
+  controls.touches = { ONE: THREE.TOUCH.PAN, TWO: -1 as unknown as THREE.TOUCH };
   controls.target.set(-size * 0.04, 0, size * 0.06); // léger décalage : le bord proche paraît plus grand
   camera.position.add(controls.target);
   controls.update();
@@ -65,6 +68,10 @@ export function createStage(container: HTMLElement, bounds: CityData['bounds'], 
     t.x = THREE.MathUtils.clamp(t.x, bounds.minX, bounds.maxX);
     t.z = THREE.MathUtils.clamp(t.z, -bounds.maxY, -bounds.minY);
     t.y = heightAt(t.x, -t.z); // la cible suit le relief
+    // De près, la caméra reste au-dessus des toits (≈ 30 m au-dessus du sol) : elle ne rentre ni dans
+    // un bâtiment ni dans une colline ; au zoom maximum, la vue plonge donc davantage sur les rues
+    const floor = heightAt(camera.position.x, -camera.position.z) + 30;
+    if (camera.position.y < floor) camera.position.y = floor;
   };
 
   window.addEventListener('resize', () => {
@@ -75,14 +82,41 @@ export function createStage(container: HTMLElement, bounds: CityData['bounds'], 
 
   // Vol de caméra vers un point (interrompu dès que l'utilisateur reprend la main)
   let flight: { target: THREE.Vector3; pos: THREE.Vector3 } | null = null;
-  controls.addEventListener('start', () => (flight = null));
+  let turn: { from: number; to: number; t: number } | null = null; // rotation vers le nord
+  controls.addEventListener('start', () => { flight = null; turn = null; });
   const flyTo = (x: number, z: number, distance = 380) => {
     const target = new THREE.Vector3(x, heightAt(x, -z), z);
     const dir = camera.position.clone().sub(controls.target).setY(0).normalize();
-    const pos = target.clone().addScaledVector(dir, distance * 0.75).setY(distance * 0.7);
+    const pos = target.clone().addScaledVector(dir, distance * 0.75);
+    pos.y = target.y + distance * 0.7; // au-dessus du sol visé (relief), pas au-dessus de 0
     flight = { target, pos };
   };
+  /** Zoom vers un point du monde en gardant l'angle de vue (double toucher). */
+  const zoomTo = (point: THREE.Vector3, factor = 0.45) => {
+    const offset = camera.position.clone().sub(controls.target);
+    const len = THREE.MathUtils.clamp(offset.length() * factor, controls.minDistance, controls.maxDistance);
+    flight = { target: point.clone(), pos: point.clone().addScaledVector(offset.normalize(), len) };
+  };
+  /** Cap de la vue en degrés : 0 = nord en haut, 90 = est en haut… (sens horaire). */
+  const heading = () => {
+    const o = camera.position.clone().sub(controls.target);
+    return THREE.MathUtils.radToDeg(Math.atan2(o.x, o.z));
+  };
+  /** Remet le nord en haut en tournant autour du point visé (boussole). */
+  const resetNorth = () => {
+    flight = null;
+    const o = camera.position.clone().sub(controls.target);
+    turn = { from: Math.atan2(o.x, o.z), to: 0, t: 0 };
+  };
   const updateFlight = (dt: number) => {
+    if (turn) {
+      turn.t = Math.min(1, turn.t + dt / 0.6);
+      const e = 1 - (1 - turn.t) ** 3;
+      const o = camera.position.clone().sub(controls.target);
+      const r = Math.hypot(o.x, o.z), a = turn.from + (turn.to - turn.from) * e;
+      camera.position.set(controls.target.x + r * Math.sin(a), camera.position.y, controls.target.z + r * Math.cos(a));
+      if (turn.t >= 1) turn = null;
+    }
     if (!flight) return;
     const k = 1 - Math.exp(-dt * 3.2);
     controls.target.lerp(flight.target, k);
@@ -90,5 +124,5 @@ export function createStage(container: HTMLElement, bounds: CityData['bounds'], 
     if (camera.position.distanceTo(flight.pos) < 0.5) flight = null;
   };
 
-  return { renderer, scene, camera, controls, clampTarget, flyTo, updateFlight, size, lights: { sun, hemi, fill } };
+  return { renderer, scene, camera, controls, clampTarget, flyTo, zoomTo, heading, resetNorth, updateFlight, size, lights: { sun, hemi, fill } };
 }

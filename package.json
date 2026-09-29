@@ -9,7 +9,10 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "nature": "node scripts/convert-nature.mjs"
+    "nature": "node scripts/convert-nature.mjs",
+    "docker:up": "docker compose up --build -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f web"
   },
   "dependencies": {
     "three": "^0.186.1"

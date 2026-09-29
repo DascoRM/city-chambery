@@ -27,6 +27,8 @@ export interface UiHandlers {
   onReset(): void;
   /** La fiche d'un lieu a été fermée (bouton ✕ ou Échap). */
   onPlaceClosed(): void;
+  /** Boussole touchée : remettre le nord en haut. */
+  onCompass(): void;
 }
 
 export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: string, h: UiHandlers) {
@@ -69,7 +71,14 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
       <div class="place-body"></div>
     </div>
 
-    <div class="hint card">Glisse pour tourner · clic droit ou deux doigts pour déplacer · molette pour zoomer · touche les <b>✦</b> pour découvrir l'histoire</div>
+    <div class="hint card">${
+      matchMedia('(pointer: coarse)').matches
+        ? '1 doigt : se déplacer · 2 doigts : zoomer, pivoter, incliner · double touche : zoomer · touche les <b>✦</b>'
+        : 'Glisse pour tourner · clic droit pour déplacer · molette pour zoomer · touche les <b>✦</b> pour découvrir l\'histoire'
+    }</div>
+    <button class="compass card" data-action="compass" aria-label="Boussole : remettre le nord en haut" title="Remettre le nord en haut">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><g class="needle"><path d="M20 5 L25 20 L15 20 Z" fill="#d1492e"/><path d="M20 35 L25 20 L15 20 Z" fill="#b9ab98"/><text x="20" y="4.6" text-anchor="middle" font-size="6.5" font-weight="700" fill="#2d2622">N</text></g></svg>
+    </button>
     <div class="toast" role="status"></div>
     <div class="tooltip" hidden></div>
     <footer class="attribution">${esc(attribution)}<span class="long"> · Textes : sources citées dans chaque fiche</span></footer>
@@ -84,6 +93,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   const toast = $<HTMLElement>('.toast');
   const tooltip = $<HTMLElement>('.tooltip');
   const hint = $<HTMLElement>('.hint');
+  const needle = $<HTMLElement>('.compass .needle');
   const placeCard = $<HTMLElement>('.place-card');
   const placeBody = $<HTMLElement>('.place-body');
   let found = new Set<string>();
@@ -201,6 +211,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     if (action === 'close-panel') panel.hidden = true;
     if (action === 'close-place') { hidePlaceCard(); h.onPlaceClosed(); }
     if (action === 'reset') h.onReset();
+    if (action === 'compass') h.onCompass();
   });
   const hourIn = root.querySelector<HTMLInputElement>('[data-action="hour"]')!;
   const playBtn = root.querySelector<HTMLButtonElement>('[data-action="play"]')!;
@@ -229,6 +240,8 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     setFound, showPoi, flash, showTooltip, setTime, hidePanel: () => (panel.hidden = true),
     showPlaceCard, hidePlaceCard, movePlaceCard,
     placeCardState: () => ({ place: shownPlace, pinned }),
+    /** Oriente l'aiguille de la boussole (cap en degrés, 0 = nord en haut). */
+    setHeading: (deg: number) => { needle.style.transform = `rotate(${deg.toFixed(1)}deg)`; },
   };
 }
 

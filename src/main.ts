@@ -14,6 +14,7 @@ import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildNature, type NatureConfig } from './scene/nature';
 import { placeCategory } from './scene/palette';
+import { installTwoFingerGestures } from './scene/touch';
 import { createUi, showFatal } from './ui/ui';
 import { loadDiscovered, resetDiscovered, saveDiscovered } from './state/progress';
 
@@ -82,6 +83,7 @@ async function main() {
       if (!v && placeIdx !== null && placeCategory(placeLayer.places[placeIdx].kind).id === cat) closePlace();
     },
     onPlaceClosed: () => placeLayer.setActive(null),
+    onCompass: () => stage.resetNorth(),
     onHour: (h) => dayNight.setHour(h),
     onPlay: (p) => dayNight.setPlaying(p),
     onReset: () => {
@@ -169,10 +171,31 @@ async function main() {
     });
   }
 
+  // Tactile : gestes à deux doigts (pincer, tourner, incliner) ; un doigt = déplacer (stage.ts)
+  installTwoFingerGestures(renderer.domElement, camera, controls);
+  // Double toucher : zoom vers l'endroit touché
+  let lastTap: { t: number; x: number; y: number } | null = null;
+  const zoomAtScreen = (clientX: number, clientY: number) => {
+    const r = renderer.domElement.getBoundingClientRect();
+    ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const hit = raycaster.intersectObject(city.group, true)[0];
+    stage.zoomTo(hit ? hit.point : controls.target.clone()); // hors du socle : zoom sur le centre de la vue
+  };
+
   let down: { x: number; y: number } | null = null;
   renderer.domElement.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
   renderer.domElement.addEventListener('pointerup', (e) => {
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
+    if (e.pointerType === 'touch') {
+      const now = performance.now();
+      if (lastTap && now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
+        lastTap = null;
+        zoomAtScreen(e.clientX, e.clientY);
+        return;
+      }
+      lastTap = { t: now, x: e.clientX, y: e.clientY };
+    }
     if (placement?.handleClick(e.clientX, e.clientY)) return;
     const h = pick(e.clientX, e.clientY);
     if (h && 'poi' in h) { closePlace(); openPoi(h.poi.id); }
@@ -222,6 +245,7 @@ async function main() {
     labels.update(camera);
     hover();
     followPlace();
+    ui.setHeading(stage.heading());
     tiltShift.update(controls.target, stage.size * 1.2);
     tiltShift.render();
   });

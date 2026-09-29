@@ -40,6 +40,9 @@
 | Fiche d'histoire (période, récit, anecdote, sources) | ✅ | Textes à relire (Trivelli/Trivelly, « plus vaste ensemble de trompe-l'œil ») |
 | Progression + journal d'exploration | ✅ | Sauvegarde dans le navigateur, bouton de remise à zéro |
 | Vol de caméra vers un lieu | ✅ | |
+| Déplacement sur mobile, comme une carte | ✅ | 1 doigt = déplacer ; 2 doigts = pincer pour zoomer, tourner, incliner ; double toucher = zoom vers le point touché ; souris inchangée |
+| Boussole | ✅ | L'aiguille suit l'orientation ; un toucher remet le nord en haut (animation) |
+| Zoom plus proche | ✅ | 70 m minimum (avant 120) ; caméra toujours ≥ 30 m au-dessus du sol |
 | Bars / cafés / restaurants | ✅ | 169 lieux OSM, couche masquable ; épingle 3D colorée par catégorie (bar violet, café bleu, restaurant orange) posée sur le toit ; fiche au survol à côté de l'épingle (titre qui rebondit), épinglée au clic, au toucher sur mobile ; légende avec une case par catégorie pour afficher ou masquer bars, cafés et restaurants séparément |
 
 ## Interface / technique

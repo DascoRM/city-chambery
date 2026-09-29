@@ -65,7 +65,7 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
 .dot.found { background: var(--teal); }
 
 /* Fiche */
-.panel { position: absolute; top: 16px; right: 16px; bottom: 36px; width: min(400px, calc(100vw - 32px)); overflow: auto; padding: 22px 24px; }
+.panel { position: absolute; z-index: 2; top: 16px; right: 16px; bottom: 36px; width: min(400px, calc(100vw - 32px)); overflow: auto; padding: 22px 24px; }
 .panel .close { position: absolute; top: 12px; right: 12px; }
 .panel h2 { font-size: 28px; margin: 6px 0 10px; }
 .panel p { line-height: 1.6; font-size: 15px; }
@@ -122,6 +122,12 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
   .place-card.pop, .place-card.pop .pc-title { animation: none; }
 }
 
+/* Boussole */
+.compass { position: absolute; z-index: 1; right: 16px; bottom: 36px; width: 46px; height: 46px; padding: 3px; border-radius: 50%; cursor: pointer; }
+.compass svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.compass .needle { transform-origin: 20px 20px; transform-box: view-box; }
+.compass:hover { background: #fff; }
+
 /* Heure de la journée */
 .time { gap: 8px; padding: 6px 12px 6px 6px; cursor: default; }
 .time .play { width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; font-size: 11px; cursor: pointer; flex: none; }
@@ -136,12 +142,13 @@ body.is-night .attribution { color: #b8bfd8; }
   .hud .eyebrow, .hud .sub { display: none; }
   .hud h1 { font-size: 22px; }
   .progress .count { font-size: 12px; margin-top: 4px; }
-  .hint { top: auto; bottom: 90px; max-width: calc(100vw - 32px); }
+  .hint { top: 140px; bottom: auto; max-width: calc(100vw - 32px); }
   .panel { top: auto; left: 16px; right: 16px; bottom: 16px; width: auto; max-height: 62vh; }
   .journal { right: 16px; width: auto; }
   .attribution { left: 16px; right: auto; bottom: 6px; }
   .attribution .long { display: none; }
   .tools { bottom: 28px; }
   .place-card { width: min(270px, calc(100vw - 24px)); }
+  .compass { top: 88px; bottom: auto; right: 16px; width: 42px; height: 42px; }
   .legend { font-size: 12px; }
 }

@@ -28,8 +28,8 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 
 ## Architecture — à trancher avant d'ouvrir le diorama aux amis
 - ❓ **Back-end : pas nécessaire aujourd'hui.** Il le devient seulement pour : progression partagée entre appareils ou entre amis (comptes, classement), ajout de lieux par d'autres que Dasco sans redéployer, données qui changent souvent (événements, horaires). Pistes légères si besoin : PocketBase ou Supabase auto-hébergé sur le Pi (Coolify) ; pour les événements des bars, consommer l'API d'ACME plutôt que créer un back-end dédié
-- ⬜ **Cache HTTP** au déploiement : fichiers de `assets/` (nom avec empreinte) en cache 1 an ; `city.json`, modèles et `index.html` revalidés (ETag) ; compression gzip ou brotli
-- ⬜ **Données versionnées** : `city.json` et les `.glb` sont servis sous un nom fixe → risque d'ancienne version en cache après une mise à jour ; ajouter un numéro de version dans l'URL
+- ✅ **Cache HTTP** : fait dans `deploy/nginx.conf` (itération 28) — `assets/` en cache 1 an, `index.html` / `city.json` / `.glb` revalidés (ETag, 304), gzip. Brotli : pas dans l'image nginx standard, à voir si besoin
+- 🟡 **Données versionnées** : la revalidation à chaque visite (nginx) évite déjà l'ancienne carte ; un numéro de version dans l'URL permettrait en plus un cache long (utile avec le mode hors-ligne)
 - ⬜ **Mode hors-ligne / rechargement instantané** (service worker, PWA) : garder `city.json` (1,4 Mo) et les modèles sur le téléphone — utile sur place, à Chambéry, avec peu de réseau
 
 ## P2 — Plus beau, plus juste
@@ -56,7 +56,7 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 
 
 *Deploiement*
-- ⬜ Déployer sur le Pi (Coolify, site statique) et partager le lien
+- 🟡 Déployer sur le Pi (Coolify) : `Dockerfile` + `docker-compose.yml` prêts (itération 28) → mettre à jour `package-lock.json` (`npm install`), pousser, créer la ressource dans Coolify, puis partager le lien — *Dasco*
 
 ## P2 — Tester avec les amis
 - ⬜ Session de test avec 5 personnes : combien de lieux trouvés, où elles bloquent, ce qu'elles retiennent

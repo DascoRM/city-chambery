@@ -1,5 +1,88 @@
 # Journal des itérations
 
+## Itération 28 — 29/09/2026
+
+**Demande de Dasco :** un docker compose pour lancer facilement le projet avec Coolify.
+
+**Changements :**
+- `Dockerfile` en deux étapes : `node:22-alpine` lance `npm ci` puis `npm run build` ; `nginx:1.27-alpine` sert `dist/`. Healthcheck `wget`. Images multi-architecture, donc Pi 5 (arm64) compris.
+- `deploy/nginx.conf` :
+  - gzip ;
+  - `assets/` en cache 1 an (immutable) ;
+  - `index.html`, `.json` et `.glb` en `no-cache` (revalidation par ETag) ;
+  - type `model/gltf-binary` pour les `.glb` ;
+  - toute adresse inconnue renvoie `index.html`.
+- `docker-compose.yml` : service `web`, `expose: 80`, sans `ports` (le proxy de Coolify suffit, pas de conflit de port sur le Pi).
+- `.dockerignore` : contexte de build d'environ 2 Mo.
+- README : nouvelle section « Déployer (Docker, Coolify) ».
+
+**Vérifié :**
+- Le build Node passe dans un contexte propre qui respecte `.dockerignore`.
+- nginx (avec la même configuration) : `syntax is ok` ; en-têtes de cache et gzip conformes ; `city.json` de 1,4 Mo transféré en 405 Ko ; revalidation → 304 ; le site servi par nginx se charge sans erreur (18 modèles d'arbres, toutes les couches).
+- **Non vérifié :** la construction de l'image Docker elle-même. Le registre Docker Hub est inaccessible depuis l'environnement de Claude.
+- **Bloquant trouvé :** le `package-lock.json` de Dasco n'est pas à jour (il lui manque `@gltf-transform/functions`, et il a `meshoptimizer` 1.1.1 au lieu de 1.3.0). `npm ci` échouerait au build. Il faut lancer `npm install` puis commiter le lock.
+
+**Correction (retour de Dasco, même jour) :** son `docker-compose.yml` repris donnait `services.web Additional property port is not allowed`.
+- `port:` → `ports:` ;
+- `'3000:3000'` → `'3000:80'`, car nginx écoute sur 80 dans le conteneur ;
+- `version: "3.8"` retiré (obsolète avec Docker Compose v2).
+
+Validé avec `docker compose config`.
+
+**Correction 2 :** le build Docker échouait sur `npm ci` (lock pas à jour, comme prévu). `package-lock.json` a été régénéré avec `npm install --package-lock-only`, qui ne touche pas à `node_modules`. Il contient les binaires de toutes les plateformes, dont Alpine arm64 pour le Pi. `npm ci` puis `npm run build` vérifiés avec ce lock.
+
+**Ajout (demande de Dasco) :** commandes pour lancer tout le projet.
+- `package.json` : scripts `docker:up`, `docker:logs`, `docker:down`.
+- README « Démarrer » réorganisé par scénario : développement, production (build/preview ou Docker), régénérer les données. Tableau de toutes les commandes, avec `npm run nature` et Docker. Il précise aussi que les données sont déjà versionnées, donc `npm run data` n'est pas nécessaire pour lancer le projet.
+
+**Ajout (demande de Dasco) :** le build Docker lance toutes les commandes.
+- Argument de build `REFRESH_DATA` (compose : `"true"`) → `deploy/refresh-data.sh` lance `npm run data` puis `npm run nature`.
+- Filet de sécurité :
+  - échec du téléchargement → `city.json` du dépôt gardé ;
+  - BD TOPO ou RGE ALTI absent de l'attribution (le script retombe sinon sans erreur sur des estimations) → nouveau `city.json` rejeté.
+- `.dockerignore` garde maintenant les `.obj` du pack (les `.fbx` restent exclus).
+
+**Testé sans réseau :**
+- repli sur `city.json` : fichier identique ;
+- `npm run nature` : 18 `.glb` identiques à ceux du dépôt ;
+- `npm run build` : OK ;
+- contrôle d'attribution : accepte la carte complète, rejette une carte sans IGN.
+
+**Non testé ici :** le chemin « tout réussit », car OSM et l'IGN sont inaccessibles depuis l'environnement de Claude.
+
+## Itération 27 — 29/09/2026
+
+**Besoin de Dasco (pas encore cadré) :** se déplacer sur la carte en mobile.
+
+**Constat :** sur mobile, un doigt faisait tourner la maquette (réglage par défaut d'OrbitControls) et deux doigts zoomaient en déplaçant. On ne pouvait pas se déplacer d'un doigt, contrairement aux applis de carte.
+
+**Cadrage (choix de Dasco) :** un doigt = déplacer ; deux doigts = zoomer, tourner, incliner ; double toucher = zoomer ; zoom plus proche ; boussole. Le bouton « Recentrer » n'a pas été retenu.
+
+**Changements :**
+- `stage.ts` :
+  - `controls.touches` : ONE = PAN, TWO désactivé (gestes à deux doigts faits maison) ;
+  - `minDistance` 120 → 70 ;
+  - caméra ≥ 30 m au-dessus du sol ;
+  - `zoomTo` (garde l'angle de vue), `heading`, `resetNorth` (rotation animée) ;
+  - `flyTo` corrigé : la hauteur de la caméra se calcule maintenant depuis le sol visé et non depuis 0 (sur une colline, la caméra pouvait finir trop bas).
+- Nouveau `touch.ts` : pincer (zoom), torsion (rotation autour du point visé, la carte suit les doigts), glisser vertical à deux doigts (inclinaison). Les trois gestes se combinent.
+- `main.ts` :
+  - double toucher (< 320 ms, < 30 px) : zoom à 45 % de la distance vers le point touché, ou vers le centre de la vue si on touche hors du socle ;
+  - l'aiguille de la boussole est mise à jour à chaque image.
+- `ui.ts` / `style.css` : boussole (en bas à droite sur ordinateur, sous le bandeau sur mobile) ; texte d'aide adapté au tactile ; `style.css` de Dasco conservé (ligne `pc-in` supprimée par lui).
+- Premier essai à 40 m minimum : un téléphone ne montrait plus qu'un toit (environ 12 m de ville en largeur avec la focale longue). Valeur retenue : 70 m, à ajuster après essai.
+
+**Vérifié** (gestes tactiles simulés, profil iPhone) :
+- un doigt déplace sans tourner ;
+- écarter zoome (6 300 → 2 230) ;
+- une torsion de 34° tourne la carte de 34°, dans le sens des doigts ;
+- glisser vers le haut incline (44° → 62°) ;
+- double toucher zoome vers le point ;
+- la boussole ramène le nord ;
+- à la souris, glisser fait toujours tourner.
+
+Le rendu logiciel est très lent : la fluidité des gestes reste à juger sur un vrai téléphone.
+
 ## Itération 26 — 29/09/2026 (réflexion, pas de code)
 
 **Demandes de Dasco :**
