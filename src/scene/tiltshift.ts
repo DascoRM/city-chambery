@@ -1,55 +1,96 @@
 import * as THREE from 'three';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 /**
  * Effet tilt-shift (« effet maquette ») : une bande horizontale nette autour du point visé,
  * le haut et le bas de l'image de plus en plus flous, comme une photo de maquette à faible
- * profondeur de champ. Flou gaussien séparable (horizontal puis vertical), en espace écran.
+ * profondeur de champ.
  *
- * Les étiquettes (parcs, rivière) sont dessinées après le flou pour rester lisibles.
+ * Chaîne de rendu (itération 29, allégée pour les écrans haute densité) :
+ *  1. la scène est dessinée une fois, anticrénelée (MSAA), dans une texture pleine résolution ;
+ *  2. le flou gaussien séparable (horizontal puis vertical) est calculé en DEMI-résolution,
+ *     sans anticrénelage (un flou n'en a pas besoin) : 4 fois moins de pixels ;
+ *  3. une seule passe finale mélange l'image nette et l'image floue selon la distance à la bande,
+ *     puis applique le rendu des tons et la conversion de couleurs vers l'écran ;
+ *  4. les étiquettes (parcs, rivière) sont dessinées par-dessus, nettes.
+ * Avant : 4 passes plein écran sur des textures anticrénelées (EffectComposer).
  */
-const TiltShiftShader = {
-  uniforms: {
-    tDiffuse: { value: null as THREE.Texture | null },
-    uDir: { value: new THREE.Vector2(1, 0) },
-    uTexel: { value: new THREE.Vector2(1 / 1024, 1 / 1024) },
-    uFocus: { value: 0.5 }, // position verticale de la bande nette (0 = bas, 1 = haut)
-    uBand: { value: 0.1 }, // demi-hauteur de la bande nette
-    uFalloff: { value: 0.35 }, // distance sur laquelle le flou monte au maximum
-    uMaxBlur: { value: 6.0 }, // rayon maximal du flou, en pixels
-  },
-  vertexShader: /* glsl */ `
-    varying vec2 vUv;
-    void main() {
-      vUv = uv;
-      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    }`,
-  fragmentShader: /* glsl */ `
-    uniform sampler2D tDiffuse;
-    uniform vec2 uDir, uTexel;
-    uniform float uFocus, uBand, uFalloff, uMaxBlur;
-    varying vec2 vUv;
-    void main() {
-      float d = abs(vUv.y - uFocus);
-      float r = smoothstep(uBand, uBand + uFalloff, d) * uMaxBlur;
-      if (r < 0.05) { gl_FragColor = texture2D(tDiffuse, vUv); return; }
-      // Gaussienne à 9 échantillons, étalée sur le rayon r
-      vec2 step = uDir * uTexel * (r / 4.0);
-      vec4 sum = texture2D(tDiffuse, vUv) * 0.2270270;
-      sum += texture2D(tDiffuse, vUv + step * 1.0) * 0.1945946;
-      sum += texture2D(tDiffuse, vUv - step * 1.0) * 0.1945946;
-      sum += texture2D(tDiffuse, vUv + step * 2.0) * 0.1216216;
-      sum += texture2D(tDiffuse, vUv - step * 2.0) * 0.1216216;
-      sum += texture2D(tDiffuse, vUv + step * 3.0) * 0.0540541;
-      sum += texture2D(tDiffuse, vUv - step * 3.0) * 0.0540541;
-      sum += texture2D(tDiffuse, vUv + step * 4.0) * 0.0162162;
-      sum += texture2D(tDiffuse, vUv - step * 4.0) * 0.0162162;
-      gl_FragColor = sum;
-    }`,
-};
+
+/** Poids de flou selon la position verticale : 0 dans la bande nette, 1 loin de la bande. */
+const WEIGHT_GLSL = /* glsl */ `
+  uniform float uFocus, uBand, uFalloff;
+  float blurWeight(float y) { return smoothstep(uBand, uBand + uFalloff, abs(y - uFocus)); }
+`;
+
+const blurMaterial = (dir: THREE.Vector2) =>
+  new THREE.ShaderMaterial({
+    uniforms: {
+      tDiffuse: { value: null as THREE.Texture | null },
+      uDir: { value: dir },
+      uTexel: { value: new THREE.Vector2(1 / 512, 1 / 512) },
+      uFocus: { value: 0.5 },
+      uBand: { value: 0.1 },
+      uFalloff: { value: 0.35 },
+      uMaxBlur: { value: 3.0 }, // rayon maximal, en pixels de la texture demi-résolution
+    },
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: /* glsl */ `
+      uniform sampler2D tDiffuse;
+      uniform vec2 uDir, uTexel;
+      uniform float uMaxBlur;
+      varying vec2 vUv;
+      ${WEIGHT_GLSL}
+      void main() {
+        float r = blurWeight(vUv.y) * uMaxBlur;
+        if (r < 0.05) { gl_FragColor = texture2D(tDiffuse, vUv); return; }
+        // Gaussienne à 9 échantillons, étalée sur le rayon r
+        vec2 st = uDir * uTexel * (r / 4.0);
+        vec4 sum = texture2D(tDiffuse, vUv) * 0.2270270;
+        sum += texture2D(tDiffuse, vUv + st * 1.0) * 0.1945946;
+        sum += texture2D(tDiffuse, vUv - st * 1.0) * 0.1945946;
+        sum += texture2D(tDiffuse, vUv + st * 2.0) * 0.1216216;
+        sum += texture2D(tDiffuse, vUv - st * 2.0) * 0.1216216;
+        sum += texture2D(tDiffuse, vUv + st * 3.0) * 0.0540541;
+        sum += texture2D(tDiffuse, vUv - st * 3.0) * 0.0540541;
+        sum += texture2D(tDiffuse, vUv + st * 4.0) * 0.0162162;
+        sum += texture2D(tDiffuse, vUv - st * 4.0) * 0.0162162;
+        gl_FragColor = sum;
+      }`,
+    depthTest: false,
+    depthWrite: false,
+  });
+
+/** Passe finale : net ↔ flou selon la bande, puis rendu des tons + conversion sRGB (vers l'écran). */
+const compositeMaterial = () =>
+  new THREE.ShaderMaterial({
+    uniforms: {
+      tSharp: { value: null as THREE.Texture | null },
+      tBlur: { value: null as THREE.Texture | null },
+      uFocus: { value: 0.5 },
+      uBand: { value: 0.1 },
+      uFalloff: { value: 0.35 },
+      uMix: { value: 1.0 }, // 0 = tout net (effet coupé), 1 = effet complet
+    },
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: /* glsl */ `
+      uniform sampler2D tSharp, tBlur;
+      uniform float uMix;
+      varying vec2 vUv;
+      ${WEIGHT_GLSL}
+      void main() {
+        // Le flou « prend le dessus » vite hors de la bande (comme l'ancien flou à rayon variable)
+        float w = clamp(blurWeight(vUv.y) * 4.0, 0.0, 1.0) * uMix;
+        gl_FragColor = mix(texture2D(tSharp, vUv), texture2D(tBlur, vUv), w);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+    depthTest: false,
+    depthWrite: false,
+  });
 
 export function createTiltShift(
   renderer: THREE.WebGLRenderer,
@@ -57,37 +98,35 @@ export function createTiltShift(
   camera: THREE.PerspectiveCamera,
   overlay: THREE.Object3D,
 ) {
-  const size = renderer.getSize(new THREE.Vector2());
-  const target = new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: 4 });
-  const composer = new EffectComposer(renderer, target);
-  composer.setPixelRatio(renderer.getPixelRatio());
-  composer.setSize(size.x, size.y);
+  const rtOpts = { type: THREE.HalfFloatType, depthBuffer: false };
+  const sceneRT = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+  const halfA = new THREE.WebGLRenderTarget(1, 1, rtOpts);
+  const halfB = new THREE.WebGLRenderTarget(1, 1, rtOpts);
 
-  const scenePass = new RenderPass(scene, camera);
-  scenePass.clearAlpha = 0; // fond transparent : le dégradé CSS reste visible
-  const blurH = new ShaderPass(TiltShiftShader);
-  const blurV = new ShaderPass(TiltShiftShader);
-  blurV.uniforms.uDir.value.set(0, 1);
+  const blurH = blurMaterial(new THREE.Vector2(1, 0));
+  const blurV = blurMaterial(new THREE.Vector2(0, 1));
+  const composite = compositeMaterial();
+  const quad = new FullScreenQuad();
 
-  // Les étiquettes restent nettes : scène à part, dessinée par-dessus le flou
+  // Les étiquettes restent nettes : scène à part, dessinée par-dessus le résultat
   const overlayScene = new THREE.Scene();
   overlayScene.add(overlay);
-  const overlayPass = new RenderPass(overlayScene, camera);
-  overlayPass.clear = false;
-
-  composer.addPass(scenePass);
-  composer.addPass(blurH);
-  composer.addPass(blurV);
-  composer.addPass(overlayPass);
-  composer.addPass(new OutputPass());
 
   let enabled = true;
   const projected = new THREE.Vector3();
 
   const setSize = (w: number, h: number) => {
-    composer.setPixelRatio(renderer.getPixelRatio());
-    composer.setSize(w, h);
+    const pr = renderer.getPixelRatio();
+    const W = Math.max(1, Math.round(w * pr)), H = Math.max(1, Math.round(h * pr));
+    sceneRT.setSize(W, H);
+    // Anticrénelage ×4 à densité 1 ; ×2 sur écran haute densité (les pixels y sont déjà petits)
+    sceneRT.samples = pr >= 1.5 ? 2 : 4;
+    const hw = Math.max(1, Math.round(W / 2)), hh = Math.max(1, Math.round(H / 2));
+    halfA.setSize(hw, hh);
+    halfB.setSize(hw, hh);
+    for (const m of [blurH, blurV]) m.uniforms.uTexel.value.set(1 / hw, 1 / hh);
   };
+  setSize(renderer.domElement.clientWidth || window.innerWidth, renderer.domElement.clientHeight || window.innerHeight);
 
   /** À appeler à chaque image : cale la bande nette sur le point visé et dose le flou selon le zoom. */
   const update = (focus: THREE.Vector3, zoomRef: number) => {
@@ -96,24 +135,39 @@ export function createTiltShift(
     // Plus on est loin, plus l'effet maquette est marqué ; de près il s'estompe
     const dist = camera.position.distanceTo(focus);
     const strength = THREE.MathUtils.clamp(dist / zoomRef, 0.25, 1);
-    const pr = renderer.getPixelRatio();
-    const w = renderer.domElement.width, h = renderer.domElement.height;
-    for (const pass of [blurH, blurV]) {
-      pass.uniforms.uFocus.value = focusY;
-      pass.uniforms.uMaxBlur.value = 7 * pr * strength;
-      pass.uniforms.uTexel.value.set(1 / w, 1 / h);
-    }
+    // Même rayon à l'écran qu'avant (7 px × densité), exprimé en pixels demi-résolution
+    const maxBlur = (7 * renderer.getPixelRatio() * strength) / 2;
+    for (const m of [blurH, blurV, composite]) m.uniforms.uFocus.value = focusY;
+    blurH.uniforms.uMaxBlur.value = blurV.uniforms.uMaxBlur.value = maxBlur;
+  };
+
+  const pass = (material: THREE.ShaderMaterial, target: THREE.WebGLRenderTarget | null) => {
+    quad.material = material;
+    renderer.setRenderTarget(target);
+    quad.render(renderer);
   };
 
   const render = () => {
+    // 1. Scène nette, anticrénelée
+    renderer.setRenderTarget(sceneRT);
+    renderer.clear();
+    renderer.render(scene, camera);
     if (enabled) {
-      composer.render();
-    } else {
-      renderer.render(scene, camera);
-      renderer.autoClear = false;
-      renderer.render(overlayScene, camera);
-      renderer.autoClear = true;
+      // 2. Flou en demi-résolution
+      blurH.uniforms.tDiffuse.value = sceneRT.texture;
+      pass(blurH, halfA);
+      blurV.uniforms.tDiffuse.value = halfA.texture;
+      pass(blurV, halfB);
     }
+    // 3. Mélange net / flou + sortie écran
+    composite.uniforms.tSharp.value = sceneRT.texture;
+    composite.uniforms.tBlur.value = (enabled ? halfB : sceneRT).texture;
+    composite.uniforms.uMix.value = enabled ? 1 : 0;
+    pass(composite, null);
+    // 4. Étiquettes par-dessus
+    renderer.autoClear = false;
+    renderer.render(overlayScene, camera);
+    renderer.autoClear = true;
   };
 
   return {

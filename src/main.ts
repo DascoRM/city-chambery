@@ -15,6 +15,8 @@ import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildNature, type NatureConfig } from './scene/nature';
 import { placeCategory } from './scene/palette';
 import { installTwoFingerGestures } from './scene/touch';
+import { createAdaptiveResolution } from './scene/quality';
+import { createPerfHud } from './ui/perfhud';
 import { createUi, showFatal } from './ui/ui';
 import { loadDiscovered, resetDiscovered, saveDiscovered } from './state/progress';
 
@@ -69,6 +71,11 @@ async function main() {
   const tiltShift = createTiltShift(renderer, scene, camera, labels.root);
   // Effet maquette toujours actif (plus d'interrupteur depuis l'itération 22)
   window.addEventListener('resize', () => tiltShift.setSize(app.clientWidth, app.clientHeight));
+  // Densité de pixels plafonnée à 1,5 puis ajustée selon les images/s (scene/quality.ts)
+  const quality = createAdaptiveResolution(renderer, () => tiltShift.setSize(app.clientWidth, app.clientHeight));
+  tiltShift.setSize(app.clientWidth, app.clientHeight);
+  // Compteur de performance : ajouter ?debug à l'adresse
+  const perfHud = new URLSearchParams(location.search).has('debug') ? createPerfHud(renderer, () => quality.pixelRatio) : null;
   const poiLayer = buildPoiMarkers(pois, terrain.heightAt);
   scene.add(poiLayer.root);
   const placeLayer = buildPlaceMarkers(data.places, terrain.heightAt, data.buildings, terrain.minUnder);
@@ -234,7 +241,10 @@ async function main() {
   renderer.shadowMap.needsUpdate = true;
   renderer.setAnimationLoop(() => {
     timer.update();
-    const dt = Math.min(timer.getDelta(), 0.1);
+    const raw = timer.getDelta();
+    const dt = Math.min(raw, 0.1);
+    perfHud?.begin();
+    quality.update(raw);
     stage.updateFlight(dt);
     controls.update();
     stage.clampTarget();
@@ -248,6 +258,7 @@ async function main() {
     ui.setHeading(stage.heading());
     tiltShift.update(controls.target, stage.size * 1.2);
     tiltShift.render();
+    perfHud?.end(raw);
   });
 
   // Accès debug depuis la console : window.diorama
