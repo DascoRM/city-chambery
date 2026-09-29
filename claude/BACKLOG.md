@@ -41,12 +41,14 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ✅ Gestion des saisons - en fonction des dates du navigateur (itération 31 : variantes automne et branches nues du pack ; le pack n'a pas de version enneigée des feuillus utilisés)
 - ✅ Option « heure réelle » (suivre l'heure de Chambéry) et saisons (lever/coucher du soleil réels) (itération 31 : bouton Direct, puce saison)
 - ✅ Nuit : n'allumer que les lieux ouverts à l'heure choisie (lecture du tag OSM `opening_hours`) (itération 31 : 104 horaires sur 106 lus ; les 2 textes libres restent allumés)
-- ⬜ Hiver : neige au sol et sur les toits (non commencé)
+- ⬜ Hiver : reprendre les arbres — de la neige plutôt que les branches nues / arbres morts (brun) actuels (demande de Dasco, à traiter plus tard) ; neige aussi au sol et sur les toits
 - ⬜ Horaires : jours fériés et vacances scolaires (aujourd'hui ignorés, l'horaire habituel du jour s'applique)
+- ⬜ Simplifier l'heure : prendre l'heure de l'appareil du visiteur au lieu de forcer le fuseau Europe/Paris (demande de Dasco, pour simplifier le code). Précision : « heure de Chambéry » dans le code est déjà l'heure de France (fuseau Europe/Paris) ; la simplification consiste à supprimer la conversion de fuseau (`src/time/chambery.ts` : `chamberyClock`, `chamberyInstant`, ≈ 25 lignes). Conséquence : un visiteur hors de France verrait la carte à son heure locale. La position du soleil garde la latitude et la longitude de Chambéry.
 - ⬜ Mobile très étroit (iPhone SE, 320 px) : la rangée Bars / Cafés / Restaurants dépasse de l'écran (constaté à l'itération 31, antérieur)
 
 
 *Refacto et stab*
+- ⬜ Découper `src/main.ts` (≈ 300 lignes) en modules pour la lisibilité, pas pour la performance (demande de Dasco, à affiner). Pistes : chargement de la scène, lieux (fiche, survol, suivi de l'épingle), sélection souris / doigt, heure et saison, boucle de rendu
 - ❓ Supprimer `assets-src/quaternius-nature/fbx/` (doublon des .obj) ?
 - Alléger les assets
 - ⬜ Arbres modélisés : utiliser `leaf_type` d'OSM (7 résineux → pins) — demande de garder ce tag dans le script de données
