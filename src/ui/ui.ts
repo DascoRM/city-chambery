@@ -1,5 +1,16 @@
 import type { Place, PlacedPoi } from '../types';
 import { PLACE_CATEGORIES, PLACE_KIND_LABEL, placeCategory } from '../scene/palette';
+import type { ClockState } from '../time/clock';
+import type { OpenState } from '../time/openinghours';
+import { SEASON_LABEL } from '../time/seasons';
+
+/** 7.5 → « 07:30 » */
+const hhmm = (h: number) => { const t = Math.floor(h * 60 + 1e-6) % 1440; return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`; };
+const OPEN_LINE: Record<OpenState, string> = {
+  open: '<p class="pc-open is-open">● Ouvert à cette heure</p>',
+  closed: '<p class="pc-open is-closed">● Fermé à cette heure</p>',
+  unknown: '<p class="pc-open">Horaires inconnus : lieu laissé allumé</p>',
+};
 
 /** Cuisines OSM les plus courantes à Chambéry, en français (les autres restent telles quelles). */
 const CUISINE: Record<string, string> = {
@@ -22,8 +33,13 @@ export interface UiHandlers {
   onJournalPick(id: string): void;
   /** Affiche / masque une catégorie de lieux (bar, cafe, restaurant). */
   onToggleCategory(category: string, visible: boolean): void;
+  /** Heure choisie au curseur (quitte le direct). */
   onHour(hour: number): void;
   onPlay(playing: boolean): void;
+  /** Bouton « Direct » : revenir à l'heure réelle de Chambéry. */
+  onLive(): void;
+  /** Puce saison : saison suivante (Auto → Printemps → Été → Automne → Hiver). */
+  onSeason(): void;
   onReset(): void;
   /** La fiche d'un lieu a été fermée (bouton ✕ ou Échap). */
   onPlaceClosed(): void;
@@ -48,10 +64,13 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     <nav class="tools">
       <button class="btn" data-action="journal" aria-expanded="false">📜 Journal</button>
       <div class="btn legend-box" role="group" aria-label="Lieux affichés">${PLACE_CATEGORIES.map((c) => `<label class="legend" style="--cat:${c.color}" title="Afficher / masquer : ${c.label}s"><input type="checkbox" data-category="${c.id}" checked /><i></i>${c.label}s</label>`).join('')}</div>
-      <div class="btn time" title="Heure de la journée">
+      <div class="btn time" title="Heure de Chambéry">
         <button class="play" data-action="play" aria-label="Faire défiler la journée">▶</button>
         <input type="range" min="0" max="24" step="0.25" value="16" data-action="hour" aria-label="Heure" />
         <span class="time-label">16:00</span>
+        <span class="sun-times" aria-label="Lever et coucher du soleil"></span>
+        <button class="live" data-action="live" aria-pressed="true" title="Suivre l'heure réelle de Chambéry">Direct</button>
+        <button class="season" data-action="season" title="Saison : automatique (date du jour) ou choisie"></button>
       </div>
     </nav>
 
@@ -138,10 +157,10 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   let shownPlace: Place | null = null;
   let pinned = false;
   /** Affiche la fiche (survol) ; pinned = elle reste ouverte (clic, ou toucher sur mobile). */
-  const showPlaceCard = (p: Place, pin: boolean) => {
+  const showPlaceCard = (p: Place, pin: boolean, status: OpenState = 'unknown') => {
     hideHint();
     pinned = pin || (pinned && shownPlace === p);
-    if (shownPlace === p && !placeCard.hidden) return;
+    if (shownPlace === p && !placeCard.hidden) return setPlaceStatus(status);
     shownPlace = p;
     const cat = placeCategory(p.kind);
     const kind = PLACE_KIND_LABEL[p.kind] ?? cat.label;
@@ -151,12 +170,20 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
       <h3 class="pc-title">${esc(p.name)}</h3>
       ${p.cuisine ? `<p class="pc-line">🍽 Cuisine ${esc(cuisineFr(p.cuisine))}</p>` : ''}
       ${p.hours ? `<p class="pc-line">🕑 ${esc(hoursFr(p.hours))}</p>` : ''}
+      <div class="pc-status">${OPEN_LINE[status]}</div>
       <p class="pc-src">OpenStreetMap · à vérifier sur place</p>`;
+    lastStatus = status + p.id;
     placeCard.hidden = false;
     // Rejoue l'animation (rebond du titre) à chaque nouveau lieu
     placeCard.classList.remove('pop');
     void placeCard.offsetWidth;
     placeCard.classList.add('pop');
+  };
+  /** Met à jour la ligne « ouvert / fermé » de la fiche affichée (l'heure a changé). */
+  let lastStatus = '';
+  const setPlaceStatus = (status: OpenState) => {
+    const el = placeBody.querySelector<HTMLElement>('.pc-status');
+    if (el && lastStatus !== status + (shownPlace?.id ?? '')) { el.innerHTML = OPEN_LINE[status]; lastStatus = status + (shownPlace?.id ?? ''); }
   };
   const hidePlaceCard = () => {
     placeCard.hidden = true;
@@ -216,30 +243,47 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   });
   const hourIn = root.querySelector<HTMLInputElement>('[data-action="hour"]')!;
   const playBtn = root.querySelector<HTMLButtonElement>('[data-action="play"]')!;
+  const liveBtn = root.querySelector<HTMLButtonElement>('[data-action="live"]')!;
+  const seasonBtn = root.querySelector<HTMLButtonElement>('[data-action="season"]')!;
   const timeLabel = root.querySelector<HTMLElement>('.time-label')!;
+  const sunTimesEl = root.querySelector<HTMLElement>('.sun-times')!;
+  const timeBox = root.querySelector<HTMLElement>('.time')!;
   let playing = false;
-  hourIn.addEventListener('input', () => {
-    if (playing) { playing = false; playBtn.textContent = '▶'; h.onPlay(false); }
-    h.onHour(Number(hourIn.value));
-  });
-  playBtn.addEventListener('click', () => {
-    playing = !playing;
-    playBtn.textContent = playing ? '❚❚' : '▶';
-    h.onPlay(playing);
-  });
-  const setTime = (hour: number, night: number) => {
-    const hh = Math.floor(hour), mm = Math.floor((hour - hh) * 60 / 15) * 15;
-    timeLabel.textContent = `${hh === 24 ? '00' : String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')} ${night > 0.5 ? '🌙' : '☀️'}`;
-    if (document.activeElement !== hourIn) hourIn.value = String(hour);
+  hourIn.addEventListener('input', () => h.onHour(Number(hourIn.value)));
+  playBtn.addEventListener('click', () => h.onPlay(!playing));
+  liveBtn.addEventListener('click', () => h.onLive());
+  seasonBtn.addEventListener('click', () => h.onSeason());
+  let lastClock = '';
+  /** Affiche l'heure, le mode (direct / manuel / lecture), la saison et le lever / coucher du soleil. */
+  const setClock = (c: ClockState, night: number) => {
+    playing = c.mode === 'playing';
+    const label = `${hhmm(c.hour)} ${night > 0.5 ? '🌙' : '☀️'}`;
+    if (timeLabel.textContent !== label) timeLabel.textContent = label;
+    if (document.activeElement !== hourIn) hourIn.value = String(c.hour);
     document.body.classList.toggle('is-night', night > 0.5);
+    const key = `${c.mode}|${c.season}|${c.current}|${c.day.y}-${c.day.m}-${c.day.d}`;
+    if (key === lastClock) return; // le reste ne change qu'avec le mode, la saison ou la date
+    lastClock = key;
+    playBtn.textContent = playing ? '❚❚' : '▶';
+    playBtn.setAttribute('aria-label', playing ? 'Arrêter le défilement' : 'Faire défiler la journée');
+    liveBtn.classList.toggle('on', c.mode === 'live');
+    liveBtn.setAttribute('aria-pressed', String(c.mode === 'live'));
+    const s = SEASON_LABEL[c.current];
+    seasonBtn.textContent = c.season === 'auto' ? `${s.icon} Auto` : `${s.icon} ${s.label}`;
+    seasonBtn.classList.toggle('on', c.season !== 'auto');
+    seasonBtn.title = c.season === 'auto' ? `Saison du jour (${s.label.toLowerCase()}) — toucher pour choisir une saison` : `Saison choisie : ${s.label.toLowerCase()} — toucher pour changer`;
+    const rise = c.sun.rise === null ? '—' : hhmm(c.sun.rise), set = c.sun.set === null ? '—' : hhmm(c.sun.set);
+    sunTimesEl.textContent = `↑${rise} ↓${set}`;
+    const date = new Date(Date.UTC(c.day.y, c.day.m - 1, c.day.d)).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+    timeBox.title = `Heure de Chambéry${c.mode === 'live' ? ' (en direct)' : ''} · ${date} · lever du soleil ${rise}, coucher ${set}`;
   };
 
   root.querySelectorAll<HTMLInputElement>('[data-category]').forEach((el) => el.addEventListener('change', () => h.onToggleCategory(el.dataset.category!, el.checked)));
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { panel.hidden = true; journal.hidden = true; if (shownPlace) { hidePlaceCard(); h.onPlaceClosed(); } } });
 
   return {
-    setFound, showPoi, flash, showTooltip, setTime, hidePanel: () => (panel.hidden = true),
-    showPlaceCard, hidePlaceCard, movePlaceCard,
+    setFound, showPoi, flash, showTooltip, setClock, hidePanel: () => (panel.hidden = true),
+    showPlaceCard, hidePlaceCard, movePlaceCard, setPlaceStatus,
     placeCardState: () => ({ place: shownPlace, pinned }),
     /** Oriente l'aiguille de la boussole (cap en degrés, 0 = nord en haut). */
     setHeading: (deg: number) => {

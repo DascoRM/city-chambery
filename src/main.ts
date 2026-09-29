@@ -13,6 +13,8 @@ import { createTiltShift } from './scene/tiltshift';
 import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildNature, type NatureConfig } from './scene/nature';
+import { createClock } from './time/clock';
+import { createOpenStates, type OpenState } from './time/openinghours';
 import { placeCategory } from './scene/palette';
 import { installTwoFingerGestures } from './scene/touch';
 import { createAdaptiveResolution } from './scene/quality';
@@ -58,9 +60,14 @@ async function main() {
   const models = modelsContent as ModelEntry[];
   const city = buildCity(data, terrain, { hidden: hiddenBuildings(models) });
   scene.add(city.group);
+  // Heure et saison (itération 31) : heure réelle de Chambéry par défaut
+  const clock = createClock();
+  let foliage = clock.state().foliage;
+  city.trees.setFoliage(foliage);
   // Arbres modélisés dans certains parcs (src/content/nature.json) ; les arbres simples restent en repli
+  let nature: Awaited<ReturnType<typeof buildNature>> | null = null;
   try {
-    const nature = await buildNature(natureContent as unknown as NatureConfig, data, city.trees.spots, terrain.heightAt);
+    nature = await buildNature(natureContent as unknown as NatureConfig, data, city.trees.spots, terrain.heightAt, foliage);
     city.trees.hide(nature.replaced);
     scene.add(nature.group);
   } catch (e) {
@@ -84,6 +91,7 @@ async function main() {
   scene.add(placeLayer.root);
 
   let discovered = loadDiscovered();
+  let placeIdx: number | null = null; // fiche de lieu ouverte
   const ui = createUi(app, pois, data.attribution, {
     onJournalPick: (id) => openPoi(id),
     onToggleCategory: (cat, v) => {
@@ -93,8 +101,10 @@ async function main() {
     },
     onPlaceClosed: () => placeLayer.setActive(null),
     onCompass: () => stage.resetNorth(),
-    onHour: (h) => dayNight.setHour(h),
-    onPlay: (p) => dayNight.setPlaying(p),
+    onHour: (h) => clock.setHour(h),
+    onPlay: (p) => clock.setPlaying(p),
+    onLive: () => clock.live(),
+    onSeason: () => clock.nextSeason(),
     onReset: () => {
       resetDiscovered();
       discovered = new Set();
@@ -105,12 +115,35 @@ async function main() {
   });
   // Mode hors-ligne (service worker, production uniquement)
   setupPwa(ui.flash);
-  // Cycle jour/nuit (16 h par défaut = rendu d'après-midi)
+  // Cycle jour/nuit : vraie course du soleil pour la date et l'heure de l'horloge
+  const start = clock.state();
   const dayNight = createDayNight({
     scene, renderer, lights: stage.lights, size: stage.size, night: city.night,
     placeHalos: placeLayer.root.getObjectByName('placeHalos'),
+  }, { day: start.day, hour: start.hour });
+
+  // La nuit, seuls les lieux ouverts à l'heure choisie restent allumés (horaires OSM opening_hours)
+  const openStatesAt = createOpenStates(data.places.map((p) => p.hours));
+  let openStates: OpenState[] = [];
+  let openKey = '';
+
+  clock.onChange((c) => {
+    dayNight.set(c.day, c.hour);
+    ui.setClock(c, dayNight.getNight());
+    const key = `${c.day.y}-${c.day.m}-${c.day.d} ${Math.floor(c.hour * 60)}`;
+    if (key !== openKey) {
+      openKey = key;
+      openStates = openStatesAt(c.day, c.hour);
+      placeLayer.setClosed(openStates.map((s) => s === 'closed'));
+      if (placeIdx !== null) ui.setPlaceStatus(openStates[placeIdx]);
+    }
+    if (c.foliage !== foliage) {
+      foliage = c.foliage;
+      city.trees.setFoliage(foliage);
+      renderer.shadowMap.needsUpdate = true;
+      nature?.setFoliage(foliage).then(() => { renderer.shadowMap.needsUpdate = true; });
+    }
   });
-  dayNight.onChange((h, night) => ui.setTime(h, night));
 
   const syncFound = () => {
     poiLayer.markers.forEach((m) => m.setFound(discovered.has(m.poi.id)));
@@ -133,11 +166,10 @@ async function main() {
   }
 
   // --- Fiche des bars, cafés, restaurants ---------------------------------
-  let placeIdx: number | null = null;
   const openPlace = (i: number, pin: boolean) => {
     placeIdx = i;
     placeLayer.setActive(i);
-    ui.showPlaceCard(placeLayer.places[i], pin);
+    ui.showPlaceCard(placeLayer.places[i], pin, openStates[i]);
   };
   const closePlace = () => {
     placeIdx = null;
@@ -255,7 +287,7 @@ async function main() {
     poiLayer.animate(timer.getElapsed());
     placeLayer.animate(timer.getElapsed());
     city.update(timer.getElapsed());
-    dayNight.update(dt);
+    clock.update(dt);
     labels.update(camera);
     hover();
     followPlace();
@@ -266,7 +298,7 @@ async function main() {
   });
 
   // Accès debug depuis la console : window.diorama
-  Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer } });
+  Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, clock } });
 }
 
 main();

@@ -119,7 +119,8 @@ Zoom maximum : 70 m du point visé (120 m avant). De près, la caméra reste à 
 En bas à gauche :
 - **📜 Journal** : les lieux découverts (clic pour y voler) et les lieux mystère restants ;
 - **☑ Bars ☑ Cafés ☑ Restaurants** : légende des couleurs ; chaque case affiche ou masque sa catégorie (épingles et halos de nuit). Une catégorie décochée apparaît grisée, et sa fiche ouverte se ferme ;
-- **🕐 Heure** : curseur de 0 h à 24 h, **▶** pour faire défiler une journée en 2 minutes ;
+- **🕐 Heure** : par défaut l'heure réelle de Chambéry (**Direct**, en rouge), avec le vrai soleil du jour (↑ lever, ↓ coucher). Le curseur choisit une heure de 0 h à 24 h, **▶** fait défiler une journée en 2 minutes ; **Direct** revient à l'heure réelle. La nuit, seuls les bars, cafés et restaurants ouverts à cette heure s'allument (horaires OpenStreetMap ; un lieu sans horaires lisibles reste allumé) ;
+- **🍂 Saison** : *Auto* suit la date du jour ; toucher pour passer à Printemps, Été, Automne, Hiver (feuillage et course du soleil de la saison) ;
 
 Les noms des parcs et de la Leysse apparaissent en s'approchant. La progression est gardée
 dans le navigateur (pas de compte) ; « Recommencer l'exploration » dans le journal la remet à zéro.
@@ -256,7 +257,7 @@ Tout se règle dans `src/content/nature.json` :
 **Ajouter un modèle ou un parc :**
 
 1. Ajouter la zone, le mélange ou le modèle dans `src/content/nature.json`.
-2. `npm run nature` : convertit les `.obj` cités dans les mélanges (rangés dans `assets-src/quaternius-nature/obj/<catégorie>/`) en `.glb` dans `public/models/nature/` (≈ 10 à 25 Ko par arbre).
+2. `npm run nature` : convertit les `.obj` cités dans les mélanges, avec leurs variantes d'automne (`_Autumn_n`) et d'hiver (`_Dead_n`) pour les familles listées dans `seasons` (rangés dans `assets-src/quaternius-nature/obj/<catégorie>/`) en `.glb` dans `public/models/nature/` (≈ 10 à 25 Ko par arbre).
 3. Recharger la page.
 
 La conversion remplace les couleurs du pack, plus sombres, par la palette du diorama (`RECOLOR` dans

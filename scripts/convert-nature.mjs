@@ -2,7 +2,8 @@
  * Convertit les modèles OBJ du pack Quaternius (assets-src/quaternius-nature/obj/<catégorie>/<Nom>.obj)
  * en .glb légers pour le diorama (public/models/nature/<Nom>.glb).
  *
- * Seuls les modèles cités dans les mélanges de src/content/nature.json sont convertis (ou ceux passés en arguments :
+ * Seuls les modèles cités dans les mélanges de src/content/nature.json sont convertis, avec leurs variantes
+ * d'automne et d'hiver (`seasons`), ou ceux passés en arguments :
  * `node scripts/convert-nature.mjs Rock_1 Bush_1`).
  *
  * Format produit : un seul maillage indexé, couleur par sommet (COLOR_0 : palette du diorama, voir RECOLOR),
@@ -33,6 +34,9 @@ const RECOLOR = {
   Wood: '#7a5a42',
   White: '#e6e1d3', // écorce de bouleau
   Black: '#3f3a36', // marques de l'écorce
+  Orange: '#d98a3d', // feuillage d'automne (itération 31)
+  LightOrange: '#e8b456',
+  LightWood: '#9b7656',
 };
 const srgbToLinear = (c) => (c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 const hexToLinear = (h) => [1, 3, 5].map((i) => srgbToLinear(parseInt(h.slice(i, i + 2), 16) / 255));
@@ -93,9 +97,14 @@ function convert(objPath) {
 }
 
 const config = JSON.parse(readFileSync(join(ROOT, 'src/content/nature.json'), 'utf8'));
+/** Variantes de saison d'un modèle (itération 31) : CommonTree_2 → CommonTree_Autumn_2, CommonTree_Dead_2. */
+const seasonal = (name) => {
+  const s = config.seasons, m = /^(.+)_(\d+)$/.exec(name);
+  return s && m && s.families.includes(m[1]) ? [s.autumn, s.bare].map((v) => `${m[1]}_${v}_${m[2]}`) : [];
+};
 const names = process.argv.slice(2).length
   ? process.argv.slice(2)
-  : [...new Set(Object.values(config.mixes).flatMap((m) => Object.keys(m.models)))];
+  : [...new Set(Object.values(config.mixes).flatMap((m) => Object.keys(m.models)).flatMap((n) => [n, ...seasonal(n)]))];
 
 const SIMPLIFY = config.simplify ?? null;
 if (SIMPLIFY) await MeshoptSimplifier.ready;

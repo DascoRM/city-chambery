@@ -96,6 +96,11 @@ export interface PlaceLayer {
   anchor(index: number, out: THREE.Vector3): THREE.Vector3;
   /** Affiche / masque toutes les épingles (et halos) d'une catégorie (PLACE_CATEGORIES). */
   setCategoryVisible(category: string, visible: boolean): void;
+  /**
+   * Lieux éteints la nuit (itération 31) : true = fermé à l'heure choisie (ni lueur ni halo).
+   * Un lieu aux horaires inconnus doit être passé à false (il reste allumé, comme avant).
+   */
+  setClosed(closed: boolean[]): void;
   animate(t: number): void;
 }
 
@@ -144,22 +149,29 @@ function standHeights(places: Place[], heightAt: HeightFn, buildings: Building[]
 export function buildPlaceMarkers(places: Place[], heightAt: HeightFn = () => 0, buildings: Building[] = [], minUnder?: (r: Pt[]) => number): PlaceLayer {
   const root = new THREE.Group();
   root.name = 'places';
-  const noop = { root, places, setActive() {}, anchor: (_: number, out: THREE.Vector3) => out, setCategoryVisible() {}, animate() {} };
+  const noop = { root, places, setActive() {}, anchor: (_: number, out: THREE.Vector3) => out, setCategoryVisible() {}, setClosed() {}, animate() {} };
   if (!places.length) return noop;
 
-  // La nuit, les épingles s'allument dans leur propre couleur (uGlow piloté par le cycle jour/nuit)
+  // La nuit, les épingles s'allument dans leur propre couleur (uGlow piloté par le cycle jour/nuit),
+  // sauf les lieux fermés à cette heure (attribut aLit par épingle : 1 allumé, 0 éteint)
   const glowUniform = { value: 0 };
   const pinMat = new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.05, flatShading: true });
   pinMat.onBeforeCompile = (shader) => {
     shader.uniforms.uGlow = glowUniform;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float aLit;\nvarying float vLit;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLit = aLit;');
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uGlow;')
+      .replace('#include <common>', '#include <common>\nuniform float uGlow;\nvarying float vLit;')
       .replace(
         '#include <emissivemap_fragment>',
-        '#include <emissivemap_fragment>\n#ifdef USE_COLOR\ntotalEmissiveRadiance += vColor.rgb * uGlow;\n#endif',
+        '#include <emissivemap_fragment>\n#ifdef USE_COLOR\ntotalEmissiveRadiance += vColor.rgb * uGlow * vLit;\n#endif',
       );
   };
-  const pins = new THREE.InstancedMesh(pinGeometry(), pinMat, places.length);
+  const pinGeo = pinGeometry();
+  const litAttr = new THREE.InstancedBufferAttribute(new Float32Array(places.length).fill(1), 1);
+  pinGeo.setAttribute('aLit', litAttr);
+  const pins = new THREE.InstancedMesh(pinGeo, pinMat, places.length);
   pins.userData.glowUniform = glowUniform;
   pins.castShadow = false; // rebondit au survol : pas d'ombre (ombres recalculées à la demande)
 
@@ -222,6 +234,17 @@ export function buildPlaceMarkers(places: Place[], heightAt: HeightFn = () => 0,
   let active: number | null = null, since = 0, now = 0;
   const hidden = new Set<string>(); // catégories masquées
   const isHidden = (i: number) => hidden.has(placeCategory(places[i].kind).id);
+  let closed: boolean[] = [];
+  // Halos : couleur noire = invisible (mélange additif) pour une catégorie masquée ou un lieu fermé
+  const refreshHalos = () => {
+    for (const { attr, ids } of haloSets) {
+      ids.forEach((i, j) => {
+        c.set(isHidden(i) || closed[i] ? '#000000' : placeCategory(places[i].kind).color);
+        attr.setXYZ(j, c.r, c.g, c.b);
+      });
+      attr.needsUpdate = true;
+    }
+  };
   const place = (i: number, lift: number, scale: number) => {
     const k = isHidden(i) ? 0 : scale; // échelle 0 = épingle masquée (et plus cliquable)
     m.compose(p.copy(base[i]).setY(base[i].y + lift), q, s.setScalar(k));
@@ -246,15 +269,13 @@ export function buildPlaceMarkers(places: Place[], heightAt: HeightFn = () => 0,
         hit.setMatrixAt(i, m);
       });
       hit.instanceMatrix.needsUpdate = true;
-      // Halos : couleur noire = invisible (mélange additif)
-      for (const { attr, ids } of haloSets) {
-        ids.forEach((i, j) => {
-          if (placeCategory(places[i].kind).id !== category) return;
-          c.set(visible ? placeCategory(places[i].kind).color : '#000000');
-          attr.setXYZ(j, c.r, c.g, c.b);
-        });
-        attr.needsUpdate = true;
-      }
+      refreshHalos();
+    },
+    setClosed(list) {
+      closed = list;
+      list.forEach((v, i) => litAttr.setX(i, v ? 0 : 1));
+      litAttr.needsUpdate = true;
+      refreshHalos();
     },
     anchor(i, out) {
       return out.copy(base[i]).setY(base[i].y + PIN_H + PIN_R + (i === active ? 3 : 0));

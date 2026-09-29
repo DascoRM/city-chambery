@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import type { NightUniforms } from './city';
+import { CHAMBERY, chamberyInstant, type LocalDate } from '../time/chambery';
+import { sunPosition } from '../time/sun';
 
 /**
  * Cycle jour/nuit : position et couleur du soleil (puis de la lune), ambiance du ciel,
  * fond de page, fenêtres éclairées, lueur des rues et halos des bars.
- * L'heure est une valeur entre 0 et 24 ; 16 h correspond au rendu « d'après-midi » d'origine.
+ * Itération 31 : le soleil suit sa vraie course au-dessus de Chambéry pour la date et l'heure
+ * données (azimut et hauteur calculés, voir src/time/sun.ts) : lever, coucher et hauteur à midi
+ * changent avec la saison. L'heure est une heure décimale de Chambéry (0-24).
  */
 
 interface Keyframe {
@@ -36,7 +40,10 @@ export interface DayNightDeps {
   placeHalos?: THREE.Object3D;
 }
 
-export function createDayNight(d: DayNightDeps, initialHour = 16) {
+/** Hauteur minimale de la lumière du soleil (≈ 7°) : en dessous, les ombres deviendraient trop longues pour le plateau. */
+const MIN_LIGHT_ELEVATION = 0.12;
+
+export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour: number }) {
   const R = d.size;
   const glowMeshes: THREE.Mesh[] = [];
   d.scene.traverse((o) => {
@@ -44,32 +51,32 @@ export function createDayNight(d: DayNightDeps, initialHour = 16) {
   });
   const warm = new THREE.Color('#ffa94d');
 
-  let hour = initialHour;
-  let playing = false;
+  let day = initial.day, hour = initial.hour, night = 0;
   let lastBg = '';
   const lastSun = new THREE.Vector3(NaN, NaN, NaN);
   const listeners: ((h: number, night: number) => void)[] = [];
 
   const apply = () => {
-    // Hauteur du soleil : lever à 6 h, coucher à 18 h (simplifié, sans saison)
-    const angle = (Math.PI * (hour - 6)) / 12;
-    const elev = Math.sin(angle);
-    const day = THREE.MathUtils.smoothstep(elev, -0.2, 0.1);
+    // Vraie position du soleil : azimut depuis le nord vers l'est, hauteur au-dessus de l'horizon
+    const sunPos = sunPosition(chamberyInstant(day, hour), CHAMBERY.lat, CHAMBERY.lon);
+    const elev = Math.sin(sunPos.elevation);
+    const dayF = THREE.MathUtils.smoothstep(elev, -0.2, 0.1);
     const dusk = 1 - THREE.MathUtils.smoothstep(Math.abs(elev), 0.0, 0.35);
-    const night = 1 - day;
+    night = 1 - dayF;
 
     // Ambiance : nuit ↔ jour, avec une teinte de crépuscule autour du lever/coucher
-    const base = mixKey(NIGHT, DAY, day);
+    const base = mixKey(NIGHT, DAY, dayF);
     const duskMix = dusk * 0.85;
     const sky = base.sky.lerp(new THREE.Color(DUSK.sky), duskMix);
-    base.hemi = THREE.MathUtils.lerp(base.hemi, DUSK.hemi, duskMix * day);
-    const keyCol = base.key.lerp(new THREE.Color(DUSK.key), duskMix * day);
+    base.hemi = THREE.MathUtils.lerp(base.hemi, DUSK.hemi, duskMix * dayF);
+    const keyCol = base.key.lerp(new THREE.Color(DUSK.key), duskMix * dayF);
     const bg = base.bg.map((c, i) => c.lerp(new THREE.Color(DUSK.bg[i]), duskMix));
 
-    // Soleil le jour (est → sud → ouest), lune la nuit (fixe, haute, un peu à l'ouest)
+    // Soleil le jour (repère : x = est, −z = nord, y = haut), lune la nuit (fixe, haute, un peu à l'ouest)
     const { sun, hemi, fill } = d.lights;
-    if (day > 0.02) {
-      sun.position.set(Math.cos(angle) * R * 0.8, Math.max(elev, 0.12) * R, R * 0.45);
+    if (dayF > 0.02) {
+      const e = Math.max(sunPos.elevation, MIN_LIGHT_ELEVATION), a = sunPos.azimuth;
+      sun.position.set(Math.sin(a) * Math.cos(e) * R, Math.sin(e) * R, -Math.cos(a) * Math.cos(e) * R);
     } else {
       sun.position.set(-R * 0.3, R * 0.75, R * 0.35);
     }
@@ -79,11 +86,11 @@ export function createDayNight(d: DayNightDeps, initialHour = 16) {
       d.renderer.shadowMap.needsUpdate = true;
     }
     sun.color.copy(keyCol);
-    sun.intensity = base.keyI * (day > 0.02 ? 0.7 + 0.3 * THREE.MathUtils.clamp(elev * 2, 0, 1) : 1);
+    sun.intensity = base.keyI * (dayF > 0.02 ? 0.7 + 0.3 * THREE.MathUtils.clamp(elev * 2, 0, 1) : 1);
     hemi.color.copy(sky);
     hemi.groundColor.copy(base.ground);
     hemi.intensity = base.hemi;
-    fill.intensity = 0.35 * day + 0.15 * night;
+    fill.intensity = 0.35 * dayF + 0.15 * night;
     d.renderer.toneMappingExposure = base.exposure;
 
     // Lumières de la ville
@@ -117,23 +124,17 @@ export function createDayNight(d: DayNightDeps, initialHour = 16) {
 
   return {
     getHour: () => hour,
-    setHour(h: number) {
+    /** 0 = plein jour, 1 = nuit. */
+    getNight: () => night,
+    /** Change la date et l'heure de Chambéry (heure décimale 0-24). */
+    set(newDay: LocalDate, h: number) {
+      day = newDay;
       hour = ((h % 24) + 24) % 24;
-      apply();
-    },
-    setPlaying(p: boolean) {
-      playing = p;
-    },
-    isPlaying: () => playing,
-    /** Une journée complète en 2 minutes quand la lecture est active. */
-    update(dt: number) {
-      if (!playing) return;
-      hour = (hour + (dt * 24) / 120) % 24;
       apply();
     },
     onChange(f: (h: number, night: number) => void) {
       listeners.push(f);
-      f(hour, 1 - THREE.MathUtils.smoothstep(Math.sin((Math.PI * (hour - 6)) / 12), -0.2, 0.1));
+      f(hour, night);
     },
   };
 }

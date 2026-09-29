@@ -140,6 +140,17 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
 .time .play { width: 28px; height: 28px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; font-size: 11px; cursor: pointer; flex: none; }
 .time input { width: 110px; accent-color: var(--gold); }
 .time-label { font-variant-numeric: tabular-nums; min-width: 68px; }
+/* Direct, saison, lever / coucher (itération 31) */
+.sun-times { font-size: 12px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.time .live, .time .season { border: 0; border-radius: 99px; padding: 4px 10px; font: inherit; font-size: 12px; font-weight: 700; background: rgba(45, 38, 34, 0.07); color: var(--muted); cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+.time .live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+.time .live.on { background: #c8412c; color: #fff; }
+.time .live.on::before { opacity: 1; animation: live-pulse 2s ease-in-out infinite; }
+.time .season.on { background: var(--gold); color: var(--ink); }
+@keyframes live-pulse { 50% { opacity: 0.25; } }
+.pc-open { margin: 5px 0 0; font-size: 12px; font-weight: 700; color: var(--muted); }
+.pc-open.is-open { color: #2f8a55; }
+.pc-open.is-closed { color: #b3413a; }
 body { transition: background 0.4s; }
 body.is-night .attribution { color: #b8bfd8; }
 
@@ -158,4 +169,15 @@ body.is-night .attribution { color: #b8bfd8; }
   .place-card { width: min(270px, calc(100vw - 24px)); }
   .compass { top: 88px; bottom: auto; right: 16px; width: 42px; height: 42px; }
   .legend { font-size: 12px; }
+  .sun-times { display: none; }
+  .time { max-width: calc(100vw - 32px); box-sizing: border-box; gap: 6px; }
+  .time input { width: auto; flex: 1 1 80px; min-width: 44px; }
+  .time-label { min-width: 0; white-space: nowrap; }
+  .time .live, .time .season { padding: 4px 8px; font-size: 11px; }
+}
+
+/* Très petits écrans (iPhone SE…) : « Direct » réduit à son point rouge */
+@media (max-width: 360px) {
+  .time .live { font-size: 0; gap: 0; padding: 7px; }
+  .time .live::before { width: 8px; height: 8px; }
 }
