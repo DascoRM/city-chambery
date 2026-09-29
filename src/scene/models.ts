@@ -5,6 +5,7 @@ import { buildElephantsFountain } from './models/elephants';
 import { buildCathedrale } from './models/cathedrale';
 import { buildChateau } from './models/chateau';
 import { buildCarreCurial } from './models/carrecurial';
+import { dataUrl } from '../dataurl';
 
 /**
  * Monuments modélisés (src/content/models.json).
@@ -71,7 +72,7 @@ export async function buildModels(entries: ModelEntry[], pois: PlacedPoi[], ctx:
           const ground = e.pos && e.pos[0] === 0 && e.pos[1] === 0 ? 0 : (ctx.heightAt?.(pos[0], pos[1]) ?? 0);
           obj = make({ ...ctx, ground });
         } else {
-          const gltf = await loader.loadAsync(`${import.meta.env.BASE_URL}${e.source}`);
+          const gltf = await loader.loadAsync(dataUrl(e.source));
           obj = gltf.scene;
           obj.traverse((o) => {
             if ((o as THREE.Mesh).isMesh) o.castShadow = o.receiveShadow = true;

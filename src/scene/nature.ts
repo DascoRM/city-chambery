@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import type { CityData, Pt } from '../types';
 import { rand } from './palette';
+import { dataUrl } from '../dataurl';
 
 /**
  * Arbres modélisés (pack Quaternius, CC0) à certains endroits de la ville.
@@ -63,7 +64,7 @@ export async function buildNature(config: NatureConfig, data: CityData, spots: P
   const cache = new Map<string, Promise<THREE.BufferGeometry>>();
   const geometryOf = (name: string) => {
     if (!cache.has(name)) {
-      cache.set(name, loader.loadAsync(`${import.meta.env.BASE_URL}models/nature/${name}.glb`).then((gltf) => {
+      cache.set(name, loader.loadAsync(dataUrl(`models/nature/${name}.glb`)).then((gltf) => {
         let geo: THREE.BufferGeometry | null = null;
         gltf.scene.traverse((o) => { if (!geo && (o as THREE.Mesh).isMesh) geo = (o as THREE.Mesh).geometry; });
         if (!geo) throw new Error(`aucun maillage dans ${name}.glb`);
