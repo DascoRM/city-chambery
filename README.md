@@ -23,7 +23,7 @@ point par point, c'est assez plaisant pour que mes amis y passent 10 minutes et 
 8. [Outil de placement (mode dev)](#outil-de-placement-mode-dev)
 9. [Rendu : ce qui se passe à l'écran](#rendu--ce-qui-se-passe-à-lécran)
 10. [Structure du code](#structure-du-code)
-11. [Déployer (Docker, Coolify)](#déployer-docker-coolify)
+11. [Déployer (Docker, Coolify, Vercel)](#déployer-docker-coolify-vercel)
 12. [Dépannage](#dépannage)
 13. [Limites connues](#limites-connues)
 14. [Licences](#licences)
@@ -61,7 +61,7 @@ npm run docker:logs  # suivre les journaux du conteneur
 npm run docker:down  # arrêter et supprimer le conteneur
 ```
 
-Sur le Pi avec Coolify : voir [Déployer (Docker, Coolify)](#déployer-docker-coolify).
+Sur le Pi avec Coolify : voir [Déployer (Docker, Coolify)](#déployer-docker-coolify-vercel).
 
 ### 3. Régénérer les données (seulement si la carte doit changer)
 
@@ -360,7 +360,7 @@ Le détail des choix est dans [`claude/DECISIONS.md`](claude/DECISIONS.md).
 
 ---
 
-## Déployer (Docker, Coolify)
+## Déployer (Docker, Coolify, Vercel)
 
 Le site est **statique** : `npm run build` produit `dist/`, servi par nginx dans une image Docker.
 
@@ -402,6 +402,8 @@ dans Coolify, ou `docker compose build --no-cache`).
 4. Pour mettre à jour : pousser sur la branche, puis redéployer (ou activer le déploiement automatique).
 
 **En local :** `npm run docker:up`, puis http://localhost:3000 (voir [Démarrer](#démarrer)).
+
+**Avec Vercel :** importer le dépôt, rien à régler : `vercel.json` donne la commande de build (`npm run build`), le dossier `dist` et les mêmes règles de cache que `deploy/nginx.conf` (1 an pour `assets/` et pour `data/` et `models/` appelés avec `?v=` ; `sw.js`, manifeste et page revérifiés à chaque visite). HTTPS fourni, donc mode hors-ligne actif. Pas de `REFRESH_DATA` : Vercel utilise les données du dépôt. Chaque branche poussée a sa propre adresse de prévisualisation.
 
 ---
 

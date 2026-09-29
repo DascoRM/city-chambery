@@ -1,5 +1,15 @@
 # Journal des itérations
 
+## Itération 32 — 29/09/2026
+
+**Demande de Dasco :** déploiement de test sur Vercel (https://city-chambery.vercel.app).
+
+**Constat :** le site fonctionne tel quel (carte, mode hors-ligne, types de fichiers, compression Brotli), mais Vercel sert tous les fichiers avec `public, max-age=0, must-revalidate` : les règles de cache de `deploy/nginx.conf` ne s'appliquent pas.
+
+**Changements :** `vercel.json` (build, dossier `dist`, cache 1 an pour `assets/` et pour `data/` et `models/` appelés avec `?v=`, `sw.js` / manifeste / page revérifiés) ; README, section Déployer.
+
+**Non vérifié :** les nouveaux en-têtes, à contrôler après le prochain déploiement.
+
 ## Itération 31 — 29/09/2026
 
 **Demande de Dasco :** l'épic *Heure et saison* (jour/nuit à l'heure réelle, saisons, lever/coucher réels, lieux ouverts la nuit).
