@@ -1,5 +1,29 @@
 # Journal des itérations
 
+## Itération 33 — 30/09/2026
+
+**Demande de Dasco :** le ticket « Mascotte (éléphant ?) qui se promène dans le diorama », avec le modèle déposé dans `assets-src/`. L'éléphant doit toujours marcher sur les chemins ou les routes.
+
+**Modèle :** « Elephant » par jeremy (Poly Pizza, https://poly.pizza/m/9J-cG39KYFC), **CC BY 3.0** (licence vérifiée sur la page du modèle) : attribution obligatoire. Statique : pas de squelette ni d'animation ; 1 170 triangles, 4 couleurs, ≈ 64 Ko une fois converti.
+
+**Changements :**
+- `scripts/convert-mascot.mjs` (`npm run mascot`) : mètres, 4,5 m de haut, origine entre les pattes, trompe vers +X → `public/models/mascotte/elephant.glb`.
+- `src/scene/mascot.ts` + `src/content/mascot.json` :
+  - graphe des voies OSM (points partagés entre voies = carrefours), plus grande partie connexe gardée ; déplacement exact le long des segments, cap lissé ;
+  - voies retirées : escaliers, tronçons sous un bâtiment, tronçons à moins de 2,2 m d'une façade, cercle de 11 m autour de la fontaine (le bassin du modèle déborde sur le chemin OSM) ; il reste ≈ 53 km de voies ;
+  - choix aux carrefours : plutôt tout droit, préférence pour les rues piétonnes, retour vers la fontaine au-delà de 380 m ;
+  - pauses de 4 à 8 s toutes les 20 à 45 s, départ et arrêt en douceur ;
+  - marche animée dans le shader (pattes en quatre temps autour de la hanche, pied levé, dandinement, trompe, oreilles, queue) ;
+  - ombre en tache : un objet qui bouge ne peut pas projeter d'ombre réelle (ombres à la demande, itération 25).
+- `main.ts` : chargement, mise à jour dans la boucle, crédit « Éléphant : jeremy (Poly Pizza), CC BY 3.0 » ajouté à l'attribution en bas à droite.
+- README : section Mascotte, commande, structure, licences.
+
+**Vérifié dans le navigateur de test :**
+- 30 min de promenade simulées : jamais dans un bâtiment, jamais à moins de 11 m de la fontaine, au plus ≈ 315 m de la fontaine ;
+- captures : l'éléphant marche sur les rues, pattes et oreilles bougent d'une image à l'autre.
+
+**Non vérifié :** l'allure de la marche en mouvement réel (le navigateur de test rend trop lentement pour juger la fluidité) et le coût sur téléphone (≈ 1 200 triangles, 4 appels de rendu : a priori négligeable).
+
 ## Itération 32 — 29/09/2026
 
 **Demande de Dasco :** déploiement de test sur Vercel (https://city-chambery.vercel.app).

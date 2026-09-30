@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 28/09/2026 — itération 15.
+État au 30/09/2026 — itération 33.
 
 ## Carte / diorama
 
@@ -25,6 +25,7 @@
 | Cathédrale Saint-François-de-Sales | 🟡 | Formes simples bâties sur le contour OSM réel : bas-côtés et chapelles, nef haute (≈ 25 m) à toit à deux pans et contreforts, abside, façade flamboyante simplifiée côté place Métropole (portail, grande baie, pinacles), clocher côté nord (position et hauteur supposées) ; éclairée la nuit, baies lumineuses |
 | Château des ducs de Savoie | 🟡 | 7 bâtiments reconstruits sur leurs contours OSM : tours Trésorerie, demi-ronde et des Archives (cordon, meurtrières, toits pointus), Sainte-Chapelle (contreforts à pinacles, grandes baies), Porterie (mâchicoulis), aile du Midi et Conseil départemental (fenêtres, toits d'ardoise raides) ; hauteurs et toits supposés ; tour Yolande absente ; côté esplanade : mur bas et grille en fer, portail fermé sur l'allée, escalier de pierre (tracés OSM) ; éclairé la nuit |
 | Carré Curial | 🟡 | Formes simples sur le contour OSM avec sa cour ; gouttière 16,7 m et toit 5,4 m (BD TOPO) ; toit à pans autour de la cour, soubassement, corniche, fenêtres régulières côté rue et côté cour ; éclairé la nuit ; médiathèque J.-J.-Rousseau accolée intégrée (mêmes matériaux, toit plat) ; étages et couleurs supposés |
+| Mascotte : éléphant qui se promène | ✅ | Itération 33. Marche uniquement sur les voies OSM (graphe des rues et chemins ; sans escaliers, passages sous bâtiment, trottoirs collés aux façades, abords de la fontaine), part de la fontaine des Éléphants et reste dans un rayon d'≈ 380 m ; va plutôt tout droit et préfère les rues piétonnes ; pauses de 4 à 8 s ; pattes, trompe, oreilles et queue animées dans le shader ; ombre en tache ; 4,5 m de haut ; modèle « Elephant » de jeremy (Poly Pizza, CC BY 3.0, crédité en bas à droite) ; `mascot.json`, `npm run mascot` |
 | Cycle jour/nuit | ✅ | **Heure réelle de Chambéry par défaut** (bouton « Direct », relue chaque minute, quel que soit le fuseau de l'appareil) ; curseur d'heure (quitte le direct) + lecture (une journée en 2 min) ; **vraie course du soleil** (azimut et hauteur calculés pour la date : lever/coucher réels affichés, soleil bas l'hiver), crépuscule orangé, nuit bleutée avec lune, fond de page assorti |
 | Saisons | ✅ | Puce Auto / Printemps / Été / Automne / Hiver ; auto = date du jour. Feuillage : vert, couleurs d'automne (15 oct. – 30 nov.), branches nues (1er déc. – 14 mars) — dates approximatives, choix de style ; parcs : variantes Automne / Dead du pack Quaternius (pins inchangés) ; arbres des rues : couronnes orangées ou petites couronnes nues. Saison choisie = date typique (20 avril, 15 juillet, 28 octobre, 15 janvier) |
 | Fenêtres éclairées la nuit | ✅ | Grille de fenêtres calculée dans le shader (pas de modèle), 15 % à 35 % allumées selon l'heure |

@@ -20,14 +20,15 @@ point par point, c'est assez plaisant pour que mes amis y passent 10 minutes et 
 5. [Gérer les lieux d'histoire](#gérer-les-lieux-dhistoire)
 6. [Monuments modélisés](#monuments-modélisés)
 7. [Arbres modélisés (pack nature)](#arbres-modélisés-pack-nature)
-8. [Outil de placement (mode dev)](#outil-de-placement-mode-dev)
-9. [Rendu : ce qui se passe à l'écran](#rendu--ce-qui-se-passe-à-lécran)
-10. [Structure du code](#structure-du-code)
-11. [Déployer (Docker, Coolify, Vercel)](#déployer-docker-coolify-vercel)
-12. [Dépannage](#dépannage)
-13. [Limites connues](#limites-connues)
-14. [Licences](#licences)
-15. [Suivi du projet](#suivi-du-projet)
+8. [Mascotte (l'éléphant qui se promène)](#mascotte-léléphant-qui-se-promène)
+9. [Outil de placement (mode dev)](#outil-de-placement-mode-dev)
+10. [Rendu : ce qui se passe à l'écran](#rendu--ce-qui-se-passe-à-lécran)
+11. [Structure du code](#structure-du-code)
+12. [Déployer (Docker, Coolify, Vercel)](#déployer-docker-coolify-vercel)
+13. [Dépannage](#dépannage)
+14. [Limites connues](#limites-connues)
+15. [Licences](#licences)
+16. [Suivi du projet](#suivi-du-projet)
 
 ---
 
@@ -87,6 +88,7 @@ npm run nature                   # reconvertit les arbres du pack nature (après
 | `npm run data -- --offline --bdtopo` | Idem, mais retélécharge seulement les hauteurs BD TOPO |
 | `npm run data -- --offline --relief` | Idem, mais retélécharge seulement le relief RGE ALTI |
 | `npm run nature` | Convertit et simplifie les arbres du pack Quaternius (`assets-src/` → `public/models/nature/`) selon `src/content/nature.json` |
+| `npm run mascot` | Convertit l'éléphant mascotte (`assets-src/Elephant by jeremy - 9J-cG39KYFC.glb` → `public/models/mascotte/elephant.glb`) : mètres, 4,5 m de haut, trompe vers +X |
 
 Variables d'environnement utiles :
 
@@ -273,6 +275,27 @@ Les `.blend` d'origine ont été supprimés (pack retéléchargeable sur quatern
 
 ---
 
+## Mascotte (l'éléphant qui se promène)
+
+Un éléphant se promène dans le diorama, **uniquement sur les rues et chemins** d'OpenStreetMap. Réglages dans
+`src/content/mascot.json`, code dans `src/scene/mascot.ts`.
+
+- **Chemin** : les voies OSM forment un graphe (les voies qui se croisent partagent leurs points). L'éléphant
+  va de point en point le long des segments ; il ne coupe jamais à travers un bâtiment ou un parc.
+  À chaque carrefour, il choisit au hasard, en préférant aller tout droit et les rues piétonnes (`preferKinds`).
+  Il part de la fontaine des Éléphants (`start`) et y revient peu à peu quand il s'en éloigne de plus de
+  `roamRadius` mètres.
+- **Voies retirées** : escaliers (`excludeKinds`) ; tronçons sous un bâtiment (passages couverts) ; tronçons à
+  moins de `clearance` mètres d'une façade (trottoirs le long des murs, pour qu'il ne rentre pas dedans) ;
+  cercle `avoid` autour de la fontaine (le bassin du modèle déborde sur le chemin OSM). Il reste ≈ 53 km de voies.
+- **Rythme** : `speed` en m/s, pauses de `pauseSeconds` toutes les `walkSeconds` secondes.
+- **Animation** : le modèle est statique (ni squelette, ni animation). Les pattes (marche en quatre temps),
+  la trompe, les oreilles et la queue sont animées **dans le shader**, d'après la position des sommets.
+  Les seuils sont ceux du modèle converti ; un autre modèle demanderait de les reprendre (`WALK_GLSL`).
+- **Ombre** : une tache sombre sous lui (les ombres de la scène ne sont recalculées que quand le soleil bouge).
+- **Modèle** : « Elephant » par jeremy, [Poly Pizza](https://poly.pizza/m/9J-cG39KYFC), CC BY 3.0. Source dans
+  `assets-src/` (le `.glb` et l'`.obj` d'origine), converti par `npm run mascot`.
+
 ## Outil de placement (mode dev)
 
 Disponible uniquement avec `npm run dev`.
@@ -316,6 +339,7 @@ scripts/
   terrain.mjs              Relief RGE ALTI (ou interpolation BD TOPO)
   roofs.mjs                Choix du toit de chaque bâtiment
   convert-nature.mjs       Pack nature : .obj → .glb (npm run nature)
+  convert-mascot.mjs       Éléphant mascotte : mise à l'échelle et orientation (npm run mascot)
 
 src/
   main.ts                  Assemblage : scène, calques, interactions, boucle de rendu
@@ -323,6 +347,7 @@ src/
   content/pois.json        Fiches d'histoire
   content/models.json      Monuments modélisés
   content/nature.json      Arbres modélisés : mélanges et zones
+  content/mascot.json      Mascotte : modèle, vitesse, voies autorisées, zones interdites
   scene/stage.ts           Renderer, caméra « maquette », lumières, contrôles, boussole (cap, retour au nord)
   scene/touch.ts           Gestes tactiles à deux doigts (pincer, tourner, incliner)
   scene/terrain.ts         Relief : maillage du sol, altitude en tout point, bords du socle
@@ -338,6 +363,7 @@ src/
   dataurl.ts               Adresses des données avec leur version (?v=)
   scene/models.ts          Chargement et placement des monuments
   scene/nature.ts          Arbres modélisés dans les parcs
+  scene/mascot.ts          Mascotte : graphe des voies, promenade, marche dans le shader
   scene/models/            Monuments générés en code + éclairage de nuit partagé
   ui/ui.ts                 HUD, fiche, journal, toasts, contrôles
   state/progress.ts        Progression et préférences (localStorage)
@@ -346,6 +372,7 @@ src/
 public/data/city.json      Données générées (ne pas modifier à la main)
 public/models/             Fichiers glTF des monuments (export Blender)
 public/models/nature/      Arbres du pack nature convertis (.glb)
+public/models/mascotte/    Éléphant mascotte converti (.glb)
 public/icons/              Icônes de l'appli (mode hors-ligne, écran d'accueil)
 assets-src/                Sources des modèles (pack Quaternius en .obj/.fbx), pas servies par le site
 data/raw/                  Caches des téléchargements (non versionnés)
@@ -441,6 +468,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 - Hauteurs BD TOPO et relief RGE ALTI © IGN, **Licence Ouverte Etalab 2.0** — attribution affichée quand ils sont utilisés.
 - Textes : reformulés, sources citées dans chaque fiche. Recopier des passages de Wikipédia imposerait la licence **CC BY-SA**.
 - Modèles nature : Ultimate Nature Pack by Quaternius, **CC0 1.0** (domaine public, aucune obligation ; crédit volontaire).
+- Mascotte : « Elephant » par jeremy ([Poly Pizza](https://poly.pizza/m/9J-cG39KYFC)), **CC BY 3.0** — attribution obligatoire, affichée en bas à droite de l'application. Modifié : mis à l'échelle, réorienté, animé.
 - Librairies : Three.js (MIT), straight-skeleton (MIT), glTF-Transform (MIT, conversion uniquement).
 
 ---

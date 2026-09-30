@@ -9,8 +9,8 @@ Priorités : **P1** prochaine itération · **P2** bientôt · **P3** un jour
 - ⬜ Épingles des lieux : icône par catégorie sur l'épingle (verre, tasse, couverts), après la v1 « pointeur de couleur »
 - ⬜ Fiche des lieux : horaires OSM plus lisibles (regroupés par jour, « ouvert maintenant »)
 - ⬜ **Petites animations le jour et la nuit** (la ville vit) — évolution du code existant, pas de refonte. Estimation : socle ≈ 1 session, éléphant ≈ 1 session, passants simples ≈ ½ à 1 session, personnages animés + 1 à 2 sessions, variantes de nuit ≈ ½ session :
-  - socle commun : une liste de choses à animer à chaque image, un réseau de chemins tiré des rues et chemins piétons OSM, des ombres « pastille » au sol (les ombres réelles ne sont plus recalculées à chaque image), un comportement différent le jour et la nuit ;
-  - l'éléphant qui se promène dans Chambéry (pas d'éléphant dans les packs Quaternius vérifiés → modèle en formes simples avec pattes animées, ou modèle trouvé ailleurs, licence à vérifier) ;
+  - 🟡 socle commun : réseau de chemins tiré des voies OSM et ombre « pastille » au sol faits avec la mascotte (itération 33, `src/scene/mascot.ts`) ; à extraire en module partagé pour les passants ; comportement jour / nuit à faire ;
+  - ✅ l'éléphant qui se promène dans Chambéry (itération 33 : modèle de jeremy sur Poly Pizza, CC BY 3.0, marche animée dans le shader) ;
   - des passants : d'abord des silhouettes simples en grand nombre, puis éventuellement des personnages animés (pack Quaternius en CC0, à convertir de FBX en glb) près de la caméra seulement ;
   - la nuit : moins de monde dans les rues, du monde devant les bars ouverts ;
   - à concilier avec le ticket « moins d'images quand rien ne bouge »
@@ -70,12 +70,18 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - - ⬜ Ajouter tes idées de lieux — *Dasco*
 
 - ⬜ Parcours thématiques (« Chambéry des ducs », « Chambéry sarde », « les nuits de Chambéry »)
-- ⬜ Quiz d'une question par lieu pour valider la découverte
-- ⬜ Mode « sur place » : débloquer un lieu par géolocalisation
+- ⬜ Mode « sur place » : débloquer un lieu par géolocalisation (phot des piuxel art)
 - ⬜ Curseur d'époques : afficher les bâtiments selon leur date
-- ⬜ Mascotte (éléphant ?) qui se promène dans le diorama
+- ✅ Mascotte (éléphant) qui se promène dans le diorama — itération 33
+- ⬜ Mascotte : bouton ou clic pour suivre l'éléphant avec la caméra (il part loin, on le perd de vue)
+- ⬜ Mascotte : la nuit, il rentre dormir près de la fontaine (ou marche plus lentement)
+- ⬜ Mascotte : il traverse parfois la couronne d'un arbre de rue (les arbres ne sont pas pris en compte dans ses chemins)
 - ⬜ Partage de progression entre amis
 - ⬜ Étendre à d'autres quartiers (plusieurs dioramas reliés)
+- Avoir un luncher pour lancer la map (mode choix, exploration ou mode histoire
+- Avoir de la vie dans les rue
+- Jeux trouve l’éléphant (si j’essaye de clique dessus il court plus vite
+- Mode histoire qui fait visiter la ville
 
 ## Fait
 Voir [FEATURES.md](FEATURES.md) et [CHANGELOG.md](CHANGELOG.md).
