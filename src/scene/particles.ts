@@ -181,6 +181,8 @@ export function createFireworks(sparks: Particles) {
         big,
       });
     },
+    /** Fusées en attente ou en vol */
+    pending: () => rockets.length,
     update(dt: number) {
       for (let i = rockets.length - 1; i >= 0; i--) {
         const r = rockets[i];

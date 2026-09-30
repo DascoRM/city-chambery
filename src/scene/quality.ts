@@ -9,6 +9,8 @@ import type * as THREE from 'three';
  *  - moins de 40 images/s → on baisse d'un cran (0,25), jusqu'à 1 au minimum ;
  *  - plus de 56 images/s pendant 3 mesures de suite → on remonte d'un cran, jusqu'au plafond.
  * Les changements sont rares (pas de va-et-vient à chaque image).
+ * Au repos, la boucle est limitée à 30 images/s (TI-02) : seules les images en mouvement sont mesurées,
+ * sinon les 30 images/s voulues passeraient pour de la lenteur.
  */
 export function createAdaptiveResolution(renderer: THREE.WebGLRenderer, onChange: () => void) {
   const max = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -26,9 +28,9 @@ export function createAdaptiveResolution(renderer: THREE.WebGLRenderer, onChange
   };
 
   return {
-    /** À appeler à chaque image avec la durée de l'image (secondes). */
-    update(dt: number) {
-      if (dt <= 0 || dt > 0.25) return; // onglet en pause, chargement… : ignoré
+    /** À appeler à chaque image avec sa durée (secondes) ; measure = image en mouvement, précédée d'une autre. */
+    update(dt: number, measure: boolean) {
+      if (!measure || dt <= 0 || dt > 0.25) return; // repos, onglet en pause, chargement… : ignoré
       acc += dt;
       frames++;
       if (acc < 2) return;

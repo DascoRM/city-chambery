@@ -74,6 +74,8 @@ export function createClock(now: () => Date = () => new Date()) {
     setSeason(s: SeasonChoice) { season = s; emit(); },
     /** Saison suivante : Auto → Printemps → Été → Automne → Hiver → Auto. */
     nextSeason() { season = SEASONS[(SEASONS.indexOf(season) + 1) % SEASONS.length]; emit(); },
+    /** Lecture ▶ : le soleil et les ombres bougent à chaque image */
+    moving: () => mode === 'playing',
     update(dt: number) {
       if (mode === 'playing') {
         hour = (hour + (dt * 24) / DAY_IN_SECONDS) % 24;
