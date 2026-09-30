@@ -4,6 +4,7 @@ import type { Building, CityData, HeightFn, Place, Pt } from '../types';
 import { pointInPoly, segDist2 } from './geo';
 import { PLACE_CATEGORIES, placeCategory } from './palette';
 import { dataUrl } from '../dataurl';
+import { roadDistanceIndex } from './roads';
 
 /**
  * Détails de façade tirés du pack de bâtiments (public/models/buildings/details.glb, voir
@@ -32,7 +33,6 @@ export interface AwningConfig {
 const PIECE_WIDTH = 4.2;
 const PIECE_DEPTH = 0.95;
 const PIECES = ['awning-a', 'awning-b'];
-const CELL = 25;
 /** Voies sans intérêt pour trouver une façade côté rue */
 const SKIP_ROADS = new Set(['steps', 'track', 'cycleway']);
 
@@ -68,28 +68,7 @@ export async function buildAwnings(o: {
     return null;
   };
 
-  // Tronçons de voies dans une grille de 25 m (distance du milieu d'une façade à la voie la plus proche)
-  const grid = new Map<string, number[][]>();
-  for (const r of data.roads) {
-    if (SKIP_ROADS.has(r.kind)) continue;
-    for (let k = 1; k < r.pts.length; k++) {
-      const [ax, ay] = r.pts[k - 1], [bx, by] = r.pts[k];
-      for (let i = Math.floor(Math.min(ax, bx) / CELL); i <= Math.floor(Math.max(ax, bx) / CELL); i++)
-        for (let j = Math.floor(Math.min(ay, by) / CELL); j <= Math.floor(Math.max(ay, by) / CELL); j++) {
-          const key = `${i},${j}`;
-          const list = grid.get(key);
-          if (list) list.push([ax, ay, bx, by]); else grid.set(key, [[ax, ay, bx, by]]);
-        }
-    }
-  }
-  const roadDistance = (x: number, y: number): number => {
-    let best = Infinity;
-    const ci = Math.floor(x / CELL), cj = Math.floor(y / CELL);
-    for (let i = ci - 1; i <= ci + 1; i++)
-      for (let j = cj - 1; j <= cj + 1; j++)
-        for (const [ax, ay, bx, by] of grid.get(`${i},${j}`) ?? []) best = Math.min(best, segDist2(x, y, ax, ay, bx, by));
-    return Math.sqrt(best);
-  };
+  const roadDistance = roadDistanceIndex(data.roads, SKIP_ROADS);
 
   const hashOf = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return (h >>> 0) / 4294967296; };
   const [wMin, wMax] = cfg.width;

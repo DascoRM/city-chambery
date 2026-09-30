@@ -5,7 +5,7 @@ import { PALETTE, rand } from './palette';
 import { planRoof, planSkeletonRoof, roofGeometry, skeletonRoofGeometry } from './roofs';
 import { buildGround, type Terrain } from './terrain';
 import { pointInRing } from './geo';
-import { FOOT_KINDS, LIFT } from './roads';
+import { FOOT_KINDS, LIFT, roadDistanceIndex } from './roads';
 import type { Foliage } from '../time/seasons';
 
 /**
@@ -159,6 +159,29 @@ function buildBuildings(data: CityData, night: NightUniforms, hidden: Set<number
   const geos: THREE.BufferGeometry[] = [];
   let pitched = 0;
   let skeletonRoofs = 0;
+  // Façades côté rue (portes de jour, EP001-US009) : un mur dont l'extérieur est à moins de STREET_DISTANCE m
+  // d'une voie et ne touche pas un bâtiment voisin (mur mitoyen)
+  const roadDistance = roadDistanceIndex(data.roads);
+  const rings = ringGrid(data);
+  const insideOther = (x: number, y: number, self: Pt[]) =>
+    (rings.get(`${Math.floor(x / RING_CELL)},${Math.floor(y / RING_CELL)}`) ?? []).some((r) => r !== self && pointInRing(x, y, r));
+  const faceAttrs = (g: THREE.BufferGeometry, b: { outer: Pt[]; minH: number } | null, base: number) => {
+    const n = g.getAttribute('position').count;
+    const street = new Float32Array(n), baseY = new Float32Array(n).fill(base);
+    if (b && b.minH === 0) {
+      const pos = g.getAttribute('position'), nor = g.getAttribute('normal');
+      for (let t = 0; t + 2 < n; t += 3) {
+        const nx = nor.getX(t), ny = nor.getY(t), nz = nor.getZ(t);
+        if (Math.abs(ny) > 0.3) continue;
+        const cx = (pos.getX(t) + pos.getX(t + 1) + pos.getX(t + 2)) / 3, cz = (pos.getZ(t) + pos.getZ(t + 1) + pos.getZ(t + 2)) / 3;
+        const ox = cx + nx * 1.5, oy = -(cz + nz * 1.5); // un peu devant le mur (plan des données : y = -z)
+        if (roadDistance(ox, oy) < STREET_DISTANCE && !insideOther(ox, oy, b.outer)) street[t] = street[t + 1] = street[t + 2] = 1;
+      }
+    }
+    g.setAttribute('aStreet', new THREE.BufferAttribute(street, 1));
+    g.setAttribute('aBase', new THREE.BufferAttribute(baseY, 1));
+    return g;
+  };
 
   for (const b of data.buildings) {
     if (hidden.has(b.id)) continue; // remplacé par un monument modélisé
@@ -198,14 +221,14 @@ function buildBuildings(data: CityData, night: NightUniforms, hidden: Set<number
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geo.translate(0, ground, 0);
-    geos.push(geo);
+    geos.push(faceAttrs(geo.index ? geo.toNonIndexed() : geo, b, ground));
     if (plan) {
       pitched++;
-      geos.push(roofGeometry({ ...plan, eave: b.minH + depth }, roof, wall).translate(0, ground, 0));
+      geos.push(faceAttrs(nonIndexed(roofGeometry({ ...plan, eave: b.minH + depth }, roof, wall).translate(0, ground, 0)), null, ground));
     } else if (skel) {
       const g = skeletonRoofGeometry(b, { ...skel, eave: b.minH + depth }, roof);
       if (g) {
-        geos.push(g.translate(0, ground, 0));
+        geos.push(faceAttrs(nonIndexed(g.translate(0, ground, 0)), null, ground));
         skeletonRoofs++;
       }
     }
@@ -226,16 +249,36 @@ function buildBuildings(data: CityData, night: NightUniforms, hidden: Set<number
  * Les fenêtres ne sont pas modélisées : une grille (3 m × 3,2 m par étage) est calculée
  * dans le shader à partir de la position sur la façade ; une fenêtre sur deux environ s'allume.
  */
+/** Distance maximale (m) entre le devant d'un mur et une voie pour que le mur soit « côté rue » */
+const STREET_DISTANCE = 9;
+const RING_CELL = 25;
+/** Contours des bâtiments rangés par cases de 25 m (boîte englobante) : test « ce point est-il dans un voisin ? » */
+function ringGrid(data: CityData): Map<string, Pt[][]> {
+  const grid = new Map<string, Pt[][]>();
+  for (const b of data.buildings) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [x, y] of b.outer) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    for (let i = Math.floor(x0 / RING_CELL); i <= Math.floor(x1 / RING_CELL); i++)
+      for (let j = Math.floor(y0 / RING_CELL); j <= Math.floor(y1 / RING_CELL); j++) {
+        const k = `${i},${j}`;
+        const list = grid.get(k);
+        if (list) list.push(b.outer); else grid.set(k, [b.outer]);
+      }
+  }
+  return grid;
+}
+const nonIndexed = (g: THREE.BufferGeometry) => (g.index ? g.toNonIndexed() : g);
+
 function windowsMaterial(night: NightUniforms): THREE.MeshStandardMaterial {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, flatShading: true });
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = night.uNight;
     shader.uniforms.uLit = night.uLit;
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vWPos;\nvarying vec3 vWNormal;')
+      .replace('#include <common>', '#include <common>\nattribute float aStreet;\nattribute float aBase;\nvarying vec3 vWPos;\nvarying vec3 vWNormal;\nvarying float vStreet;\nvarying float vBase;')
       .replace(
         '#include <worldpos_vertex>',
-        '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWNormal = normalize(mat3(modelMatrix) * objectNormal);',
+        '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWNormal = normalize(mat3(modelMatrix) * objectNormal);\nvStreet = aStreet;\nvBase = aBase;',
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
@@ -243,19 +286,36 @@ function windowsMaterial(night: NightUniforms): THREE.MeshStandardMaterial {
         `#include <common>
         varying vec3 vWPos;
         varying vec3 vWNormal;
+        varying float vStreet;
+        varying float vBase;
         uniform float uNight;
         uniform float uLit;
         float hash21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }`,
       )
+      // Fenêtres (grille de 3 m × 3,2 m sur les murs) : verre sombre de jour (EP001-US009), allumées la nuit
+      // selon uLit ; portes au rez-de-chaussée des murs côté rue (vStreet), une case sur trois environ
+      .replace(
+        '#include <color_fragment>',
+        `#include <color_fragment>
+        float win = 0.0, door = 0.0;
+        vec2 cell = vec2(0.0);
+        if (abs(vWNormal.y) < 0.3) {
+          vec2 n = normalize(vWNormal.xz);
+          float u = dot(vWPos.xz, vec2(-n.y, n.x));        // position le long de la façade
+          cell = vec2(floor(u / 3.0), floor(vWPos.y / 3.2));
+          vec2 f = vec2(fract(u / 3.0), fract(vWPos.y / 3.2));
+          win = step(0.3, f.x) * step(f.x, 0.7) * step(0.35, f.y) * step(f.y, 0.78) * step(1.5, vWPos.y);
+          float h = vWPos.y - vBase;                      // hauteur au-dessus du pied du bâtiment
+          door = vStreet * step(hash21(vec2(floor(u / 3.0), floor(vBase))), 0.34) * step(0.32, f.x) * step(f.x, 0.68) * step(h, 2.3);
+          win *= 1.0 - step(h, 3.2) * vStreet * step(hash21(vec2(floor(u / 3.0), floor(vBase))), 0.34); // pas de fenêtre au-dessus d'une porte, au rez-de-chaussée
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.13, 0.16, 0.2), win * 0.85);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.3, 0.2, 0.14), door);
+        }`,
+      )
       .replace(
         '#include <emissivemap_fragment>',
         `#include <emissivemap_fragment>
-        if (uNight > 0.01 && abs(vWNormal.y) < 0.3) {
-          vec2 n = normalize(vWNormal.xz);
-          float u = dot(vWPos.xz, vec2(-n.y, n.x));        // position le long de la façade
-          vec2 cell = vec2(floor(u / 3.0), floor(vWPos.y / 3.2));
-          vec2 f = vec2(fract(u / 3.0), fract(vWPos.y / 3.2));
-          float win = step(0.3, f.x) * step(f.x, 0.7) * step(0.35, f.y) * step(f.y, 0.78) * step(1.5, vWPos.y);
+        if (uNight > 0.01 && win > 0.0) {
           float on = step(hash21(cell + floor(vWPos.xz * 0.02)), uLit);
           vec3 warm = mix(vec3(1.0, 0.72, 0.38), vec3(1.0, 0.86, 0.6), hash21(cell.yx));
           totalEmissiveRadiance += warm * win * on * uNight * 1.25;

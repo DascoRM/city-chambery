@@ -1,6 +1,6 @@
 # EP001 - US009 - Des fenêtres et des portes visibles de jour sur les bâtiments
 
-**Statut : 📝 à préciser avec Dasco** (remplace l'ancienne US009 « portes, balcons, climatiseurs et lucarnes » du pack, abandonnée avec le pack le 30/09/2026).
+**Statut : ✅ faite (itération 49)** · réponses de Dasco : **verre sombre, juste du verre pour commencer, portes côté rue** (remplace l'ancienne US009 « portes, balcons, climatiseurs et lucarnes » du pack, abandonnée avec le pack le 30/09/2026).
 
 ## User Story
 
@@ -51,4 +51,4 @@ Dasco préfère les bâtiments actuels (extrusions pastel) à ceux du pack modul
 ---
 
 **Priorité** : Medium
-**Status** : 📝 À préciser
+**Status** : ✅ Done (itération 49)

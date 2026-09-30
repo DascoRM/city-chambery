@@ -1,5 +1,19 @@
 # Journal des itérations
 
+## Itération 49 — 01/10/2026 (branche `feat/EP001-US009-fenetres-de-jour`, empilée sur `feat/EP001-US007-US008-batiments`)
+
+**Demande de Dasco (EP001-US009) :** fenêtres et portes visibles de jour ; « un verre sombre, juste du verre dans un premier temps, porte côté rue ».
+
+**Changements :**
+- `src/scene/city.ts`, shader des façades : la grille de fenêtres de la nuit (3 m × 3,2 m) est aussi dessinée **de jour, en verre sombre** (couleur du mur assombrie à 85 % vers un gris-bleu) ; la nuit, les fenêtres allumées restent aux mêmes endroits, les éteintes sont désormais en verre sombre au lieu de la couleur du mur ;
+- **portes** : panneau brun de 1,2 × 2,3 m au rez-de-chaussée, environ une case de 3 m sur trois, **seulement sur les murs côté rue** : attribut par face `aStreet` calculé au chargement (devant du mur à moins de 9 m d'une voie, et pas dans un bâtiment voisin : un mur mitoyen n'en a pas), plus `aBase` (pied du bâtiment) pour la hauteur ; pas de fenêtre au rez-de-chaussée au-dessus d'une porte ; pas de porte sur les parties de bâtiment qui ne touchent pas le sol ;
+- `src/scene/roads.ts` : `roadDistanceIndex` (distance à la voie la plus proche par grille), partagé avec les auvents (`facades.ts` n'a plus sa propre copie) ;
+- README, FEATURES, BACKLOG, spec.
+
+**Vérifié :** `npm run build` ; dans Chrome avec la carte graphique, à 14 h et 23 h (rue de Boigne, place Saint-Léger, théâtre) et au-dessus des 4 plus grandes places : fenêtres visibles de jour, nuit comme avant, portes visibles là où le pied des façades est dégagé ; 15 803 triangles de mur « côté rue » sur 117 579 ; **triangles et appels de rendu inchangés** (1,36 M, même maillage) ; aucune erreur console.
+
+**Non vérifié / limites :** dans les rues étroites, le pied des façades est presque toujours caché par l'immeuble d'en face (la caméra reste à au moins 30 m du sol) : **les portes se voient surtout sur les places et les grandes rues** ; images/s non mesurées avant / après (le travail est dans le shader, par pixel de mur) ; mémoire : deux valeurs de plus par sommet des bâtiments ; téléphone.
+
 ## Itération 48 — 30/09/2026 (branche `feat/EP001-US007-US008-batiments`)
 
 **Retour de Dasco :** « autant les auvents ça me va, autant les bâtiments non, je trouve que les autres sont mieux ; le seul truc c'est qu'ils n'ont pas de fenêtres et portes la journée. Supprime les obj buildings. »

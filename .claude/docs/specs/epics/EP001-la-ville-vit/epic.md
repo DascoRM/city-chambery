@@ -61,7 +61,7 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 | [US006](US006-drapeaux.md) | Des drapeaux qui flottent sur des mâts sourcés | Medium | 3 | décision sur les emplacements | 🔲 Todo |
 | [US007](US007-preparer-le-pack-batiments.md) | Préparer le pack de bâtiments (nom, licence, conversion) : réduit aux 2 pièces d'auvent | Medium | 3 | — | ✅ Done (itération 46) |
 | [US008](US008-auvents-des-lieux.md) | Des auvents devant les bars, cafés et restaurants | Medium | 5 | US007 | ✅ Done (itérations 46 et 48, validée par Dasco) |
-| [US009](US009-fenetres-et-portes-de-jour.md) | Des fenêtres et des portes visibles de jour sur les bâtiments (dans le shader, sans pack) | Medium | 3 | — | 📝 À préciser |
+| [US009](US009-fenetres-et-portes-de-jour.md) | Des fenêtres et des portes visibles de jour sur les bâtiments (dans le shader, sans pack) | Medium | 3 | — | ✅ Done (itération 49) |
 | [US010](US010-personnages-animes.md) | *(Option)* Des personnages animés près de la caméra | Low | — | US001, US002 | ⏸ Non planifiée |
 | [US011](US011-horaires-provisoires-des-bars.md) | Des horaires provisoires pour les bars, pubs et boîtes de nuit | High | 1 | — | ✅ Done (itération 46) |
 
