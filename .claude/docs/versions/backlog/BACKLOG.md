@@ -40,7 +40,12 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
   - `src/scene/quality.ts` : ne mesurer les images/s que pendant les mouvements, sinon il prend les 30 images/s pour de la lenteur et baisse la netteté ;
   - condition : aucune perte de qualité visible (netteté stable au repos, éléphants et gemmes fluides à l'œil) — à vérifier avec `?debug`
 - ✅ *itération 43* **TI-03 — three.js dans un fichier JS séparé** : appli 44,5 Ko gzip + three.js 171,6 Ko gzip ; une mise à jour de l'appli ne retélécharge plus que l'appli (mesuré : 44,5 Ko, estimé à 30). Réglage de découpage dans `vite.config.ts` — *petit*
-- ⬜ **EN-03 — Analyse : compression meshopt des modèles** : mesuré en test, 45 `.glb` de 442 → 197 Ko gzip (−55 %). À analyser avant de décider : la quantification ajoute une transformation au nœud (ignorée par `nature.ts`, qui ne garde que la géométrie) et le shader de marche de l'éléphant lit les positions des sommets ; décodeur à brancher sur les 3 chargeurs glTF. Livrable : essai sur un arbre et l'éléphant, comparaison visuelle, go / no go — *petit*
+- ✅ *itération 44* **EN-03 — Analyse : compression meshopt des modèles** → **GO**, voir [`tasks/en03-meshopt-analyse.md`](../../tasks/en03-meshopt-analyse.md) ; mise en œuvre = TI-04 ci-dessous. Énoncé d'origine : mesuré en test, 45 `.glb` de 442 → 197 Ko gzip (−55 %). À analyser avant de décider : la quantification ajoute une transformation au nœud (ignorée par `nature.ts`, qui ne garde que la géométrie) et le shader de marche de l'éléphant lit les positions des sommets ; décodeur à brancher sur les 3 chargeurs glTF. Livrable : essai sur un arbre et l'éléphant, comparaison visuelle, go / no go — *petit*
+- ⬜ **TI-04 — Compression meshopt des modèles** (suite d'EN-03, GO) — *petit* : modèles 442 → 194 Ko gzip (−247 Ko, à chaque déploiement puisque l'empreinte des données change), décodeur +7,3 Ko :
+  - `@gltf-transform/extensions` en devDependency (commiter `package-lock.json`) ;
+  - `convert-nature.mjs` et `convert-mascot.mjs` : `meshopt({ encoder: MeshoptEncoder, level: 'high' })` en dernière transformation, puis `npm run nature` et `npm run mascot` ;
+  - `src/scene/gltf.ts` : chargeur avec décodeur + `bakeToFloat` (positions remises en flottants et en mètres, sinon le shader de marche et `nature.ts` cassent), utilisé par `nature.ts`, `mascot.ts`, `models.ts` ;
+  - README (modèles, licences) ; vérifier : géométrie, parc, éléphant, nuit et hiver, iPhone si possible, mode hors-ligne — détail dans [`tasks/en03-meshopt-analyse.md`](../../tasks/en03-meshopt-analyse.md)
 
 ## P1 — Fiabiliser le POC
 - ⬜ Reprendre la position des 8 lieux (champ `pos` ou `osm.match` dans `src/content/pois.json`) — *Dasco*
