@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Escape, Herd, Elephant } from '../scene/mascot';
 import type { Particles } from '../scene/particles';
 import type { Pt } from '../types';
+import { screenRay } from '../scene/geo';
 
 /**
  * Mini-jeu « Ramène les éléphants à la fontaine » (itération 35).
@@ -68,7 +69,6 @@ function direction(a: Pt, b: Pt): string {
 export function createHunt(o: HuntOptions): Hunt {
   const { herd, camera } = o;
   const raycaster = new THREE.Raycaster();
-  const ndc = new THREE.Vector2();
   const tmp = new THREE.Vector3();
   let total = o.points;
   let restartIn = -1;
@@ -85,10 +85,7 @@ export function createHunt(o: HuntOptions): Hunt {
   });
 
   const pickElephant = (clientX: number, clientY: number): Elephant | null => {
-    const r = o.canvasRect();
-    ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
-    raycaster.setFromCamera(ndc, camera);
-    const hits = raycaster.intersectObjects(herd.elephants.filter((e) => e.group.visible).map((e) => e.hit), false);
+    const hits = screenRay(raycaster, camera, o.canvasRect(), clientX, clientY).intersectObjects(herd.elephants.filter((e) => e.group.visible).map((e) => e.hit), false);
     const id = hits[0]?.object.userData.elephant as number | undefined;
     return id === undefined ? null : herd.elephants[id];
   };

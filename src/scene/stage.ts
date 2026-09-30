@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import type { CityData } from '../types';
+import type { CityData, HeightFn } from '../types';
 
 /** Renderer, caméra, lumières et contrôles — la « scène de maquettiste ». */
-export function createStage(container: HTMLElement, bounds: CityData['bounds'], heightAt: (x: number, y: number) => number = () => 0) {
+export function createStage(container: HTMLElement, bounds: CityData['bounds'], heightAt: HeightFn = () => 0) {
   // Pas d'anticrénelage ici : l'image passe par l'effet maquette (tiltshift.ts), qui a sa propre
   // cible de rendu anticrénelée (samples: 4). Celui du renderer ne servirait qu'à la copie finale.
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });

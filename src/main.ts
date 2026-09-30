@@ -20,6 +20,7 @@ import { createClock } from './time/clock';
 import { createOpenStates, type OpenState } from './time/openinghours';
 import { placeCategory } from './scene/palette';
 import { installTwoFingerGestures } from './scene/touch';
+import { screenRay } from './scene/geo';
 import { createAdaptiveResolution } from './scene/quality';
 import { createPerfHud } from './ui/perfhud';
 import { dataUrl } from './dataurl';
@@ -256,16 +257,12 @@ async function main() {
 
   // --- Sélection à la souris / au doigt -----------------------------------
   const raycaster = new THREE.Raycaster();
-  const ndc = new THREE.Vector2();
   // Zones de clic fixes (une catégorie masquée passe à l'échelle 0) : liste calculée une seule fois
   const hitTargets = [...poiLayer.markers.map((m) => m.hit), ...placeLayer.root.children.filter((c) => c.userData.places)];
 
   type Hit = { poi: PlacedPoi } | { place: Place; index: number } | null;
   const pick = (clientX: number, clientY: number): Hit => {
-    const r = canvasRect;
-    ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
-    raycaster.setFromCamera(ndc, camera);
-    const hit = raycaster.intersectObjects(hitTargets, false)[0];
+    const hit = screenRay(raycaster, camera, canvasRect, clientX, clientY).intersectObjects(hitTargets, false)[0];
     if (!hit) return null;
     if (hit.object.userData.poiId) return { poi: pois.find((p) => p.id === hit.object.userData.poiId)! };
     const places = hit.object.userData.places as Place[] | undefined;
@@ -288,10 +285,7 @@ async function main() {
   // Double toucher : zoom vers l'endroit touché
   let lastTap: { t: number; x: number; y: number } | null = null;
   const zoomAtScreen = (clientX: number, clientY: number) => {
-    const r = canvasRect;
-    ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
-    raycaster.setFromCamera(ndc, camera);
-    const hit = raycaster.intersectObject(city.group, true)[0];
+    const hit = screenRay(raycaster, camera, canvasRect, clientX, clientY).intersectObject(city.group, true)[0];
     stage.zoomTo(hit ? hit.point : controls.target.clone()); // hors du socle : zoom sur le centre de la vue
   };
 

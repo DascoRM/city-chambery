@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { Pt } from '../../types';
+import { mesh } from './mesh';
+import type { HeightFn, Pt } from '../../types';
 
 /**
  * Château : clôture côté esplanade (itération 20).
@@ -31,7 +32,6 @@ const BAR_STEP = 0.16;
 
 const iron = new THREE.MeshStandardMaterial({ color: '#2a2a2e', roughness: 0.5, metalness: 0.6 });
 
-type Height = (x: number, y: number) => number;
 
 /** Intersection de deux segments (paramètre t sur le premier), ou null. */
 function intersect([a, b]: [Pt, Pt], [c, d]: [Pt, Pt]): number | null {
@@ -44,7 +44,7 @@ function intersect([a, b]: [Pt, Pt], [c, d]: [Pt, Pt]): number | null {
 }
 
 /** Ruban épais qui suit le sol le long d'un tracé (mur, lisse) : dessus + deux côtés + bouts. */
-function ribbon(path: Pt[], h: Height, bottom: number, top: number, half: number): THREE.BufferGeometry {
+function ribbon(path: Pt[], h: HeightFn, bottom: number, top: number, half: number): THREE.BufferGeometry {
   const pos: number[] = [];
   const quad = (a: number[], b: number[], c: number[], d: number[]) => pos.push(...a, ...b, ...c, ...a, ...c, ...d);
   for (let k = 0; k + 1 < path.length; k++) {
@@ -72,12 +72,6 @@ function ribbon(path: Pt[], h: Height, bottom: number, top: number, half: number
   return geo;
 }
 
-function mesh(geo: THREE.BufferGeometry, mat: THREE.Material): THREE.Mesh {
-  const m = new THREE.Mesh(geo, mat);
-  m.castShadow = m.receiveShadow = true;
-  return m;
-}
-
 /** Barreaux instanciés : [x, y, bas, haut] (hauteurs absolues). */
 function bars(list: [number, number, number, number][], size = 0.05): THREE.Group {
   const g = new THREE.Group();
@@ -94,7 +88,7 @@ function bars(list: [number, number, number, number][], size = 0.05): THREE.Grou
   return g;
 }
 
-export function buildGrille(h: Height, stone: THREE.Material, stoneDark: THREE.Material): THREE.Group {
+export function buildGrille(h: HeightFn, stone: THREE.Material, stoneDark: THREE.Material): THREE.Group {
   const g = new THREE.Group();
   g.name = 'chateau-grille';
 

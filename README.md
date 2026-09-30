@@ -365,6 +365,7 @@ scripts/
   bdtopo.mjs               Hauteurs IGN BD TOPO (téléchargement WFS + association aux bâtiments OSM)
   terrain.mjs              Relief RGE ALTI (ou interpolation BD TOPO)
   roofs.mjs                Choix du toit de chaque bâtiment
+  geo.mjs                  Géométrie 2D des scripts (point dans un polygone, distance à un segment)
   convert-nature.mjs       Pack nature : .obj → .glb (npm run nature)
   convert-mascot.mjs       Éléphant mascotte : mise à l'échelle et orientation (npm run mascot)
 
@@ -379,6 +380,9 @@ src/
   scene/touch.ts           Gestes tactiles à deux doigts (pincer, tourner, incliner)
   scene/terrain.ts         Relief : maillage du sol, altitude en tout point, bords du socle
   scene/city.ts            Rues, eau, bâtiments, arbres (posés sur le relief)
+  scene/geo.ts             Géométrie 2D commune + rayon depuis un point de l'écran (screenRay)
+  scene/roads.ts           Voies piétonnes et hauteur des rubans de voies (partagées)
+  scene/walkways.ts        Réseau des voies où l'on marche (éléphants, futurs passants)
   scene/roofs.ts           Dessin des toits
   scene/markers.ts         Gemmes des lieux + épingles 3D et halos des bars, cafés, restaurants
   scene/labels.ts          Noms des parcs et cours d'eau
@@ -391,8 +395,8 @@ src/
   dataurl.ts               Adresses des données avec leur version (?v=)
   scene/models.ts          Chargement et placement des monuments
   scene/nature.ts          Arbres modélisés dans les parcs
-  scene/mascot.ts          Mascotte : graphe des voies, promenade, marche dans le shader
-  scene/models/            Monuments générés en code + éclairage de nuit partagé
+  scene/mascot.ts          Mascotte : promenade sur le réseau des voies, marche dans le shader
+  scene/models/            Monuments générés en code + éclairage de nuit et mesh() partagés
   ui/ui.ts                 HUD, fiche, journal, toasts, contrôles
   state/progress.ts        Progression et préférences (localStorage)
   state/points.ts          Points du mini-jeu (localStorage)

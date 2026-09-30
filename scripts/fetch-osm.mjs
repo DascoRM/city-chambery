@@ -19,6 +19,7 @@ import { createRequire } from 'node:module';
 import { chooseRoof } from './roofs.mjs';
 import { loadBdTopo, applyBdTopo } from './bdtopo.mjs';
 import { loadTerrain } from './terrain.mjs';
+import { distToSegment, pointInRing } from './geo.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CONFIG = JSON.parse(await readFile(resolve(ROOT, 'diorama.config.json'), 'utf8'));
@@ -473,20 +474,6 @@ for (const poi of POIS) {
 // ---------------------------------------------------------------------------
 // 5 bis. Étiquettes : noms des parcs et des cours d'eau
 // ---------------------------------------------------------------------------
-function distToSegment(p, a, b) {
-  const dx = b[0] - a[0], dy = b[1] - a[1];
-  const l2 = dx * dx + dy * dy || 1;
-  const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2));
-  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
-}
-function insideRing(x, y, ring) {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i], [xj, yj] = ring[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-}
 /** Point intérieur le plus éloigné des bords (échantillonnage), pour poser l'étiquette. */
 function labelPoint(ring) {
   const xs = ring.map((p) => p[0]), ys = ring.map((p) => p[1]);
@@ -495,7 +482,7 @@ function labelPoint(ring) {
   const N = 16;
   for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
     const p = [x0 + ((x1 - x0) * i) / N, y0 + ((y1 - y0) * j) / N];
-    if (!insideRing(p[0], p[1], ring)) continue;
+    if (!pointInRing(p[0], p[1], ring)) continue;
     let d = Infinity;
     for (let k = 0; k < ring.length; k++) d = Math.min(d, distToSegment(p, ring[k], ring[(k + 1) % ring.length]));
     if (d > bestD) { bestD = d; best = p; }

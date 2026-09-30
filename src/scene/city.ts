@@ -4,7 +4,8 @@ import type { CityData, Poly, Pt } from '../types';
 import { PALETTE, rand } from './palette';
 import { planRoof, planSkeletonRoof, roofGeometry, skeletonRoofGeometry } from './roofs';
 import { buildGround, type Terrain } from './terrain';
-import { pointInRing } from './nature';
+import { pointInRing } from './geo';
+import { FOOT_KINDS, LIFT } from './roads';
 import type { Foliage } from '../time/seasons';
 
 /**
@@ -134,19 +135,17 @@ function glow<T extends THREE.Mesh | null>(mesh: T, amount: number): T {
 
 function buildFlat(data: CityData, waterMat: THREE.Material, terrain: Terrain): THREE.Group {
   const g = new THREE.Group();
-  const FOOT = new Set(['footway', 'path', 'steps', 'cycleway', 'track', 'pedestrian', 'living_street']);
   type Line = Extract<CityData['water'][number], { kind: 'line' }>;
   const waterLines = data.water.filter((w): w is Line => w.kind === 'line');
   const roads = data.roads.filter((r) => !r.bridge);
   const bridges = data.roads.filter((r) => r.bridge);
-  // Ordre vertical (au-dessus du sol en relief, où verts, places et plans d'eau sont peints) :
-  // chemins < rues < berges < eau < ponts
+  // Ordre vertical : voir LIFT (scene/roads.ts), partagé avec tout ce qui marche dans les rues
   const parts = [
-    glow(ribbons(roads.filter((r) => FOOT.has(r.kind)), 0.14, PALETTE.footway, terrain), 0.07),
-    glow(ribbons(roads.filter((r) => !FOOT.has(r.kind)), 0.18, PALETTE.street, terrain), 0.12),
-    ribbons(waterLines, 0.24, PALETTE.bank, terrain, 2.2),
-    ribbons(waterLines, 0.3, waterMat, terrain),
-    ribbons(bridges, 0.9, PALETTE.bridge, terrain, 0.6),
+    glow(ribbons(roads.filter((r) => FOOT_KINDS.has(r.kind)), LIFT.foot, PALETTE.footway, terrain), 0.07),
+    glow(ribbons(roads.filter((r) => !FOOT_KINDS.has(r.kind)), LIFT.street, PALETTE.street, terrain), 0.12),
+    ribbons(waterLines, LIFT.bank, PALETTE.bank, terrain, 2.2),
+    ribbons(waterLines, LIFT.water, waterMat, terrain),
+    ribbons(bridges, LIFT.bridge, PALETTE.bridge, terrain, 0.6),
   ];
   for (const p of parts) if (p) g.add(p);
   return g;

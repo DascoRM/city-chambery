@@ -13,6 +13,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { pointInRing } from './geo.mjs';
 
 const WFS = process.env.BDTOPO_WFS_URL ?? 'https://data.geopf.fr/wfs/ows';
 const LAYER = 'BDTOPO_V3:batiment';
@@ -69,15 +70,6 @@ function field(props, names) {
   return null;
 }
 
-function inside(x, y, ring) {
-  let r = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i], [xj, yj] = ring[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) r = !r;
-  }
-  return r;
-}
-
 /**
  * Associe chaque bâtiment OSM à un bâtiment BD TOPO et met à jour sa hauteur.
  * @param project (lat, lon) → [x, y] en mètres (même projection que le diorama)
@@ -130,7 +122,7 @@ export function applyBdTopo(fc, buildings, project) {
     const N = 6;
     for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
       const x = x0 + ((i + 0.5) / N) * (x1 - x0), y = y0 + ((j + 0.5) / N) * (y1 - y0);
-      if (inside(x, y, b.outer)) pts.push([x, y]);
+      if (pointInRing(x, y, b.outer)) pts.push([x, y]);
     }
     if (!pts.length) continue;
     const votes = new Map();
@@ -138,7 +130,7 @@ export function applyBdTopo(fc, buildings, project) {
       for (const idx of grid.get(key(Math.floor(x / CELL), Math.floor(y / CELL))) ?? []) {
         const it = items[idx];
         if (x < it.box[0] || x > it.box[2] || y < it.box[1] || y > it.box[3]) continue;
-        if (inside(x, y, it.ring)) votes.set(idx, (votes.get(idx) ?? 0) + 1);
+        if (pointInRing(x, y, it.ring)) votes.set(idx, (votes.get(idx) ?? 0) + 1);
       }
     }
     let best = -1, bestV = 0;

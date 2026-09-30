@@ -5,6 +5,7 @@
  */
 import * as THREE from 'three';
 import type { CityData, PlacedPoi, Pt } from '../types';
+import { screenRay } from '../scene/geo';
 
 interface Deps {
   root: HTMLElement;
@@ -179,13 +180,10 @@ export function installPlacementTool(d: Deps) {
 
   // --- Clic sur la carte
   const raycaster = new THREE.Raycaster();
-  const ndc = new THREE.Vector2();
   const ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const handleClick = (clientX: number, clientY: number): boolean => {
     if (!active) return false;
-    const r = d.canvas.getBoundingClientRect();
-    ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
-    raycaster.setFromCamera(ndc, d.camera);
+    screenRay(raycaster, d.camera, d.canvas.getBoundingClientRect(), clientX, clientY);
     const hit = raycaster.intersectObject(d.pickTargets, true)[0];
     const p = hit?.point ?? raycaster.ray.intersectPlane(ground, new THREE.Vector3());
     if (!p) return true;
