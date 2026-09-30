@@ -1,5 +1,18 @@
 # Journal des itérations
 
+## Organisation du suivi — 30/09/2026 (pas de code)
+
+**Demande de Dasco :** réorganiser `claude/` dans le `.claude/` initialisé depuis un template, remplir le contexte et le `CLAUDE.md` ; les agents viendront ensuite.
+
+**Changements :**
+- `claude/` déplacé (historique git conservé) : `FEATURES.md` et `CHANGELOG.md` → `.claude/docs/versions/`, `BACKLOG.md` → `.claude/docs/versions/backlog/`, `DECISIONS.md` → `.claude/docs/architecture/decisions/`, `PERF-AUDIT.md` → `.claude/docs/architecture/` ; liens internes corrigés ;
+- `claude/README.md` fondu dans `.claude/docs/context.md` (vision, utilisateurs, périmètre, stack, état, index des documents) ;
+- `CLAUDE.md` racine fondu dans `.claude/CLAUDE.md`, réécrit pour le projet : règles projet, workflow hybride (itération / epic), clôture d'itération, section sub-agents « à définir » (agents du template non utilisés), checklist avant commit ;
+- `.claude/docs/onboarding/getting-started.md` rempli avec les vraies commandes ;
+- `README.md` et `.dockerignore` pointent vers `.claude/`.
+
+**Non modifié :** `agents/` (les agents seront définis ensuite).
+
 ## Itération 37 — 30/09/2026
 
 **Retour de Dasco sur le jeu :** bien : on met du temps à les trouver, animations, retour à la fontaine et feu d'artifice final ; la limite à 380 m peut rester (les éloigner davantage lui plaisait aussi, à revoir plus tard). À revoir : la bulle ne reste pas assez longtemps pour lire le message ; la disparition au survol est pénible, le premier réflexe est de cliquer.

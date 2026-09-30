@@ -408,14 +408,13 @@ public/models/mascotte/    Éléphant mascotte converti (.glb)
 public/icons/              Icônes de l'appli (mode hors-ligne, écran d'accueil)
 assets-src/                Sources des modèles (pack Quaternius en .obj/.fbx), pas servies par le site
 data/raw/                  Caches des téléchargements (non versionnés)
-claude/                    Suivi du projet : fonctionnalités, backlog, journal, décisions
-CLAUDE.md                  Consignes pour Claude quand il travaille sur le projet
+.claude/                   Consignes pour Claude (CLAUDE.md) et suivi du projet (docs/)
 ```
 
 Choix techniques : **Three.js** plutôt qu'une librairie de cartographie (rendu diorama plus
 simple à maîtriser en scène 3D pure) ; **pas de backend** : tout est statique, hébergeable
 n'importe où (Coolify sur le Pi, Netlify, GitHub Pages…) avec `npm run build`.
-Le détail des choix est dans [`claude/DECISIONS.md`](claude/DECISIONS.md).
+Le détail des choix est dans [`.claude/docs/architecture/decisions/DECISIONS.md`](.claude/docs/architecture/decisions/DECISIONS.md).
 
 ---
 
@@ -444,7 +443,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 | `deploy/nginx.conf` | Compression gzip ; cache 1 an pour `assets/` et pour les données appelées avec `?v=` ; `index.html`, `sw.js` et le manifeste revérifiés à chaque visite (réponse 304 s'ils n'ont pas changé) |
 | `docker-compose.yml` | Un service `web` (conteneur `city-chambery`) ; nginx écoute sur le port 80 du conteneur, publié sur le port **3000** de l'hôte (`'3000:80'`) ; argument `REFRESH_DATA` |
 | `deploy/refresh-data.sh` | Au build, si `REFRESH_DATA=true` : `npm run data` + `npm run nature`, avec retour aux données du dépôt en cas d'échec ou de données incomplètes |
-| `.dockerignore` | Exclut `node_modules`, `data/raw`, `claude/`, les `.fbx` du pack nature… (garde les `.obj` pour `npm run nature`) : contexte de build d'environ 4 Mo |
+| `.dockerignore` | Exclut `node_modules`, `data/raw`, `.claude/`, les `.fbx` du pack nature… (garde les `.obj` pour `npm run nature`) : contexte de build d'environ 4 Mo |
 
 **Cache et mode hors-ligne :**
 
@@ -507,11 +506,15 @@ dans Coolify, ou `docker compose build --no-cache`).
 
 ## Suivi du projet
 
-Le dossier [`claude/`](claude/README.md) sert de mémoire au projet :
+Le dossier [`.claude/docs/`](.claude/docs/context.md) sert de mémoire au projet (point d'entrée : [`context.md`](.claude/docs/context.md)) :
 
 | Fichier | Contenu |
 |---|---|
-| [FEATURES.md](claude/FEATURES.md) | Fonctionnalités livrées et leur état |
-| [BACKLOG.md](claude/BACKLOG.md) | Ce qui reste à faire, par priorité |
-| [CHANGELOG.md](claude/CHANGELOG.md) | Journal des itérations et des retours |
-| [DECISIONS.md](claude/DECISIONS.md) | Choix techniques et produit, avec leur justification |
+| [FEATURES.md](.claude/docs/versions/FEATURES.md) | Fonctionnalités livrées et leur état |
+| [BACKLOG.md](.claude/docs/versions/backlog/BACKLOG.md) | Ce qui reste à faire, par priorité |
+| [CHANGELOG.md](.claude/docs/versions/CHANGELOG.md) | Journal des itérations et des retours |
+| [DECISIONS.md](.claude/docs/architecture/decisions/DECISIONS.md) | Choix techniques et produit, avec leur justification |
+| [PERF-AUDIT.md](.claude/docs/architecture/PERF-AUDIT.md) | Audit de fluidité |
+| [specs/epics/](.claude/docs/specs/) | Specs des gros chantiers |
+
+Les consignes pour Claude sont dans [`.claude/CLAUDE.md`](.claude/CLAUDE.md).

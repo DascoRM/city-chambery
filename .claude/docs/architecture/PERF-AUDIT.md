@@ -1,7 +1,7 @@
 # Audit de fluidité — 29/09/2026
 
 Passe sur tout le projet pour trouver ce qui coûte à chaque image. Les tickets qui en découlent
-sont dans [BACKLOG.md](BACKLOG.md), section **P1 — Fluidité**.
+sont dans [BACKLOG.md](../versions/backlog/BACKLOG.md), section **P1 — Fluidité**.
 
 ## Méthode et limites
 
