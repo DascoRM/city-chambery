@@ -454,7 +454,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 
 **Cache et mode hors-ligne :**
 
-- **Code :** les fichiers `assets/` ont une empreinte dans leur nom ; nginx les garde en cache 1 an.
+- **Code :** les fichiers `assets/` ont une empreinte dans leur nom ; nginx les garde en cache 1 an. three.js est dans son propre fichier (`three-….js`, réglage `codeSplitting` de `vite.config.ts`) : une mise à jour de l'appli ne change que `index-….js` (≈ 45 Ko gzip), three.js (≈ 172 Ko gzip) reste en cache tant que la version de la librairie ne change pas.
 - **Données et modèles :** ils sont chargés avec la version des données dans l'adresse (`city.json?v=…`, empreinte calculée au build par `vite.config.ts`), donc gardés en cache 1 an, et rechargés dès que les données changent.
 - **Hors-ligne (PWA) :** un service worker garde le site, les données et les modèles (≈ 2,4 Mo) dès la première visite. La carte s'ouvre ensuite sans réseau et peut s'installer sur l'écran d'accueil. Quand une nouvelle version est publiée, un bandeau propose « Mettre à jour ».
 - **HTTPS obligatoire** pour le hors-ligne : le service worker ne fonctionne qu'en HTTPS (domaine Coolify) ou sur localhost, pas sur `http://<ip-du-pi>:3000`. Il n'existe pas non plus en `npm run dev` ; pour le tester en local, lancer `npm run build && npm run preview`.

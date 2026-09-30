@@ -82,6 +82,15 @@ function poiPlacementApi(): Plugin {
 }
 
 export default defineConfig({
+  build: {
+    rolldownOptions: {
+      output: {
+        // three.js (≈ 90 % du poids du code) dans son propre fichier : il ne change qu'avec la version de
+        // la librairie, donc une mise à jour de l'appli ne le fait pas retélécharger (nom à empreinte, cache 1 an)
+        codeSplitting: { groups: [{ name: 'three', test: /node_modules[\\/]three[\\/]/ }] },
+      },
+    },
+  },
   define: { __DATA_VERSION__: JSON.stringify(dataVersion()) },
   plugins: [
     poiPlacementApi(),

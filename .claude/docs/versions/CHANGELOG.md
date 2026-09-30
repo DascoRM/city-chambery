@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 43 — 30/09/2026 (branche `feat/TI-03-three-separe`)
+
+**Demande de Dasco :** TI-03 pour finaliser le P1 (three.js dans un fichier JS séparé).
+
+**Changements (aucun changement visible) :**
+- `vite.config.ts` : `build.rolldownOptions.output.codeSplitting` met three.js dans son propre fichier (`three-<empreinte>.js`) ; l'appli garde son fichier `index-<empreinte>.js` ;
+- avant : un seul fichier de 789 Ko (216 Ko gzip) ; après : appli 111 Ko (44,5 Ko gzip) + three.js 678 Ko (171,6 Ko gzip), soit 216,1 Ko gzip au total : le premier chargement ne change pas ;
+- après une mise à jour de l'appli, seuls les 44,5 Ko gzip de l'appli changent (l'audit estimait ≈ 30 Ko) ; three.js garde son nom et reste en cache (nginx et Vercel : `assets/` en cache 1 an) ;
+- l'avertissement « fichier de plus de 500 Ko » de Vite disparaît ;
+- README : cache.
+
+**Vérifié :** `npm run build` ; après une vraie modification du code de l'appli, `index-…js` change de nom et `three-Eow9QVYq.js` reste identique ; `index.html` précharge le fichier three (`modulepreload`) ; sur le build de production (`vite preview`), dans Chrome avec la puce graphique : la carte s'affiche avec et sans `?debug`, les 3 fichiers JS sont servis (200), compteur et panneau des éléphants présents avec `?debug`, aucune erreur de l'appli.
+
+**Non vérifié :** le gain réel après une mise à jour sur un vrai serveur (nginx, Coolify, en-têtes de cache) ; le service worker (bloqué dans le test) : il devrait ne retélécharger que le fichier de l'appli, un fichier à empreinte inchangée étant gardé tel quel ; le temps de chargement (deux fichiers en parallèle au lieu d'un, non mesuré).
+
 ## Itération 42 — 30/09/2026 (branche `feat/TI-02-cadence-repos`)
 
 **Demande de Dasco :** attaquer TI-02 (30 images/s au repos, pleine vitesse pendant les mouvements).
