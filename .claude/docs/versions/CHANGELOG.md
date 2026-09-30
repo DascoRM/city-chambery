@@ -1,5 +1,22 @@
 # Journal des itérations
 
+## Itération 45 — 30/09/2026 (branche `docs/EP001-la-ville-vit`, pas de code applicatif)
+
+**Demande de Dasco :** regarder la spec de « la ville vit » ; choix : silhouettes simples d'abord, fenêtres, oiseaux, fumée et drapeaux (pas de voitures), décor sans interaction, et intégrer le pack de bâtiments (en détails de façade).
+
+**Changements :** documents seulement : `specs/epics/EP001-la-ville-vit/` (`epic.md` et `US001` à `US010`), BACKLOG (section P2 renvoyée vers l'epic), DECISIONS.
+
+**À retenir de la spec :**
+- 9 user stories (34 points, ≈ 6 à 8 sessions), US010 en option ; budget de fluidité de l'epic : au plus +25 appels de rendu et +0,5 M de triangles, tout en instances ; les animations lentes (passants, pigeons, fumée, drapeaux) ne forcent pas la pleine vitesse (TI-02) ;
+- **constat sur les données** : seuls 10 bars sur 25, 3 pubs sur 7 et aucune des 4 boîtes de nuit ont des horaires OSM (63 lieux sur 169 sans horaires, 2 illisibles) : « du monde devant les bars ouverts » ne suffirait pas ; proposition : groupes aussi devant les bars sans horaires, entre 21 h et 2 h, à poids réduit, déclarés décor (Q7) ;
+- **constat sur le pack** : pièces Kenney colorées par une texture de palette (pas par des couleurs de matériau) : `convert-nature.mjs` ne suffit pas (US007) ; licence à confirmer (aucun fichier de licence dans le dossier) ;
+- OpenStreetMap n'est pas interrogé pour les mâts de drapeaux ni les cheminées : les drapeaux dépendent d'une décision de Dasco (Q4), les cheminées sont du décor déclaré ;
+- `uLit` (part de fenêtres allumées) ne dépend aujourd'hui que du soleil : une courbe horaire suffit pour US003.
+
+**Vérifié :** nombres de lieux, horaires, voies et espaces lus dans `city.json` ; existence des pièces Kenney citées ; format et taille de la palette (512 × 512) ; valeurs de `uLit`, `OpenState` et saisons lues dans le code.
+
+**Non vérifié :** la licence du pack Kenney ; l'échelle réelle des pièces (une unité ≈ un étage, à mesurer) ; le coût des passants et des détails (budgets à confirmer par la mesure) ; la taille de la plus grande partie connexe du réseau piéton sans les grandes rues (à mesurer en US001).
+
 ## Itération 44 — 30/09/2026 (branche `feat/EN-03-analyse-meshopt`, pas de code applicatif)
 
 **Demande de Dasco :** EN-03, analyse de la compression meshopt des modèles (go / no go).
