@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 30/09/2026 — itération 42.
+État au 30/09/2026 — itération 43.
 
 ## Carte / diorama
 
@@ -55,6 +55,7 @@
 | Web desktop + mobile | ✅ | Fiche en tiroir bas sur mobile |
 | Pipeline de données `npm run data` | ✅ | Overpass → projection → découpage → choix des toits → `public/data/city.json` (1,2 Mo, 360 Ko compressé) ; mode `--offline` |
 | Cadence adaptée | ✅ | Itération 42 : 30 images/s quand rien ne bouge, pleine vitesse pendant les mouvements (caméra, souris, lecture ▶, mini-jeu) ; la résolution adaptative ne mesure que les images en mouvement ; mode affiché par `?debug` |
+| Code découpé (appli / three.js) | ✅ | Itération 43 : three.js dans son propre fichier (171,6 Ko gzip), l'appli à part (44,5 Ko gzip) ; une mise à jour ne retélécharge que l'appli |
 | Attribution OSM (ODbL) | ✅ | |
 | Déploiement | ⬜ | Cible : Coolify sur le Pi |
 

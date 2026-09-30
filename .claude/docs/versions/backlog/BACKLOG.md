@@ -39,7 +39,7 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
   - chaque module de la boucle (`Ticker`, itération 40) dit s'il bouge (reporté d'EN-02) ;
   - `src/scene/quality.ts` : ne mesurer les images/s que pendant les mouvements, sinon il prend les 30 images/s pour de la lenteur et baisse la netteté ;
   - condition : aucune perte de qualité visible (netteté stable au repos, éléphants et gemmes fluides à l'œil) — à vérifier avec `?debug`
-- ⬜ **TI-03 — three.js dans un fichier JS séparé** : aujourd'hui un seul fichier de 789 Ko (216 Ko gzip) ; une mise à jour de l'appli ferait retélécharger ≈ 30 Ko au lieu de 216 (estimé). Réglage de découpage dans `vite.config.ts` — *petit*
+- ✅ *itération 43* **TI-03 — three.js dans un fichier JS séparé** : appli 44,5 Ko gzip + three.js 171,6 Ko gzip ; une mise à jour de l'appli ne retélécharge plus que l'appli (mesuré : 44,5 Ko, estimé à 30). Réglage de découpage dans `vite.config.ts` — *petit*
 - ⬜ **EN-03 — Analyse : compression meshopt des modèles** : mesuré en test, 45 `.glb` de 442 → 197 Ko gzip (−55 %). À analyser avant de décider : la quantification ajoute une transformation au nœud (ignorée par `nature.ts`, qui ne garde que la géométrie) et le shader de marche de l'éléphant lit les positions des sommets ; décodeur à brancher sur les 3 chargeurs glTF. Livrable : essai sur un arbre et l'éléphant, comparaison visuelle, go / no go — *petit*
 
 ## P1 — Fiabiliser le POC
