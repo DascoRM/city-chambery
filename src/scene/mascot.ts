@@ -45,13 +45,51 @@ export interface MascotConfig {
   /** Durée de marche entre deux pauses, et durée des pauses (s) : [min, max] */
   walkSeconds: [number, number];
   pauseSeconds: [number, number];
+  /** Mini-jeu « Attrape l'éléphant » (itération 34) */
+  game: {
+    /** Distance (m) à laquelle la souris le fait fuir */
+    fleeRadius: number;
+    fleeSpeed: number;
+    /** Sprint après un clic raté, en m/s, pendant boostSeconds */
+    boostSpeed: number;
+    boostSeconds: number;
+    /** Temps sans menace avant qu'il se calme */
+    calmSeconds: number;
+    /** Temps pendant lequel il reste coincé avant de forcer le passage */
+    cornerSeconds: number;
+    /**
+     * Coincé si la meilleure issue d'un carrefour ne s'éloigne pas assez de la menace :
+     * produit scalaire entre la direction de la voie et la direction opposée à la menace (−1 à 1).
+     * −0,3 : toutes les issues repartent vers la souris (cul-de-sac, bout de carte, coin fermé).
+     */
+    cornerScore: number;
+    points: number;
+  };
 }
+
+/** calm : promenade · flee : fuit la souris · cornered : coincé, il rebondit · caught : attrapé */
+export type MascotMode = 'calm' | 'flee' | 'cornered' | 'caught';
 
 export interface Mascot {
   group: THREE.Group;
+  /** Zone de clic (invisible), pour le lancer de rayon */
+  hit: THREE.Object3D;
   update(dt: number, t: number): void;
+  /**
+   * Position de la menace (souris ou doigt) en mètres, null si elle a quitté la carte.
+   * click = tentative de clic : s'il n'est pas coincé, il sprinte.
+   */
+  setThreat(p: Pt | null, click?: boolean): void;
+  /** Tentative de capture : réussit seulement s'il est coincé (renvoie true), sinon il sprinte. */
+  tryCatch(): boolean;
   /** Position actuelle [x, y] en mètres (coordonnées OSM projetées) */
   position(): Pt;
+  mode(): MascotMode;
+  /** Altitude actuelle (Three.js y) */
+  height(): number;
+  time(): number;
+  /** État interne (tests) */
+  debug(): { from: number; to: number; s: number; len: number; mode: MascotMode; deg: number };
 }
 
 /** Hauteur des rubans de voies au-dessus du relief (mêmes valeurs que buildFlat, scene/city.ts) */
@@ -250,15 +288,49 @@ export async function buildMascot(cfg: MascotConfig, data: CityData, heightAt: (
   shadow.scale.multiplyScalar(cfg.scale);
   group.add(shadow);
 
-  // --- Promenade ------------------------------------------------------------
+  // Zone de clic plus large que l'éléphant (plus facile à attraper), invisible
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(7, 5.5, 4.5), new THREE.MeshBasicMaterial({ visible: false }));
+  hit.position.set(1, 2.4, 0);
+  hit.scale.multiplyScalar(cfg.scale);
+  hit.name = 'mascot-hit';
+  group.add(hit);
+
+  const G = cfg.game;
+  // --- État ------------------------------------------------------------------
   let edge = pickNext(-1, from);
   let s = 0; // distance parcourue sur le segment courant
+  let mode: MascotMode = 'calm';
   let walking = true;
   let timer = rnd(cfg.walkSeconds);
   let heading = Math.atan2(g.y[edge.to] - g.y[from], g.x[edge.to] - g.x[from]);
   let y = NaN;
   let amp = 0;
+  let speed = cfg.speed;
+  let threat: Pt | null = null;
+  let calmIn = 0; // fuite : temps restant avant de se calmer
+  let boostIn = 0; // clic raté : sprint
+  let reverseCooldown = 0;
+  let modeT = 0; // temps passé dans le mode courant
+  let lastT = 0;
   const pos: Pt = [g.x[from], g.y[from]];
+
+  const setMode = (m: MascotMode) => {
+    mode = m;
+    modeT = 0;
+  };
+  const dirOf = (a: number, e: Edge): [number, number] => {
+    const dx = g.x[e.to] - g.x[a], dy = g.y[e.to] - g.y[a];
+    const l = Math.hypot(dx, dy) || 1;
+    return [dx / l, dy / l];
+  };
+  /** Direction opposée à la menace (unitaire), depuis la position actuelle */
+  const away = (): [number, number] => {
+    if (!threat) return [0, 0];
+    const dx = pos[0] - threat[0], dy = pos[1] - threat[1];
+    const l = Math.hypot(dx, dy) || 1;
+    return [dx / l, dy / l];
+  };
+  const threatDist = () => (threat ? Math.hypot(pos[0] - threat[0], pos[1] - threat[1]) : Infinity);
 
   function pickNext(prev: number, at: number): Edge {
     const opts = g.adj[at].filter((e) => main.has(e.to));
@@ -282,34 +354,171 @@ export async function buildMascot(cfg: MascotConfig, data: CityData, heightAt: (
     return list[list.length - 1];
   }
 
+  /**
+   * En fuite : la voie qui s'éloigne le plus de la menace (un peu de hasard pour ne pas être prévisible).
+   * Renvoie null si toutes les voies ramènent vers la menace : l'éléphant est coincé.
+   */
+  function pickFlee(at: number): Edge | null {
+    const [ax, ay] = away();
+    let best: Edge | null = null, bestScore = -Infinity;
+    for (const e of g.adj[at]) {
+      if (!main.has(e.to)) continue;
+      const [dx, dy] = dirOf(at, e);
+      const score = dx * ax + dy * ay + Math.random() * 0.15;
+      if (score > bestScore) { bestScore = score; best = e; }
+    }
+    return bestScore < G.cornerScore && threatDist() < G.fleeRadius * 1.5 ? null : best;
+  }
+
+  /** Demi-tour sur place : on repart vers le nœud d'où l'on vient. */
+  function reverse() {
+    const back = g.adj[edge.to].find((e) => e.to === from);
+    if (!back) return;
+    const len = edge.len;
+    from = edge.to;
+    edge = back;
+    s = Math.max(0, len - s);
+  }
+
+  function setThreat(p: Pt | null, click = false) {
+    if (mode === 'caught') return;
+    threat = p;
+    if (!p) return;
+    const d = threatDist();
+    if (d < G.fleeRadius) {
+      if (mode === 'calm') setMode('flee');
+      if (mode === 'flee') calmIn = G.calmSeconds;
+      // Clic à côté de lui (ou sur lui sans l'avoir coincé) : il sprinte
+      if (click && mode === 'flee') boostIn = G.boostSeconds;
+    }
+  }
+
+  let respawnAt = -1;
+  function tryCatch(): boolean {
+    if (mode !== 'cornered') {
+      setThreat(threat ?? pos.slice() as Pt, true);
+      return false;
+    }
+    setMode('caught');
+    threat = null;
+    return true;
+  }
+
+  function bounceAt(t: number) {
+    // Rebond « coincé » : petits sauts avec écrasement à l'atterrissage
+    const hop = Math.abs(Math.sin(t * 9));
+    body.position.y = hop * 0.9 * cfg.scale;
+    const squash = 1 - (1 - hop) * 0.18;
+    body.scale.set(cfg.scale * (2 - squash), cfg.scale * squash, cfg.scale * (2 - squash));
+  }
+
   function update(dt: number, t: number) {
     uniforms.uTime.value = t;
-    timer -= dt;
-    if (timer <= 0) {
-      walking = !walking;
-      timer = rnd(walking ? cfg.walkSeconds : cfg.pauseSeconds);
+    lastT = t;
+    modeT += dt;
+    reverseCooldown -= dt;
+    boostIn -= dt;
+    body.position.y = 0;
+    body.scale.setScalar(cfg.scale);
+    body.rotation.set(0, 0, 0);
+    group.visible = true;
+
+    let targetAmp = 1;
+    // Souris immobile sur son chemin : il la voit en arrivant
+    if (mode === 'calm' && threatDist() < G.fleeRadius) { setMode('flee'); calmIn = G.calmSeconds; }
+    if (mode === 'calm') {
+      timer -= dt;
+      if (timer <= 0) {
+        walking = !walking;
+        timer = rnd(walking ? cfg.walkSeconds : cfg.pauseSeconds);
+      }
+      targetAmp = walking ? 1 : 0;
+      speed += (cfg.speed - speed) * Math.min(1, dt * 2);
+    } else if (mode === 'flee') {
+      calmIn -= dt;
+      if (threatDist() < G.fleeRadius) calmIn = G.calmSeconds;
+      if (calmIn <= 0) { setMode('calm'); walking = true; timer = rnd(cfg.walkSeconds); }
+      const want = boostIn > 0 ? G.boostSpeed : G.fleeSpeed;
+      speed += (want - speed) * Math.min(1, dt * 4);
+      // La menace est devant lui sur la voie : demi-tour immédiat
+      if (threat && reverseCooldown <= 0 && threatDist() < G.fleeRadius) {
+        const [dx, dy] = dirOf(from, edge);
+        const [ax, ay] = away();
+        if (dx * ax + dy * ay < -0.35) { reverse(); reverseCooldown = 0.5; }
+      }
+    } else if (mode === 'cornered') {
+      targetAmp = 0;
+      speed = 0;
+      bounceAt(t);
+      // Menace partie, ou trop lent à cliquer : il force le passage et repart en sprint
+      if (modeT > G.cornerSeconds || threatDist() > G.fleeRadius * 1.8) {
+        setMode('flee');
+        calmIn = G.calmSeconds;
+        boostIn = G.boostSeconds;
+        const e = g.adj[from].filter((q) => main.has(q.to));
+        edge = e[Math.floor(Math.random() * e.length)] ?? edge;
+        s = 0;
+        threat = null;
+      }
+    } else if (mode === 'caught') {
+      // Célébration : grand saut en tournant, puis il disparaît et revient à la fontaine
+      targetAmp = 0;
+      speed = 0;
+      const k = modeT / 1.4;
+      if (k < 1) {
+        body.position.y = Math.sin(k * Math.PI) * 4 * cfg.scale;
+        body.rotation.y = k * Math.PI * 2;
+        const sc = cfg.scale * (k < 0.75 ? 1 : 1 - (k - 0.75) / 0.25);
+        body.scale.setScalar(Math.max(0.01, sc));
+      } else {
+        group.visible = false;
+        if (respawnAt < 0) respawnAt = t + 1.2;
+        if (t >= respawnAt) {
+          respawnAt = -1;
+          from = startNode;
+          edge = pickNext(-1, from);
+          s = 0;
+          y = NaN;
+          setMode('calm');
+          walking = false;
+          timer = 1.5;
+        }
+      }
     }
+
     // Démarrage et arrêt en douceur
-    amp += ((walking ? 1 : 0) - amp) * Math.min(1, dt * 3);
-    const step = cfg.speed * amp * dt;
+    amp += (targetAmp - amp) * Math.min(1, dt * (mode === 'flee' ? 8 : 3));
+    const step = speed * amp * dt;
     s += step;
     while (s >= edge.len) {
       s -= edge.len;
       const prev = from;
       from = edge.to;
-      edge = pickNext(prev, from);
+      if (mode === 'flee') {
+        const next = pickFlee(from);
+        if (!next) {
+          // Coincé au nœud : toutes les issues passent par la menace
+          s = 0;
+          setMode('cornered');
+          break;
+        }
+        edge = next;
+      } else edge = pickNext(prev, from);
     }
-    const k = edge.len > 0 ? s / edge.len : 0;
+    const k = edge.len > 0 ? Math.min(1, s / edge.len) : 0;
     pos[0] = g.x[from] + (g.x[edge.to] - g.x[from]) * k;
     pos[1] = g.y[from] + (g.y[edge.to] - g.y[from]) * k;
-    uniforms.uPhase.value = (uniforms.uPhase.value + step / (cfg.stride * cfg.scale)) % 1;
+    // Au galop, les pas sont plus longs
+    const stride = cfg.stride * cfg.scale * (mode === 'flee' ? 1.8 : 1);
+    uniforms.uPhase.value = (uniforms.uPhase.value + step / stride) % 1;
     uniforms.uAmp.value = amp;
 
-    // Cap lissé (la position, elle, reste exactement sur la voie)
-    const target = Math.atan2(g.y[edge.to] - g.y[from], g.x[edge.to] - g.x[from]);
+    // Cap lissé (la position, elle, reste exactement sur la voie). Coincé : il fait face à la menace
+    let target = Math.atan2(g.y[edge.to] - g.y[from], g.x[edge.to] - g.x[from]);
+    if (mode === 'cornered' && threat) target = Math.atan2(threat[1] - pos[1], threat[0] - pos[0]);
     let d = target - heading;
     d = Math.atan2(Math.sin(d), Math.cos(d));
-    heading += d * Math.min(1, dt * 4);
+    heading += d * Math.min(1, dt * (mode === 'flee' ? 10 : 4));
     // Altitude lissée : pas de saut à l'entrée d'un pont
     const ty = heightAt(pos[0], pos[1]) + edge.lift;
     y = Number.isNaN(y) ? ty : y + (ty - y) * Math.min(1, dt * 6);
@@ -319,6 +528,14 @@ export async function buildMascot(cfg: MascotConfig, data: CityData, heightAt: (
     group.rotation.y = heading;
   }
 
+  const startNode = from;
   update(0, 0);
-  return { group, update, position: () => [pos[0], pos[1]] };
+  return {
+    group, hit, update, setThreat, tryCatch,
+    position: () => [pos[0], pos[1]],
+    mode: () => mode,
+    height: () => y,
+    time: () => lastT,
+    debug: () => ({ from, to: edge.to, s: +s.toFixed(2), len: +edge.len.toFixed(2), mode, deg: g.adj[from].length }),
+  };
 }

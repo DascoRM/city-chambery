@@ -25,6 +25,8 @@ import { dataUrl } from './dataurl';
 import { setupPwa } from './pwa';
 import { createUi, showFatal } from './ui/ui';
 import { loadDiscovered, resetDiscovered, saveDiscovered } from './state/progress';
+import { loadPoints, savePoints } from './state/points';
+import { createCatchGame, type CatchGame } from './game/catch';
 
 const app = document.getElementById('app')!;
 
@@ -156,6 +158,32 @@ async function main() {
     }
   });
 
+  // --- Mini-jeu « Attrape l'éléphant » (itération 34) -------------------------
+  let points = loadPoints();
+  ui.setPoints(points);
+  let fleeHint = false;
+  let cornerHints = 0;
+  const game: CatchGame | null = mascot
+    ? createCatchGame({
+        mascot, camera, canvas: renderer.domElement, points, gain: mascotContent.game.points,
+        onScore: (total, gained) => {
+          points = total;
+          savePoints(points);
+          ui.setPoints(points, gained);
+          ui.flash(`🐘 Attrapé ! +${gained} points`);
+        },
+        onMode: (m) => {
+          if (m === 'flee' && !fleeHint) {
+            fleeHint = true;
+            ui.flash('🐘 Il s\'enfuit ! Pousse-le dans un cul-de-sac pour l\'attraper');
+          } else if (m === 'cornered' && cornerHints < 3) {
+            cornerHints++;
+            ui.flash('🐘 Coincé ! Clique vite sur lui');
+          }
+        },
+      })
+    : null;
+
   const syncFound = () => {
     poiLayer.markers.forEach((m) => m.setFound(discovered.has(m.poi.id)));
     ui.setFound(discovered);
@@ -251,6 +279,8 @@ async function main() {
       lastTap = { t: now, x: e.clientX, y: e.clientY };
     }
     if (placement?.handleClick(e.clientX, e.clientY)) return;
+    if (game?.click(e.clientX, e.clientY)) { ui.showTooltip(null); return; }
+    if (e.pointerType === 'touch') game?.touch(e.clientX, e.clientY);
     const h = pick(e.clientX, e.clientY);
     if (h && 'poi' in h) { closePlace(); openPoi(h.poi.id); }
     else if (h && 'place' in h) openPlace(h.index, true); // clic ou toucher : la fiche reste ouverte
@@ -261,6 +291,7 @@ async function main() {
     if (e.pointerType === 'mouse') hoverQueued = e;
   });
   renderer.domElement.addEventListener('pointerleave', () => {
+    game?.pointerLeave();
     ui.showTooltip(null);
     if (!ui.placeCardState().pinned && ui.placeCardState().place) closePlace();
   });
@@ -270,6 +301,12 @@ async function main() {
     const e = hoverQueued;
     hoverQueued = null;
     if (placement?.isActive()) return ui.showTooltip(null);
+    // L'éléphant d'abord : survolé, il fuit (ou, coincé, attend le clic)
+    if (game?.pointerMove(e.clientX, e.clientY)) {
+      renderer.domElement.style.cursor = 'pointer';
+      ui.showTooltip(mascot?.mode() === 'cornered' ? '🐘 Attrape-le !' : null, e.clientX, e.clientY);
+      return;
+    }
     const h = pick(e.clientX, e.clientY);
     renderer.domElement.style.cursor = h ? 'pointer' : 'grab';
     if (h && 'poi' in h) ui.showTooltip(discovered.has(h.poi.id) ? h.poi.title : '✦ Lieu mystère', e.clientX, e.clientY);
@@ -299,6 +336,7 @@ async function main() {
     placeLayer.animate(timer.getElapsed());
     city.update(timer.getElapsed());
     mascot?.update(dt, timer.getElapsed());
+    game?.update(dt);
     clock.update(dt);
     labels.update(camera);
     hover();
@@ -310,7 +348,7 @@ async function main() {
   });
 
   // Accès debug depuis la console : window.diorama
-  Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, clock, mascot } });
+  Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, clock, mascot, game } });
 }
 
 main();

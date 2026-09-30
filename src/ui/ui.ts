@@ -59,6 +59,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
         <div class="bar"><span></span></div>
         <p class="count"></p>
       </div>
+      <p class="points" title="Points gagnés en attrapant l'éléphant" aria-live="polite">🐘 <b>0</b> <span>points</span></p>
     </header>
 
     <nav class="tools">
@@ -285,6 +286,17 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     setFound, showPoi, flash, showTooltip, setClock, hidePanel: () => (panel.hidden = true),
     showPlaceCard, hidePlaceCard, movePlaceCard, setPlaceStatus,
     placeCardState: () => ({ place: shownPlace, pinned }),
+    /** Compteur de points (mini-jeu de l'éléphant) ; gained > 0 : petite animation */
+    setPoints: (n: number, gained = 0) => {
+      const el = $<HTMLElement>('.points');
+      el.querySelector('b')!.textContent = String(n);
+      el.querySelector('span')!.textContent = n > 1 ? 'points' : 'point';
+      if (gained > 0) {
+        el.classList.remove('pop');
+        void el.offsetWidth; // relance l'animation
+        el.classList.add('pop');
+      }
+    },
     /** Oriente l'aiguille de la boussole (cap en degrés, 0 = nord en haut). */
     setHeading: (deg: number) => {
       const v = `rotate(${deg.toFixed(1)}deg)`;
