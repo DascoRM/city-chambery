@@ -370,7 +370,8 @@ scripts/
   convert-mascot.mjs       Éléphant mascotte : mise à l'échelle et orientation (npm run mascot)
 
 src/
-  main.ts                  Assemblage : scène, calques, interactions, boucle de rendu
+  main.ts                  Assemblage : scène, calques, fiches, boucle de rendu (liste de modules)
+  interaction.ts           Clic, survol, double toucher, gestes à deux doigts
   types.ts                 Types des données (city.json, lieux, monuments)
   content/pois.json        Fiches d'histoire
   content/models.json      Monuments modélisés
@@ -402,6 +403,7 @@ src/
   state/points.ts          Points du mini-jeu (localStorage)
   state/herd.ts            Éléphants ramenés sur la fontaine (localStorage)
   game/hunt.ts             Mini-jeu « Ramène les éléphants » : cache-cache, bulle, retour, score
+  game/setup.ts            Mise en place du mini-jeu : sauvegarde, places sur la fontaine, particules
   scene/particles.ts       Fumée, étincelles, feux d'artifice
   dev/placement.ts         Outil de placement (chargé seulement en dev)
 
