@@ -3,6 +3,7 @@ import './style.css';
 import poisContent from './content/pois.json';
 import modelsContent from './content/models.json';
 import natureContent from './content/nature.json';
+import mascotContent from './content/mascot.json';
 import type { CityData, Place, Poi, PlacedPoi } from './types';
 import { createStage } from './scene/stage';
 import { buildCity } from './scene/city';
@@ -13,6 +14,7 @@ import { createTiltShift } from './scene/tiltshift';
 import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildNature, type NatureConfig } from './scene/nature';
+import { buildMascot, type Mascot, type MascotConfig } from './scene/mascot';
 import { createClock } from './time/clock';
 import { createOpenStates, type OpenState } from './time/openinghours';
 import { placeCategory } from './scene/palette';
@@ -75,6 +77,14 @@ async function main() {
   }
   // Monuments modélisés (formes simples en code ou fichiers glTF)
   scene.add(await buildModels(models, pois, { night: city.night.uNight, data, heightAt: terrain.heightAt, minUnder: terrain.minUnder }));
+  // Mascotte : un éléphant qui se promène sur les rues et chemins (src/content/mascot.json)
+  let mascot: Mascot | null = null;
+  try {
+    mascot = await buildMascot(mascotContent as unknown as MascotConfig, data, terrain.heightAt);
+    if (mascot) scene.add(mascot.group);
+  } catch (e) {
+    console.warn('[mascotte] non chargée', e);
+  }
   const labels = await buildLabels(data.labels ?? [], terrain.heightAt);
   // Effet maquette : les étiquettes passent par-dessus le flou pour rester lisibles
   const tiltShift = createTiltShift(renderer, scene, camera, labels.root);
@@ -92,7 +102,8 @@ async function main() {
 
   let discovered = loadDiscovered();
   let placeIdx: number | null = null; // fiche de lieu ouverte
-  const ui = createUi(app, pois, data.attribution, {
+  // Modèle de la mascotte sous licence CC BY 3.0 : crédit obligatoire, affiché avec les autres
+  const ui = createUi(app, pois, `${data.attribution} · Éléphant : jeremy (Poly Pizza), CC BY 3.0`, {
     onJournalPick: (id) => openPoi(id),
     onToggleCategory: (cat, v) => {
       placeLayer.setCategoryVisible(cat, v);
@@ -287,6 +298,7 @@ async function main() {
     poiLayer.animate(timer.getElapsed());
     placeLayer.animate(timer.getElapsed());
     city.update(timer.getElapsed());
+    mascot?.update(dt, timer.getElapsed());
     clock.update(dt);
     labels.update(camera);
     hover();
@@ -298,7 +310,7 @@ async function main() {
   });
 
   // Accès debug depuis la console : window.diorama
-  Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, clock } });
+  Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, clock, mascot } });
 }
 
 main();

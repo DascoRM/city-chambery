@@ -1,0 +1,15 @@
+{
+  "note": "Mascotte (itération 33). Modèle : « Elephant » par jeremy, Poly Pizza, CC BY 3.0 (attribution obligatoire). Converti par npm run mascot. L'éléphant ne marche que sur les routes et chemins OSM (graphe des voies), jamais à travers les bâtiments ou les parcs.",
+  "model": "models/mascotte/elephant.glb",
+  "start": "elephants",
+  "scale": 1,
+  "speed": 1.4,
+  "stride": 1.2,
+  "excludeKinds": ["steps"],
+  "preferKinds": { "pedestrian": 2, "living_street": 2, "footway": 1.5 },
+  "clearance": 2.2,
+  "avoid": [{ "anchor": "elephants", "radius": 11, "note": "Bassin de la fontaine (6,45 m × 1,3) + demi-largeur de l'éléphant" }],
+  "roamRadius": 380,
+  "walkSeconds": [20, 45],
+  "pauseSeconds": [4, 8]
+}
