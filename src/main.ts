@@ -4,6 +4,7 @@ import poisContent from './content/pois.json';
 import modelsContent from './content/models.json';
 import natureContent from './content/nature.json';
 import mascotContent from './content/mascot.json';
+import placeHours from './content/place-hours.json';
 import type { CityData, Poi, PlacedPoi, Ticker } from './types';
 import { createStage } from './scene/stage';
 import { buildCity } from './scene/city';
@@ -145,7 +146,11 @@ async function main() {
   }, { day: start.day, hour: start.hour });
 
   // La nuit, seuls les lieux ouverts à l'heure choisie restent allumés (horaires OSM opening_hours)
+  // Fiche : seulement les vraies horaires. Éclairage (et plus tard les groupes de passants) : les vraies, à défaut
+  // les horaires PROVISOIRES (fictifs) de src/content/place-hours.json, jamais affichés aux visiteurs
+  const provisional = (placeHours as { hours: Record<string, string> }).hours;
   const openStatesAt = createOpenStates(data.places.map((p) => p.hours));
+  const litStatesAt = createOpenStates(data.places.map((p) => p.hours ?? provisional[p.id]));
   let openStates: OpenState[] = [];
   let openKey = '';
 
@@ -156,7 +161,7 @@ async function main() {
     if (key !== openKey) {
       openKey = key;
       openStates = openStatesAt(c.day, c.hour);
-      placeLayer.setClosed(openStates.map((s) => s === 'closed'));
+      placeLayer.setClosed(litStatesAt(c.day, c.hour).map((s) => s === 'closed'));
       if (placeIdx !== null) ui.setPlaceStatus(openStates[placeIdx]);
     }
     if (c.foliage !== foliage) {

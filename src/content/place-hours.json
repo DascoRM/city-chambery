@@ -1,0 +1,28 @@
+{
+  "note": "Horaires PROVISOIRES (fictifs) des bars, pubs et boîtes de nuit sans horaires dans OpenStreetMap (US011, EP001). Ils servent seulement à l'éclairage de nuit et, plus tard, aux groupes de passants : ils ne sont jamais affichés aux visiteurs. Format OSM opening_hours. Les vrais horaires de city.json passent avant ; à remplacer par les données du projet bar / restau de Dasco (voir le backlog).",
+  "hours": {
+    "node/302637193": "Mo-Sa 17:00-01:00",
+    "node/308729262": "Mo-Su 16:00-01:00",
+    "node/442339881": "Tu-Su 18:00-02:00",
+    "node/641490773": "Mo-Su 16:00-01:00",
+    "node/1251303694": "Mo-Su 16:00-00:00",
+    "node/1522668318": "Mo-Sa 17:00-01:00",
+    "node/1756275760": "Tu-Su 18:00-02:00",
+    "node/2457495970": "Th-Sa 23:00-05:00",
+    "node/2596955173": "Mo-Su 16:00-00:00",
+    "node/2597427064": "Mo-Su 16:00-01:00",
+    "node/2598279301": "Mo-Sa 17:00-01:00",
+    "node/2598405601": "Tu-Su 18:00-02:00",
+    "node/2912488727": "Mo-Su 16:00-00:00",
+    "node/2954645396": "Mo-Sa 17:00-01:00",
+    "node/3026642096": "Th-Sa 23:00-05:00",
+    "node/3026642097": "Th-Sa 23:00-05:00",
+    "node/3026642098": "Tu-Su 18:00-02:00",
+    "node/3125077958": "Th-Sa 23:00-05:00",
+    "node/3354839756": "Mo-Su 16:00-00:00",
+    "node/4455493030": "Mo-Sa 17:00-01:00",
+    "node/4645719630": "Mo-Su 16:00-01:00",
+    "node/5469348199": "Tu-Su 18:00-02:00",
+    "node/9723318754": "Mo-Su 16:00-00:00"
+  }
+}
