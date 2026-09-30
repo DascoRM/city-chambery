@@ -84,6 +84,7 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ⬜ Mini-jeu : régler après de vrais essais (distance de réapparition, nombre de fuites, points)
 - ⬜ Mini-jeu : aide pour les trouver (flèche au bord de l'écran, ou bouton « où sont les éléphants ? ») — pour les joueurs ; le mode debug `?debug` (itération 36) montre déjà où ils sont
 - ⬜ Mini-jeu : points selon la rapidité (idée écartée pour la v1)
+- ⬜ Mini-jeu : distance des réapparitions (aujourd'hui ≤ 380 m de la fontaine) — Dasco aimait aussi quand ils partaient loin, à revoir
 - ⬜ Points : à quoi les dépenser (bâtiments débloqués, décorations…) — *Dasco*
 - Mode histoire qui fait visiter la ville
 

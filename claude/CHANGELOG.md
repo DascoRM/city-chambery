@@ -1,5 +1,18 @@
 # Journal des itérations
 
+## Itération 37 — 30/09/2026
+
+**Retour de Dasco sur le jeu :** bien : on met du temps à les trouver, animations, retour à la fontaine et feu d'artifice final ; la limite à 380 m peut rester (les éloigner davantage lui plaisait aussi, à revoir plus tard). À revoir : la bulle ne reste pas assez longtemps pour lire le message ; la disparition au survol est pénible, le premier réflexe est de cliquer.
+
+**Changements :**
+- survol : l'éléphant sursaute (petit bond) et trotte à 3,5 m/s pendant 3 s, pas plus ; c'est le **clic** (ou le toucher) qui le fait disparaître ;
+- bulle affichée 6 s au lieu de 3,2 s ;
+- réglages dans `mascot.json` → `game` : `bubbleSeconds`, `startleSpeed`, `startleSeconds`.
+
+**Vérifié :** vraie souris : survol → il reste visible et repart ; clic → nuage et bulle, encore affichée 8 s plus tard dans le navigateur de test (plus lent que le temps réel).
+
+**Non vérifié :** la vitesse de trot ressentie avec une vraie souris.
+
 ## Itération 36 — 30/09/2026
 
 **Retour de Dasco :** impossible de trouver le dernier éléphant (bug ou pas ?), un « artefact » sur le 3e (capture : éléphant épuisé collé contre une façade) ; demande un mode debug pour les retrouver.

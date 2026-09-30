@@ -115,7 +115,7 @@ source et dénivelé du relief, types de toits, et quels lieux d'histoire ont é
 | Découvrir un lieu | clic sur une gemme ✦ | toucher une gemme |
 | Voir un bar / café / restaurant | survoler son épingle (la fiche s'affiche à côté) ; clic = la fiche reste ouverte | toucher l'épingle |
 | Fermer une fiche | Échap, ✕ ou clic dans le vide | ✕ ou toucher dans le vide |
-| Ramener un éléphant à la fontaine | le survoler le fait disparaître (il réapparaît plus loin) ; épuisé (étoiles), clic pour le ramener | le toucher le fait disparaître ; épuisé, le toucher pour le ramener |
+| Ramener un éléphant à la fontaine | le survoler le fait trotter plus vite ; clic = il disparaît et réapparaît plus loin ; épuisé (étoiles), clic pour le ramener | le toucher le fait disparaître ; épuisé, le toucher pour le ramener |
 
 Zoom maximum : 70 m du point visé (120 m avant). De près, la caméra reste à au moins 30 m au-dessus du sol pour ne pas entrer dans les toits ni dans les collines. Gestes à deux doigts : `src/scene/touch.ts` ; réglages de la caméra : `src/scene/stage.ts`.
 
@@ -302,8 +302,10 @@ Quatre éléphants se promènent dans le diorama, **uniquement sur les rues et c
 Les quatre éléphants de la fontaine se sont échappés : au départ, la fontaine n'a plus ses éléphants,
 et quatre éléphants se promènent dans les rues (entre 80 et 300 m de la fontaine, `game.startDistance`).
 
-- **Cache-cache** : survoler un éléphant à la souris (ou le toucher) le fait disparaître dans un nuage.
-  Une bulle le fait narguer (`game.taunts`) et donne un indice : la rue OSM où il réapparaît
+- **Sursaut** : la souris sur un éléphant le fait sursauter et trotter plus vite (`startleSpeed`, 3,5 m/s,
+  pendant `startleSeconds`) : il faut le rattraper pour cliquer.
+- **Cache-cache** : cliquer sur un éléphant (ou le toucher) le fait disparaître dans un nuage.
+  Une bulle le fait narguer (`game.taunts`, affichée `bubbleSeconds`, 6 s) et donne un indice : la rue OSM où il réapparaît
   (« Je file vers la rue de Boigne »), ou la direction si la voie n'a pas de nom. Il réapparaît de 100
   à 250 m plus loin (`respawnDistance`), toujours à moins de `roamRadius` (380 m) de la fontaine et sur un
   endroit dégagé : façade à plus de `openSpace` (4,5 m), pour qu'il ne rentre pas dans un mur en s'asseyant.
