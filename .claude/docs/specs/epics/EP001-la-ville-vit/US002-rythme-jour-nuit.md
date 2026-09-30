@@ -13,11 +13,11 @@
 - [ ] **Given** la carte à 12 h, **When** je la compare à 3 h, **Then** il y a nettement plus de passants à 12 h (densité = part du maximum donnée par la courbe de `life.json`)
 - [ ] **Given** la carte à 23 h et un bar ouvert d'après ses horaires OSM, **When** je zoome devant lui, **Then** un petit groupe (2 à 5 silhouettes) se tient devant l'entrée
 - [ ] **Given** le même bar à 4 h, fermé d'après ses horaires OSM, **When** je zoome devant lui, **Then** il n'y a aucun groupe
-- [ ] **Given** un bar, un pub ou une boîte de nuit sans horaires OSM, **When** il est 23 h, **Then** il peut avoir un groupe, avec un poids réduit de moitié (Q7 de l'epic)
-- [ ] **Given** un restaurant sans horaires OSM, **When** il est 23 h, **Then** il n'a pas de groupe
+- [ ] **Given** une boîte de nuit aux horaires provisoires (jeudi au samedi, 23 h à 5 h : US011), **When** il est 1 h un vendredi, **Then** un groupe se tient devant l'entrée
+- [ ] **Given** un restaurant ou un café sans horaires, **When** il est 23 h, **Then** il n'a pas de groupe
 - [ ] **Given** la lecture ▶ d'une journée en 2 minutes, **When** l'heure avance, **Then** la foule grossit et s'éclaircit progressivement, sans passant qui apparaît ou disparaît à l'écran (les arrivées et départs se font hors champ de la caméra)
 - [ ] **Given** un groupe devant un lieu, **When** l'heure du curseur passe à celle de sa fermeture, **Then** le groupe s'éloigne à pied sur le réseau puis disparaît hors champ
-- [ ] **Given** la légende avec « Bars » décochée, **When** il est 23 h, **Then** les groupes des bars restent (la légende ne concerne que les épingles et les halos) — *Q8 de l'epic, à confirmer par Dasco*
+- [ ] **Given** la légende avec « Bars » décochée, **When** il est 23 h, **Then** les groupes devant les bars, pubs et boîtes de nuit disparaissent avec leurs épingles ; ils reviennent quand je recoche (Q8 : Dasco jugera si c'est bien)
 
 ---
 
@@ -27,12 +27,13 @@
 |-------|-------------|
 | R1 | **Heure** : celle de l'horloge du diorama (`clock.state().hour`, heure de Chambéry), y compris en lecture ▶ et avec le curseur |
 | R2 | **Courbe de densité** dans `life.json` (`people.dayCurve`), interpolée entre les points. Proposition de départ : 0–5 h 5 % · 7 h 40 % · 8 h 80 % · 9 h 60 % · 12 h 100 % · 14 h 60 % · 17 h 90 % · 19 h 50 % · 22 h 25 % · 24 h 5 % (à régler à l'œil) |
-| R3 | **Lieux éligibles** : `bar`, `pub`, `nightclub` (poids 1), `restaurant` (0,5), `cafe` (0,3) ; `ice_cream` jamais. Plage `people.groups` : de 20 h à 3 h, au plus `max` groupes (12 sur ordinateur, ×`mobileFactor` sur mobile) |
-| R4 | **État d'ouverture** : `OpenState` de `src/time/openinghours.ts`. `open` → éligible. `closed` → jamais de groupe. `unknown` → éligible seulement pour `bar`, `pub`, `nightclub`, entre 21 h et 2 h, poids ×0,5 (décor : à déclarer dans « Limites connues ») |
+| R3 | **Lieux éligibles** : catégorie « bar » de la légende (`bar`, `pub`, `nightclub`, poids 1), `restaurant` (0,5), `cafe` (0,3) ; `ice_cream` jamais. Plage `people.groups` : de 20 h à 3 h, au plus `max` groupes (12 sur ordinateur, ×`mobileFactor` sur mobile) |
+| R4 | **État d'ouverture** : `OpenState` de `src/time/openinghours.ts`. `open` → éligible ; `closed` ou `unknown` → jamais de groupe. Tous les bars, pubs et boîtes de nuit ont des horaires (OSM, ou **provisoires** dans `src/content/place-hours.json`, US011) : plus de cas « horaire inconnu » pour eux. Restaurants et cafés sans horaires : pas de groupe |
 | R5 | **Choix des lieux** : parmi les lieux éligibles, tirage pondéré stable (même lieu, même groupe à la même heure) ; priorité aux lieux près de la caméra (comme la foule d'US001, R6) |
 | R6 | **Emplacement du groupe** : sur le réseau des passants, au point le plus proche de l'épingle du lieu, entre 1,5 et 3 m de la façade ; silhouettes tournées vers le lieu, petits balancements au lieu de la marche |
 | R7 | **Arrivées et départs hors champ** : un passant n'apparaît ni ne disparaît dans le champ de la caméra ; il naît ou meurt sur un nœud hors écran, ou se dissout à plus de `radius` m |
 | R8 | Les groupes ne sont pas cliquables et ne changent pas l'éclairage des lieux (halos de nuit inchangés) |
+| R9 | Les groupes sont **liés à la catégorie de leur lieu** : `setCategoryVisible` (légende) les masque avec les épingles (Q8) ; les passants qui marchent dans les rues ne sont pas concernés |
 
 ---
 
@@ -54,7 +55,7 @@
 |-----|---------------------|
 | Curseur d'heure tiré vite | Les naissances et morts sont étalées (quelques secondes), pas de bond de la foule |
 | Aucun lieu éligible ouvert à cette heure | Pas de groupe, seulement la foule des rues |
-| Lieu avec horaires illisibles (2 cas sur 106) | Traité comme `unknown` |
+| Lieu avec horaires illisibles (2 cas sur 106) | Traité comme `unknown` : pas de groupe |
 | Jours fériés et vacances | Ignorés, comme pour l'éclairage des lieux (limite connue du backlog) |
 | Bar sans voie proche | Pas de groupe (on ne place pas au hasard) |
 

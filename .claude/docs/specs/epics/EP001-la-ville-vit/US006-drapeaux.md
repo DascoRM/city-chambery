@@ -10,8 +10,9 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** un mât défini dans `life.json` (position sourcée, hauteur, motif), **When** je zoome dessus, **Then** un drapeau flotte, avec des ondulations qui se propagent du mât vers le bord libre
-- [ ] **Given** la carte sans aucun mât défini, **When** je regarde la ville, **Then** il n'y a aucun drapeau (rien n'est placé par défaut)
+- [ ] **Given** le château, **When** je zoome sur lui, **Then** un drapeau de la Savoie (croix blanche sur fond rouge) flotte sur son mât, avec des ondulations qui se propagent du mât vers le bord libre
+- [ ] **Given** l'hôtel de ville, **When** je zoome sur lui, **Then** un drapeau flotte aussi sur son mât
+- [ ] **Given** n'importe quel autre bâtiment de la carte, **When** je le regarde, **Then** il n'a pas de drapeau : **seuls le château et l'hôtel de ville en ont** (Q4)
 - [ ] **Given** deux drapeaux proches, **When** je les regarde, **Then** ils ondulent avec des décalages différents, dans le même sens de vent
 - [ ] **Given** la carte de nuit, **When** je regarde un drapeau, **Then** il est sombre comme le reste (pas de lueur, sauf si le monument est éclairé par le bas)
 - [ ] **Given** la carte au repos, **When** les drapeaux ondulent, **Then** le compteur `?debug` affiche « repos (30 max) »
@@ -23,9 +24,9 @@
 
 | Règle | Description |
 |-------|-------------|
-| R1 | **Rien d'inventé** : chaque mât a une **source** (un élément OpenStreetMap `man_made=flagpole`, ou une position placée par Dasco avec l'outil de placement, valeur `pos` copiée), et un motif choisi par Dasco. Aucun mât « pour faire joli » |
-| R2 | **Point de départ** : notre extrait OSM ne contient aucun mât car la requête actuelle ne les demande pas. Première tâche : ajouter `man_made=flagpole` à la requête (`scripts/fetch-osm.mjs`), relancer `npm run data` (avec réseau), regarder ce qu'OSM contient dans l'emprise, et le montrer à Dasco. Si OSM n'a rien de satisfaisant, Dasco place les mâts (Q4 de l'epic) |
-| R3 | **Dans `city.json`** : si la requête change, les mâts arrivent par le script de données (`npm run data -- --offline` ensuite ; `city.json` jamais modifié à la main, règles 2 et 3 du projet). Sinon, les mâts sont dans `life.json` : `{ id, pos, height, design, note }` |
+| R1 | **Deux mâts seulement : le château et l'hôtel de ville** (décision de Dasco, Q4). Chacun a une **source** : le château, l'ancrage OSM `chateau` de `city.json` ; l'hôtel de ville, son bâtiment OSM (à identifier par son nom, comme `osm.match` des lieux) ou, à défaut, une position placée par Dasco avec l'outil de placement (valeur `pos`). Aucun mât « pour faire joli » |
+| R2 | **Motif de la Savoie** : croix blanche sur fond rouge, dessinée en code sur un canevas ; **montré à Dasco avant de finir** (il dit si c'est le bon dessin). Le même motif pour l'hôtel de ville sauf avis contraire |
+| R3 | **Dans `life.json`** : `flags: [{ id, anchor ou pos, height, design }]`. Pas de changement du script de données ni de `city.json` |
 | R4 | **Formes** : un mât (cylindre fin) et un plan subdivisé (8 × 4 segments) dont les sommets ondulent dans le shader ; motifs simples dessinés en code sur un canevas (bandes de couleur, croix), aucun asset tiers |
 | R5 | **Vent** : une direction unique dans `life.json` (`wind`), force variable lentement ; le drapeau s'oriente dans le sens du vent, quelle que soit la position de la caméra |
 | R6 | Décor : pas d'ombre projetée par le tissu (il bouge) ; le mât peut en projeter une si la carte des ombres est recalculée |
@@ -49,18 +50,18 @@
 
 | Cas | Comportement attendu |
 |-----|---------------------|
-| Mât sur un bâtiment caché par un monument modélisé | La hauteur se lit sur le relief et le monument : vérifier que le mât ne traverse pas le toit |
+| Mât du château, bâtiment remplacé par un monument modélisé | La hauteur se lit sur le relief et le monument : vérifier que le mât ne traverse pas le toit |
 | Mât posé sur un point hors du socle | Ignoré avec un avertissement console |
 | Motif inconnu | Drapeau blanc et avertissement console |
-| Nombreux mâts (> 20) | Un seul maillage instancié par motif |
+| Autres mâts demandés plus tard | Un seul maillage instancié par motif |
 
 ---
 
 ## Dépendances et existant réutilisé
-Outil de placement (`src/dev/placement.ts`) pour relever les positions ; `fetch-osm.mjs` ; `terrain.heightAt` ; liste `tickers`. **Dépend d'une décision de Dasco** (emplacements et motifs, Q4).
+Ancrage `chateau` de `city.json` ; outil de placement (`src/dev/placement.ts`) si l'hôtel de ville n'a pas de position ; `terrain.heightAt` ; liste `tickers`. Décision de Dasco prise (Q4).
 
 ## Vérification
-Un drapeau de chaque motif de près et de loin ; aucune erreur console si `flags` est vide ; `?debug` avant / après ; si la requête Overpass change : `npm run data`, puis `npm run data -- --offline`.
+Le drapeau du château et celui de l'hôtel de ville de près et de loin ; motif de la Savoie montré à Dasco ; aucune erreur console si `flags` est vide ; `?debug` avant / après.
 
 ---
 
@@ -75,9 +76,9 @@ Un drapeau de chaque motif de près et de loin ; aucune erreur console si `flags
 
 ## Checklist dev
 
-- [ ] Décision de Dasco sur les emplacements et les motifs
-- [ ] Code implémenté (`src/scene/flags.ts`, `life.json`, éventuellement `fetch-osm.mjs`)
-- [ ] `npm run build` passe ; `city.json` régénéré si le script change
+- [ ] Motif de la Savoie validé par Dasco
+- [ ] Code implémenté (`src/scene/flags.ts`, `life.json`)
+- [ ] `npm run build` passe
 - [ ] README et clôture d'itération ; sources des mâts notées
 - [ ] Validé par Dasco
 

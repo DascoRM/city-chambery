@@ -27,7 +27,7 @@
 | R1 | **Façade** : pour chaque lieu dont l'épingle est dans un bâtiment (161 lieux sur 169, `buildPlaceMarkers`), on retient l'arête du contour du bâtiment la plus proche de la voie la plus proche, dans un rayon de `maxStreetDistance` (20 m), puis le point de cette arête le plus proche du lieu. L'auvent est orienté vers l'extérieur du bâtiment |
 | R2 | **Les 8 lieux hors bâtiment** n'ont pas d'auvent |
 | R3 | **Dimensions** : largeur entre 2 et 4 m selon la longueur de la façade (jamais plus de la moitié de l'arête), hauteur du rez-de-chaussée ≈ 3 m (réglable) ; les bâtiments sont posés sur le point le plus bas du terrain sous leur emprise (voir README, Limites : sur une pente, l'amont est enterré) : lire le sol au pied de la façade |
-| R4 | **Couleur** : celle de la catégorie du lieu (Q5 de l'epic), appliquée à la pièce `details.glb` de l'auvent par couleur d'instance ; les rayures éventuelles de la pièce sont gardées en clair |
+| R4 | **Couleur** : celle de la catégorie du lieu (Q5 de l'epic : on juge au rendu, puis on ajuste), appliquée à la pièce `details.glb` de l'auvent par couleur d'instance ; les rayures éventuelles de la pièce sont gardées en clair |
 | R5 | **Visibilité** : liée à `setCategoryVisible` de `PlaceLayer` (`src/scene/markers.ts`) : l'auvent d'une catégorie masquée est masqué ; l'API de `PlaceLayer` est étendue pour cela |
 | R6 | **Instancié** : un maillage par pièce d'auvent (1 à 3 modèles différents choisis par hachage de l'identifiant du lieu) ; aucune ombre projetée par l'auvent au-delà de la carte des ombres existante |
 | R7 | **Décor** : l'auvent ne prétend pas reproduire le vrai commerce (règle 2 de l'epic) ; à déclarer dans « Limites connues » |

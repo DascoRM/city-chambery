@@ -2,7 +2,7 @@
 
 ## User Story
 
-**En tant que** visiteur qui regarde la ville par temps froid,
+**En tant que** visiteur qui regarde la ville hors de l'été,
 **je veux** voir de petits panaches de fumée monter de quelques toits,
 **afin de** sentir la saison et la vie des maisons.
 
@@ -10,9 +10,9 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** la saison d'hiver et l'heure de 18 h, **When** je zoome sur un toit à cheminée, **Then** un panache de fumée monte et dérive doucement avec le vent
+- [ ] **Given** la saison d'hiver, **When** je zoome sur un toit à cheminée, **Then** un panache de fumée monte et dérive doucement avec le vent, à n'importe quelle heure
 - [ ] **Given** la saison d'été (puce saison ou date du navigateur), **When** je regarde les mêmes toits, **Then** les cheminées sont visibles mais sans fumée
-- [ ] **Given** la saison d'automne, **When** je regarde la fumée, **Then** elle est moins dense qu'en hiver
+- [ ] **Given** le printemps ou l'automne, **When** je regarde la fumée, **Then** elle est moins dense qu'en hiver
 - [ ] **Given** la caméra loin de ces toits (au-delà de `smoke.distance`), **When** je regarde la carte, **Then** les panaches ne sont ni simulés ni dessinés
 - [ ] **Given** la carte au repos avec de la fumée visible, **When** je regarde le compteur `?debug`, **Then** il affiche toujours « repos (30 max) » (la fumée ne force pas la pleine vitesse)
 - [ ] **Given** le mini-jeu, **When** un éléphant s'échappe dans un nuage, **Then** son nuage et les panaches de cheminée ne se gênent pas (réserves de particules séparées)
@@ -25,7 +25,7 @@
 | Règle | Description |
 |-------|-------------|
 | R1 | **Décor, pas un relevé** : OpenStreetMap ne donne pas les cheminées (la requête actuelle ne demande pas `man_made=chimney`, et il n'y en aurait pas pour toutes les maisons). Les cheminées sont posées au hasard stable (hachage de l'identifiant OSM) sur des toits en pente ; à déclarer dans « Limites connues » |
-| R2 | **Quand** : saisons `autumn` et `winter` de l'horloge (`clock.state().current`), valeur `smoke.seasons` de `life.json` ; plus dense en hiver, et le matin et le soir. Q3 de l'epic décide si l'été et le printemps en ont aussi. Les petites cheminées (boîtes) sont dessinées toute l'année |
+| R2 | **Quand** : selon la **saison seulement** de l'horloge (`clock.state().current`), densité de `smoke.density` dans `life.json` : printemps 0,4, **été 0 (pas de fumée)**, automne 0,7, hiver 1. **Aucune règle d'heure** (décision de Dasco, Q3 : pas de complication pour peu de chose). Les petites cheminées (boîtes) sont dessinées toute l'année |
 | R3 | **Combien** : `smoke.chimneys` (30) toits équipés, dont seuls ceux à moins de `smoke.distance` m de la caméra émettent |
 | R4 | **Particules** : le système existant `createParticles` (`src/scene/particles.ts`), dans **un pool à part** de celui du jeu (les 400 fumées du jeu ne sont pas partagées) ; fumée grise claire qui grossit et monte, dérive dans le sens du vent de `life.json` |
 | R5 | **Cadence** : `moving()` reste faux ; une fumée lente n'a pas besoin de la pleine vitesse (règle 5 de l'epic) |
@@ -40,9 +40,9 @@
 
 | État | Description |
 |------|-------------|
-| Hiver | Panaches plus denses, surtout tôt et tard dans la journée |
-| Automne | Panaches légers |
-| Printemps, été | Cheminées sans fumée (sous réserve de Q3) |
+| Hiver | Panaches denses |
+| Printemps, automne | Panaches légers |
+| Été | Cheminées sans fumée |
 | Zoom arrière | Aucune fumée (limite de distance) |
 
 ---
@@ -62,7 +62,7 @@
 `particles.ts`, `clock` (saison), `roofs.ts` (forme des toits), liste `tickers`.
 
 ## Vérification
-Hiver à 18 h sur un toit à cheminée ; même toit en été ; `?debug` (mode repos, images/s) ; jeu des éléphants pendant que la fumée est visible.
+Hiver sur un toit à cheminée ; même toit en été ; printemps et automne ; `?debug` (mode repos, images/s) ; jeu des éléphants pendant que la fumée est visible.
 
 ---
 

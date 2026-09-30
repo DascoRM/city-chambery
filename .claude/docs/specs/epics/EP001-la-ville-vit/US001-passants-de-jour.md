@@ -24,13 +24,13 @@
 
 | Règle | Description |
 |-------|-------------|
-| R1 | Les passants marchent sur un **réseau de voies qui leur est propre**, construit avec `buildWalkways` (`src/scene/walkways.ts`) et ses propres options : sans escaliers, sans routes à voitures (à valider, Q2 de l'epic), façades à 1 m au lieu de 2,2 m (un humain ne demande pas la marge d'un éléphant). Le réseau des éléphants ne change pas |
-| R2 | Seule la **plus grande partie connexe** du réseau est utilisée (`mainComponent`). Mesurer sa taille en début d'US : si elle est trop petite, revoir R1 (repli : accepter les axes des grandes rues) |
+| R1 | Les passants marchent sur un **réseau de voies qui leur est propre**, construit avec `buildWalkways` (`src/scene/walkways.ts`) et ses propres options : sans escaliers, **toutes les autres voies autorisées** (pas de trottoirs ni d'axes évités pour l'instant, Q2 de l'epic), façades à 1 m au lieu de 2,2 m (un humain ne demande pas la marge d'un éléphant). Le réseau des éléphants ne change pas |
+| R2 | Seule la **plus grande partie connexe** du réseau est utilisée (`mainComponent`). Mesurer sa taille en début d'US : si elle est trop petite, réduire la marge aux façades (R1) |
 | R3 | Même zone interdite que les éléphants autour de la fontaine (cercle `avoid`, 15 m) : le bassin déborde sur le chemin OSM |
 | R4 | **Un seul maillage instancié** pour tous les passants, marche animée dans le shader (comme `WALK_GLSL` de l'éléphant), couleur de vêtement par instance dans la palette pastel du diorama. Formes simples (corps, tête), pas d'asset tiers |
 | R5 | **Pas d'ombre projetée** (la carte d'ombres ne bouge qu'avec le soleil) : une pastille d'ombre au sol, instanciée elle aussi |
 | R6 | **Foule autour du point visé** (piste pour la fluidité) : seuls les passants dans un rayon de `radius` mètres (250 par défaut) autour de la cible de la caméra sont simulés et dessinés ; un passant qui en sort est replacé hors écran sur un nœud du réseau dans le rayon. À confirmer par la mesure : si la simulation de tous les passants sur toute la carte coûte peu, on garde la version simple |
-| R7 | Vitesse tirée au hasard entre `speed[0]` et `speed[1]` m/s ; pauses courtes (2 à 6 s) de temps en temps ; hauteur = 1,7 m × `scale` (Q1 de l'epic) |
+| R7 | Vitesse tirée au hasard entre `speed[0]` et `speed[1]` m/s ; pauses courtes (2 à 6 s) de temps en temps ; hauteur = 1,7 m × `scale` (1 par défaut, Dasco la changera au besoin : Q1 de l'epic) |
 | R8 | Facteur `mobileFactor` sur les appareils tactiles et les écrans étroits |
 | R9 | Le module se branche dans la liste `tickers` de `main.ts` avec `moving()` faux (règle 5 de l'epic) ; il ne crée aucune cible de sélection |
 

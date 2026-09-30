@@ -1,11 +1,11 @@
 # Epic EP001 - La ville vit
 
-**Statut : 📝 spec à valider par Dasco** (rédigée le 30/09/2026, aucune ligne de code écrite)
+**Statut : ✅ spec validée par Dasco (questions tranchées le 30/09/2026)** · démarrage par **US007 + US008** (pack de bâtiments) pour juger le rendu ; **go de Dasco requis avant d'aller plus loin** (il écarte le pack s'il ne lui plaît pas)
 
 ## Résumé
 Faire vivre le diorama : des passants dans les rues (plus nombreux de jour, des petits groupes devant les bars
 ouverts la nuit), des fenêtres qui s'allument et s'éteignent, des pigeons, de la fumée de cheminée, des drapeaux,
-et des détails de façade (auvents, portes, balcons…) tirés du pack de bâtiments Kenney.
+et des détails de façade (auvents, portes, balcons…) tirés du pack de bâtiments (de Kenney).
 
 ---
 
@@ -27,7 +27,7 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 | Style des passants | **Silhouettes simples d'abord** (figurines low-poly instanciées) ; des personnages animés restent une option, non planifiée (US010) |
 | Autres « vies » | Fenêtres qui s'allument / s'éteignent, pigeons et oiseaux, fumée de cheminées, drapeaux. **Pas de voitures ni de bus** |
 | Interaction | **Décor seulement** : pas de clic sur les passants, ils ne réagissent ni aux éléphants ni au jeu |
-| Pack de bâtiments (`assets-src/buiding`, Kenney) | **Détails de façade sur les bâtiments existants** (auvents, portes, balcons, climatiseurs, lucarnes). Les 2 067 bâtiments OSM restent tels quels |
+| Pack de bâtiments (`assets-src/buildings`, dossier renommé ; auteur : Kenney) | **Détails de façade sur les bâtiments existants** (auvents, portes, balcons, climatiseurs, lucarnes). Les 2 067 bâtiments OSM restent tels quels |
 
 ---
 
@@ -59,14 +59,13 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 | [US004](US004-pigeons-et-oiseaux.md) | Des pigeons sur les places et des oiseaux autour des monuments | Medium | 3 | — | 🔲 Todo |
 | [US005](US005-fumee-de-cheminees.md) | De la fumée qui sort de cheminées, en automne et en hiver | Medium | 3 | — | 🔲 Todo |
 | [US006](US006-drapeaux.md) | Des drapeaux qui flottent sur des mâts sourcés | Medium | 3 | décision sur les emplacements | 🔲 Todo |
-| [US007](US007-preparer-le-pack-kenney.md) | Préparer le pack de bâtiments Kenney (nom, licence, conversion) | Medium | 3 | — | 🔲 Todo |
+| [US007](US007-preparer-le-pack-batiments.md) | Préparer le pack de bâtiments (nom, licence, conversion) | Medium | 3 | — | 🔲 Todo |
 | [US008](US008-auvents-des-lieux.md) | Des auvents devant les bars, cafés et restaurants | Medium | 5 | US007 | 🔲 Todo |
 | [US009](US009-details-de-facade.md) | Portes, balcons, climatiseurs et lucarnes sur les façades et les toits | Low | 5 | US007 (US008 conseillée) | 🔲 Todo |
 | [US010](US010-personnages-animes.md) | *(Option)* Des personnages animés près de la caméra | Low | — | US001, US002 | ⏸ Non planifiée |
+| [US011](US011-horaires-provisoires-des-bars.md) | Des horaires provisoires pour les bars, pubs et boîtes de nuit | High | 1 | — | ✅ Done (itération 46) |
 
-Ordre conseillé : US001 → US002 → US003 → US004 → US005 → US006 → US007 → US008 → US009. Les US003 à US006
-sont indépendantes des passants et peuvent passer avant si Dasco veut un effet visible plus vite (US003, la plus
-courte, est un bon premier pas).
+**Ordre décidé par Dasco** : d'abord **US007 puis US008** (le pack de bâtiments), pour voir ce que ça donne ; **Dasco donne ou non son go** (s'il n'aime pas le rendu, le pack est écarté avec US008 et US009). Ensuite, sous réserve de ce go : US001 → US002 → US003 → US004 → US005 → US006 → US009. US011 (horaires provisoires) est faite, c'est le prérequis d'US002.
 
 ---
 
@@ -105,30 +104,28 @@ Ouverture de la carte (12 h) → zoom dans la rue de Boigne → des passants mar
 
 ---
 
-## Questions ouvertes (à trancher avec Dasco avant de coder)
+## Questions tranchées (réponses de Dasco, 30/09/2026)
 
-| # | Question | Proposition par défaut |
+| # | Question | Décision |
 |---|---|---|
-| Q1 | **Échelle des passants** : taille réelle (1,7 m) ou agrandie comme l'éléphant (4,5 m au lieu de 3 à 4 m) ? Au zoom maximal, 1,7 m fait environ 45 pixels de haut ; de loin, ils sont invisibles | ×1,5 (≈ 2,5 m), réglable dans `life.json` |
-| Q2 | **Grandes rues** (`primary`, `secondary`, `tertiary`, ≈ 255 tronçons) : les trottoirs séparés ne sont pas dans les données. Les passants marchent-ils sur l'axe de ces rues, les traversent-ils seulement aux carrefours, ou les évitent-ils ? | Rues piétonnes, résidentielles, chemins et cours ; traversée des grandes rues aux carrefours seulement (à vérifier : le réseau doit rester d'un seul tenant) |
-| Q3 | **Fumée** : seulement en automne et en hiver (saison de l'horloge), ou toute l'année ? | Automne et hiver, plus dense l'hiver et aux heures froides (matin, soir) |
-| Q4 | **Drapeaux** : quels bâtiments (château, hôtel de ville, Carré Curial…) et quels motifs ? Aucune donnée dans notre extrait OSM (la requête actuelle ne demande pas `man_made=flagpole`) | Ajouter `man_made=flagpole` à la requête et voir ce qu'OSM contient ; sinon Dasco place les mâts avec l'outil de placement |
-| Q5 | **Couleur des auvents** : celle de la catégorie du lieu (violet bar, bleu café, orange restaurant, comme les épingles) ou des couleurs libres ? | Couleur de la catégorie : lisible, et cohérent avec la légende (qui masque aussi les auvents d'une catégorie décochée) |
-| Q6 | **Nom du dossier** `assets-src/buiding` (faute de frappe) | Le renommer `assets-src/kenney-buildings` (US007) |
-| Q7 | **Lieux sans horaires OSM** : 65 lieux sur 169 n'ont pas d'horaire utilisable (63 sans horaires, 2 au texte illisible), dont 15 bars sur 25, 4 pubs sur 7 et les 4 boîtes de nuit sans horaires du tout (seuls 10 bars et 3 pubs en ont). Sans eux, presque personne devant les bars la nuit. Ont-ils des groupes ? | Oui pour bars, pubs et boîtes de nuit, entre 21 h et 2 h, avec un poids réduit (×0,5) : c'est du décor, déclaré comme tel dans « Limites connues ». Un lieu dont l'horaire OSM dit « fermé » n'a jamais de groupe |
-| Q8 | **Légende** : quand la case « Bars » est décochée, les groupes de passants devant les bars restent-ils ? (la légende masque aujourd'hui les épingles et les halos) | Oui : la légende ne concerne que les épingles et les halos ; les auvents (US008), eux, suivent la légende |
-
----
+| Q1 | Échelle des passants | **Taille réelle, 1,7 m** (`scale` à 1) ; Dasco la changera au besoin |
+| Q2 | Grandes rues et trottoirs | **Pas de trottoirs pour l'instant** : Chambéry est surtout piétonne. Les passants marchent sur toutes les voies sauf les escaliers. Les axes que les piétons devront éviter, et les véhicules, feront l'objet d'une autre spec |
+| Q3 | Fumée de cheminée | **Pas de fumée l'été.** Au printemps, à l'automne et en hiver (plus dense en hiver). Suivant la saison seulement : **aucune règle d'heure** (pas de complication pour peu de chose) |
+| Q4 | Drapeaux | **Le château et l'hôtel de ville, c'est tout.** Le drapeau de la Savoie (croix blanche sur fond rouge) si c'est faisable ; le motif sera montré à Dasco |
+| Q5 | Couleur des auvents | **Couleur de la catégorie** (violet bar, bleu café, orange restaurant) ; on juge au rendu, puis on ajuste |
+| Q6 | Nom du dossier du pack | **`assets-src/buildings`** (sans « kenney »), fait le 30/09 |
+| Q7 | Lieux sans horaires OSM | **Horaires fictifs** pour les bars, pubs et boîtes de nuit dans `src/content/place-hours.json` (US011), puis un script de Dasco reprendra les vraies données de son projet bar / restau (ligne ajoutée au BACKLOG). Plus de cas « horaire inconnu » pour ces lieux |
+| Q8 | Légende « Bars » décochée | Les groupes de passants devant un bar sont **liés à la catégorie du bar** : case décochée → ils disparaissent. Dasco jugera si c'est bien |
 
 ## Risques
 
 | Risque | Effet | Parade |
 |---|---|---|
-| Réseau piéton des passants trop morcelé (une fois les grandes rues et les façades retirées) | Passants confinés à quelques îlots | Mesurer la plus grande partie connexe en US001 ; repli : accepter les axes de grandes rues |
+| Réseau piéton des passants trop morcelé (une fois les façades et les escaliers retirés) | Passants confinés à quelques îlots | Mesurer la plus grande partie connexe en US001 ; repli : réduire la marge aux façades |
 | Coût des passants sur mobile | Images/s en baisse | Instanciation, foule limitée autour du point visé (voir US001), facteur mobile, mesure sur téléphone |
 | Décor qui passe pour des faits (mât, cheminée, auvent) | Contredit la règle « rien d'inventé » | Règle 2, section « Limites connues » du README |
-| Échelle et couleurs du pack Kenney différentes de celles du diorama | Détails qui jurent avec la maquette | Conversion avec la palette du projet (US007), essai sur un bâtiment avant le lot |
-| Licence du pack Kenney non confirmée (aucun fichier de licence dans le dossier) | Impossible de publier le pack | Vérifier sur le site de l'auteur avant la conversion ; Kenney publie habituellement ses packs en CC0 |
+| Échelle et couleurs du pack différentes de celles du diorama | Détails qui jurent avec la maquette | Conversion avec la palette du projet (US007), essai sur un bâtiment avant le lot |
+| Licence du pack de bâtiments (auteur : Kenney) non confirmée (aucun fichier de licence dans le dossier) | Impossible de publier le pack | Vérifier sur le site de l'auteur avant la conversion (US007) ; le pack reste hors du dépôt tant que ce n'est pas fait |
 
 ---
 
@@ -144,7 +141,7 @@ Ouverture de la carte (12 h) → zoom dans la rue de Boigne → des passants mar
 
 ## Estimation globale
 - **Complexité** : L
-- **Effort estimé** : 34 points, environ 6 à 8 sessions (une user story ≈ une itération)
+- **Effort estimé** : 35 points, environ 6 à 8 sessions (une user story ≈ une itération)
 
 ---
 
@@ -152,14 +149,15 @@ Ouverture de la carte (12 h) → zoom dans la rue de Boigne → des passants mar
 ```json
 {
   "people": {
-    "max": 300, "mobileFactor": 0.5, "radius": 250, "scale": 1.5, "speed": [1.0, 1.5],
-    "network": { "excludeKinds": ["steps", "primary", "secondary", "tertiary", "cycleway", "track"], "clearance": 1.0 },
+    "max": 300, "mobileFactor": 0.5, "radius": 250, "scale": 1.0, "speed": [1.0, 1.5],
+    "network": { "excludeKinds": ["steps"], "clearance": 1.0 },
     "dayCurve": [[0, 0.05], [5, 0.05], [7, 0.4], [8, 0.8], [9, 0.6], [12, 1.0], [14, 0.6], [17, 0.9], [19, 0.5], [22, 0.25], [24, 0.05]],
-    "groups": { "from": 20, "to": 3, "max": 12, "size": [2, 5], "nightWeight": { "bar": 1, "pub": 1, "nightclub": 1, "restaurant": 0.5, "cafe": 0.3 } }
+    "groups": { "from": 20, "to": 3, "max": 12, "size": [2, 5], "nightWeight": { "bar": 1, "restaurant": 0.5, "cafe": 0.3 } }
   },
   "windows": { "litCurve": [[0, 0.2], [2, 0.1], [4, 0.05], [6, 0.12], [7, 0.2], [9, 0.1], [16, 0.15], [18, 0.35], [22, 0.4], [24, 0.25]] },
   "birds": { "pigeons": 40, "circling": 8 },
-  "smoke": { "seasons": ["autumn", "winter"], "chimneys": 30, "distance": 300 }
+  "smoke": { "density": { "spring": 0.4, "summer": 0, "autumn": 0.7, "winter": 1 }, "chimneys": 30, "distance": 300 },
+  "flags": [{ "id": "chateau", "anchor": "chateau", "design": "savoie" }, { "id": "hotel-de-ville", "design": "savoie", "pos": "à placer" }]
 }
 ```
 Toutes ces valeurs sont des points de départ, à régler à l'œil après les premiers essais.
