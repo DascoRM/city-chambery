@@ -3,6 +3,9 @@ export type Pt = [number, number]; // mètres : x = est, y = nord
 /** Altitude du sol (Three.js y) en un point [x, y] projeté (relief) */
 export type HeightFn = (x: number, y: number) => number;
 
+/** Module animé : appelé à chaque image par la boucle de rendu (main.ts), dt et temps écoulé en secondes */
+export interface Ticker { update(dt: number, t: number): void }
+
 export interface Poly { outer: Pt[]; holes: Pt[][] }
 
 export interface Building extends Poly {

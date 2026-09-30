@@ -25,8 +25,8 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
   - puis sortir le réseau de voies (graphe, obstacles, distance aux murs) de `mascot.ts` vers `src/scene/walkways.ts`, partagé par éléphants et passants ;
   - petits copier-coller : `mesh()` recopié dans les 5 monuments, type `(x, y) => number` réécrit 7 fois → `types.ts`
   - Vérifier : éléphants toujours sur les rues (`?debug`), clic sur gemme et bar, double toucher, outil de placement
-- ⬜ **EN-02 — Reprise de `main.ts` (modularité)** — remplace le ticket « Découper `src/main.ts` » — *moyen* :
-  - boucle de rendu : tableau de modules `{ update(dt, t) }` au lieu des 20 appels écrits à la main ; ajouter un module (passants) = une ligne ; chaque module peut dire s'il bouge (base de TI-02) ;
+- ✅ *itération 40* **EN-02 — Reprise de `main.ts` (modularité)** — remplace le ticket « Découper `src/main.ts` » — *moyen* :
+  - boucle de rendu : tableau de modules `{ update(dt, t) }` au lieu des 20 appels écrits à la main ; ajouter un module (passants) = une ligne ; chaque module peut dire s'il bouge (base de TI-02) — *ce dernier point reporté dans TI-02* ;
   - `src/interaction.ts` : sélection souris / doigt, survol, double toucher ;
   - `src/game/setup.ts` : mini-jeu, places sur la fontaine, particules, réglages passés d'un bloc
 - ⬜ **TI-01 — Mode dev / debug propre** — *petit* :
@@ -36,6 +36,7 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ **TI-02 — 30 images/s au repos, pleine vitesse pendant les mouvements** — remplace le ticket « Moins d'images quand rien ne bouge » — *moyen* :
   - les éléphants marchent en permanence : on ne peut pas arrêter le rendu, on limite la cadence ;
   - pleine vitesse pendant : caméra qui bouge (et 0,5 s après), vol ou rotation, lecture ▶, particules, bulle ou statue qui apparaît, épingle qui rebondit, survol ;
+  - chaque module de la boucle (`Ticker`, itération 40) dit s'il bouge (reporté d'EN-02) ;
   - `src/scene/quality.ts` : ne mesurer les images/s que pendant les mouvements, sinon il prend les 30 images/s pour de la lenteur et baisse la netteté ;
   - condition : aucune perte de qualité visible (netteté stable au repos, éléphants et gemmes fluides à l'œil) — à vérifier avec `?debug`
 - ⬜ **TI-03 — three.js dans un fichier JS séparé** : aujourd'hui un seul fichier de 789 Ko (216 Ko gzip) ; une mise à jour de l'appli ferait retélécharger ≈ 30 Ko au lieu de 216 (estimé). Réglage de découpage dans `vite.config.ts` — *petit*
@@ -86,6 +87,7 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ⬜ Hiver : reprendre les arbres — de la neige plutôt que les branches nues / arbres morts (brun) actuels (demande de Dasco, à traiter plus tard) ; neige aussi au sol et sur les toits
 - ⬜ Horaires : jours fériés et vacances scolaires (aujourd'hui ignorés, l'horaire habituel du jour s'applique)
 - ⬜ Simplifier l'heure : prendre l'heure de l'appareil du visiteur au lieu de forcer le fuseau Europe/Paris (demande de Dasco, pour simplifier le code). Précision : « heure de Chambéry » dans le code est déjà l'heure de France (fuseau Europe/Paris) ; la simplification consiste à supprimer la conversion de fuseau (`src/time/chambery.ts` : `chamberyClock`, `chamberyInstant`, ≈ 25 lignes). Conséquence : un visiteur hors de France verrait la carte à son heure locale. La position du soleil garde la latitude et la longitude de Chambéry.
+- ❓ Double toucher (zoom) : sans effet dans le navigateur de test, sur `main` comme après EN-02 (itération 40) — à vérifier sur un vrai téléphone
 - ⬜ Mobile très étroit (iPhone SE, 320 px) : la rangée Bars / Cafés / Restaurants dépasse de l'écran (constaté à l'itération 31, antérieur)
 
 

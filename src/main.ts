@@ -4,7 +4,7 @@ import poisContent from './content/pois.json';
 import modelsContent from './content/models.json';
 import natureContent from './content/nature.json';
 import mascotContent from './content/mascot.json';
-import type { CityData, Place, Poi, PlacedPoi } from './types';
+import type { CityData, Poi, PlacedPoi, Ticker } from './types';
 import { createStage } from './scene/stage';
 import { buildCity } from './scene/city';
 import { createTerrain } from './scene/terrain';
@@ -15,22 +15,18 @@ import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildNature, type NatureConfig } from './scene/nature';
 import { buildHerd, type Herd, type MascotConfig } from './scene/mascot';
-import { createParticles, createFireworks } from './scene/particles';
 import { createClock } from './time/clock';
 import { createOpenStates, type OpenState } from './time/openinghours';
 import { placeCategory } from './scene/palette';
-import { installTwoFingerGestures } from './scene/touch';
-import { screenRay } from './scene/geo';
 import { createAdaptiveResolution } from './scene/quality';
 import { createPerfHud } from './ui/perfhud';
 import { dataUrl } from './dataurl';
 import { setupPwa } from './pwa';
 import { createUi, showFatal } from './ui/ui';
 import { loadDiscovered, resetDiscovered, saveDiscovered } from './state/progress';
-import { loadPoints, savePoints } from './state/points';
-import { createHunt, type Hunt } from './game/hunt';
+import { setupGame } from './game/setup';
+import { installInteraction, type PlacementTool } from './interaction';
 import { installHerdDebug } from './dev/herd-debug';
-import { loadReturned, saveReturned } from './state/herd';
 
 const app = document.getElementById('app')!;
 
@@ -85,9 +81,10 @@ async function main() {
   const modelsRoot = await buildModels(models, pois, { night: city.night.uNight, data, heightAt: terrain.heightAt, minUnder: terrain.minUnder });
   scene.add(modelsRoot);
   // Les quatre éléphants échappés de la fontaine, sur les rues et chemins (src/content/mascot.json)
+  const mascot = mascotContent as unknown as MascotConfig;
   let herd: Herd | null = null;
   try {
-    herd = await buildHerd(mascotContent as unknown as MascotConfig, data, terrain.heightAt);
+    herd = await buildHerd(mascot, data, terrain.heightAt);
     if (herd) scene.add(herd.group);
   } catch (e) {
     console.warn('[mascottes] non chargées', e);
@@ -170,49 +167,18 @@ async function main() {
   });
 
   // --- Mini-jeu « Ramène les éléphants à la fontaine » (itération 35) --------
-  let points = loadPoints();
-  const returned = loadReturned();
-  const herdTotal = herd?.elephants.length ?? 0;
-  ui.setPoints(points);
-  ui.setHerd(returned.size, herdTotal);
-  const fountain = modelsRoot.getObjectByName('fontaine-des-elephants');
-  const slots = Array.from({ length: mascotContent.game.count }, (_, i) => fountain?.getObjectByName(`elephant-${i}`))
-    .filter((o): o is THREE.Object3D => !!o);
-  if (herd && slots.length !== herdTotal) {
-    console.warn(`[mini-jeu] désactivé : ${herdTotal} éléphants dans les rues, ${slots.length} places sur la fontaine`);
-  }
-  const smoke = createParticles(400, false);
-  // Étincelles en mélange normal (et non additif) : visibles aussi de jour, sur fond clair
-  const sparks = createParticles(3000, false);
-  const fireworks = createFireworks(sparks);
-  scene.add(smoke.points, sparks.points);
-  const hunt: Hunt | null = herd && slots.length === herdTotal
-    ? createHunt({
-        herd, camera, canvasRect: () => canvasRect, slots, smoke, sparks, fireworks, returned, points,
-        gain: mascotContent.game.points, bonus: mascotContent.game.bonus,
-        restartSeconds: mascotContent.game.restartSeconds, taunts: mascotContent.game.taunts,
-        bubbleSeconds: mascotContent.game.bubbleSeconds,
-        bubble: ui.bubble,
-        onReturned: (r) => { saveReturned(r); ui.setHerd(r.size, herdTotal); },
-        onScore: (total, gained, text) => {
-          points = total;
-          savePoints(points);
-          ui.setPoints(points, gained);
-          ui.flash(text);
-        },
-        onRestart: () => ui.flash('🐘 Oh non ! Les éléphants se sont encore échappés…'),
-        flyTo: (x, z) => stage.flyTo(x, z, 160),
-      })
-    : null;
+  const game = setupGame({
+    scene, camera, canvasRect: () => canvasRect, herd,
+    fountain: modelsRoot.getObjectByName('fontaine-des-elephants'),
+    game: mascot.game,
+    ui,
+    flyTo: (x, z) => stage.flyTo(x, z, 160),
+  });
+  const { hunt, slots } = game;
   // Mode debug (?debug) : faisceaux au-dessus des éléphants et panneau pour les retrouver
   const herdDebug = herd && new URLSearchParams(location.search).has('debug')
-    ? installHerdDebug({ root: app, scene, herd, home: data.anchors[mascotContent.start]?.pos ?? [0, 0], flyTo: (x, z) => stage.flyTo(x, z, 160) })
+    ? installHerdDebug({ root: app, scene, herd, home: data.anchors[mascot.start]?.pos ?? [0, 0], flyTo: (x, z) => stage.flyTo(x, z, 160) })
     : null;
-  if (hunt && returned.size < herdTotal) {
-    window.setTimeout(() => ui.flash(returned.size
-      ? `🐘 Encore ${herdTotal - returned.size} éléphant${herdTotal - returned.size > 1 ? 's' : ''} à ramener à la fontaine`
-      : '🐘 Les quatre éléphants de la fontaine se sont échappés ! Retrouve-les dans les rues'), 2500);
-  }
 
   const syncFound = () => {
     poiLayer.markers.forEach((m) => m.setFound(discovered.has(m.poi.id)));
@@ -255,23 +221,8 @@ async function main() {
     ui.movePlaceCard(r.left + ((anchorV.x + 1) / 2) * r.width, r.top + ((1 - anchorV.y) / 2) * r.height, onScreen);
   };
 
-  // --- Sélection à la souris / au doigt -----------------------------------
-  const raycaster = new THREE.Raycaster();
-  // Zones de clic fixes (une catégorie masquée passe à l'échelle 0) : liste calculée une seule fois
-  const hitTargets = [...poiLayer.markers.map((m) => m.hit), ...placeLayer.root.children.filter((c) => c.userData.places)];
-
-  type Hit = { poi: PlacedPoi } | { place: Place; index: number } | null;
-  const pick = (clientX: number, clientY: number): Hit => {
-    const hit = screenRay(raycaster, camera, canvasRect, clientX, clientY).intersectObjects(hitTargets, false)[0];
-    if (!hit) return null;
-    if (hit.object.userData.poiId) return { poi: pois.find((p) => p.id === hit.object.userData.poiId)! };
-    const places = hit.object.userData.places as Place[] | undefined;
-    if (places && hit.instanceId !== undefined) return { place: places[hit.instanceId], index: hit.instanceId };
-    return null;
-  };
-
   // Outil de placement : chargé uniquement en dev, absent du build de production
-  let placement: { handleClick(x: number, y: number): boolean; isActive(): boolean } | null = null;
+  let placement: PlacementTool | null = null;
   if (import.meta.env.DEV) {
     const { installPlacementTool } = await import('./dev/placement');
     placement = installPlacementTool({
@@ -280,68 +231,48 @@ async function main() {
     });
   }
 
-  // Tactile : gestes à deux doigts (pincer, tourner, incliner) ; un doigt = déplacer (stage.ts)
-  installTwoFingerGestures(renderer.domElement, camera, controls);
-  // Double toucher : zoom vers l'endroit touché
-  let lastTap: { t: number; x: number; y: number } | null = null;
-  const zoomAtScreen = (clientX: number, clientY: number) => {
-    const hit = screenRay(raycaster, camera, canvasRect, clientX, clientY).intersectObject(city.group, true)[0];
-    stage.zoomTo(hit ? hit.point : controls.target.clone()); // hors du socle : zoom sur le centre de la vue
-  };
-
-  let down: { x: number; y: number } | null = null;
-  renderer.domElement.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
-  renderer.domElement.addEventListener('pointerup', (e) => {
-    if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
-    if (e.pointerType === 'touch') {
-      const now = performance.now();
-      if (lastTap && now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
-        lastTap = null;
-        zoomAtScreen(e.clientX, e.clientY);
-        return;
+  // --- Sélection à la souris / au doigt (src/interaction.ts) ---------------
+  const interaction = installInteraction({
+    canvas: renderer.domElement, camera, controls, canvasRect: () => canvasRect, pois,
+    targets: [...poiLayer.markers.map((m) => m.hit), ...placeLayer.root.children.filter((c) => c.userData.places)],
+    ground: city.group,
+    zoomTo: (p) => stage.zoomTo(p),
+    hunt, placement,
+    tooltip: ui.showTooltip,
+    onSelect: (h) => {
+      if (h && 'poi' in h) { closePlace(); openPoi(h.poi.id); }
+      else if (h && 'place' in h) openPlace(h.index, true); // clic ou toucher : la fiche reste ouverte
+      else if (ui.placeCardState().place) closePlace(); // clic dans le vide : on ferme
+    },
+    onHover: (h, x, y) => {
+      if (h && 'poi' in h) ui.showTooltip(discovered.has(h.poi.id) ? h.poi.title : '✦ Lieu mystère', x, y);
+      else ui.showTooltip(null);
+      // Bars, cafés, restaurants : la fiche apparaît au survol (sauf si une fiche est déjà épinglée par un clic)
+      if (!ui.placeCardState().pinned) {
+        if (h && 'place' in h) openPlace(h.index, false);
+        else if (ui.placeCardState().place) closePlace();
       }
-      lastTap = { t: now, x: e.clientX, y: e.clientY };
-    }
-    if (placement?.handleClick(e.clientX, e.clientY)) return;
-    if (hunt?.click(e.clientX, e.clientY)) { ui.showTooltip(null); return; }
-    const h = pick(e.clientX, e.clientY);
-    if (h && 'poi' in h) { closePlace(); openPoi(h.poi.id); }
-    else if (h && 'place' in h) openPlace(h.index, true); // clic ou toucher : la fiche reste ouverte
-    else if (ui.placeCardState().place) closePlace(); // clic dans le vide : on ferme
+    },
+    onLeave: () => {
+      if (!ui.placeCardState().pinned && ui.placeCardState().place) closePlace();
+    },
   });
-  let hoverQueued: PointerEvent | null = null;
-  renderer.domElement.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'mouse') hoverQueued = e;
-  });
-  renderer.domElement.addEventListener('pointerleave', () => {
-    ui.showTooltip(null);
-    if (!ui.placeCardState().pinned && ui.placeCardState().place) closePlace();
-  });
-
-  const hover = () => {
-    if (!hoverQueued) return;
-    const e = hoverQueued;
-    hoverQueued = null;
-    if (placement?.isActive()) return ui.showTooltip(null);
-    // L'éléphant d'abord : survolé, il fuit (ou, coincé, attend le clic)
-    const el = hunt?.pointerMove(e.clientX, e.clientY);
-    if (el) {
-      renderer.domElement.style.cursor = 'pointer';
-      ui.showTooltip(el.state() === 'tired' ? '🐘 Épuisé ! Clique pour le ramener à la fontaine' : null, e.clientX, e.clientY);
-      return;
-    }
-    const h = pick(e.clientX, e.clientY);
-    renderer.domElement.style.cursor = h ? 'pointer' : 'grab';
-    if (h && 'poi' in h) ui.showTooltip(discovered.has(h.poi.id) ? h.poi.title : '✦ Lieu mystère', e.clientX, e.clientY);
-    else ui.showTooltip(null);
-    // Bars, cafés, restaurants : la fiche apparaît au survol (sauf si une fiche est déjà épinglée par un clic)
-    if (!ui.placeCardState().pinned) {
-      if (h && 'place' in h) openPlace(h.index, false);
-      else if (ui.placeCardState().place) closePlace();
-    }
-  };
 
   // --- Boucle de rendu ------------------------------------------------------
+  // Modules animés, dans l'ordre d'appel ; ajouter un module = ajouter une ligne
+  const tickers: Ticker[] = [
+    { update: (_, t) => poiLayer.animate(t) },
+    { update: (_, t) => placeLayer.animate(t) },
+    { update: (_, t) => city.update(t) },
+    ...(herd ? [herd] : []),
+    game.ticker,
+    ...(herdDebug ? [herdDebug] : []),
+    clock,
+    { update: () => labels.update(camera) },
+    interaction, // survol
+    { update: followPlace },
+    { update: () => ui.setHeading(stage.heading()) },
+  ];
   const timer = new THREE.Timer();
   timer.connect(document);
   // Tout est en place (ville, arbres, monuments) : première carte des ombres
@@ -350,25 +281,13 @@ async function main() {
     timer.update();
     const raw = timer.getDelta();
     const dt = Math.min(raw, 0.1);
+    const t = timer.getElapsed();
     perfHud?.begin();
     quality.update(raw);
     stage.updateFlight(dt);
     controls.update();
     stage.clampTarget();
-    poiLayer.animate(timer.getElapsed());
-    placeLayer.animate(timer.getElapsed());
-    city.update(timer.getElapsed());
-    herd?.update(dt, timer.getElapsed());
-    hunt?.update(dt);
-    herdDebug?.update(dt);
-    fireworks.update(dt);
-    smoke.update(dt);
-    sparks.update(dt);
-    clock.update(dt);
-    labels.update(camera);
-    hover();
-    followPlace();
-    ui.setHeading(stage.heading());
+    for (const m of tickers) m.update(dt, t);
     tiltShift.update(controls.target, stage.size * 1.2);
     tiltShift.render();
     perfHud?.end(raw);

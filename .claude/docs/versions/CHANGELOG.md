@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 40 — 30/09/2026 (branche `feat/EN-02-reprise-main`)
+
+**Demande de Dasco :** attaquer EN-02 (reprise de `main.ts`).
+
+**Changements (aucun changement visible) :**
+- boucle de rendu : un tableau de modules `{ update(dt, t) }` (type `Ticker` dans `types.ts`) remplace les appels écrits à la main ; ajouter un module (passants) = une ligne ; la caméra, la résolution adaptative et le rendu restent à part ;
+- `src/interaction.ts` : sélection souris / doigt, survol (traité une fois par image), double toucher, gestes à deux doigts ; `main.ts` ne garde que ce qu'on fait d'un clic ou d'un survol (fiches, infobulle) ;
+- `src/game/setup.ts` : mini-jeu (points et partie sauvegardés, places sur la fontaine, particules, message d'accueil) ;
+- `hunt.ts` reçoit les réglages du jeu d'un bloc (`mascot.json` → `game`) au lieu de 5 valeurs une à une ; `mascot.json` converti une seule fois dans `main.ts` ;
+- `main.ts` : 381 → 300 lignes ; README : structure du code.
+
+**Vérifié :** `npm run build` (taille du JS inchangée : 789,6 Ko, 216,5 Ko gzip) ; dans Chromium (Playwright, rendu logiciel), avec `?debug` : jeu actif (4 éléphants, 4 places), survol d'une épingle de bar → fiche, clic → fiche épinglée, clic dans le vide → fermée, **clic sur la gemme de la fontaine → fiche d'histoire** (le test de l'itération 39 visait mal), clic sur un éléphant → il disparaît (`poof`, identique sur `main`), outil de placement en dev (P puis clic → position affichée) ; aucune erreur ni avertissement de l'appli dans la console.
+
+**Non vérifié :** double toucher sur mobile : dans le navigateur de test, les deux touchers arrivent (`pointerup` × 2) mais la caméra ne zoome pas, **exactement pareil sur `main`** : limite du test ou bug antérieur, à vérifier sur un vrai téléphone ; gestes à deux doigts ; « chaque module dit s'il bouge » (prévu dans EN-02) laissé à TI-02, qui l'utilisera.
+
 ## Itération 39 — 30/09/2026 (branche `feat/EN-01-module-geo-voies`)
 
 **Demande de Dasco :** lancer EN-01 (module commun géométrie et voies), prérequis de « la ville vit ».
