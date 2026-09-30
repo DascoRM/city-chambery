@@ -88,4 +88,4 @@ Trois rues avec leurs auvents de près ; case « Bars » décochée et recochée
 ---
 
 **Priorité** : Medium
-**Status** : 🔲 Todo
+**Status** : 🟡 Livrée (itération 46), en attente du go de Dasco

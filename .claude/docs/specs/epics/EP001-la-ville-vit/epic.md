@@ -59,8 +59,8 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 | [US004](US004-pigeons-et-oiseaux.md) | Des pigeons sur les places et des oiseaux autour des monuments | Medium | 3 | — | 🔲 Todo |
 | [US005](US005-fumee-de-cheminees.md) | De la fumée qui sort de cheminées, en automne et en hiver | Medium | 3 | — | 🔲 Todo |
 | [US006](US006-drapeaux.md) | Des drapeaux qui flottent sur des mâts sourcés | Medium | 3 | décision sur les emplacements | 🔲 Todo |
-| [US007](US007-preparer-le-pack-batiments.md) | Préparer le pack de bâtiments (nom, licence, conversion) | Medium | 3 | — | 🔲 Todo |
-| [US008](US008-auvents-des-lieux.md) | Des auvents devant les bars, cafés et restaurants | Medium | 5 | US007 | 🔲 Todo |
+| [US007](US007-preparer-le-pack-batiments.md) | Préparer le pack de bâtiments (nom, licence, conversion) | Medium | 3 | — | ✅ Done (itération 46) |
+| [US008](US008-auvents-des-lieux.md) | Des auvents devant les bars, cafés et restaurants | Medium | 5 | US007 | 🟡 Livrée (itération 46), en attente du go de Dasco |
 | [US009](US009-details-de-facade.md) | Portes, balcons, climatiseurs et lucarnes sur les façades et les toits | Low | 5 | US007 (US008 conseillée) | 🔲 Todo |
 | [US010](US010-personnages-animes.md) | *(Option)* Des personnages animés près de la caméra | Low | — | US001, US002 | ⏸ Non planifiée |
 | [US011](US011-horaires-provisoires-des-bars.md) | Des horaires provisoires pour les bars, pubs et boîtes de nuit | High | 1 | — | ✅ Done (itération 46) |

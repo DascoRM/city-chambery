@@ -89,6 +89,7 @@ npm run nature                   # reconvertit les arbres du pack nature (après
 | `npm run data -- --offline --relief` | Idem, mais retélécharge seulement le relief RGE ALTI |
 | `npm run nature` | Convertit et simplifie les arbres du pack Quaternius (`assets-src/` → `public/models/nature/`) selon `src/content/nature.json` |
 | `npm run mascot` | Convertit l'éléphant mascotte (`assets-src/Elephant by jeremy - 9J-cG39KYFC.glb` → `public/models/mascotte/elephant.glb`) : mètres, 4,5 m de haut, trompe vers +X |
+| `npm run buildings` | Convertit les pièces retenues du pack de bâtiments (`assets-src/buildings` → `public/models/buildings/details.glb`) selon `src/content/buildings.json` : couleurs de la palette lues et écrites en couleurs de sommet, échelle en mètres |
 
 Variables d'environnement utiles :
 
@@ -369,6 +370,8 @@ scripts/
   geo.mjs                  Géométrie 2D des scripts (point dans un polygone, distance à un segment)
   convert-nature.mjs       Pack nature : .obj → .glb (npm run nature)
   convert-mascot.mjs       Éléphant mascotte : mise à l'échelle et orientation (npm run mascot)
+  convert-buildings.mjs    Pack de bâtiments : pièces retenues → public/models/buildings/details.glb (npm run buildings)
+  lib/kenney-obj.mjs       Lecture des .obj du pack (palette PNG lue par les UV) et de sa texture
 
 src/
   main.ts                  Assemblage : scène, calques, fiches, boucle de rendu (liste de modules)
@@ -378,6 +381,8 @@ src/
   content/models.json      Monuments modélisés
   content/nature.json      Arbres modélisés : mélanges et zones
   content/mascot.json      Mascotte : modèle, vitesse, voies autorisées, zones interdites
+  content/buildings.json   Pack de bâtiments : pièces, échelle, décalages ; réglages des auvents
+  content/place-hours.json Horaires PROVISOIRES (fictifs) des bars, pubs et boîtes de nuit, pour l'éclairage de nuit
   scene/stage.ts           Renderer, caméra « maquette », lumières, contrôles, boussole (cap, retour au nord)
   scene/touch.ts           Gestes tactiles à deux doigts (pincer, tourner, incliner)
   scene/terrain.ts         Relief : maillage du sol, altitude en tout point, bords du socle
@@ -398,6 +403,7 @@ src/
   scene/models.ts          Chargement et placement des monuments
   scene/nature.ts          Arbres modélisés dans les parcs
   scene/mascot.ts          Mascotte : promenade sur le réseau des voies, marche dans le shader
+  scene/facades.ts         Auvents des bars, cafés et restaurants (pièces du pack de bâtiments, couleur de la catégorie)
   scene/models/            Monuments générés en code + éclairage de nuit et mesh() partagés
   ui/ui.ts                 HUD, fiche, journal, toasts, contrôles
   state/progress.ts        Progression et préférences (localStorage)
@@ -495,6 +501,8 @@ dans Coolify, ou `docker compose build --no-cache`).
 - **Positions des lieux** : celles trouvées automatiquement dans OSM sont approximatives ; à vérifier.
 - **Contenu** : 8 fiches rédigées à partir des sources citées ; à relire avant de montrer.
 - **Bars et cafés** : noms et horaires bruts d'OSM ; la nuit, ils s'allument selon leur type, pas selon leurs horaires.
+- **Horaires provisoires** : 23 bars, pubs et boîtes de nuit sans horaires dans OSM reçoivent des horaires fictifs (`src/content/place-hours.json`), utilisés seulement pour leur éclairage de nuit ; ils ne sont jamais affichés. À remplacer par les vraies données (voir le backlog).
+- **Auvents** : 148 lieux sur 169 en ont un, posé sur la façade côté rue d'après les contours OSM et les voies ; c'est du décor, pas un relevé des commerces. Les 12 lieux dans un bâtiment remplacé par un monument et les 8 lieux hors bâtiment n'en ont pas.
 - **Soleil** : lever 6 h, coucher 18 h toute l'année (pas de saisons).
 - **Leysse** : dessinée à l'air libre sur toute sa longueur, y compris là où elle est couverte en réalité (sous les boulevards du centre ; un tronçon a été découvert en 2013 près du Palais de justice). Choix de lisibilité, réglable avec `showCoveredWater`.
 
@@ -507,6 +515,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 - Textes : reformulés, sources citées dans chaque fiche. Recopier des passages de Wikipédia imposerait la licence **CC BY-SA**.
 - Modèles nature : Ultimate Nature Pack by Quaternius, **CC0 1.0** (domaine public, aucune obligation ; crédit volontaire).
 - Mascotte : « Elephant » par jeremy ([Poly Pizza](https://poly.pizza/m/9J-cG39KYFC)), **CC BY 3.0** — attribution obligatoire, affichée en bas à droite de l'application. Modifié : mis à l'échelle, réorienté, animé.
+- Pièces de bâtiments (auvents…) : « Building Kit » de Kenney ([kenney.nl](https://kenney.nl/assets/building-kit)), **CC0 1.0** (domaine public, crédit non obligatoire ; confirmé sur la page du pack le 30/09/2026). Sources dans `assets-src/buildings`, converties par `npm run buildings`.
 - Librairies : Three.js (MIT), straight-skeleton (MIT), glTF-Transform (MIT, conversion uniquement).
 
 ---

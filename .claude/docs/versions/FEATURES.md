@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 30/09/2026 — itération 43.
+État au 30/09/2026 — itération 46.
 
 ## Carte / diorama
 
@@ -28,6 +28,8 @@
 | Mascottes : éléphants qui se promènent | ✅ | Itération 33 (1 éléphant), 35 (4 éléphants, réseau partagé). Marche uniquement sur les voies OSM (graphe des rues et chemins ; sans escaliers, passages sous bâtiment, trottoirs collés aux façades, abords de la fontaine), part de la fontaine des Éléphants et reste dans un rayon d'≈ 380 m ; va plutôt tout droit et préfère les rues piétonnes ; pauses de 4 à 8 s ; pattes, trompe, oreilles et queue animées dans le shader ; ombre en tache ; 4,5 m de haut ; modèle « Elephant » de jeremy (Poly Pizza, CC BY 3.0, crédité en bas à droite) ; `mascot.json`, `npm run mascot` |
 | Mini-jeu « Ramène les éléphants à la fontaine » | ✅ | Itération 35 (remplace « Attrape l'éléphant » de l'itération 34). Au départ la fontaine n'a plus ses 4 éléphants, qui se promènent dans les rues. Survolé, il sursaute et trotte plus vite ; cliqué ou touché, un éléphant disparaît dans un nuage, nargue dans une bulle (6 s) avec un indice (rue OSM où il réapparaît, sinon la direction) et réapparaît 100 à 250 m plus loin ; après 1 à 5 fuites (au hasard) il réapparaît épuisé, assis, étoiles au-dessus de la tête ; un clic le ramène en vol à sa place, il se change en bronze, étincelles et feu d'artifice ; 10 points par éléphant, +20 fontaine complète (grand feu d'artifice) ; nouvelle partie 45 s après. Partie et points gardés dans le navigateur. Réglages : `mascot.json` → `game` |
 | Cycle jour/nuit | ✅ | **Heure réelle de Chambéry par défaut** (bouton « Direct », relue chaque minute, quel que soit le fuseau de l'appareil) ; curseur d'heure (quitte le direct) + lecture (une journée en 2 min) ; **vraie course du soleil** (azimut et hauteur calculés pour la date : lever/coucher réels affichés, soleil bas l'hiver), crépuscule orangé, nuit bleutée avec lune, fond de page assorti |
+| Auvents des bars, cafés et restaurants | 🟡 | Itération 46 (EP001-US008, **en attente du go de Dasco**) : pièces du pack de bâtiments de Kenney (CC0), posées sur la façade côté rue de 148 lieux sur 169, à hauteur de rez-de-chaussée, à la couleur de la catégorie (éclaircie) ; masquées avec la catégorie dans la légende ; 6 appels de rendu en plus. Dalles plates, discrètes, sombres la nuit |
+| Horaires provisoires des bars | 🟡 | Itération 46 (EP001-US011) : horaires fictifs pour 23 bars, pubs et boîtes de nuit (`src/content/place-hours.json`), servant à l'éclairage de nuit seulement, jamais affichés dans la fiche |
 | Saisons | ✅ | Puce Auto / Printemps / Été / Automne / Hiver ; auto = date du jour. Feuillage : vert, couleurs d'automne (15 oct. – 30 nov.), branches nues (1er déc. – 14 mars) — dates approximatives, choix de style ; parcs : variantes Automne / Dead du pack Quaternius (pins inchangés) ; arbres des rues : couronnes orangées ou petites couronnes nues. Saison choisie = date typique (20 avril, 15 juillet, 28 octobre, 15 janvier) |
 | Fenêtres éclairées la nuit | ✅ | Grille de fenêtres calculée dans le shader (pas de modèle), 15 % à 35 % allumées selon l'heure |
 | Lueur des rues la nuit | ✅ | Rues, chemins et places légèrement éclairés |

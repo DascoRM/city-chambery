@@ -1,5 +1,23 @@
 # Journal des itérations
 
+## Itération 46 — 30/09/2026 (branche `feat/EP001-US007-US008-batiments`)
+
+**Demande de Dasco :** réponses aux questions de la spec (Q1 à Q8) ; horaires fictifs pour les bars ; commencer par le pack de bâtiments (US007 puis US008) et lui faire un retour pour qu'il teste et donne son go avant la suite de l'epic.
+
+**Changements :**
+- spec EP001 mise à jour (questions tranchées, US011 ajoutée, US007 renommée, dossier `assets-src/buildings`) ;
+- **US011** : `src/content/place-hours.json`, horaires fictifs pour 23 bars, pubs et boîtes de nuit sans horaires OSM ; ils ne servent qu'à l'éclairage de nuit (`main.ts` : deux listes d'états, la fiche garde les vrais horaires), jamais affichés ; ligne au BACKLOG pour le script de récupération des données du projet bar / restau de Dasco ;
+- **US007** : licence vérifiée (« Building Kit » de Kenney, CC0 1.0) ; `npm run buildings` (`scripts/convert-buildings.mjs`, `scripts/lib/kenney-obj.mjs`, `src/content/buildings.json`) → `public/models/buildings/details.glb` (8 pièces, 13,9 Ko, 4,1 Ko gzip) ; palette PNG lue par les UV et écrite en couleurs de sommet ; pièces dédoublonnées (chaque pièce est répétée deux fois dans les `.obj`) ; échelle 4,2 m par unité (porte de 0,5 unité = 2,1 m) ;
+- **US008** : `src/scene/facades.ts`, auvents sur la façade côté rue de chaque lieu dans un bâtiment : arête du contour proche d'une voie, pas mitoyenne, près du lieu ; hauteur de rez-de-chaussée ; couleur de la catégorie éclaircie d'un tiers ; masqués avec la catégorie dans la légende ; README, FEATURES, BACKLOG.
+
+**Vérifié :**
+- horaires provisoires, avec le vrai parseur : mardi 3 h tout fermé, mardi 23 h bars ouverts et boîte fermée, vendredi 1 h boîte ouverte, samedi 4 h boîte ouverte ;
+- `npm run buildings` deux fois : fichier identique ; `npm run build` ;
+- Chrome avec la carte graphique : 148 auvents posés sur 169 lieux (12 dans un bâtiment remplacé par un monument, 8 hors bâtiment, 1 sans façade côté rue), 6 maillages, aucune erreur console ; légende : décocher « Restaurants » masque leurs auvents, recocher les remet ; **coût : 2 371 → 2 377 appels de rendu, 1,46 → 1,47 M triangles, cadence inchangée** ; captures à 14 h et 23 h au zoom maximal du jeu (70 m) ;
+- constat de rendu : les auvents du pack sont de petites **dalles plates** (pas des toiles inclinées), discrètes ; sur 148, seulement 26 sont visibles en ligne droite depuis une caméra basse dans l'axe de leur façade (les autres sont cachés par les immeubles d'en face) ; la nuit ils sont sombres (aucune lumière propre).
+
+**Non vérifié :** que le dossier est bien le « Building Kit » (les noms des pièces correspondent, mais il n'y a pas de fichier de licence dans le dossier : Dasco confirme où il l'a téléchargé) ; le rendu sur téléphone ; la fiche d'un bar aux horaires provisoires (vérifié par lecture du code : elle lit les vrais horaires), pas à l'écran ; l'éclairage de nuit des bars avec les horaires provisoires, à l'écran ; les pièces convertie mais non utilisées (portes, balcon, climatiseurs, lucarne) : **le balcon extrait garde les deux faces du module** (4,8 m de profondeur), à reprendre en US009.
+
 ## Itération 45 — 30/09/2026 (branche `docs/EP001-la-ville-vit`, pas de code applicatif)
 
 **Demande de Dasco :** regarder la spec de « la ville vit » ; choix : silhouettes simples d'abord, fenêtres, oiseaux, fumée et drapeaux (pas de voitures), décor sans interaction, et intégrer le pack de bâtiments (en détails de façade).

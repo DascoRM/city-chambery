@@ -78,4 +78,4 @@ Aucun : pas de changement visible.
 ---
 
 **Priorité** : Medium
-**Status** : 🔲 Todo
+**Status** : ✅ Done (itération 46)
