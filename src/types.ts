@@ -1,5 +1,8 @@
 export type Pt = [number, number]; // mètres : x = est, y = nord
 
+/** Altitude du sol (Three.js y) en un point [x, y] projeté (relief) */
+export type HeightFn = (x: number, y: number) => number;
+
 export interface Poly { outer: Pt[]; holes: Pt[][] }
 
 export interface Building extends Poly {

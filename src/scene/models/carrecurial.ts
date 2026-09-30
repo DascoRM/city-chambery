@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mesh } from './mesh';
 import type { CityData, Pt } from '../../types';
 import { skeletonRoofGeometry } from '../roofs';
 import { alongWalls, walls } from './chateau';
@@ -33,12 +34,6 @@ const opening = new THREE.MeshStandardMaterial({ color: '#3a3430', roughness: 1 
 const flatRoof = new THREE.MeshStandardMaterial({ color: '#7a7d83', roughness: 0.9 });
 const SLATE = new THREE.Color('#65686f');
 let lit = false;
-
-function mesh(geo: THREE.BufferGeometry, mat: THREE.Material): THREE.Mesh {
-  const m = new THREE.Mesh(geo, mat);
-  m.castShadow = m.receiveShadow = true;
-  return m;
-}
 
 export function buildCarreCurial(ctx: { night: { value: number }; data?: CityData; minUnder?: (r: Pt[]) => number }): THREE.Group {
   const g = new THREE.Group();

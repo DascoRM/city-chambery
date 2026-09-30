@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import type { CityData, Pt } from '../types';
+import type { CityData, HeightFn, Pt } from '../types';
 import { rand } from './palette';
+import { distToSegment, pointInPoly } from './geo';
 import { dataUrl } from '../dataurl';
 import type { Foliage } from '../time/seasons';
 
@@ -32,28 +33,13 @@ export function seasonalName(name: string, foliage: Foliage, seasons?: NatureSea
 
 const material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 });
 
-export function pointInRing(x: number, y: number, ring: Pt[]): boolean {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i], [xj, yj] = ring[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-}
-
-function distToSegment([px, py]: Pt, [ax, ay]: Pt, [bx, by]: Pt): number {
-  const dx = bx - ax, dy = by - ay;
-  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy || 1)));
-  return Math.hypot(px - ax - t * dx, py - ay - t * dy);
-}
-
 /** Test « cet emplacement est dans la zone » ; null si la zone ne correspond à rien dans city.json. */
 function zoneTest(zone: NatureZone, data: CityData): ((p: Pt) => boolean) | null {
   if (zone.areas) {
     const areas = data.areas.filter((a) => a.name && zone.areas!.includes(a.name));
     for (const name of zone.areas) if (!areas.some((a) => a.name === name)) console.warn(`[nature] espace vert « ${name} » introuvable`);
     if (!areas.length) return null;
-    return ([x, y]) => areas.some((a) => pointInRing(x, y, a.outer) && !a.holes.some((h) => pointInRing(x, y, h)));
+    return ([x, y]) => areas.some((a) => pointInPoly(x, y, a));
   }
   if (zone.water) {
     const lines = data.water.flatMap((w) => (w.kind === 'line' && w.name === zone.water ? [w] : []));
@@ -69,7 +55,7 @@ function zoneTest(zone: NatureZone, data: CityData): ((p: Pt) => boolean) | null
  * @returns le groupe des arbres modélisés, les indices des emplacements qu'ils remplacent, et
  *          `setFoliage` pour passer d'une saison à l'autre
  */
-export async function buildNature(config: NatureConfig, data: CityData, spots: Pt[], heightAt: (x: number, y: number) => number, foliage: Foliage = 'green'): Promise<{ group: THREE.Group; replaced: number[]; setFoliage(f: Foliage): Promise<void> }> {
+export async function buildNature(config: NatureConfig, data: CityData, spots: Pt[], heightAt: HeightFn, foliage: Foliage = 'green'): Promise<{ group: THREE.Group; replaced: number[]; setFoliage(f: Foliage): Promise<void> }> {
   const group = new THREE.Group();
   group.name = 'nature';
   const loader = new GLTFLoader();

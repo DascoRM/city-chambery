@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mesh } from './mesh';
 import type { CityData, Pt } from '../../types';
 import { glowAtNight, uplight } from './lighting';
 
@@ -63,12 +64,6 @@ export function frameOf(pts: Pt[]): Frame {
     }
   }
   return best;
-}
-
-function mesh(geo: THREE.BufferGeometry, mat: THREE.Material): THREE.Mesh {
-  const m = new THREE.Mesh(geo, mat);
-  m.castShadow = m.receiveShadow = true;
-  return m;
 }
 
 export function buildCathedrale(ctx: { night: { value: number }; data?: CityData }): THREE.Group {

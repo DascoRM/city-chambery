@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import type { Building, Place, PlacedPoi, Pt } from '../types';
+import type { Building, HeightFn, Place, PlacedPoi, Pt } from '../types';
 import { PALETTE, placeCategory } from './palette';
+import { pointInPoly } from './geo';
 
 const GEM_HEIGHT = 42;
 
@@ -15,8 +16,6 @@ export interface PoiMarker {
 }
 
 /** Marqueurs des lieux d'histoire : gemme flottante + faisceau + anneau au sol. */
-export type HeightFn = (x: number, y: number) => number;
-
 export function buildPoiMarkers(pois: PlacedPoi[], heightAt: HeightFn = () => 0): { root: THREE.Group; markers: PoiMarker[]; animate(t: number): void } {
   const root = new THREE.Group();
   root.name = 'pois';
@@ -118,15 +117,6 @@ function pinGeometry(): THREE.BufferGeometry {
   return new THREE.LatheGeometry(pts, 14);
 }
 
-function inRing(x: number, y: number, ring: Pt[]): boolean {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const [xi, yi] = ring[i], [xj, yj] = ring[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-}
-
 /**
  * Hauteur où poser chaque épingle : sur le toit du bâtiment qui contient le point OSM
  * (la plupart des bars sont au rez-de-chaussée d'un immeuble : posée au sol, l'épingle serait
@@ -140,7 +130,7 @@ function standHeights(places: Place[], heightAt: HeightFn, buildings: Building[]
   });
   return places.map(({ pos: [x, y] }) => {
     const ground = heightAt(x, y);
-    const hit = boxes.find((k) => x >= k.x0 && x <= k.x1 && y >= k.y0 && y <= k.y1 && inRing(x, y, k.b.outer) && !k.b.holes.some((h) => inRing(x, y, h)));
+    const hit = boxes.find((k) => x >= k.x0 && x <= k.x1 && y >= k.y0 && y <= k.y1 && pointInPoly(x, y, k.b));
     return hit ? (minUnder?.(hit.b.outer) ?? ground) + hit.b.h : ground;
   });
 }

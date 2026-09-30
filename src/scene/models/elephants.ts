@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mesh } from './mesh';
 
 /**
  * Fontaine des Éléphants — version « formes simples » générée en code (itération 9).
@@ -23,14 +24,6 @@ const iron = new THREE.MeshStandardMaterial({ color: '#77716a', roughness: 0.55,
 const bronze = new THREE.MeshStandardMaterial({ color: '#6f7058', roughness: 0.5, metalness: 0.2, flatShading: true });
 const water = new THREE.MeshStandardMaterial({ color: '#79b8dc', roughness: 0.15, metalness: 0.1 });
 const jet = new THREE.MeshStandardMaterial({ color: '#d6ecf8', roughness: 0.1, transparent: true, opacity: 0.7 });
-
-function mesh(geo: THREE.BufferGeometry, mat: THREE.Material, x = 0, y = 0, z = 0): THREE.Mesh {
-  const m = new THREE.Mesh(geo, mat);
-  m.position.set(x, y, z);
-  m.castShadow = true;
-  m.receiveShadow = true;
-  return m;
-}
 
 /** L'avant d'un éléphant, sortant du piédestal le long de +X (la croupe est « dans » le bloc central). */
 function elephantFront(): THREE.Group {

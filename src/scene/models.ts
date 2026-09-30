@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import type { CityData, PlacedPoi, Pt } from '../types';
+import type { CityData, HeightFn, PlacedPoi, Pt } from '../types';
 import { buildElephantsFountain } from './models/elephants';
 import { buildCathedrale } from './models/cathedrale';
 import { buildChateau } from './models/chateau';
@@ -34,7 +34,7 @@ export interface ModelContext {
   night: { value: number };
   data?: CityData;
   /** Altitude du sol (relief) en coordonnées OSM projetées */
-  heightAt?: (x: number, y: number) => number;
+  heightAt?: HeightFn;
   /** Altitude la plus basse sous une emprise */
   minUnder?: (ring: Pt[]) => number;
   /** Altitude du sol à l'emplacement du modèle (renseignée par buildModels) */

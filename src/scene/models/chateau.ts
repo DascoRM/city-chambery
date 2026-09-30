@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import type { Building, CityData, Pt } from '../../types';
+import { mesh } from './mesh';
+import type { Building, CityData, HeightFn, Pt } from '../../types';
 import { roofGeometry, skeletonRoofGeometry } from '../roofs';
 import { frameOf } from './cathedrale';
 import { glowAtNight, uplight } from './lighting';
@@ -44,12 +45,6 @@ const opening = new THREE.MeshStandardMaterial({ color: '#3a3430', roughness: 1 
 const SLATE = new THREE.Color('#62666e');
 const WALL = new THREE.Color('#d8d0bd');
 let lit = false;
-
-function mesh(geo: THREE.BufferGeometry, mat: THREE.Material | THREE.Material[]): THREE.Mesh {
-  const m = new THREE.Mesh(geo, mat);
-  m.castShadow = m.receiveShadow = true;
-  return m;
-}
 
 /** Murs : contour OSM extrudé jusqu'à la gouttière. */
 export function walls(b: Building, h: number, mat: THREE.Material): THREE.Mesh {
@@ -112,7 +107,7 @@ export function alongWalls(b: Building, spacing: number, make: (x: number, y: nu
   return g;
 }
 
-export function buildChateau(ctx: { night: { value: number }; data?: CityData; minUnder?: (r: Pt[]) => number; heightAt?: (x: number, y: number) => number }): THREE.Group {
+export function buildChateau(ctx: { night: { value: number }; data?: CityData; minUnder?: (r: Pt[]) => number; heightAt?: HeightFn }): THREE.Group {
   const g = new THREE.Group();
   g.name = 'chateau-des-ducs';
   if (!ctx.data) return g;

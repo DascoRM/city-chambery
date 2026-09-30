@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Label } from '../types';
+import type { HeightFn, Label } from '../types';
 
 const STYLE = {
   park: { color: '#355e2b', halo: 'rgba(250, 246, 232, 0.92)' },
@@ -47,7 +47,7 @@ function makeSprite(label: Label, ground = 0): THREE.Sprite {
  * Noms des parcs et cours d'eau. Les petits parcs n'apparaissent qu'en s'approchant,
  * pour ne pas surcharger la vue d'ensemble.
  */
-export async function buildLabels(labels: Label[], heightAt: (x: number, y: number) => number = () => 0) {
+export async function buildLabels(labels: Label[], heightAt: HeightFn = () => 0) {
   try {
     await document.fonts.load(`italic 600 64px Fraunces`);
   } catch {
