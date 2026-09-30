@@ -1,5 +1,22 @@
 # Journal des itérations
 
+## Audit avant nouveaux travaux — 30/09/2026 (pas de code applicatif)
+
+**Demande de Dasco :** un audit rapide du projet avec les agents et les skills, pour voir ce qu'il y a à optimiser avant de commencer de nouveaux travaux ; puis ranger les suites en P0 (bugs), P1 (enablers et technical improvements) et P2 (reprise de « la ville vit »).
+
+**Changements :**
+- skills Three.js installés (`threejs-fundamentals`, `-geometry`, `-interaction`, `-animation`) et graphe de connaissances graphify (`graphify-out/`, ignoré par git) ;
+- 3 audits en lecture seule par des sub-agents génériques (pas les agents du template) : rendu, qualité du code, données / chargement / déploiement → `.claude/docs/tasks/audit-2026-09-30-{rendu,code,donnees}-plan.md` ;
+- BACKLOG : section P0 (BUG-01 éclairage de nuit, BUG-02 lot de petites corrections), P1 (EN-01 module commun géométrie et voies, EN-02 reprise de `main.ts`, TI-01 mode dev, TI-02 30 images/s au repos, TI-03 three.js séparé, EN-03 analyse meshopt), P2 « la ville vit » déplacée à la suite des enablers ; démarrage raté rattaché au launcher (P3) ;
+- DECISIONS : nouvelle version à chaque déploiement, assumée ;
+- `.gitignore` : `graphify-out/`.
+
+**Vérifié :** `npm run build` passe (0 erreur de type, un seul fichier JS de 789 Ko / 216 Ko gzip) ; `npm audit --omit=dev` : 0 vulnérabilité ; mécanisme de BUG-01 confirmé dans le code de three.js 0.186 (`Material.customProgramCacheKey` = texte de `onBeforeCompile`) ; `generatedAt` bien inclus dans l'empreinte des données (`vite.config.ts`).
+
+**Non vérifié :** BUG-01 à l'écran (rendu de nuit) ; les gains estimés (TI-03, double téléchargement du service worker) ; aucune mesure de temps (navigateur de test en rendu logiciel).
+
+**Non retenu :** ombre figée des statues de la fontaine (non constatée par Dasco) ; `generatedAt` (voulu) ; fusion des monuments (reprise avec les bâtiments) ; double téléchargement à la 1re visite (pas grave pour l'instant).
+
 ## Organisation du suivi — 30/09/2026 (pas de code)
 
 **Demande de Dasco :** réorganiser `claude/` dans le `.claude/` initialisé depuis un template, remplir le contexte et le `CLAUDE.md` ; les agents viendront ensuite.
