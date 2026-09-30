@@ -1,5 +1,17 @@
 # Journal des itérations
 
+## Itération 44 — 30/09/2026 (branche `feat/EN-03-analyse-meshopt`, pas de code applicatif)
+
+**Demande de Dasco :** EN-03, analyse de la compression meshopt des modèles (go / no go).
+
+**Changements :** documents seulement : `.claude/docs/tasks/en03-meshopt-analyse.md` (mesures, essai, plan), BACKLOG (EN-03 fait, nouveau ticket **TI-04**), DECISIONS.
+
+**Résultat : GO.** Modèles : 442 → 194 Ko gzip (−247 Ko, −56 %), décodeur +7,3 Ko, donc ≈ −240 Ko au premier chargement (≈ −23 %) ; précache hors-ligne −372 Kio ; et les modèles sont retéléchargés à chaque déploiement (l'empreinte des données change). Sans quantification, le gain tombe à −34 % sur les arbres et l'éléphant devient plus lourd : il faut quantifier, ce qui oblige à remettre la géométrie en flottants et en mètres au chargement (helper `gltf.ts`, sinon le shader de marche et `nature.ts` cassent).
+
+**Vérifié :** essai complet dans une copie jetable (rien n'a été modifié dans l'appli) : 45 modèles rechargés avec le vrai chargeur, écart maximal 0,36 mm par rapport à l'original ; parc de 927 arbres : 0,0045 % des pixels au-delà de 8/255 ; éléphant correct à l'écran (corps, oreilles, défenses, pattes) ; décodage ≈ 2 ms par arbre, 9 ms pour l'éléphant ; aucune erreur console ; tailles du build mesurées (fichiers JS et précache).
+
+**Non vérifié :** Safari / iOS et mobiles modestes (repli sans WebAssembly, temps de décodage) ; nuit, automne et hiver (seulement 14 h et arbres verts) ; service worker avec les fichiers compressés ; niveau `medium` de `meshopt()` ; éléphant comparé image par image (impossible : le hasard du troupeau diffère d'un chargement à l'autre, la preuve est la géométrie).
+
 ## Itération 43 — 30/09/2026 (branche `feat/TI-03-three-separe`)
 
 **Demande de Dasco :** TI-03 pour finaliser le P1 (three.js dans un fichier JS séparé).
