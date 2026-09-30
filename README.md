@@ -305,7 +305,8 @@ et quatre éléphants se promènent dans les rues (entre 80 et 300 m de la fonta
 - **Cache-cache** : survoler un éléphant à la souris (ou le toucher) le fait disparaître dans un nuage.
   Une bulle le fait narguer (`game.taunts`) et donne un indice : la rue OSM où il réapparaît
   (« Je file vers la rue de Boigne »), ou la direction si la voie n'a pas de nom. Il réapparaît de 100
-  à 250 m plus loin (`respawnDistance`).
+  à 250 m plus loin (`respawnDistance`), toujours à moins de `roamRadius` (380 m) de la fontaine et sur un
+  endroit dégagé : façade à plus de `openSpace` (4,5 m), pour qu'il ne rentre pas dans un mur en s'asseyant.
 - **Épuisé** : chaque éléphant tire au hasard son nombre de fuites (1 à 5, `escapes`). Après la dernière,
   il réapparaît assis, des étoiles au-dessus de la tête, et ne bouge plus.
 - **Ramené** : un clic sur l'éléphant épuisé l'envoie en vol jusqu'à sa place ; la caméra suit, il se
@@ -347,7 +348,7 @@ En production, ni le code de l'outil ni l'endpoint `/__dev/poi` du serveur Vite 
 - **Bars, cafés, restaurants** : une épingle 3D (pointeur de carte) par lieu OSM, colorée par catégorie : violet = bar (bar, pub, biergarten, boîte de nuit), bleu = café (café, glacier), orange = restaurant (`PLACE_CATEGORIES` dans `src/scene/palette.ts`). L'épingle est posée sur le toit du bâtiment qui contient le point OSM (161 lieux sur 169 sont à l'intérieur d'un bâtiment), sinon au sol. Au survol, l'épingle rebondit et grossit, et une fiche apparaît à côté (catégorie, nom avec un petit rebond, cuisine, horaires OSM avec les jours en français). La fiche suit l'épingle quand la caméra bouge ; sur mobile, elle s'ouvre au toucher, au-dessus de l'épingle.
 - **Effet maquette** : flou tilt-shift en post-traitement, toujours actif (plus d'interrupteur), bande nette sur le point visé ; les noms restent nets. Le flou est calculé en demi-résolution (`src/scene/tiltshift.ts`).
 - **Résolution** : densité de pixels plafonnée à 1,5, puis baissée automatiquement si les images/s chutent sous 40 (`src/scene/quality.ts`).
-- **Mesurer la fluidité** : ajouter `?debug` à l'adresse (ex. `http://localhost:3000/?debug`) affiche images/s, pire image, appels de rendu, triangles et densité.
+- **Mesurer la fluidité** : ajouter `?debug` à l'adresse (ex. `http://localhost:3000/?debug`) affiche images/s, pire image, appels de rendu, triangles et densité, ainsi que le **debug des éléphants** : un faisceau coloré au-dessus de chacun (bleu : se promène, jaune : épuisé ; visible à travers les bâtiments) et un panneau avec leur état, leurs fuites restantes et leur distance à la fontaine ; « Voir » y amène la caméra, « Épuiser » le fait réapparaître épuisé.
 
 ---
 
@@ -383,6 +384,7 @@ src/
   scene/tiltshift.ts       Effet maquette (flou en demi-résolution)
   scene/quality.ts         Résolution adaptative (densité de pixels selon les images/s)
   ui/perfhud.ts            Compteur de performance (?debug)
+  dev/herd-debug.ts        Debug des éléphants : faisceaux et panneau (?debug)
   pwa.ts                   Mode hors-ligne : service worker, bandeau « nouvelle version »
   dataurl.ts               Adresses des données avec leur version (?v=)
   scene/models.ts          Chargement et placement des monuments

@@ -1,5 +1,21 @@
 # Journal des itérations
 
+## Itération 36 — 30/09/2026
+
+**Retour de Dasco :** impossible de trouver le dernier éléphant (bug ou pas ?), un « artefact » sur le 3e (capture : éléphant épuisé collé contre une façade) ; demande un mode debug pour les retrouver.
+
+**Constat :**
+- rien ne limitait les réapparitions au quartier : de fuite en fuite (jusqu'à 250 m chacune), un éléphant pouvait finir au bout de la carte, à plus de 600 m de la fontaine ;
+- un bout de chemin peut toucher une façade ; un éléphant qui y réapparaît épuisé s'assoit à moitié dans le mur (probablement l'artefact vu sur le 3e, à confirmer par Dasco).
+
+**Changements :**
+- réapparitions limitées à `roamRadius` (380 m) autour de la fontaine, et seulement sur des nœuds dégagés : façade la plus proche à plus de `openSpace` (4,5 m) ; 3 717 nœuds sur 4 459 retenus ;
+- mode debug (`?debug`, `src/dev/herd-debug.ts`) : faisceau coloré au-dessus de chaque éléphant, visible à travers les bâtiments ; panneau état / fuites restantes / distance à la fontaine, boutons « Voir » (vol de la caméra) et « Épuiser ».
+
+**Vérifié :** 40 fuites simulées, la plus lointaine à 357 m de la fontaine ; panneau et faisceaux affichés.
+
+**Non vérifié :** que l'artefact vu par Dasco est bien celui-là.
+
 ## Itération 35 — 30/09/2026
 
 **Retour de Dasco sur l'itération 34 :** pas amusant, on n'arrive pas vraiment à le bloquer dans un coin, et la souris l'attrape trop facilement. Idées : il disparaît au survol et on le recherche ; un message pour narguer ; puis : quatre éléphants à ramener sur la fontaine, avec animation de retour et feu d'artifice.

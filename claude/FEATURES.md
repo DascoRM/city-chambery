@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 30/09/2026 — itération 35.
+État au 30/09/2026 — itération 36.
 
 ## Carte / diorama
 

@@ -82,7 +82,7 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - Avoir de la vie dans les rue
 - ✅ Jeu « trouve l'éléphant » — itération 34 (coincer l'éléphant : abandonné, pas amusant), remplacé à l'itération 35 par « Ramène les quatre éléphants à la fontaine » (cache-cache, 1 à 5 fuites, épuisé, retour en vol, feu d'artifice)
 - ⬜ Mini-jeu : régler après de vrais essais (distance de réapparition, nombre de fuites, points)
-- ⬜ Mini-jeu : aide pour les trouver (flèche au bord de l'écran, ou bouton « où sont les éléphants ? »)
+- ⬜ Mini-jeu : aide pour les trouver (flèche au bord de l'écran, ou bouton « où sont les éléphants ? ») — pour les joueurs ; le mode debug `?debug` (itération 36) montre déjà où ils sont
 - ⬜ Mini-jeu : points selon la rapidité (idée écartée pour la v1)
 - ⬜ Points : à quoi les dépenser (bâtiments débloqués, décorations…) — *Dasco*
 - Mode histoire qui fait visiter la ville
