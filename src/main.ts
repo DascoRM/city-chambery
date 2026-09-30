@@ -5,12 +5,14 @@ import modelsContent from './content/models.json';
 import natureContent from './content/nature.json';
 import mascotContent from './content/mascot.json';
 import placeHours from './content/place-hours.json';
+import buildingsContent from './content/buildings.json';
 import type { CityData, Poi, PlacedPoi, Ticker } from './types';
 import { createStage } from './scene/stage';
 import { buildCity } from './scene/city';
 import { createTerrain } from './scene/terrain';
 import { buildPlaceMarkers, buildPoiMarkers } from './scene/markers';
 import { buildLabels } from './scene/labels';
+import { buildAwnings, type AwningConfig } from './scene/facades';
 import { createTiltShift } from './scene/tiltshift';
 import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
@@ -111,6 +113,15 @@ async function main() {
   scene.add(poiLayer.root);
   const placeLayer = buildPlaceMarkers(data.places, terrain.heightAt, data.buildings, terrain.minUnder);
   scene.add(placeLayer.root);
+  // Auvents des bars, cafés et restaurants (pièces du pack de bâtiments) ; s'ils ne se chargent pas, la carte reste sans
+  let awnings: Awaited<ReturnType<typeof buildAwnings>> | null = null;
+  try {
+    awnings = await buildAwnings({ data, heightAt: terrain.heightAt, minUnder: terrain.minUnder, hidden: hiddenBuildings(models), config: buildingsContent.awning as AwningConfig });
+    scene.add(awnings.group);
+    if (DEBUG) console.info(`[auvents] ${awnings.stats.placed} posés, ignorés :`, awnings.stats.skipped);
+  } catch (e) {
+    console.warn('[auvents] non chargés', e);
+  }
 
   let discovered = loadDiscovered();
   let placeIdx: number | null = null; // fiche de lieu ouverte
@@ -119,6 +130,7 @@ async function main() {
     onJournalPick: (id) => openPoi(id),
     onToggleCategory: (cat, v) => {
       placeLayer.setCategoryVisible(cat, v);
+      awnings?.setCategoryVisible(cat, v);
       // La fiche ouverte disparaît si sa catégorie est masquée
       if (!v && placeIdx !== null && placeCategory(placeLayer.places[placeIdx].kind).id === cat) closePlace();
     },
@@ -324,7 +336,7 @@ async function main() {
   });
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, clock, herd, hunt, slots } });
 }
 
 main();
