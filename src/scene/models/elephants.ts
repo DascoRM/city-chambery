@@ -202,6 +202,8 @@ export function buildElephantsFountain(ctx?: { night: { value: number }; ground?
   for (let i = 0; i < 4; i++) {
     const e = elephantFront();
     e.rotation.y = (i * Math.PI) / 2;
+    // Nommés pour le mini-jeu : chaque éléphant échappé revient à sa place (src/game/hunt.ts)
+    e.name = `elephant-${i}`;
     g.add(e);
   }
 

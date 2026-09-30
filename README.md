@@ -20,7 +20,7 @@ point par point, c'est assez plaisant pour que mes amis y passent 10 minutes et 
 5. [Gérer les lieux d'histoire](#gérer-les-lieux-dhistoire)
 6. [Monuments modélisés](#monuments-modélisés)
 7. [Arbres modélisés (pack nature)](#arbres-modélisés-pack-nature)
-8. [Mascotte (l'éléphant qui se promène)](#mascotte-léléphant-qui-se-promène)
+8. [Mascottes (les éléphants qui se promènent)](#mascottes-les-éléphants-qui-se-promènent)
 9. [Outil de placement (mode dev)](#outil-de-placement-mode-dev)
 10. [Rendu : ce qui se passe à l'écran](#rendu--ce-qui-se-passe-à-lécran)
 11. [Structure du code](#structure-du-code)
@@ -115,6 +115,7 @@ source et dénivelé du relief, types de toits, et quels lieux d'histoire ont é
 | Découvrir un lieu | clic sur une gemme ✦ | toucher une gemme |
 | Voir un bar / café / restaurant | survoler son épingle (la fiche s'affiche à côté) ; clic = la fiche reste ouverte | toucher l'épingle |
 | Fermer une fiche | Échap, ✕ ou clic dans le vide | ✕ ou toucher dans le vide |
+| Ramener un éléphant à la fontaine | le survoler le fait trotter plus vite ; clic = il disparaît et réapparaît plus loin ; épuisé (étoiles), clic pour le ramener | le toucher le fait disparaître ; épuisé, le toucher pour le ramener |
 
 Zoom maximum : 70 m du point visé (120 m avant). De près, la caméra reste à au moins 30 m au-dessus du sol pour ne pas entrer dans les toits ni dans les collines. Gestes à deux doigts : `src/scene/touch.ts` ; réglages de la caméra : `src/scene/stage.ts`.
 
@@ -275,9 +276,9 @@ Les `.blend` d'origine ont été supprimés (pack retéléchargeable sur quatern
 
 ---
 
-## Mascotte (l'éléphant qui se promène)
+## Mascottes (les éléphants qui se promènent)
 
-Un éléphant se promène dans le diorama, **uniquement sur les rues et chemins** d'OpenStreetMap. Réglages dans
+Quatre éléphants se promènent dans le diorama, **uniquement sur les rues et chemins** d'OpenStreetMap. Réglages dans
 `src/content/mascot.json`, code dans `src/scene/mascot.ts`.
 
 - **Chemin** : les voies OSM forment un graphe (les voies qui se croisent partagent leurs points). L'éléphant
@@ -287,7 +288,7 @@ Un éléphant se promène dans le diorama, **uniquement sur les rues et chemins*
   `roamRadius` mètres.
 - **Voies retirées** : escaliers (`excludeKinds`) ; tronçons sous un bâtiment (passages couverts) ; tronçons à
   moins de `clearance` mètres d'une façade (trottoirs le long des murs, pour qu'il ne rentre pas dedans) ;
-  cercle `avoid` autour de la fontaine (le bassin du modèle déborde sur le chemin OSM). Il reste ≈ 53 km de voies.
+  cercle `avoid` de 15 m autour de la fontaine (le bassin du modèle déborde sur le chemin OSM). Il reste ≈ 53 km de voies.
 - **Rythme** : `speed` en m/s, pauses de `pauseSeconds` toutes les `walkSeconds` secondes.
 - **Animation** : le modèle est statique (ni squelette, ni animation). Les pattes (marche en quatre temps),
   la trompe, les oreilles et la queue sont animées **dans le shader**, d'après la position des sommets.
@@ -295,6 +296,32 @@ Un éléphant se promène dans le diorama, **uniquement sur les rues et chemins*
 - **Ombre** : une tache sombre sous lui (les ombres de la scène ne sont recalculées que quand le soleil bouge).
 - **Modèle** : « Elephant » par jeremy, [Poly Pizza](https://poly.pizza/m/9J-cG39KYFC), CC BY 3.0. Source dans
   `assets-src/` (le `.glb` et l'`.obj` d'origine), converti par `npm run mascot`.
+
+### Mini-jeu « Ramène les éléphants à la fontaine »
+
+Les quatre éléphants de la fontaine se sont échappés : au départ, la fontaine n'a plus ses éléphants,
+et quatre éléphants se promènent dans les rues (entre 80 et 300 m de la fontaine, `game.startDistance`).
+
+- **Sursaut** : la souris sur un éléphant le fait sursauter et trotter plus vite (`startleSpeed`, 3,5 m/s,
+  pendant `startleSeconds`) : il faut le rattraper pour cliquer.
+- **Cache-cache** : cliquer sur un éléphant (ou le toucher) le fait disparaître dans un nuage.
+  Une bulle le fait narguer (`game.taunts`, affichée `bubbleSeconds`, 6 s) et donne un indice : la rue OSM où il réapparaît
+  (« Je file vers la rue de Boigne »), ou la direction si la voie n'a pas de nom. Il réapparaît de 100
+  à 250 m plus loin (`respawnDistance`), toujours à moins de `roamRadius` (380 m) de la fontaine et sur un
+  endroit dégagé : façade à plus de `openSpace` (4,5 m), pour qu'il ne rentre pas dans un mur en s'asseyant.
+- **Épuisé** : chaque éléphant tire au hasard son nombre de fuites (1 à 5, `escapes`). Après la dernière,
+  il réapparaît assis, des étoiles au-dessus de la tête, et ne bouge plus.
+- **Ramené** : un clic sur l'éléphant épuisé l'envoie en vol jusqu'à sa place ; la caméra suit, il se
+  change en bronze en sortant du socle, gerbe d'étincelles et petit feu d'artifice. `points` (10) par
+  éléphant, plus `bonus` (20) quand la fontaine est complète, avec un grand feu d'artifice.
+- **Nouvelle partie** : `restartSeconds` (45 s) après la fontaine complète, les éléphants s'échappent de
+  nouveau.
+- **Sauvegarde** : éléphants ramenés (`src/state/herd.ts`) et points (`src/state/points.ts`) gardés dans
+  le navigateur, comme les lieux découverts. « Recommencer l'exploration » ne touche ni l'un ni l'autre.
+- **Compteur** : « 🐘 N points · ⛲ n / 4 » sous la progression.
+- Code : `src/game/hunt.ts` (règles, bulle, score), `src/scene/mascot.ts` (troupeau, états, animations),
+  `src/scene/particles.ts` (fumée, étincelles, feux d'artifice), places sur la fontaine :
+  `elephant-0` à `elephant-3` dans `src/scene/models/elephants.ts`.
 
 ## Outil de placement (mode dev)
 
@@ -323,7 +350,7 @@ En production, ni le code de l'outil ni l'endpoint `/__dev/poi` du serveur Vite 
 - **Bars, cafés, restaurants** : une épingle 3D (pointeur de carte) par lieu OSM, colorée par catégorie : violet = bar (bar, pub, biergarten, boîte de nuit), bleu = café (café, glacier), orange = restaurant (`PLACE_CATEGORIES` dans `src/scene/palette.ts`). L'épingle est posée sur le toit du bâtiment qui contient le point OSM (161 lieux sur 169 sont à l'intérieur d'un bâtiment), sinon au sol. Au survol, l'épingle rebondit et grossit, et une fiche apparaît à côté (catégorie, nom avec un petit rebond, cuisine, horaires OSM avec les jours en français). La fiche suit l'épingle quand la caméra bouge ; sur mobile, elle s'ouvre au toucher, au-dessus de l'épingle.
 - **Effet maquette** : flou tilt-shift en post-traitement, toujours actif (plus d'interrupteur), bande nette sur le point visé ; les noms restent nets. Le flou est calculé en demi-résolution (`src/scene/tiltshift.ts`).
 - **Résolution** : densité de pixels plafonnée à 1,5, puis baissée automatiquement si les images/s chutent sous 40 (`src/scene/quality.ts`).
-- **Mesurer la fluidité** : ajouter `?debug` à l'adresse (ex. `http://localhost:3000/?debug`) affiche images/s, pire image, appels de rendu, triangles et densité.
+- **Mesurer la fluidité** : ajouter `?debug` à l'adresse (ex. `http://localhost:3000/?debug`) affiche images/s, pire image, appels de rendu, triangles et densité, ainsi que le **debug des éléphants** : un faisceau coloré au-dessus de chacun (bleu : se promène, jaune : épuisé ; visible à travers les bâtiments) et un panneau avec leur état, leurs fuites restantes et leur distance à la fontaine ; « Voir » y amène la caméra, « Épuiser » le fait réapparaître épuisé.
 
 ---
 
@@ -359,6 +386,7 @@ src/
   scene/tiltshift.ts       Effet maquette (flou en demi-résolution)
   scene/quality.ts         Résolution adaptative (densité de pixels selon les images/s)
   ui/perfhud.ts            Compteur de performance (?debug)
+  dev/herd-debug.ts        Debug des éléphants : faisceaux et panneau (?debug)
   pwa.ts                   Mode hors-ligne : service worker, bandeau « nouvelle version »
   dataurl.ts               Adresses des données avec leur version (?v=)
   scene/models.ts          Chargement et placement des monuments
@@ -367,6 +395,10 @@ src/
   scene/models/            Monuments générés en code + éclairage de nuit partagé
   ui/ui.ts                 HUD, fiche, journal, toasts, contrôles
   state/progress.ts        Progression et préférences (localStorage)
+  state/points.ts          Points du mini-jeu (localStorage)
+  state/herd.ts            Éléphants ramenés sur la fontaine (localStorage)
+  game/hunt.ts             Mini-jeu « Ramène les éléphants » : cache-cache, bulle, retour, score
+  scene/particles.ts       Fumée, étincelles, feux d'artifice
   dev/placement.ts         Outil de placement (chargé seulement en dev)
 
 public/data/city.json      Données générées (ne pas modifier à la main)
@@ -376,14 +408,13 @@ public/models/mascotte/    Éléphant mascotte converti (.glb)
 public/icons/              Icônes de l'appli (mode hors-ligne, écran d'accueil)
 assets-src/                Sources des modèles (pack Quaternius en .obj/.fbx), pas servies par le site
 data/raw/                  Caches des téléchargements (non versionnés)
-claude/                    Suivi du projet : fonctionnalités, backlog, journal, décisions
-CLAUDE.md                  Consignes pour Claude quand il travaille sur le projet
+.claude/                   Consignes pour Claude (CLAUDE.md) et suivi du projet (docs/)
 ```
 
 Choix techniques : **Three.js** plutôt qu'une librairie de cartographie (rendu diorama plus
 simple à maîtriser en scène 3D pure) ; **pas de backend** : tout est statique, hébergeable
 n'importe où (Coolify sur le Pi, Netlify, GitHub Pages…) avec `npm run build`.
-Le détail des choix est dans [`claude/DECISIONS.md`](claude/DECISIONS.md).
+Le détail des choix est dans [`.claude/docs/architecture/decisions/DECISIONS.md`](.claude/docs/architecture/decisions/DECISIONS.md).
 
 ---
 
@@ -412,7 +443,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 | `deploy/nginx.conf` | Compression gzip ; cache 1 an pour `assets/` et pour les données appelées avec `?v=` ; `index.html`, `sw.js` et le manifeste revérifiés à chaque visite (réponse 304 s'ils n'ont pas changé) |
 | `docker-compose.yml` | Un service `web` (conteneur `city-chambery`) ; nginx écoute sur le port 80 du conteneur, publié sur le port **3000** de l'hôte (`'3000:80'`) ; argument `REFRESH_DATA` |
 | `deploy/refresh-data.sh` | Au build, si `REFRESH_DATA=true` : `npm run data` + `npm run nature`, avec retour aux données du dépôt en cas d'échec ou de données incomplètes |
-| `.dockerignore` | Exclut `node_modules`, `data/raw`, `claude/`, les `.fbx` du pack nature… (garde les `.obj` pour `npm run nature`) : contexte de build d'environ 4 Mo |
+| `.dockerignore` | Exclut `node_modules`, `data/raw`, `.claude/`, les `.fbx` du pack nature… (garde les `.obj` pour `npm run nature`) : contexte de build d'environ 4 Mo |
 
 **Cache et mode hors-ligne :**
 
@@ -475,11 +506,15 @@ dans Coolify, ou `docker compose build --no-cache`).
 
 ## Suivi du projet
 
-Le dossier [`claude/`](claude/README.md) sert de mémoire au projet :
+Le dossier [`.claude/docs/`](.claude/docs/context.md) sert de mémoire au projet (point d'entrée : [`context.md`](.claude/docs/context.md)) :
 
 | Fichier | Contenu |
 |---|---|
-| [FEATURES.md](claude/FEATURES.md) | Fonctionnalités livrées et leur état |
-| [BACKLOG.md](claude/BACKLOG.md) | Ce qui reste à faire, par priorité |
-| [CHANGELOG.md](claude/CHANGELOG.md) | Journal des itérations et des retours |
-| [DECISIONS.md](claude/DECISIONS.md) | Choix techniques et produit, avec leur justification |
+| [FEATURES.md](.claude/docs/versions/FEATURES.md) | Fonctionnalités livrées et leur état |
+| [BACKLOG.md](.claude/docs/versions/backlog/BACKLOG.md) | Ce qui reste à faire, par priorité |
+| [CHANGELOG.md](.claude/docs/versions/CHANGELOG.md) | Journal des itérations et des retours |
+| [DECISIONS.md](.claude/docs/architecture/decisions/DECISIONS.md) | Choix techniques et produit, avec leur justification |
+| [PERF-AUDIT.md](.claude/docs/architecture/PERF-AUDIT.md) | Audit de fluidité |
+| [specs/epics/](.claude/docs/specs/) | Specs des gros chantiers |
+
+Les consignes pour Claude sont dans [`.claude/CLAUDE.md`](.claude/CLAUDE.md).

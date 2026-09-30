@@ -59,6 +59,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
         <div class="bar"><span></span></div>
         <p class="count"></p>
       </div>
+      <p class="points" title="Points gagnés en ramenant les éléphants à la fontaine" aria-live="polite">🐘 <b>0</b> <span>points</span> <i class="herd" title="Éléphants ramenés sur la fontaine"></i></p>
     </header>
 
     <nav class="tools">
@@ -226,6 +227,11 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     tooltip.hidden = false;
   };
 
+  const bubbleEl = document.createElement('div');
+  bubbleEl.className = 'elephant-bubble';
+  bubbleEl.setAttribute('aria-live', 'polite');
+  root.appendChild(bubbleEl);
+
   const hideHint = () => hint.classList.add('gone');
   window.setTimeout(hideHint, 9000);
 
@@ -285,6 +291,38 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     setFound, showPoi, flash, showTooltip, setClock, hidePanel: () => (panel.hidden = true),
     showPlaceCard, hidePlaceCard, movePlaceCard, setPlaceStatus,
     placeCardState: () => ({ place: shownPlace, pinned }),
+    /** Éléphants ramenés sur la fontaine */
+    setHerd: (n: number, total: number) => {
+      $<HTMLElement>('.points .herd').textContent = total ? `· ⛲ ${n} / ${total}` : '';
+    },
+    /**
+     * Bulle de l'éléphant (il nargue le joueur). text : nouveau texte (null = cacher, '' = inchangé) ;
+     * x, y : position à l'écran de la pointe de la bulle.
+     */
+    bubble: (text: string | null, x?: number, y?: number) => {
+      if (text === null) { bubbleEl.classList.remove('show'); return; }
+      if (text) {
+        bubbleEl.textContent = text;
+        bubbleEl.classList.remove('show');
+        void bubbleEl.offsetWidth; // relance l'animation d'apparition
+        bubbleEl.classList.add('show');
+      }
+      if (x !== undefined && y !== undefined) {
+        bubbleEl.style.left = `${Math.round(x)}px`;
+        bubbleEl.style.top = `${Math.round(y)}px`;
+      }
+    },
+    /** Compteur de points (mini-jeu de l'éléphant) ; gained > 0 : petite animation */
+    setPoints: (n: number, gained = 0) => {
+      const el = $<HTMLElement>('.points');
+      el.querySelector('b')!.textContent = String(n);
+      el.querySelector('span')!.textContent = n > 1 ? 'points' : 'point';
+      if (gained > 0) {
+        el.classList.remove('pop');
+        void el.offsetWidth; // relance l'animation
+        el.classList.add('pop');
+      }
+    },
     /** Oriente l'aiguille de la boussole (cap en degrés, 0 = nord en haut). */
     setHeading: (deg: number) => {
       const v = `rotate(${deg.toFixed(1)}deg)`;

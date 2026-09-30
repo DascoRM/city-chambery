@@ -1,5 +1,90 @@
 # Journal des itérations
 
+## Organisation du suivi — 30/09/2026 (pas de code)
+
+**Demande de Dasco :** réorganiser `claude/` dans le `.claude/` initialisé depuis un template, remplir le contexte et le `CLAUDE.md` ; les agents viendront ensuite.
+
+**Changements :**
+- `claude/` déplacé (historique git conservé) : `FEATURES.md` et `CHANGELOG.md` → `.claude/docs/versions/`, `BACKLOG.md` → `.claude/docs/versions/backlog/`, `DECISIONS.md` → `.claude/docs/architecture/decisions/`, `PERF-AUDIT.md` → `.claude/docs/architecture/` ; liens internes corrigés ;
+- `claude/README.md` fondu dans `.claude/docs/context.md` (vision, utilisateurs, périmètre, stack, état, index des documents) ;
+- `CLAUDE.md` racine fondu dans `.claude/CLAUDE.md`, réécrit pour le projet : règles projet, workflow hybride (itération / epic), clôture d'itération, section sub-agents « à définir » (agents du template non utilisés), checklist avant commit ;
+- `.claude/docs/onboarding/getting-started.md` rempli avec les vraies commandes ;
+- `README.md` et `.dockerignore` pointent vers `.claude/`.
+
+**Non modifié :** `agents/` (les agents seront définis ensuite).
+
+## Itération 37 — 30/09/2026
+
+**Retour de Dasco sur le jeu :** bien : on met du temps à les trouver, animations, retour à la fontaine et feu d'artifice final ; la limite à 380 m peut rester (les éloigner davantage lui plaisait aussi, à revoir plus tard). À revoir : la bulle ne reste pas assez longtemps pour lire le message ; la disparition au survol est pénible, le premier réflexe est de cliquer.
+
+**Changements :**
+- survol : l'éléphant sursaute (petit bond) et trotte à 3,5 m/s pendant 3 s, pas plus ; c'est le **clic** (ou le toucher) qui le fait disparaître ;
+- bulle affichée 6 s au lieu de 3,2 s ;
+- réglages dans `mascot.json` → `game` : `bubbleSeconds`, `startleSpeed`, `startleSeconds`.
+
+**Vérifié :** vraie souris : survol → il reste visible et repart ; clic → nuage et bulle, encore affichée 8 s plus tard dans le navigateur de test (plus lent que le temps réel).
+
+**Non vérifié :** la vitesse de trot ressentie avec une vraie souris.
+
+## Itération 36 — 30/09/2026
+
+**Retour de Dasco :** impossible de trouver le dernier éléphant (bug ou pas ?), un « artefact » sur le 3e (capture : éléphant épuisé collé contre une façade) ; demande un mode debug pour les retrouver.
+
+**Constat :**
+- rien ne limitait les réapparitions au quartier : de fuite en fuite (jusqu'à 250 m chacune), un éléphant pouvait finir au bout de la carte, à plus de 600 m de la fontaine ;
+- un bout de chemin peut toucher une façade ; un éléphant qui y réapparaît épuisé s'assoit à moitié dans le mur (probablement l'artefact vu sur le 3e, à confirmer par Dasco).
+
+**Changements :**
+- réapparitions limitées à `roamRadius` (380 m) autour de la fontaine, et seulement sur des nœuds dégagés : façade la plus proche à plus de `openSpace` (4,5 m) ; 3 717 nœuds sur 4 459 retenus ;
+- mode debug (`?debug`, `src/dev/herd-debug.ts`) : faisceau coloré au-dessus de chaque éléphant, visible à travers les bâtiments ; panneau état / fuites restantes / distance à la fontaine, boutons « Voir » (vol de la caméra) et « Épuiser ».
+
+**Vérifié :** 40 fuites simulées, la plus lointaine à 357 m de la fontaine ; panneau et faisceaux affichés.
+
+**Non vérifié :** que l'artefact vu par Dasco est bien celui-là.
+
+## Itération 35 — 30/09/2026
+
+**Retour de Dasco sur l'itération 34 :** pas amusant, on n'arrive pas vraiment à le bloquer dans un coin, et la souris l'attrape trop facilement. Idées : il disparaît au survol et on le recherche ; un message pour narguer ; puis : quatre éléphants à ramener sur la fontaine, avec animation de retour et feu d'artifice.
+
+**Décisions de Dasco :** transformation en bronze sur la fontaine ; progression gardée comme les lieux découverts ; nombre de fuites au hasard entre 1 et 5 ; indice avec le nom de la rue.
+
+**Changements :**
+- `src/scene/mascot.ts` réécrit en troupeau : réseau de voies calculé une fois et partagé ; 4 éléphants (matériaux propres, pour que chacun marche à son rythme) ; états promenade, disparition, caché, épuisé, en vol, rentré. Les mécaniques de fuite et de coin de l'itération 34 sont retirées.
+- `src/game/hunt.ts` (remplace `catch.ts`) : survol ou toucher = disparition + bulle (phrase au hasard + rue de réapparition avec son article, ou direction) ; clic sur un éléphant épuisé = vol jusqu'à sa place (courbe, 2,4 s, rotation, caméra vers la fontaine) ; place qui sort du socle avec un rebond (transformation en bronze) ; points ; fontaine complète : bonus, grand feu d'artifice, nouvelle partie après 45 s.
+- `src/scene/particles.ts` : particules (fumée, étincelles) et feux d'artifice (fusée avec traînée puis gerbe) ; couleurs saturées en mélange normal pour rester visibles de jour.
+- `src/scene/models/elephants.ts` : les 4 éléphants de bronze nommés `elephant-0` à `elephant-3`.
+- `src/state/herd.ts` : éléphants ramenés, gardés dans le navigateur. Compteur « ⛲ n / 4 » à côté des points ; bulle au-dessus de l'éléphant.
+- `mascot.json` : bloc `game` remplacé (les réglages de fuite de l'itération 34, dont ceux modifiés par Dasco, n'ont plus d'usage).
+
+**Vérifié dans le navigateur de test :**
+- vrai survol de souris : disparition, nuage, bulle « La fontaine attendra encore un peu ! / Je file vers l'ouest 🐘 » ;
+- éléphant épuisé avec ses étoiles ; vrais clics : les 4 éléphants ramenés, compteur 60 points (4 × 10 + 20), fontaine complète, feu d'artifice visible ;
+- partie reprise après rechargement (éléphants déjà ramenés sur la fontaine, les autres dans les rues).
+
+**Non vérifié :** le jeu en conditions réelles (fluidité, difficulté pour les retrouver), au doigt sur téléphone, et la nouvelle partie après 45 s (logique relue, pas observée).
+
+## Itération 34 — 30/09/2026
+
+**Demande de Dasco :** le mini-jeu « trouve l'éléphant ». Quand on essaie de cliquer ou de passer la souris dessus, il accélère ; il faut le diriger vers un coin ou un angle pour le bloquer ; bloqué, il fait un rebond et on peut l'attraper ; on gagne des points ; un compteur, réutilisable plus tard pour les bâtiments.
+
+**Changements :**
+- `src/scene/mascot.ts` : quatre états (promenade, fuite, coincé, attrapé) :
+  - fuite : voie la plus éloignée de la souris à chaque carrefour, demi-tour si elle barre la route, sprint après un clic raté ;
+  - coincé : quand toutes les issues d'un carrefour repartent vers la souris ; rebond avec écrasement, face à la souris ; il force le passage après 4 s ou si la souris s'éloigne ;
+  - attrapé : grand saut en tournant, disparition, retour à la fontaine ;
+  - zone de clic invisible plus large que le modèle ; réglages dans `mascot.json` → `game`.
+- `src/game/catch.ts` : position de la souris sur la carte (plan à l'altitude de l'éléphant), toucher sur mobile (menace pendant 1,5 s), clic, score.
+- `src/state/points.ts` + compteur 🐘 dans le cartouche (animation à chaque gain) ; messages : première fuite, « Coincé ! » (3 premières fois), « Attrapé ! +10 points ».
+- Cercle interdit autour de la fontaine passé de 11 à 15 m : coincé près du bassin, l'éléphant se tournait et sa trompe entrait dans la margelle.
+- README : commandes, section du mini-jeu, structure.
+
+**Vérifié dans le navigateur de test :**
+- un « joueur » simulé qui le pousse par derrière le coince en 4 à 120 s selon les essais, ou pas du tout en 2 min (il tourne alors sur une boucle de chemins) ;
+- vrai clic de souris sur l'éléphant coincé : attrapé, compteur à 10, retour à la fontaine ;
+- rebond visible entre deux images ; 30 min de promenade : jamais dans un bâtiment ni à moins de 15 m de la fontaine.
+
+**Non vérifié :** le plaisir de jeu et la difficulté avec une vraie souris, et le jeu au doigt sur téléphone.
+
 ## Itération 33 — 30/09/2026
 
 **Demande de Dasco :** le ticket « Mascotte (éléphant ?) qui se promène dans le diorama », avec le modèle déposé dans `assets-src/`. L'éléphant doit toujours marcher sur les chemins ou les routes.

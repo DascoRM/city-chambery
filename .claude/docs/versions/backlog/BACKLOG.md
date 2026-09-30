@@ -17,7 +17,7 @@ Priorités : **P1** prochaine itération · **P2** bientôt · **P3** un jour
 
 
 
-## P1 — Fluidité (audit du 29/09, détail dans [PERF-AUDIT.md](PERF-AUDIT.md))
+## P1 — Fluidité (audit du 29/09, détail dans [PERF-AUDIT.md](../../architecture/PERF-AUDIT.md))
 Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par image. Après (ombres à la demande, arbres simplifiés) : ≈ 2 400 appels et ≈ 1,5 M triangles par image la plupart du temps.
 - ✅ **Mesurer** : compteur avec `?debug` dans l'adresse (images/s, pire image, appels de rendu, triangles, densité, taille du rendu) — itération 29
 - ⏸ **Monuments : fusionner la géométrie par matériau** — *en attente, Dasco garde les monuments tels quels pour l'instant* (Carré Curial 1 683 objets, château 561, fontaine 54, cathédrale 42 → ~30 appels) — gain le plus fort, aucun changement visuel — *petit*
@@ -80,8 +80,13 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ⬜ Étendre à d'autres quartiers (plusieurs dioramas reliés)
 - Avoir un luncher pour lancer la map (mode choix, exploration ou mode histoire
 - Avoir de la vie dans les rue
-- Jeux trouve l’éléphant (si j’essaye de clique dessus il court plus vite
+- ✅ Jeu « trouve l'éléphant » — itération 34 (coincer l'éléphant : abandonné, pas amusant), remplacé à l'itération 35 par « Ramène les quatre éléphants à la fontaine » (cache-cache, 1 à 5 fuites, épuisé, retour en vol, feu d'artifice)
+- ⬜ Mini-jeu : régler après de vrais essais (distance de réapparition, nombre de fuites, points)
+- ⬜ Mini-jeu : aide pour les trouver (flèche au bord de l'écran, ou bouton « où sont les éléphants ? ») — pour les joueurs ; le mode debug `?debug` (itération 36) montre déjà où ils sont
+- ⬜ Mini-jeu : points selon la rapidité (idée écartée pour la v1)
+- ⬜ Mini-jeu : distance des réapparitions (aujourd'hui ≤ 380 m de la fontaine) — Dasco aimait aussi quand ils partaient loin, à revoir
+- ⬜ Points : à quoi les dépenser (bâtiments débloqués, décorations…) — *Dasco*
 - Mode histoire qui fait visiter la ville
 
 ## Fait
-Voir [FEATURES.md](FEATURES.md) et [CHANGELOG.md](CHANGELOG.md).
+Voir [FEATURES.md](../FEATURES.md) et [CHANGELOG.md](../CHANGELOG.md).
