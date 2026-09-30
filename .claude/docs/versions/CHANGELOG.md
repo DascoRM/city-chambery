@@ -13,7 +13,9 @@
 
 **Vérifié :** `npm run build` ; dans Chrome sans fenêtre **avec la carte graphique du Mac** (M1, et non le rendu logiciel), fenêtre 1 200 × 800 à densité 2, écran à 60 images/s : repos 30,0 images dessinées/s ; glisser la carte 59,8 ; souris qui bouge 55,8 ; lecture ▶ 59,0 ; clic sur un éléphant (fumée, bulle) 53,4 ; le compteur affiche le bon mode ; densité restée à 1,5 (maximum) pendant tout le test ; aucune erreur console.
 
-**Non vérifié :** fluidité à l'œil des éléphants et des gemmes à 30 images/s (à regarder avec `?debug`) ; mobile et écrans 120 Hz (au repos, une image sur quatre, toujours 30 images/s en théorie) ; économie de batterie ou de chauffe (non mesurée). Non traité : le curseur d'heure tiré à la main reste à 30 images/s (lumière et ombres un peu moins fluides pendant qu'on le tire), à ajouter si c'est gênant.
+**Vérifié par Dasco :** tout est fluide, aucun effet visible de la cadence à 30 images/s au repos. Doublons remarqués sur des bars / restaurants : doublons OSM (ajouté au BACKLOG).
+
+**Non vérifié :** mobile et écrans 120 Hz (au repos, une image sur quatre, toujours 30 images/s en théorie) ; économie de batterie ou de chauffe (non mesurée). Non traité : le curseur d'heure tiré à la main reste à 30 images/s (lumière et ombres un peu moins fluides pendant qu'on le tire), à ajouter si c'est gênant.
 
 ## Itération 41 — 30/09/2026 (branche `feat/TI-01-mode-debug`)
 

@@ -47,6 +47,7 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ Relire les fiches (Trivelli/Trivelly, « plus vaste ensemble de trompe-l'œil d'Europe » sourcé uniquement Wikipédia)
 - ⬜ Pack nature : buissons, fleurs, rochers moussus, nénuphars dans les parcs
 - ⬜ Épingles des lieux : icône par catégorie sur l'épingle (verre, tasse, couverts), après la v1 « pointeur de couleur »
+- ⬜ Bars / restaurants en double (retour de Dasco, itération 42) : doublons dans OSM, deux points pour le même lieu — Le Maharaja (node/462016883 et node/8809074519, à 15 m), Le Thali (node/13144805796 et node/14104261001, à 6 m). Corriger dans OSM, ou fusionner dans le script de données les lieux de même nom à moins de ~25 m (Columbus Café : 2 points à 330 m, sans doute 2 boutiques, à garder) — *petit*
 - ⬜ Fiche des lieux : horaires OSM plus lisibles (regroupés par jour, « ouvert maintenant »)
 
 
