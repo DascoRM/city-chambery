@@ -105,23 +105,31 @@ const AQUA = new THREE.Color('#6fd3ff');
 let lit = false;
 let groundY = 0; // altitude du sol sous la fontaine (relief)
 
+// Réglages par matériau en uniformes, jamais dans le texte du shader (voir lighting.ts) :
+// sinon fonte et bronze partageraient les valeurs du premier matériau compilé.
 function uplight(mat: THREE.MeshStandardMaterial, night: { value: number }, strength: number, statueBoost: number) {
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = night;
+    shader.uniforms.uUpStrength = { value: strength };
+    shader.uniforms.uStatueBoost = { value: statueBoost };
+    shader.uniforms.uGroundY = { value: groundY };
+    shader.uniforms.uUpWarm = { value: WARM };
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying float vLocalY;')
-      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvLocalY = (modelMatrix * vec4(transformed, 1.0)).y - ' + groundY.toFixed(2) + ';');
+      .replace('#include <common>', '#include <common>\nvarying float vLocalY;\nuniform float uGroundY;')
+      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvLocalY = (modelMatrix * vec4(transformed, 1.0)).y - uGroundY;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
         varying float vLocalY;
-        uniform float uNight;`)
+        uniform float uNight;
+        uniform float uUpStrength;
+        uniform float uStatueBoost;
+        uniform vec3 uUpWarm;`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
         // Hauteur relative (0 = sol, 1 = sommet ; la fontaine peut être agrandie)
         float hRel = clamp(vLocalY / ${(TOTAL_H * 1.6).toFixed(1)}, 0.0, 1.0);
         float up = mix(1.0, 0.25, smoothstep(0.0, 0.75, hRel));
         float statue = smoothstep(0.78, 0.84, vLocalY / ${(TOTAL_H * 1.3).toFixed(1)});
-        totalEmissiveRadiance += diffuseColor.rgb * vec3(${WARM.toArray().map((v) => v.toFixed(3)).join(', ')})
-          * uNight * (${strength.toFixed(2)} * up + ${statueBoost.toFixed(2)} * statue);`);
+        totalEmissiveRadiance += diffuseColor.rgb * uUpWarm * uNight * (uUpStrength * up + uStatueBoost * statue);`);
   };
   mat.needsUpdate = true;
 }
@@ -129,10 +137,12 @@ function uplight(mat: THREE.MeshStandardMaterial, night: { value: number }, stre
 function glowFlat(mat: THREE.MeshStandardMaterial, night: { value: number }, color: THREE.Color, k: number) {
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = night;
+    shader.uniforms.uGlowColor = { value: color };
+    shader.uniforms.uGlowK = { value: k };
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uNight;')
+      .replace('#include <common>', '#include <common>\nuniform float uNight;\nuniform vec3 uGlowColor;\nuniform float uGlowK;')
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-        totalEmissiveRadiance += vec3(${color.toArray().map((v) => v.toFixed(3)).join(', ')}) * uNight * ${k.toFixed(2)};`);
+        totalEmissiveRadiance += uGlowColor * uNight * uGlowK;`);
   };
   mat.needsUpdate = true;
 }
