@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Escape, Herd, Elephant } from '../scene/mascot';
+import type { Escape, Herd, Elephant, MascotConfig } from '../scene/mascot';
 import type { Particles } from '../scene/particles';
 import type { Pt } from '../types';
 import { screenRay } from '../scene/geo';
@@ -37,12 +37,8 @@ export interface HuntOptions {
   fireworks: { launch(from: THREE.Vector3, delay?: number, big?: boolean): void };
   returned: Set<number>;
   points: number;
-  gain: number;
-  bonus: number;
-  restartSeconds: number;
-  /** Durée d'affichage de la bulle (s) */
-  bubbleSeconds: number;
-  taunts: string[];
+  /** Réglages du jeu (src/content/mascot.json, bloc game) */
+  game: Pick<MascotConfig['game'], 'points' | 'bonus' | 'restartSeconds' | 'bubbleSeconds' | 'taunts'>;
   /** Bulle de texte ancrée sur un point de la scène */
   bubble(text: string | null, x?: number, y?: number): void;
   onReturned(returned: Set<number>): void;
@@ -92,7 +88,7 @@ export function createHunt(o: HuntOptions): Hunt {
 
   const showBubble = (text: string, at: THREE.Vector3) => {
     bubbleAt = at;
-    bubbleLeft = o.bubbleSeconds;
+    bubbleLeft = o.game.bubbleSeconds;
     o.bubble(text);
   };
 
@@ -101,7 +97,7 @@ export function createHunt(o: HuntOptions): Hunt {
     if (!esc) return;
     const at = new THREE.Vector3(esc.from[0], e.height(), -esc.from[1]);
     o.smoke.emit(at.clone().setY(at.y + 2), { count: 40, speed: [1, 3.5], up: 1.5, life: [0.8, 1.4], size: 2.2, grow: 1.6, colors: ['#f3efe6', '#e2dccf', '#cfc7b8'], drag: 2.5, spread: 1.5 });
-    const taunt = o.taunts[Math.floor(Math.random() * o.taunts.length)] ?? 'Raté !';
+    const taunt = o.game.taunts[Math.floor(Math.random() * o.game.taunts.length)] ?? 'Raté !';
     const where = esc.road ? `vers ${withArticle(esc.road)}` : `vers ${direction(esc.from, esc.to)}`;
     const tail = esc.tired ? `Je file ${where}… mais je suis épuisé 😮‍💨` : `Je file ${where} 🐘`;
     showBubble(`${taunt}\n${tail}`, at.clone().setY(at.y + 6));
@@ -120,8 +116,8 @@ export function createHunt(o: HuntOptions): Hunt {
     o.onReturned(o.returned);
     const base = center.clone().setY(center.y - 2);
     const complete = o.returned.size >= herd.elephants.length;
-    let gained = o.gain;
-    if (complete) gained += o.bonus;
+    let gained = o.game.points;
+    if (complete) gained += o.game.bonus;
     total += gained;
     o.onScore(total, gained, complete
       ? `🎉 La fontaine est complète ! Les Quatre sans cul sont de retour · +${gained} points`
@@ -129,7 +125,7 @@ export function createHunt(o: HuntOptions): Hunt {
     for (let i = 0; i < (complete ? 3 : 2); i++) o.fireworks.launch(base, i * 0.35);
     if (complete) {
       for (let i = 0; i < 12; i++) o.fireworks.launch(base, 1 + i * 0.4, true);
-      restartIn = o.restartSeconds;
+      restartIn = o.game.restartSeconds;
     }
   };
 
