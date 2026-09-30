@@ -80,6 +80,7 @@ export function setupGame(o: GameSetupOptions): { hunt: Hunt | null; slots: THRE
         smoke.update(dt);
         sparks.update(dt);
       },
+      moving: () => smoke.alive() > 0 || sparks.alive() > 0 || fireworks.pending() > 0 || !!hunt?.moving(),
     },
   };
 }

@@ -4,7 +4,11 @@ export type Pt = [number, number]; // mètres : x = est, y = nord
 export type HeightFn = (x: number, y: number) => number;
 
 /** Module animé : appelé à chaque image par la boucle de rendu (main.ts), dt et temps écoulé en secondes */
-export interface Ticker { update(dt: number, t: number): void }
+export interface Ticker {
+  update(dt: number, t: number): void;
+  /** true pendant une animation qui doit rester fluide (TI-02) : la boucle passe alors à pleine vitesse */
+  moving?(): boolean;
+}
 
 export interface Poly { outer: Pt[]; holes: Pt[][] }
 

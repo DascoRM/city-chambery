@@ -33,7 +33,7 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
   - `?debug` lu une seule fois (constante `DEBUG`) ;
   - outil de debug des éléphants (`herd-debug`) chargé à la demande (`import()`), comme l'outil de placement, donc absent du code de production ;
   - `window.diorama` exposé seulement en dev ou avec `?debug`
-- ⬜ **TI-02 — 30 images/s au repos, pleine vitesse pendant les mouvements** — remplace le ticket « Moins d'images quand rien ne bouge » — *moyen* :
+- ✅ *itération 42* **TI-02 — 30 images/s au repos, pleine vitesse pendant les mouvements** — remplace le ticket « Moins d'images quand rien ne bouge » — *moyen* :
   - les éléphants marchent en permanence : on ne peut pas arrêter le rendu, on limite la cadence ;
   - pleine vitesse pendant : caméra qui bouge (et 0,5 s après), vol ou rotation, lecture ▶, particules, bulle ou statue qui apparaît, épingle qui rebondit, survol ;
   - chaque module de la boucle (`Ticker`, itération 40) dit s'il bouge (reporté d'EN-02) ;
@@ -47,6 +47,7 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ Relire les fiches (Trivelli/Trivelly, « plus vaste ensemble de trompe-l'œil d'Europe » sourcé uniquement Wikipédia)
 - ⬜ Pack nature : buissons, fleurs, rochers moussus, nénuphars dans les parcs
 - ⬜ Épingles des lieux : icône par catégorie sur l'épingle (verre, tasse, couverts), après la v1 « pointeur de couleur »
+- ⬜ Bars / restaurants en double (retour de Dasco, itération 42) : doublons dans OSM, deux points pour le même lieu — Le Maharaja (node/462016883 et node/8809074519, à 15 m), Le Thali (node/13144805796 et node/14104261001, à 6 m). Corriger dans OSM, ou fusionner dans le script de données les lieux de même nom à moins de ~25 m (Columbus Café : 2 points à 330 m, sans doute 2 boutiques, à garder) — *petit*
 - ⬜ Fiche des lieux : horaires OSM plus lisibles (regroupés par jour, « ouvert maintenant »)
 
 
@@ -88,6 +89,7 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ⬜ Horaires : jours fériés et vacances scolaires (aujourd'hui ignorés, l'horaire habituel du jour s'applique)
 - ⬜ Simplifier l'heure : prendre l'heure de l'appareil du visiteur au lieu de forcer le fuseau Europe/Paris (demande de Dasco, pour simplifier le code). Précision : « heure de Chambéry » dans le code est déjà l'heure de France (fuseau Europe/Paris) ; la simplification consiste à supprimer la conversion de fuseau (`src/time/chambery.ts` : `chamberyClock`, `chamberyInstant`, ≈ 25 lignes). Conséquence : un visiteur hors de France verrait la carte à son heure locale. La position du soleil garde la latitude et la longitude de Chambéry.
 - ❓ Double toucher (zoom) : sans effet dans le navigateur de test, sur `main` comme après EN-02 (itération 40) — à vérifier sur un vrai téléphone
+- ⬜ Cadence : curseur d'heure tiré à la main encore à 30 images/s (TI-02, itération 42) — à passer en pleine vitesse si c'est gênant
 - ⬜ Mobile très étroit (iPhone SE, 320 px) : la rangée Bars / Cafés / Restaurants dépasse de l'écran (constaté à l'itération 31, antérieur)
 
 

@@ -266,7 +266,7 @@ async function main() {
   // Modules animés, dans l'ordre d'appel ; ajouter un module = ajouter une ligne
   const tickers: Ticker[] = [
     { update: (_, t) => poiLayer.animate(t) },
-    { update: (_, t) => placeLayer.animate(t) },
+    { update: (_, t) => placeLayer.animate(t), moving: placeLayer.moving },
     { update: (_, t) => city.update(t) },
     ...(herd ? [herd] : []),
     game.ticker,
@@ -277,24 +277,45 @@ async function main() {
     { update: followPlace },
     { update: () => ui.setHeading(stage.heading()) },
   ];
+  // Cadence (TI-02) : les éléphants marchent en permanence, on ne peut pas arrêter le rendu ; au repos,
+  // on le limite à 30 images/s. Pleine vitesse quand la caméra bouge (et 0,5 s après), quand
+  // l'utilisateur la prend en main, ou quand un module dit qu'il bouge (Ticker.moving)
+  const IDLE_FRAME = 1 / 30 - 0.004; // marge : sur un écran 60 Hz, une image sur deux exactement
+  const CAMERA_TAIL = 0.5;
+  let pending = 0; // temps écoulé depuis la dernière image dessinée
+  let still = 0; // temps depuis le dernier mouvement de caméra
+  let wasBusy = false;
+  const lastPos = camera.position.clone(), lastTarget = controls.target.clone();
+  controls.addEventListener('start', () => { still = 0; });
   const timer = new THREE.Timer();
   timer.connect(document);
   // Tout est en place (ville, arbres, monuments) : première carte des ombres
   renderer.shadowMap.needsUpdate = true;
   renderer.setAnimationLoop(() => {
     timer.update();
-    const raw = timer.getDelta();
+    pending += timer.getDelta();
+    const busy = still < CAMERA_TAIL || tickers.some((m) => m.moving?.());
+    if (!busy && pending < IDLE_FRAME) return;
+    const raw = pending;
+    pending = 0;
     const dt = Math.min(raw, 0.1);
     const t = timer.getElapsed();
     perfHud?.begin();
-    quality.update(raw);
+    // La première image après le repos dure ≈ 33 ms voulues : pas une mesure de lenteur
+    quality.update(raw, busy && wasBusy);
+    wasBusy = busy;
     stage.updateFlight(dt);
     controls.update();
     stage.clampTarget();
+    if (camera.position.distanceToSquared(lastPos) > 1e-6 || controls.target.distanceToSquared(lastTarget) > 1e-6) {
+      still = 0;
+      lastPos.copy(camera.position);
+      lastTarget.copy(controls.target);
+    } else still += raw;
     for (const m of tickers) m.update(dt, t);
     tiltShift.update(controls.target, stage.size * 1.2);
     tiltShift.render();
-    perfHud?.end(raw);
+    perfHud?.end(raw, busy);
   });
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)

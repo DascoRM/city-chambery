@@ -101,6 +101,8 @@ export interface PlaceLayer {
    */
   setClosed(closed: boolean[]): void;
   animate(t: number): void;
+  /** L'épingle active rebondit encore */
+  moving(): boolean;
 }
 
 const PIN_R = 3.2; // rayon de la tête
@@ -139,7 +141,7 @@ function standHeights(places: Place[], heightAt: HeightFn, buildings: Building[]
 export function buildPlaceMarkers(places: Place[], heightAt: HeightFn = () => 0, buildings: Building[] = [], minUnder?: (r: Pt[]) => number): PlaceLayer {
   const root = new THREE.Group();
   root.name = 'places';
-  const noop = { root, places, setActive() {}, anchor: (_: number, out: THREE.Vector3) => out, setCategoryVisible() {}, setClosed() {}, animate() {} };
+  const noop = { root, places, setActive() {}, anchor: (_: number, out: THREE.Vector3) => out, setCategoryVisible() {}, setClosed() {}, animate() {}, moving: () => false };
   if (!places.length) return noop;
 
   // La nuit, les épingles s'allument dans leur propre couleur (uGlow piloté par le cycle jour/nuit),
@@ -281,5 +283,6 @@ export function buildPlaceMarkers(places: Place[], heightAt: HeightFn = () => 0,
       const bounce = Math.abs(Math.sin(u * Math.PI * 2)) * 4 * (1 - u); // deux rebonds qui s'amortissent
       place(active, 2 + bounce, 1 + 0.3 * Math.min(1, u * 3));
     },
+    moving: () => active !== null && !settled,
   };
 }

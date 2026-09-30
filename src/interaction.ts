@@ -39,7 +39,8 @@ export interface InteractionOptions {
 
 /**
  * Sélection à la souris / au doigt : clic, survol, double toucher (zoom), gestes à deux doigts.
- * Renvoie le module à animer : le survol est traité une fois par image, pas à chaque mouvement de souris.
+ * Renvoie le module à animer : le survol est traité une fois par image, pas à chaque mouvement de souris ;
+ * la boucle passe à pleine vitesse tant que la souris bouge.
  */
 export function installInteraction(o: InteractionOptions): Ticker {
   const { canvas, camera, controls, hunt, placement } = o;
@@ -81,8 +82,9 @@ export function installInteraction(o: InteractionOptions): Ticker {
     o.onSelect(pick(e.clientX, e.clientY));
   });
   let hoverQueued: PointerEvent | null = null;
+  let lastMove = -Infinity;
   canvas.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'mouse') hoverQueued = e;
+    if (e.pointerType === 'mouse') { hoverQueued = e; lastMove = e.timeStamp; }
   });
   canvas.addEventListener('pointerleave', () => {
     o.tooltip(null);
@@ -90,6 +92,8 @@ export function installInteraction(o: InteractionOptions): Ticker {
   });
 
   return {
+    // Souris qui bouge (et 0,5 s après) : survol, infobulle et fiche suivent sans à-coups
+    moving: () => performance.now() - lastMove < 500,
     update() {
       if (!hoverQueued) return;
       const e = hoverQueued;

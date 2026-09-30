@@ -23,6 +23,8 @@ export interface Hunt {
   /** Clic ou toucher ; renvoie true si le geste concernait un éléphant */
   click(clientX: number, clientY: number): boolean;
   update(dt: number): void;
+  /** Bulle affichée, statue qui sort du socle, éléphant qui disparaît ou qui vole */
+  moving(): boolean;
 }
 
 export interface HuntOptions {
@@ -155,6 +157,7 @@ export function createHunt(o: HuntOptions): Hunt {
       }
       return true;
     },
+    moving: () => bubbleAt !== null || pops.size > 0 || herd.elephants.some((e) => e.state() === 'poof' || e.state() === 'flying'),
     update(dt) {
       // Bulle : suit son point d'ancrage à l'écran, puis s'efface
       if (bubbleAt) {
