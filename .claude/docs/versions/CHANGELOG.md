@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 42 — 30/09/2026 (branche `feat/TI-02-cadence-repos`)
+
+**Demande de Dasco :** attaquer TI-02 (30 images/s au repos, pleine vitesse pendant les mouvements).
+
+**Changements :**
+- boucle de rendu (`main.ts`) : quand rien ne bouge, une image sur deux sur un écran 60 Hz (30 images/s) ; les éléphants, l'eau et les gemmes continuent de s'animer à cette cadence ;
+- pleine vitesse quand : la caméra bouge (détecté en comparant sa position et son point visé d'une image à l'autre, donc vols, retour au nord, gestes et inertie compris), puis 0,5 s après ; dès que l'utilisateur prend la carte en main ; la souris bouge sur la carte (et 0,5 s après) ; lecture ▶ ; particules, fusées, bulle d'un éléphant, statue qui sort du socle, éléphant qui disparaît ou vole ; épingle qui rebondit ;
+- chaque module concerné le dit par `moving()` (type `Ticker`) : épingles, horloge, mini-jeu, interactions ;
+- `quality.ts` : ne mesure les images/s que pendant les mouvements (et pas la première image après le repos) ;
+- compteur `?debug` : « repos (30 max) » ou « mouvement » sur la première ligne.
+
+**Vérifié :** `npm run build` ; dans Chrome sans fenêtre **avec la carte graphique du Mac** (M1, et non le rendu logiciel), fenêtre 1 200 × 800 à densité 2, écran à 60 images/s : repos 30,0 images dessinées/s ; glisser la carte 59,8 ; souris qui bouge 55,8 ; lecture ▶ 59,0 ; clic sur un éléphant (fumée, bulle) 53,4 ; le compteur affiche le bon mode ; densité restée à 1,5 (maximum) pendant tout le test ; aucune erreur console.
+
+**Non vérifié :** fluidité à l'œil des éléphants et des gemmes à 30 images/s (à regarder avec `?debug`) ; mobile et écrans 120 Hz (au repos, une image sur quatre, toujours 30 images/s en théorie) ; économie de batterie ou de chauffe (non mesurée). Non traité : le curseur d'heure tiré à la main reste à 30 images/s (lumière et ombres un peu moins fluides pendant qu'on le tire), à ajouter si c'est gênant.
+
 ## Itération 41 — 30/09/2026 (branche `feat/TI-01-mode-debug`)
 
 **Demande de Dasco :** enchaîner TI-01 (mode dev / debug propre).

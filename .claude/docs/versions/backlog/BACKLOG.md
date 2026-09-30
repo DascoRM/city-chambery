@@ -33,7 +33,7 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
   - `?debug` lu une seule fois (constante `DEBUG`) ;
   - outil de debug des éléphants (`herd-debug`) chargé à la demande (`import()`), comme l'outil de placement, donc absent du code de production ;
   - `window.diorama` exposé seulement en dev ou avec `?debug`
-- ⬜ **TI-02 — 30 images/s au repos, pleine vitesse pendant les mouvements** — remplace le ticket « Moins d'images quand rien ne bouge » — *moyen* :
+- ✅ *itération 42* **TI-02 — 30 images/s au repos, pleine vitesse pendant les mouvements** — remplace le ticket « Moins d'images quand rien ne bouge » — *moyen* :
   - les éléphants marchent en permanence : on ne peut pas arrêter le rendu, on limite la cadence ;
   - pleine vitesse pendant : caméra qui bouge (et 0,5 s après), vol ou rotation, lecture ▶, particules, bulle ou statue qui apparaît, épingle qui rebondit, survol ;
   - chaque module de la boucle (`Ticker`, itération 40) dit s'il bouge (reporté d'EN-02) ;
@@ -88,6 +88,7 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ⬜ Horaires : jours fériés et vacances scolaires (aujourd'hui ignorés, l'horaire habituel du jour s'applique)
 - ⬜ Simplifier l'heure : prendre l'heure de l'appareil du visiteur au lieu de forcer le fuseau Europe/Paris (demande de Dasco, pour simplifier le code). Précision : « heure de Chambéry » dans le code est déjà l'heure de France (fuseau Europe/Paris) ; la simplification consiste à supprimer la conversion de fuseau (`src/time/chambery.ts` : `chamberyClock`, `chamberyInstant`, ≈ 25 lignes). Conséquence : un visiteur hors de France verrait la carte à son heure locale. La position du soleil garde la latitude et la longitude de Chambéry.
 - ❓ Double toucher (zoom) : sans effet dans le navigateur de test, sur `main` comme après EN-02 (itération 40) — à vérifier sur un vrai téléphone
+- ⬜ Cadence : curseur d'heure tiré à la main encore à 30 images/s (TI-02, itération 42) — à passer en pleine vitesse si c'est gênant
 - ⬜ Mobile très étroit (iPhone SE, 320 px) : la rangée Bars / Cafés / Restaurants dépasse de l'écran (constaté à l'itération 31, antérieur)
 
 
