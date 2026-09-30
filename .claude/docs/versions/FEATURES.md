@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 30/09/2026 — itération 37.
+État au 30/09/2026 — itération 38.
 
 ## Carte / diorama
 
@@ -21,7 +21,7 @@
 | Cours d'eau (la Leysse) | ✅ | Berges en pierre, eau brillante animée, largeur OSM ×1,8 ; tronçons couverts dessinés quand même (choix de lisibilité, `showCoveredWater`) |
 | Noms des parcs et cours d'eau | ✅ | 15 étiquettes, apparaissent en s'approchant (grands parcs d'abord), réduites quand la caméra est très proche |
 | Ombres portées, lumière d'après-midi | ✅ | |
-| Monuments modélisés | 🟡 | Système prêt (formes en code ou fichiers glTF, config `src/content/models.json`) ; 1 monument en test : fontaine des Éléphants en formes simples (bassin de 13 m tiré d'OSM, 4 éléphants dos à dos avec jets d'eau, colonne, statue ; hauteur 17,65 m ; agrandie ×1,3) ; mise en lumière la nuit (éclairage par le bas, statue en projecteur, bassin bleuté, halo au sol) |
+| Monuments modélisés | 🟡 | Système prêt (formes en code ou fichiers glTF, config `src/content/models.json`) ; 1 monument en test : fontaine des Éléphants en formes simples (bassin de 13 m tiré d'OSM, 4 éléphants dos à dos avec jets d'eau, colonne, statue ; hauteur 17,65 m ; agrandie ×1,3) ; mise en lumière la nuit (éclairage par le bas, statue en projecteur, bassin bleuté, halo au sol) ; itération 38 : chaque matériau garde ses propres réglages de nuit (pierre, fonte, bronze), et chaque monument sa propre altitude de sol (BUG-01) |
 | Cathédrale Saint-François-de-Sales | 🟡 | Formes simples bâties sur le contour OSM réel : bas-côtés et chapelles, nef haute (≈ 25 m) à toit à deux pans et contreforts, abside, façade flamboyante simplifiée côté place Métropole (portail, grande baie, pinacles), clocher côté nord (position et hauteur supposées) ; éclairée la nuit, baies lumineuses |
 | Château des ducs de Savoie | 🟡 | 7 bâtiments reconstruits sur leurs contours OSM : tours Trésorerie, demi-ronde et des Archives (cordon, meurtrières, toits pointus), Sainte-Chapelle (contreforts à pinacles, grandes baies), Porterie (mâchicoulis), aile du Midi et Conseil départemental (fenêtres, toits d'ardoise raides) ; hauteurs et toits supposés ; tour Yolande absente ; côté esplanade : mur bas et grille en fer, portail fermé sur l'allée, escalier de pierre (tracés OSM) ; éclairé la nuit |
 | Carré Curial | 🟡 | Formes simples sur le contour OSM avec sa cour ; gouttière 16,7 m et toit 5,4 m (BD TOPO) ; toit à pans autour de la cour, soubassement, corniche, fenêtres régulières côté rue et côté cour ; éclairé la nuit ; médiathèque J.-J.-Rousseau accolée intégrée (mêmes matériaux, toit plat) ; étages et couleurs supposés |
