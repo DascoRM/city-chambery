@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 30/09/2026 — itération 40 (reprise du code, rien de visible).
+État au 30/09/2026 — itération 41 (reprise du code, rien de visible).
 
 ## Carte / diorama
 

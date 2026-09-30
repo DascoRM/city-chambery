@@ -29,7 +29,7 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
   - boucle de rendu : tableau de modules `{ update(dt, t) }` au lieu des 20 appels écrits à la main ; ajouter un module (passants) = une ligne ; chaque module peut dire s'il bouge (base de TI-02) — *ce dernier point reporté dans TI-02* ;
   - `src/interaction.ts` : sélection souris / doigt, survol, double toucher ;
   - `src/game/setup.ts` : mini-jeu, places sur la fontaine, particules, réglages passés d'un bloc
-- ⬜ **TI-01 — Mode dev / debug propre** — *petit* :
+- ✅ *itération 41* **TI-01 — Mode dev / debug propre** — *petit* :
   - `?debug` lu une seule fois (constante `DEBUG`) ;
   - outil de debug des éléphants (`herd-debug`) chargé à la demande (`import()`), comme l'outil de placement, donc absent du code de production ;
   - `window.diorama` exposé seulement en dev ou avec `?debug`
