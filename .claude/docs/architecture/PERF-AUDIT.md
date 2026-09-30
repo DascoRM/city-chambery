@@ -40,8 +40,12 @@ image**, 60 fois par seconde, même quand rien ne bouge.
 | 3. Arbres modélisés | 🟡 itération 25 : simplifiés à 50 % (1,97 M → 0,99 M triangles) ; découpage par quartier à faire |
 | 4. Anticrénelage en double | ✅ itération 25 : `antialias: false` sur le renderer |
 | 5. Effet maquette (écrans haute densité, mobile) | 🟡 itération 29 : flou en demi-résolution, 1 passe finale au lieu de 3, anticrénelage ×2 si densité ≥ 1,5, densité plafonnée à 1,5 puis adaptative ; mobile : à trancher après mesure |
-| 6. Rendu continu à l'arrêt | ⬜ |
-| 7. Chargement | ⬜ P3 |
+| 6. Rendu continu à l'arrêt | ⬜ → ticket TI-02 (30 images/s au repos : les éléphants marchent en permanence, la scène ne s'arrête jamais) |
+| 7. Chargement | ⬜ P3 ; gzip nginx vérifié le 30/09 ; three.js séparé → TI-03, meshopt → EN-03 |
+
+**Audit du 30/09 (itérations 30 à 37) :** suite de cet audit, lecture du code seulement, dans
+[tasks/audit-2026-09-30-rendu-plan.md](../tasks/audit-2026-09-30-rendu-plan.md) et
+[tasks/audit-2026-09-30-donnees-plan.md](../tasks/audit-2026-09-30-donnees-plan.md). Tickets dans le BACKLOG (P0 et P1).
 
 Estimation par image, la plupart du temps (hors changement d'heure) : ≈ 2 400 appels de rendu et
 ≈ 1,5 M triangles, contre ≈ 4 800 et ≈ 4,7 M avant. Ce sont des comptes, pas des mesures de vitesse.

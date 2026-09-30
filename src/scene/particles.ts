@@ -79,10 +79,15 @@ export function createParticles(max: number, additive: boolean): Particles {
   points.frustumCulled = false;
   points.renderOrder = 5;
   const c = new THREE.Color();
+  const attrs = (['position', 'aColor', 'aAlpha', 'aSize'] as const).map((name) => geo.getAttribute(name) as THREE.BufferAttribute);
+  const colorAttr = attrs[1];
+  let colorDirty = false; // les couleurs ne changent qu'à l'émission et quand une particule meurt
+  let drawn = 0; // particules envoyées à la carte graphique à la dernière image
 
   // Taille à l'écran : suit la hauteur de la zone de rendu
+  const bufferSize = new THREE.Vector2();
   points.onBeforeRender = (renderer) => {
-    mat.uniforms.uScale.value = renderer.getDrawingBufferSize(new THREE.Vector2()).y * 0.9;
+    mat.uniforms.uScale.value = renderer.getDrawingBufferSize(bufferSize).y * 0.9;
   };
 
   return {
@@ -107,16 +112,23 @@ export function createParticles(max: number, additive: boolean): Particles {
         drag[i] = o.drag ?? 0;
         c.set(o.colors[Math.floor(Math.random() * o.colors.length)]);
         col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+        colorDirty = true;
       }
     },
     update(dt) {
+      if (n === 0 && drawn === 0) return; // rien à animer ni à envoyer
       for (let i = 0; i < n; i++) {
         life[i] -= dt;
         if (life[i] <= 0) {
           // On remplace la particule morte par la dernière active
           n--;
           if (i !== n) {
-            for (const [arr, w] of [[pos, 3], [col, 3], [vel, 3]] as const) for (let k = 0; k < w; k++) arr[i * w + k] = arr[n * w + k];
+            for (let k = 0; k < 3; k++) {
+              pos[i * 3 + k] = pos[n * 3 + k];
+              col[i * 3 + k] = col[n * 3 + k];
+              vel[i * 3 + k] = vel[n * 3 + k];
+            }
+            colorDirty = true;
             life[i] = life[n]; life0[i] = life0[n]; size0[i] = size0[n]; grow[i] = grow[n]; grav[i] = grav[n]; drag[i] = drag[n];
             i--;
           }
@@ -130,8 +142,16 @@ export function createParticles(max: number, additive: boolean): Particles {
         size[i] = size0[i] * (1 + grow[i] * k);
       }
       geo.setDrawRange(0, n);
-      for (const name of ['position', 'aColor', 'aAlpha', 'aSize']) (geo.getAttribute(name) as THREE.BufferAttribute).needsUpdate = true;
       points.visible = n > 0;
+      drawn = n;
+      if (n === 0) return;
+      // Seules les n premières particules sont envoyées, et les couleurs seulement si elles ont changé
+      for (const a of attrs) {
+        if (a === colorAttr && !colorDirty) continue;
+        a.addUpdateRange(0, n * a.itemSize);
+        a.needsUpdate = true;
+      }
+      colorDirty = false;
     },
     alive: () => n,
   };

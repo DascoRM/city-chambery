@@ -593,9 +593,8 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: (x:
       } else if (state === 'flying' && fly) {
         const k = Math.min(1, stateT / 2.4);
         const e = ease(k);
-        const p = new THREE.Vector3().lerpVectors(fly.a, fly.b, e);
-        p.y = (1 - e) * (1 - e) * fly.a.y + 2 * (1 - e) * e * fly.top + e * e * fly.b.y;
-        root.position.copy(p);
+        root.position.lerpVectors(fly.a, fly.b, e);
+        root.position.y = (1 - e) * (1 - e) * fly.a.y + 2 * (1 - e) * e * fly.top + e * e * fly.b.y;
         body.rotation.y = e * Math.PI * 4;
         sc *= 1 - 0.55 * e;
         if (k >= 1) {

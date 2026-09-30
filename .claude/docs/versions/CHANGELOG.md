@@ -1,5 +1,40 @@
 # Journal des itérations
 
+## Itération 38 — 30/09/2026 (branche `fix/audit-bugs`)
+
+**Demande de Dasco :** corriger les bugs P0 de l'audit (BUG-01, BUG-02) ; review ensuite.
+
+**Changements :**
+- BUG-01 : `uplight()` / `glowAtNight()` (`models/lighting.ts`) et `uplight()` / `glowFlat()` (`models/elephants.ts`) passent intensité, hauteur, altitude du sol et couleur par des uniformes au lieu de les écrire dans le texte du shader ; les matériaux partagent toujours un programme, mais gardent leurs valeurs ;
+- BUG-02 :
+  - fiche des lieux et bulle : rectangle du canevas gardé en mémoire (recalculé au redimensionnement), taille de la fiche mesurée une fois par contenu, style réécrit seulement s'il change ;
+  - particules : `update()` envoyait les 4 tableaux complets à la carte graphique **à chaque image, même sans particule** (3 000 étincelles + 400 fumées en permanence) ; désormais rien quand elles sont vides, seulement les vivantes sinon, couleurs seulement quand elles changent ;
+  - épingle active : une seule instance envoyée, plus rien après le rebond ;
+  - plus d'objets créés à chaque image : cap de la boussole, passes du tilt-shift, vol des éléphants, cibles du survol (calculées une fois), couleurs du cycle jour/nuit (pendant ▶) ;
+  - mini-jeu : places de la fontaine selon `game.count`, avertissement console si le nombre d'éléphants ne correspond pas ;
+  - code mort retiré : `weekday`, callback `onComplete`.
+
+**Vérifié :** `npm run build` ; dans Chromium (rendu logiciel, Playwright) : à 23 h, uniformes lus dans le renderer pour chaque matériau — Carré Curial façades 0,9 / toits 0,35 / baies 0,5, château 1,0 / 0,4, cathédrale 1,0 / 0,5, fontaine pierre 0,9 (+1,6 statue) / bronze 0,6 (+3,2), altitude du sol propre à chaque monument (8,51 / 6,82 / 7,08 m) ; aucune erreur ni avertissement console au chargement.
+
+**Non vérifié :** le rendu de nuit à l'écran (captures inutilisables : environ 5 s par image en rendu logiciel, la caméra ne s'est pas déplacée) ; fiche d'un bar qui suit son épingle, bulle de l'éléphant, particules et feu d'artifice, après les changements ; gain de fluidité (non mesuré).
+
+## Audit avant nouveaux travaux — 30/09/2026 (pas de code applicatif)
+
+**Demande de Dasco :** un audit rapide du projet avec les agents et les skills, pour voir ce qu'il y a à optimiser avant de commencer de nouveaux travaux ; puis ranger les suites en P0 (bugs), P1 (enablers et technical improvements) et P2 (reprise de « la ville vit »).
+
+**Changements :**
+- skills Three.js installés (`threejs-fundamentals`, `-geometry`, `-interaction`, `-animation`) et graphe de connaissances graphify (`graphify-out/`, ignoré par git) ;
+- 3 audits en lecture seule par des sub-agents génériques (pas les agents du template) : rendu, qualité du code, données / chargement / déploiement → `.claude/docs/tasks/audit-2026-09-30-{rendu,code,donnees}-plan.md` ;
+- BACKLOG : section P0 (BUG-01 éclairage de nuit, BUG-02 lot de petites corrections), P1 (EN-01 module commun géométrie et voies, EN-02 reprise de `main.ts`, TI-01 mode dev, TI-02 30 images/s au repos, TI-03 three.js séparé, EN-03 analyse meshopt), P2 « la ville vit » déplacée à la suite des enablers ; démarrage raté rattaché au launcher (P3) ;
+- DECISIONS : nouvelle version à chaque déploiement, assumée ;
+- `.gitignore` : `graphify-out/`.
+
+**Vérifié :** `npm run build` passe (0 erreur de type, un seul fichier JS de 789 Ko / 216 Ko gzip) ; `npm audit --omit=dev` : 0 vulnérabilité ; mécanisme de BUG-01 confirmé dans le code de three.js 0.186 (`Material.customProgramCacheKey` = texte de `onBeforeCompile`) ; `generatedAt` bien inclus dans l'empreinte des données (`vite.config.ts`).
+
+**Non vérifié :** BUG-01 à l'écran (rendu de nuit) ; les gains estimés (TI-03, double téléchargement du service worker) ; aucune mesure de temps (navigateur de test en rendu logiciel).
+
+**Non retenu :** ombre figée des statues de la fontaine (non constatée par Dasco) ; `generatedAt` (voulu) ; fusion des monuments (reprise avec les bâtiments) ; double téléchargement à la 1re visite (pas grave pour l'instant).
+
 ## Organisation du suivi — 30/09/2026 (pas de code)
 
 **Demande de Dasco :** réorganiser `claude/` dans le `.claude/` initialisé depuis un template, remplir le contexte et le `CLAUDE.md` ; les agents viendront ensuite.

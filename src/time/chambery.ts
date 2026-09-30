@@ -31,6 +31,3 @@ export function chamberyInstant(day: LocalDate, hour: number): Date {
   const off = offsetMinutes(new Date(guess - 120 * 60000)); // proche de l'instant visé
   return new Date(guess - off * 60000);
 }
-
-/** Jour de la semaine (0 = lundi … 6 = dimanche) d'une date locale. */
-export const weekday = (day: LocalDate) => (new Date(Date.UTC(day.y, day.m - 1, day.d)).getUTCDay() + 6) % 7;

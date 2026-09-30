@@ -98,9 +98,8 @@ export function createStage(container: HTMLElement, bounds: CityData['bounds'], 
     flight = { target: point.clone(), pos: point.clone().addScaledVector(offset.normalize(), len) };
   };
   /** Cap de la vue en degrés : 0 = nord en haut, 90 = est en haut… (sens horaire). */
-  const heading = () => {
-    const o = camera.position.clone().sub(controls.target);
-    return THREE.MathUtils.radToDeg(Math.atan2(o.x, o.z));
+  const heading = () => { // appelé à chaque image : pas de vecteur créé
+    return THREE.MathUtils.radToDeg(Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z));
   };
   /** Remet le nord en haut en tournant autour du point visé (boussole). */
   const resetNorth = () => {

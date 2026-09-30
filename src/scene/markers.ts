@@ -249,8 +249,10 @@ export function buildPlaceMarkers(places: Place[], heightAt: HeightFn = () => 0,
     const k = isHidden(i) ? 0 : scale; // échelle 0 = épingle masquée (et plus cliquable)
     m.compose(p.copy(base[i]).setY(base[i].y + lift), q, s.setScalar(k));
     pins.setMatrixAt(i, m);
+    pins.instanceMatrix.addUpdateRange(i * 16, 16); // seulement cette épingle, pas les 169
     pins.instanceMatrix.needsUpdate = true;
   };
+  let settled = false; // rebond de l'épingle active terminé : plus rien à renvoyer à la carte graphique
   return {
     root,
     places,
@@ -259,6 +261,7 @@ export function buildPlaceMarkers(places: Place[], heightAt: HeightFn = () => 0,
       if (active !== null) place(active, 0, 1);
       active = i;
       since = now;
+      settled = false;
     },
     setCategoryVisible(category, visible) {
       if (visible) hidden.delete(category); else hidden.add(category);
@@ -282,8 +285,9 @@ export function buildPlaceMarkers(places: Place[], heightAt: HeightFn = () => 0,
     },
     animate(t) {
       now = t;
-      if (active === null) return;
+      if (active === null || settled) return;
       const u = Math.min(1, (t - since) / 0.55);
+      if (u >= 1) settled = true; // dernière pose, puis l'épingle ne bouge plus
       const bounce = Math.abs(Math.sin(u * Math.PI * 2)) * 4 * (1 - u); // deux rebonds qui s'amortissent
       place(active, 2 + bounce, 1 + 0.3 * Math.min(1, u * 3));
     },

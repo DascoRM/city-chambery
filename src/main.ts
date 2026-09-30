@@ -95,7 +95,13 @@ async function main() {
   // Effet maquette : les étiquettes passent par-dessus le flou pour rester lisibles
   const tiltShift = createTiltShift(renderer, scene, camera, labels.root);
   // Effet maquette toujours actif (plus d'interrupteur depuis l'itération 22)
-  window.addEventListener('resize', () => tiltShift.setSize(app.clientWidth, app.clientHeight));
+  // Rectangle du canevas gardé en mémoire : le relire à chaque image (fiche, bulle, survol)
+  // forcerait le navigateur à recalculer la mise en page après chaque écriture de style
+  let canvasRect = renderer.domElement.getBoundingClientRect();
+  window.addEventListener('resize', () => {
+    tiltShift.setSize(app.clientWidth, app.clientHeight);
+    canvasRect = renderer.domElement.getBoundingClientRect();
+  });
   // Densité de pixels plafonnée à 1,5 puis ajustée selon les images/s (scene/quality.ts)
   const quality = createAdaptiveResolution(renderer, () => tiltShift.setSize(app.clientWidth, app.clientHeight));
   tiltShift.setSize(app.clientWidth, app.clientHeight);
@@ -169,7 +175,11 @@ async function main() {
   ui.setPoints(points);
   ui.setHerd(returned.size, herdTotal);
   const fountain = modelsRoot.getObjectByName('fontaine-des-elephants');
-  const slots = [0, 1, 2, 3].map((i) => fountain?.getObjectByName(`elephant-${i}`)).filter((o): o is THREE.Object3D => !!o);
+  const slots = Array.from({ length: mascotContent.game.count }, (_, i) => fountain?.getObjectByName(`elephant-${i}`))
+    .filter((o): o is THREE.Object3D => !!o);
+  if (herd && slots.length !== herdTotal) {
+    console.warn(`[mini-jeu] désactivé : ${herdTotal} éléphants dans les rues, ${slots.length} places sur la fontaine`);
+  }
   const smoke = createParticles(400, false);
   // Étincelles en mélange normal (et non additif) : visibles aussi de jour, sur fond clair
   const sparks = createParticles(3000, false);
@@ -177,7 +187,7 @@ async function main() {
   scene.add(smoke.points, sparks.points);
   const hunt: Hunt | null = herd && slots.length === herdTotal
     ? createHunt({
-        herd, camera, canvas: renderer.domElement, slots, smoke, sparks, fireworks, returned, points,
+        herd, camera, canvasRect: () => canvasRect, slots, smoke, sparks, fireworks, returned, points,
         gain: mascotContent.game.points, bonus: mascotContent.game.bonus,
         restartSeconds: mascotContent.game.restartSeconds, taunts: mascotContent.game.taunts,
         bubbleSeconds: mascotContent.game.bubbleSeconds,
@@ -189,7 +199,6 @@ async function main() {
           ui.setPoints(points, gained);
           ui.flash(text);
         },
-        onComplete: () => undefined,
         onRestart: () => ui.flash('🐘 Oh non ! Les éléphants se sont encore échappés…'),
         flyTo: (x, z) => stage.flyTo(x, z, 160),
       })
@@ -240,7 +249,7 @@ async function main() {
   const followPlace = () => {
     if (placeIdx === null) return;
     placeLayer.anchor(placeIdx, anchorV).project(camera);
-    const r = renderer.domElement.getBoundingClientRect();
+    const r = canvasRect;
     const onScreen = anchorV.z < 1 && Math.abs(anchorV.x) <= 1.05 && Math.abs(anchorV.y) <= 1.05;
     ui.movePlaceCard(r.left + ((anchorV.x + 1) / 2) * r.width, r.top + ((1 - anchorV.y) / 2) * r.height, onScreen);
   };
@@ -248,14 +257,15 @@ async function main() {
   // --- Sélection à la souris / au doigt -----------------------------------
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
-  const hitTargets = () => [...poiLayer.markers.map((m) => m.hit), ...placeLayer.root.children.filter((c) => c.userData.places)];
+  // Zones de clic fixes (une catégorie masquée passe à l'échelle 0) : liste calculée une seule fois
+  const hitTargets = [...poiLayer.markers.map((m) => m.hit), ...placeLayer.root.children.filter((c) => c.userData.places)];
 
   type Hit = { poi: PlacedPoi } | { place: Place; index: number } | null;
   const pick = (clientX: number, clientY: number): Hit => {
-    const r = renderer.domElement.getBoundingClientRect();
+    const r = canvasRect;
     ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
-    const hit = raycaster.intersectObjects(hitTargets(), false)[0];
+    const hit = raycaster.intersectObjects(hitTargets, false)[0];
     if (!hit) return null;
     if (hit.object.userData.poiId) return { poi: pois.find((p) => p.id === hit.object.userData.poiId)! };
     const places = hit.object.userData.places as Place[] | undefined;
@@ -278,7 +288,7 @@ async function main() {
   // Double toucher : zoom vers l'endroit touché
   let lastTap: { t: number; x: number; y: number } | null = null;
   const zoomAtScreen = (clientX: number, clientY: number) => {
-    const r = renderer.domElement.getBoundingClientRect();
+    const r = canvasRect;
     ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
     const hit = raycaster.intersectObject(city.group, true)[0];
