@@ -1,11 +1,11 @@
 # Epic EP001 - La ville vit
 
-**Statut : ✅ spec validée par Dasco (questions tranchées le 30/09/2026)** · démarrage par **US007 + US008** (pack de bâtiments) pour juger le rendu ; **go de Dasco requis avant d'aller plus loin** (il écarte le pack s'il ne lui plaît pas)
+**Statut : ✅ spec validée par Dasco (questions tranchées le 30/09/2026)** · **pack de bâtiments jugé le 30/09 : auvents gardés, reste du pack écarté** · suite : passants (US001), puis le reste, dans l'ordre ci-dessous
 
 ## Résumé
 Faire vivre le diorama : des passants dans les rues (plus nombreux de jour, des petits groupes devant les bars
 ouverts la nuit), des fenêtres qui s'allument et s'éteignent, des pigeons, de la fumée de cheminée, des drapeaux,
-et des détails de façade (auvents, portes, balcons…) tirés du pack de bâtiments (de Kenney).
+et des auvents tirés du pack de bâtiments de Kenney (le reste du pack a été écarté).
 
 ---
 
@@ -27,7 +27,7 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 | Style des passants | **Silhouettes simples d'abord** (figurines low-poly instanciées) ; des personnages animés restent une option, non planifiée (US010) |
 | Autres « vies » | Fenêtres qui s'allument / s'éteignent, pigeons et oiseaux, fumée de cheminées, drapeaux. **Pas de voitures ni de bus** |
 | Interaction | **Décor seulement** : pas de clic sur les passants, ils ne réagissent ni aux éléphants ni au jeu |
-| Pack de bâtiments (`assets-src/buildings`, dossier renommé ; auteur : Kenney) | **Détails de façade sur les bâtiments existants** (auvents, portes, balcons, climatiseurs, lucarnes). Les 2 067 bâtiments OSM restent tels quels |
+| Pack de bâtiments (`assets-src/buildings`, auteur : Kenney) | **Auvents gardés** (« ça me va »). Le reste du pack, y compris un essai de bâtiment reconstruit en modules, **écarté** : Dasco préfère les bâtiments actuels. Les 2 067 bâtiments OSM restent tels quels |
 
 ---
 
@@ -35,7 +35,7 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 - Des passants qui marchent sur les voies piétonnes, sans traverser les bâtiments, à une densité qui suit l'heure
 - La nuit : moins de monde dans les rues, des groupes devant les bars, pubs et boîtes de nuit ouverts (horaires OSM)
 - Des animations discrètes de jour comme de nuit : fenêtres, pigeons, fumée en automne et en hiver, drapeaux
-- Des détails de façade qui donnent vie aux rues commerçantes (auvents colorés selon la catégorie du lieu)
+- Des auvents colorés selon la catégorie du lieu devant les bars, cafés et restaurants, et des fenêtres et portes visibles de jour
 - Sans perdre en fluidité, notamment sur mobile, et sans toucher au jeu des éléphants
 
 ---
@@ -59,19 +59,21 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 | [US004](US004-pigeons-et-oiseaux.md) | Des pigeons sur les places et des oiseaux autour des monuments | Medium | 3 | — | 🔲 Todo |
 | [US005](US005-fumee-de-cheminees.md) | De la fumée qui sort de cheminées, en automne et en hiver | Medium | 3 | — | 🔲 Todo |
 | [US006](US006-drapeaux.md) | Des drapeaux qui flottent sur des mâts sourcés | Medium | 3 | décision sur les emplacements | 🔲 Todo |
-| [US007](US007-preparer-le-pack-batiments.md) | Préparer le pack de bâtiments (nom, licence, conversion) | Medium | 3 | — | ✅ Done (itération 46) |
-| [US008](US008-auvents-des-lieux.md) | Des auvents devant les bars, cafés et restaurants | Medium | 5 | US007 | 🟡 Livrée (itération 46), en attente du go de Dasco |
-| [US009](US009-details-de-facade.md) | Portes, balcons, climatiseurs et lucarnes sur les façades et les toits | Low | 5 | US007 (US008 conseillée) | 🔲 Todo |
+| [US007](US007-preparer-le-pack-batiments.md) | Préparer le pack de bâtiments (nom, licence, conversion) : réduit aux 2 pièces d'auvent | Medium | 3 | — | ✅ Done (itération 46) |
+| [US008](US008-auvents-des-lieux.md) | Des auvents devant les bars, cafés et restaurants | Medium | 5 | US007 | ✅ Done (itérations 46 et 48, validée par Dasco) |
+| [US009](US009-fenetres-et-portes-de-jour.md) | Des fenêtres et des portes visibles de jour sur les bâtiments (dans le shader, sans pack) | Medium | 3 | — | 📝 À préciser |
 | [US010](US010-personnages-animes.md) | *(Option)* Des personnages animés près de la caméra | Low | — | US001, US002 | ⏸ Non planifiée |
 | [US011](US011-horaires-provisoires-des-bars.md) | Des horaires provisoires pour les bars, pubs et boîtes de nuit | High | 1 | — | ✅ Done (itération 46) |
 
-**Ordre décidé par Dasco** : d'abord **US007 puis US008** (le pack de bâtiments), pour voir ce que ça donne ; **Dasco donne ou non son go** (s'il n'aime pas le rendu, le pack est écarté avec US008 et US009). Ensuite, sous réserve de ce go : US001 → US002 → US003 → US004 → US005 → US006 → US009. US011 (horaires provisoires) est faite, c'est le prérequis d'US002.
+**Ordre** : US007, US008 et US011 sont faites. Suite conseillée : US001 → US002 → US003 → US004 → US005 → US006, et US009 (fenêtres et portes de jour) quand Dasco veut la préciser : elle est indépendante des passants et peu coûteuse.
 
 ---
 
-## Essai du pack de bâtiments (itération 47) — en attente du go de Dasco
+## Pack de bâtiments : ce qui a été jugé (itérations 46 à 48)
 
-Les auvents seuls (US008) ne convainquent pas : de petites dalles plates. Dasco a demandé un essai plus large : **un bâtiment isolé reconstruit avec les modules du pack** (fenêtres, porte, balcon, toit). Captures : [avant, zoom maximal](assets/essai-batiment-avant-zoommax-nord-est.png) · [après](assets/essai-batiment-apres-zoommax-nord-est.png) · [après, de nuit](assets/essai-batiment-apres-h23-zoommax-sud-est.png). Code : `src/scene/modular.ts`, bouton « Bâtiment d'essai » en dev. Constats et chiffres : CHANGELOG, itération 47. Suites possibles, selon le go : (a) écarter le pack et retirer les 4 commits ; (b) quelques bâtiments remarquables détaillés (places, rue de Boigne) ; (c) un vrai chantier « bâtiments » à part, avec distance limite et façades côté voie seulement.
+- **Auvents (US008)** : gardés. Ils viennent de 2 pièces du pack (`roof-flat-awning-b` et `-c`), d'où les seuls fichiers sources conservés dans `assets-src/buildings`.
+- **Bâtiment reconstruit en modules (essai de l'itération 47)** : écarté. Il donnait un bâtiment plus riche (fenêtres à appuis, balcon, toit), mais Dasco trouve les bâtiments actuels mieux, et le coût d'un remplacement général (≈ +2,4 M de triangles pour les 2 067 bâtiments) n'était pas tenable sur mobile. Le code, les pièces et les sources de cet essai ont été supprimés.
+- **Regret de Dasco retenu** : de jour, les bâtiments n'ont ni fenêtres ni portes → US009, dans le shader existant.
 
 ---
 

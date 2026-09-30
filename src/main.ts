@@ -13,7 +13,6 @@ import { createTerrain } from './scene/terrain';
 import { buildPlaceMarkers, buildPoiMarkers } from './scene/markers';
 import { buildLabels } from './scene/labels';
 import { buildAwnings, type AwningConfig } from './scene/facades';
-import { buildModularBuilding, type ModularConfig } from './scene/modular';
 import { createTiltShift } from './scene/tiltshift';
 import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
@@ -67,10 +66,7 @@ async function main() {
   const stage = createStage(app, data.bounds, terrain.heightAt);
   const { scene, camera, renderer, controls } = stage;
   const models = modelsContent as ModelEntry[];
-  // Bâtiments cachés : ceux qu'un monument remplace, et celui de l'essai du pack (src/scene/modular.ts)
-  const protoConfig = buildingsContent.prototype as ModularConfig;
-  const hidden = hiddenBuildings(models);
-  if (protoConfig.id !== null) hidden.add(protoConfig.id);
+  const hidden = hiddenBuildings(models); // bâtiments remplacés par un monument modélisé
   const city = buildCity(data, terrain, { hidden });
   scene.add(city.group);
   // Heure et saison (itération 31) : heure réelle de Chambéry par défaut
@@ -127,29 +123,6 @@ async function main() {
   } catch (e) {
     console.warn('[auvents] non chargés', e);
   }
-  // Essai : un bâtiment reconstruit avec les modules du pack
-  let modular: Awaited<ReturnType<typeof buildModularBuilding>> = null;
-  try {
-    modular = await buildModularBuilding({ data, minUnder: terrain.minUnder, night: city.night, config: protoConfig });
-    if (modular) {
-      scene.add(modular.group);
-      if (DEBUG) console.info('[bâtiment modulaire]', modular.info);
-      // En dev ou avec ?debug : un bouton pour aller voir le bâtiment d'essai
-      if (import.meta.env.DEV || DEBUG) {
-        const ring = modular.building.outer;
-        const cx = ring.reduce((t, p) => t + p[0], 0) / ring.length, cy = ring.reduce((t, p) => t + p[1], 0) / ring.length;
-        const go = document.createElement('button');
-        go.className = 'btn';
-        go.textContent = "🏠 Bâtiment d'essai";
-        go.style.cssText = 'position:absolute;top:64px;right:16px;z-index:5;cursor:pointer';
-        go.addEventListener('click', () => stage.flyTo(cx, -cy, 110));
-        app.appendChild(go);
-      }
-    }
-  } catch (e) {
-    console.warn('[bâtiment modulaire] non construit', e);
-  }
-
   let discovered = loadDiscovered();
   let placeIdx: number | null = null; // fiche de lieu ouverte
   // Modèle de la mascotte sous licence CC BY 3.0 : crédit obligatoire, affiché avec les autres
@@ -363,7 +336,7 @@ async function main() {
   });
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, modular, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, clock, herd, hunt, slots } });
 }
 
 main();

@@ -1,5 +1,5 @@
 {
-  "note": "Détails de façade tirés du pack « Building Kit » de Kenney (CC0) rangé dans assets-src/buildings, convertis par `npm run buildings` en public/models/buildings/details.glb. Chaque pièce : `obj` = fichier du pack ; `part` = `protrude` pour ne garder que ce qui dépasse du mur (z > 0,505, par exemple l'auvent d'un module de toit) ; `offset` = décalage en unités du pack avant mise à l'échelle (origine au bord du mur, face vers +Z) ; `tint` = couleur en gris clair, pour être teintée par instance (catégorie du lieu) ; `slate` = remplace l'ardoise très sombre du pack par cette couleur (palette du diorama), en gardant les nuances.",
+  "note": "Auvents des lieux tirés du pack « Building Kit » de Kenney (CC0), convertis par `npm run buildings` en public/models/buildings/details.glb. Chaque pièce : `obj` = fichier du pack (assets-src/buildings) ; `part` = `protrude` pour ne garder que ce qui dépasse du mur (z > 0,505 : l'auvent d'un module de toit) ; `offset` = décalage en unités du pack avant mise à l'échelle (origine au bord du mur, face vers +Z) ; `tint` = couleur en gris clair, pour être teintée par instance (catégorie du lieu). Le reste du pack (murs, fenêtres, portes, toits) a été essayé sur un bâtiment puis écarté par Dasco (itération 48).",
   "scale": 4.2,
   "scaleNote": "Mètres par unité du pack : la porte mesure 0,5 unité, soit 2,1 m à 4,2 ; un module de mur fait 4,2 m de large et 2,65 m de haut (0,63 unité).",
   "pieces": {
@@ -22,53 +22,6 @@
         -0.5
       ],
       "tint": true
-    },
-    "door-brown": {
-      "obj": "door-brown"
-    },
-    "door-white": {
-      "obj": "door-white"
-    },
-    "balcony": {
-      "obj": "building-window-balcony",
-      "part": "protrude",
-      "offset": [
-        0,
-        0,
-        -0.5
-      ]
-    },
-    "ac-a": {
-      "obj": "detail-ac-a"
-    },
-    "ac-b": {
-      "obj": "detail-ac-b"
-    },
-    "dormer": {
-      "obj": "roof-slanted-window"
-    },
-    "wall-block": {
-      "obj": "building-block"
-    },
-    "wall-window": {
-      "obj": "building-window"
-    },
-    "wall-windows": {
-      "obj": "building-windows"
-    },
-    "wall-door": {
-      "obj": "building-door"
-    },
-    "wall-balcony": {
-      "obj": "building-window-balcony"
-    },
-    "roof-gable": {
-      "obj": "roof-gable",
-      "slate": "#949cad"
-    },
-    "roof-gable-end": {
-      "obj": "roof-gable-end",
-      "slate": "#949cad"
     }
   },
   "awning": {
@@ -81,12 +34,5 @@
     "projection": 1.3,
     "maxStreetDistance": 20,
     "minBuildingHeight": 3.5
-  },
-  "prototype": {
-    "note": "Essai demandé par Dasco (itération 47) : UN bâtiment de la carte reconstruit avec les modules du pack (murs à fenêtres, porte, balcon, toit d'ardoise) pour voir si le style s'intègre. `id` = identifiant OSM du bâtiment (null = désactivé) ; `module` = largeur visée d'un module (m) ; `floor` = hauteur d'un étage (m) ; `roofHeight` = hauteur du toit (m) quand le bâtiment n'a pas de hauteur de gouttière (sinon : hauteur totale moins gouttière).",
-    "id": 101968677,
-    "module": 3.2,
-    "floor": 2.65,
-    "roofHeight": 3.2
   }
 }

@@ -78,4 +78,4 @@ Aucun : pas de changement visible.
 ---
 
 **Priorité** : Medium
-**Status** : ✅ Done (itération 46)
+**Status** : ✅ Done (itération 46), **réduite le 30/09 (itération 48)** : seules les 2 pièces d'auvent et la palette restent dans `assets-src/buildings` ; le reste du pack, les autres pièces converties et l'essai de bâtiment modulaire ont été supprimés à la demande de Dasco

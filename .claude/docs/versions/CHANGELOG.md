@@ -1,5 +1,19 @@
 # Journal des itérations
 
+## Itération 48 — 30/09/2026 (branche `feat/EP001-US007-US008-batiments`)
+
+**Retour de Dasco :** « autant les auvents ça me va, autant les bâtiments non, je trouve que les autres sont mieux ; le seul truc c'est qu'ils n'ont pas de fenêtres et portes la journée. Supprime les obj buildings. »
+
+**Changements :**
+- **essai du bâtiment modulaire retiré** : `src/scene/modular.ts`, son branchement et son bouton dans `main.ts`, le réglage `prototype`, les 7 pièces de mur et de toit, l'option `slate` du script, les 3 captures de la spec ;
+- **pack de bâtiments supprimé**, sauf ce qu'il faut aux auvents gardés : `assets-src/buildings` ne contient plus que `roof-flat-awning-b`, `roof-flat-awning-c` (`.obj` et `.mtl`) et `Textures/colormap.png` (28 Ko au lieu de 1,1 Mo) ; `buildings.json` réduit aux 2 pièces d'auvent ; `details.glb` régénéré (3,2 Ko) ;
+- spec : US008 validée ; ancienne US009 (portes, balcons, climatiseurs, lucarnes du pack) **remplacée** par « fenêtres et portes visibles de jour », à faire dans le shader existant des façades, sans pack, à préciser avec Dasco ;
+- README, FEATURES, DECISIONS.
+
+**Vérifié :** `npm run buildings` puis `npm run build` ; dans Chrome avec la carte graphique : toujours 148 auvents posés, légende qui masque et remet ceux d'une catégorie, aucune erreur console ; plus aucune référence à l'essai dans `main.ts`.
+
+**Non vérifié :** rien de visible n'a changé pour les auvents (même pièces, même réglages) ; pas de nouvelle capture.
+
 ## Itération 47 — 30/09/2026 (branche `feat/EP001-US007-US008-batiments`, essai du pack)
 
 **Retour de Dasco sur les auvents :** « je vois un rectangle sur la partie basse du bâtiment, j'ai pas l'impression que le bâtiment est intégré ». Il choisit d'**essayer le pack autrement, sur un seul bâtiment** (fenêtres, porte, toit), avant de décider.

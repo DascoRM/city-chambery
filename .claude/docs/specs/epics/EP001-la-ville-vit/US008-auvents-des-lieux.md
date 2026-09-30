@@ -88,4 +88,4 @@ Trois rues avec leurs auvents de près ; case « Bars » décochée et recochée
 ---
 
 **Priorité** : Medium
-**Status** : 🟡 Livrée (itération 46), en attente du go de Dasco
+**Status** : ✅ Done (itération 46) ; **validée par Dasco le 30/09/2026** (« les auvents, ça me va »)

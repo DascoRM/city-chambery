@@ -15,7 +15,7 @@ import { join, dirname } from 'node:path';
 import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Document, NodeIO } from '@gltf-transform/core';
-import { readPng, readObj, bounds, srgbToLinear } from './lib/kenney-obj.mjs';
+import { readPng, readObj, bounds } from './lib/kenney-obj.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'assets-src/buildings');
@@ -50,19 +50,6 @@ function tinted(piece) {
   return { ...piece, colors };
 }
 
-/** Remplace les couleurs très sombres (l'ardoise du pack, luminance < 0,12) par `hex`, en gardant les nuances entre elles. */
-function slated(piece, hex) {
-  const target = srgbToLinear([1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)));
-  const colors = Float32Array.from(piece.colors);
-  for (let i = 0; i < colors.length; i += 3) {
-    const l = 0.2126 * colors[i] + 0.7152 * colors[i + 1] + 0.0722 * colors[i + 2];
-    if (l >= 0.12) continue;
-    const k = Math.min(1.15, Math.max(0.75, l / 0.055));
-    for (let c = 0; c < 3; c++) colors[i + c] = Math.min(1, target[c] * k);
-  }
-  return { ...piece, colors };
-}
-
 const doc = new Document();
 const buffer = doc.createBuffer();
 const scene = doc.createScene('details');
@@ -74,7 +61,6 @@ for (const [name, def] of Object.entries(config.pieces)) {
   if (def.part === 'protrude') piece = protrudingPart(piece);
   if (!piece.indices.length) { console.warn(`⚠️  ${name} (${def.obj}) : aucun triangle, pièce ignorée`); continue; }
   if (def.tint) piece = tinted(piece);
-  if (def.slate) piece = slated(piece, def.slate);
   const [ox, oy, oz] = def.offset ?? [0, 0, 0];
   const pos = new Float32Array(piece.positions.length);
   for (let i = 0; i < pos.length; i += 3) {
