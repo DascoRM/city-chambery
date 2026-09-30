@@ -13,7 +13,7 @@
   "walkSeconds": [20, 45],
   "pauseSeconds": [4, 8],
   "game": {
-    "note": "Mini-jeu « Ramène les éléphants à la fontaine » (itération 35) : survolé ou touché, un éléphant disparaît et réapparaît plus loin ; après 1 à 5 fuites il est épuisé et un clic le ramène sur la fontaine",
+    "note": "Mini-jeu « Ramène les éléphants à la fontaine » (itération 35) : la souris sur un éléphant le fait trotter plus vite, un clic (ou un toucher) le fait disparaître et réapparaître plus loin ; après 1 à 5 fuites il est épuisé et un clic le ramène sur la fontaine",
     "count": 4,
     "escapes": [1, 5],
     "respawnDistance": [100, 250],
@@ -22,6 +22,9 @@
     "bonus": 20,
     "openSpace": 4.5,
     "restartSeconds": 45,
+    "bubbleSeconds": 6,
+    "startleSpeed": 3.5,
+    "startleSeconds": 3,
     "taunts": [
       "Trop lent !",
       "Raté ! 😜",

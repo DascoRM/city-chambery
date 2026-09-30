@@ -180,6 +180,7 @@ async function main() {
         herd, camera, canvas: renderer.domElement, slots, smoke, sparks, fireworks, returned, points,
         gain: mascotContent.game.points, bonus: mascotContent.game.bonus,
         restartSeconds: mascotContent.game.restartSeconds, taunts: mascotContent.game.taunts,
+        bubbleSeconds: mascotContent.game.bubbleSeconds,
         bubble: ui.bubble,
         onReturned: (r) => { saveReturned(r); ui.setHerd(r.size, herdTotal); },
         onScore: (total, gained, text) => {

@@ -68,6 +68,11 @@ export interface MascotConfig {
     openSpace: number;
     /** Délai (s) après la fontaine complète avant qu'ils s'échappent de nouveau */
     restartSeconds: number;
+    /** Durée d'affichage (s) de la bulle quand il disparaît */
+    bubbleSeconds: number;
+    /** Souris sur lui : il sursaute et trotte plus vite (m/s) pendant startleSeconds */
+    startleSpeed: number;
+    startleSeconds: number;
     /** Phrases pour narguer (une au hasard à chaque fuite) */
     taunts: string[];
   };
@@ -109,6 +114,8 @@ export interface Elephant {
   setHome(): void;
   /** Mode debug : plus aucune fuite, il disparaît et réapparaît épuisé. */
   exhaust(): void;
+  /** Souris sur lui : il sursaute et accélère un moment (il ne disparaît qu'au clic). */
+  startle(): void;
 }
 
 export interface Herd {
@@ -446,6 +453,8 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: (x:
     let escapes = rndInt(G.escapes);
     let next = -1; // nœud de réapparition
     let appearT = 0; // animation d'apparition (0 → 1)
+    let startleT = 0; // sursaut : temps restant au trot
+    let speed = cfg.speed;
     const pos: Pt = [g.x[from], g.y[from]];
     let fly: { a: THREE.Vector3; b: THREE.Vector3; top: number; onLand: () => void } | null = null;
 
@@ -515,6 +524,14 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: (x:
       setHome() {
         setState('home');
       },
+      startle() {
+        // Déjà au trot : on prolonge sans refaire le sursaut
+        if (state !== 'walk') return;
+        if (startleT <= 0) stateT = 0;
+        startleT = G.startleSeconds;
+        walking = true;
+        timer = Math.max(timer, G.startleSeconds);
+      },
       exhaust() {
         if (state !== 'walk') return;
         escapes = 1;
@@ -553,6 +570,13 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: (x:
           timer = rnd(walking ? cfg.walkSeconds : cfg.pauseSeconds);
         }
         targetAmp = walking ? 1 : 0;
+        if (startleT > 0) {
+          startleT -= dt;
+          targetAmp = 1;
+          // Sursaut : petit bond au moment où la souris arrive sur lui
+          if (stateT < 0.35) body.position.y = Math.sin((stateT / 0.35) * Math.PI) * 0.9;
+        }
+        speed += ((startleT > 0 ? G.startleSpeed : cfg.speed) - speed) * Math.min(1, dt * 5);
       } else if (state === 'poof') {
         // Il tourne sur lui-même et rétrécit, puis disparaît dans le nuage
         const k = Math.min(1, stateT / 0.35);
@@ -586,7 +610,7 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: (x:
       body.scale.setScalar(Math.max(0.01, sc));
 
       amp = state === 'walk' ? amp + (targetAmp - amp) * Math.min(1, dt * 3) : 0;
-      const step = cfg.speed * amp * dt;
+      const step = speed * amp * dt;
       s += step;
       while (s >= edge.len) {
         s -= edge.len;
@@ -597,7 +621,8 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: (x:
       const k = edge.len > 0 ? Math.min(1, s / edge.len) : 0;
       pos[0] = g.x[from] + (g.x[edge.to] - g.x[from]) * k;
       pos[1] = g.y[from] + (g.y[edge.to] - g.y[from]) * k;
-      uniforms.uPhase.value = (uniforms.uPhase.value + step / (cfg.stride * cfg.scale)) % 1;
+      // Au trot, les pas s'allongent un peu (sinon les pattes s'affolent)
+      uniforms.uPhase.value = (uniforms.uPhase.value + step / (cfg.stride * cfg.scale * Math.sqrt(speed / cfg.speed))) % 1;
       uniforms.uAmp.value = amp;
 
       // Cap lissé (la position, elle, reste exactement sur la voie)

@@ -7,9 +7,9 @@ import type { Pt } from '../types';
  * Mini-jeu « Ramène les éléphants à la fontaine » (itération 35).
  *
  * Les quatre éléphants de la fontaine se sont échappés et se promènent dans les rues.
- * - Survoler un éléphant à la souris (ou le toucher) le fait disparaître dans un nuage : il nargue le
- *   joueur dans une bulle, avec un indice (la rue où il réapparaît, sinon la direction), puis réapparaît
- *   plus loin.
+ * - La souris sur un éléphant le fait sursauter et trotter plus vite (itération 37) ; cliquer dessus (ou le
+ *   toucher) le fait disparaître dans un nuage : il nargue le joueur dans une bulle, avec un indice (la rue
+ *   où il réapparaît, sinon la direction), puis réapparaît plus loin.
  * - Après 1 à 5 fuites (au hasard), il réapparaît épuisé : assis, des étoiles au-dessus de la tête.
  *   Un clic l'attrape : il s'envole vers sa place sur la fontaine, se change en bronze dans une gerbe
  *   d'étincelles, et un feu d'artifice part. Points à chaque éléphant, bonus quand la fontaine est complète.
@@ -38,6 +38,8 @@ export interface HuntOptions {
   gain: number;
   bonus: number;
   restartSeconds: number;
+  /** Durée d'affichage de la bulle (s) */
+  bubbleSeconds: number;
   taunts: string[];
   /** Bulle de texte ancrée sur un point de la scène */
   bubble(text: string | null, x?: number, y?: number): void;
@@ -93,7 +95,7 @@ export function createHunt(o: HuntOptions): Hunt {
 
   const showBubble = (text: string, at: THREE.Vector3) => {
     bubbleAt = at;
-    bubbleLeft = 3.2;
+    bubbleLeft = o.bubbleSeconds;
     o.bubble(text);
   };
 
@@ -138,13 +140,13 @@ export function createHunt(o: HuntOptions): Hunt {
   return {
     pointerMove(x, y) {
       const e = pickElephant(x, y);
-      if (e?.state() === 'walk') escape(e);
+      if (e?.state() === 'walk') e.startle();
       return e;
     },
     click(x, y) {
       const e = pickElephant(x, y);
       if (!e) return false;
-      if (e.state() === 'walk') escape(e); // au doigt : toucher = survoler
+      if (e.state() === 'walk') escape(e);
       else if (e.state() === 'tired') {
         const slot = o.slots[e.id];
         const target = slot ? new THREE.Box3().setFromObject(slot, true).getCenter(new THREE.Vector3()) : e.group.position.clone();
