@@ -1,5 +1,15 @@
 # Journal des itérations
 
+## Itération 50 — 01/10/2026 (branche `feat/EP001-US009-fenetres-de-jour`)
+
+**Retour de Dasco :** « c'est trop gris, il faut faire dans la même idée que le mode nuit ; ça fait très volet fermé en pleine journée. Donc pas verre sombre. »
+
+**Changements (`src/scene/city.ts`, shader des façades) :** vitre **claire qui reflète le ciel** (bleu, plus clair en haut) au lieu du verre sombre, avec un **encadrement crème** d'environ 12 cm ; la nuit, les vitres éteintes redeviennent sombres (mélange selon `uNight`), les allumées ne changent pas ; portes inchangées.
+
+**Vérifié :** `npm run build` ; dans Chrome avec la carte graphique, rue de Boigne, place Saint-Léger, théâtre à 14 h et 23 h, et une grande place (portes visibles) ; aucune erreur console ; triangles et appels de rendu inchangés.
+
+**Non vérifié :** l'aube et le crépuscule (mélange jour / nuit des vitres), téléphone.
+
 ## Itération 49 — 01/10/2026 (branche `feat/EP001-US009-fenetres-de-jour`, empilée sur `feat/EP001-US007-US008-batiments`)
 
 **Demande de Dasco (EP001-US009) :** fenêtres et portes visibles de jour ; « un verre sombre, juste du verre dans un premier temps, porte côté rue ».

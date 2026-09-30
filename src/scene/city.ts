@@ -305,10 +305,19 @@ function windowsMaterial(night: NightUniforms): THREE.MeshStandardMaterial {
           cell = vec2(floor(u / 3.0), floor(vWPos.y / 3.2));
           vec2 f = vec2(fract(u / 3.0), fract(vWPos.y / 3.2));
           win = step(0.3, f.x) * step(f.x, 0.7) * step(0.35, f.y) * step(f.y, 0.78) * step(1.5, vWPos.y);
+          // Encadrement : bande de ≈ 12 cm autour de la vitre
+          float frame = step(0.26, f.x) * step(f.x, 0.74) * step(0.31, f.y) * step(f.y, 0.82) * step(1.5, vWPos.y) * (1.0 - win);
           float h = vWPos.y - vBase;                      // hauteur au-dessus du pied du bâtiment
           door = vStreet * step(hash21(vec2(floor(u / 3.0), floor(vBase))), 0.34) * step(0.32, f.x) * step(f.x, 0.68) * step(h, 2.3);
-          win *= 1.0 - step(h, 3.2) * vStreet * step(hash21(vec2(floor(u / 3.0), floor(vBase))), 0.34); // pas de fenêtre au-dessus d'une porte, au rez-de-chaussée
-          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.13, 0.16, 0.2), win * 0.85);
+          float noWin = 1.0 - step(h, 3.2) * vStreet * step(hash21(vec2(floor(u / 3.0), floor(vBase))), 0.34); // pas de fenêtre au-dessus d'une porte, au rez-de-chaussée
+          win *= noWin;
+          frame *= noWin;
+          // Vitre claire qui reflète le ciel le jour (plus claire en haut), sombre la nuit quand elle est éteinte
+          float gy = clamp((f.y - 0.35) / 0.43, 0.0, 1.0);
+          vec3 sky = mix(vec3(0.36, 0.58, 0.82), vec3(0.68, 0.84, 0.97), gy);
+          vec3 glass = mix(sky, vec3(0.08, 0.1, 0.16), uNight);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.96, 0.94, 0.89), frame);
+          diffuseColor.rgb = mix(diffuseColor.rgb, glass, win);
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.3, 0.2, 0.14), door);
         }`,
       )

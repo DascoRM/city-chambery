@@ -1,6 +1,6 @@
 # EP001 - US009 - Des fenêtres et des portes visibles de jour sur les bâtiments
 
-**Statut : ✅ faite (itération 49)** · réponses de Dasco : **verre sombre, juste du verre pour commencer, portes côté rue** (remplace l'ancienne US009 « portes, balcons, climatiseurs et lucarnes » du pack, abandonnée avec le pack le 30/09/2026).
+**Statut : ✅ faite (itération 49)** · réponses de Dasco : juste du verre pour commencer, portes côté rue ; verre sombre essayé puis refusé (« ça fait volet fermé ») → **vitre claire qui reflète le ciel, encadrement crème** (itération 50) (remplace l'ancienne US009 « portes, balcons, climatiseurs et lucarnes » du pack, abandonnée avec le pack le 30/09/2026).
 
 ## User Story
 
