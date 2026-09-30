@@ -20,6 +20,7 @@
     "startDistance": [80, 300],
     "points": 10,
     "bonus": 20,
+    "openSpace": 4.5,
     "restartSeconds": 45,
     "taunts": [
       "Trop lent !",

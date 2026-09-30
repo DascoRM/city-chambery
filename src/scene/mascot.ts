@@ -64,6 +64,8 @@ export interface MascotConfig {
     /** Points par éléphant ramené, et bonus quand la fontaine est complète */
     points: number;
     bonus: number;
+    /** Distance minimale (m) entre un lieu de réapparition et la façade la plus proche */
+    openSpace: number;
     /** Délai (s) après la fontaine complète avant qu'ils s'échappent de nouveau */
     restartSeconds: number;
     /** Phrases pour narguer (une au hasard à chaque fuite) */
@@ -105,6 +107,8 @@ export interface Elephant {
   release(): void;
   /** Déjà ramené (partie sauvegardée) : il reste sur la fontaine. */
   setHome(): void;
+  /** Mode debug : plus aucune fuite, il disparaît et réapparaît épuisé. */
+  exhaust(): void;
 }
 
 export interface Herd {
@@ -192,6 +196,46 @@ function blocker(data: CityData, cfg: MascotConfig): (a: Pt, b: Pt) => boolean {
       if (n === 1 && underBuilding([(a[0] + b[0]) / 2, (a[1] + b[1]) / 2])) return true;
     }
     return false;
+  };
+}
+
+/**
+ * Distance (m) d'un point à la façade la plus proche, plafonnée à `max` (grille de 25 m).
+ * Sert à choisir où un éléphant réapparaît : en bout de chemin, un nœud peut toucher un mur, et l'éléphant
+ * (6 m de long) rentrerait dans la façade.
+ */
+function wallDistance(data: CityData): (p: Pt, max: number) => number {
+  const CELL = 25;
+  const grid = new Map<string, Pt[][]>();
+  for (const b of data.buildings) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [x, y] of b.outer) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    for (let i = Math.floor(x0 / CELL); i <= Math.floor(x1 / CELL); i++)
+      for (let j = Math.floor(y0 / CELL); j <= Math.floor(y1 / CELL); j++) {
+        const k = `${i},${j}`;
+        const list = grid.get(k);
+        if (list) list.push(b.outer); else grid.set(k, [b.outer]);
+      }
+  }
+  return (p, max) => {
+    let best = max * max;
+    const ci = Math.floor(p[0] / CELL), cj = Math.floor(p[1] / CELL);
+    const seen = new Set<Pt[]>();
+    for (let i = ci - 1; i <= ci + 1; i++)
+      for (let j = cj - 1; j <= cj + 1; j++)
+        for (const ring of grid.get(`${i},${j}`) ?? []) {
+          if (seen.has(ring)) continue;
+          seen.add(ring);
+          if (pointInRing(p[0], p[1], ring)) return 0;
+          for (let a = 0, b = ring.length - 1; a < ring.length; b = a++) {
+            const [ax, ay] = ring[b], [bx, by] = ring[a];
+            const dx = bx - ax, dy = by - ay;
+            const t = Math.max(0, Math.min(1, ((p[0] - ax) * dx + (p[1] - ay) * dy) / (dx * dx + dy * dy || 1)));
+            const ex = ax + dx * t - p[0], ey = ay + dy * t - p[1];
+            best = Math.min(best, ex * ex + ey * ey);
+          }
+        }
+    return Math.sqrt(best);
   };
 }
 
@@ -315,18 +359,25 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: (x:
   const g = buildGraph(data, cfg);
   const main = mainComponent(g);
   if (!main.size) return null;
-  const mainList = [...main];
   const home: Pt = data.anchors[cfg.start]?.pos ?? [0, 0];
   const b = data.bounds;
   const G = cfg.game;
+  // Lieux de réapparition : seulement des nœuds dégagés (façade à plus de openSpace mètres),
+  // sinon l'éléphant, qui s'assoit épuisé à cet endroit, peut rentrer dans un mur (itération 36)
+  const wall = wallDistance(data);
+  const open = [...main].filter((i) => wall([g.x[i], g.y[i]], G.openSpace + 1) >= G.openSpace);
+  const mainList = open.length ? open : [...main];
+  if (import.meta.env.DEV) console.info(`[mascottes] ${open.length} lieux de réapparition dégagés sur ${main.size} nœuds`);
 
-  /** Nœud au hasard à une distance de `from` comprise dans [min, max], à 30 m au moins des bords de la carte */
+  /** Nœud dégagé au hasard, à une distance de `from` comprise dans [min, max], à moins de roamRadius de la fontaine */
   const randomNode = (from: Pt, range: [number, number]): number => {
     let best = mainList[0], bestErr = Infinity;
     for (let k = 0; k < 400; k++) {
       const i = mainList[Math.floor(Math.random() * mainList.length)];
       const x = g.x[i], y = g.y[i];
       if (x < b.minX + 30 || x > b.maxX - 30 || y < b.minY + 30 || y > b.maxY - 30) continue;
+      // Il reste dans le quartier de la fontaine : sinon, de fuite en fuite, il pouvait finir au bout de la carte
+      if (Math.hypot(x - home[0], y - home[1]) > cfg.roamRadius) continue;
       const d = Math.hypot(x - from[0], y - from[1]);
       const err = d < range[0] ? range[0] - d : d > range[1] ? d - range[1] : 0;
       if (err === 0) return i;
@@ -463,6 +514,11 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: (x:
       },
       setHome() {
         setState('home');
+      },
+      exhaust() {
+        if (state !== 'walk') return;
+        escapes = 1;
+        el.escape();
       },
     };
     elephants.push(el);

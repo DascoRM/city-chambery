@@ -28,6 +28,7 @@ import { createUi, showFatal } from './ui/ui';
 import { loadDiscovered, resetDiscovered, saveDiscovered } from './state/progress';
 import { loadPoints, savePoints } from './state/points';
 import { createHunt, type Hunt } from './game/hunt';
+import { installHerdDebug } from './dev/herd-debug';
 import { loadReturned, saveReturned } from './state/herd';
 
 const app = document.getElementById('app')!;
@@ -192,6 +193,10 @@ async function main() {
         flyTo: (x, z) => stage.flyTo(x, z, 160),
       })
     : null;
+  // Mode debug (?debug) : faisceaux au-dessus des éléphants et panneau pour les retrouver
+  const herdDebug = herd && new URLSearchParams(location.search).has('debug')
+    ? installHerdDebug({ root: app, scene, herd, home: data.anchors[mascotContent.start]?.pos ?? [0, 0], flyTo: (x, z) => stage.flyTo(x, z, 160) })
+    : null;
   if (hunt && returned.size < herdTotal) {
     window.setTimeout(() => ui.flash(returned.size
       ? `🐘 Encore ${herdTotal - returned.size} éléphant${herdTotal - returned.size > 1 ? 's' : ''} à ramener à la fontaine`
@@ -350,6 +355,7 @@ async function main() {
     city.update(timer.getElapsed());
     herd?.update(dt, timer.getElapsed());
     hunt?.update(dt);
+    herdDebug?.update(dt);
     fireworks.update(dt);
     smoke.update(dt);
     sparks.update(dt);
