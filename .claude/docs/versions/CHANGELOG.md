@@ -1,5 +1,18 @@
 # Journal des itérations
 
+## Itération 41 — 30/09/2026 (branche `feat/TI-01-mode-debug`)
+
+**Demande de Dasco :** enchaîner TI-01 (mode dev / debug propre).
+
+**Changements (aucun changement visible pour les visiteurs) :**
+- `?debug` lu une seule fois (constante `DEBUG` dans `main.ts`) ;
+- debug des éléphants (`dev/herd-debug.ts`) chargé à la demande (`import()`), comme l'outil de placement : il sort du fichier JS principal (fichier à part de 1,8 Ko, téléchargé seulement avec `?debug`) ;
+- `window.diorama` n'existe plus en production, sauf avec `?debug`.
+
+**Vérifié :** `npm run build` (fichier principal 789,6 → 788,0 Ko, 216,5 → 216,0 Ko gzip) ; dans Chromium (Playwright), en dev et sur le build de production (`vite preview`), sans et avec `?debug` : sans `?debug`, ni compteur, ni panneau des éléphants, ni téléchargement de `herd-debug`, et `window.diorama` absent en production (présent en dev) ; avec `?debug`, compteur de perf, panneau des éléphants (boutons « Voir » / « Épuiser » des 4 éléphants) et `window.diorama` présents ; aucune erreur console.
+
+**Non vérifié :** les boutons du panneau des éléphants en action (seulement leur présence) ; le mode hors-ligne : le petit fichier `herd-debug` est gardé par le service worker comme les autres (1 Ko gzip de plus, sans importance).
+
 ## Itération 40 — 30/09/2026 (branche `feat/EN-02-reprise-main`)
 
 **Demande de Dasco :** attaquer EN-02 (reprise de `main.ts`).

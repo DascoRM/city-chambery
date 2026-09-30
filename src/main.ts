@@ -26,9 +26,10 @@ import { createUi, showFatal } from './ui/ui';
 import { loadDiscovered, resetDiscovered, saveDiscovered } from './state/progress';
 import { setupGame } from './game/setup';
 import { installInteraction, type PlacementTool } from './interaction';
-import { installHerdDebug } from './dev/herd-debug';
 
 const app = document.getElementById('app')!;
+/** Mode debug : ajouter ?debug à l'adresse (compteur de perf, debug des éléphants, window.diorama) */
+const DEBUG = new URLSearchParams(location.search).has('debug');
 
 async function loadCity(): Promise<CityData | null> {
   try {
@@ -104,7 +105,7 @@ async function main() {
   const quality = createAdaptiveResolution(renderer, () => tiltShift.setSize(app.clientWidth, app.clientHeight));
   tiltShift.setSize(app.clientWidth, app.clientHeight);
   // Compteur de performance : ajouter ?debug à l'adresse
-  const perfHud = new URLSearchParams(location.search).has('debug') ? createPerfHud(renderer, () => quality.pixelRatio) : null;
+  const perfHud = DEBUG ? createPerfHud(renderer, () => quality.pixelRatio) : null;
   const poiLayer = buildPoiMarkers(pois, terrain.heightAt);
   scene.add(poiLayer.root);
   const placeLayer = buildPlaceMarkers(data.places, terrain.heightAt, data.buildings, terrain.minUnder);
@@ -175,10 +176,13 @@ async function main() {
     flyTo: (x, z) => stage.flyTo(x, z, 160),
   });
   const { hunt, slots } = game;
-  // Mode debug (?debug) : faisceaux au-dessus des éléphants et panneau pour les retrouver
-  const herdDebug = herd && new URLSearchParams(location.search).has('debug')
-    ? installHerdDebug({ root: app, scene, herd, home: data.anchors[mascot.start]?.pos ?? [0, 0], flyTo: (x, z) => stage.flyTo(x, z, 160) })
-    : null;
+  // Mode debug (?debug) : faisceaux au-dessus des éléphants et panneau pour les retrouver ;
+  // chargé à la demande, comme l'outil de placement : absent du fichier principal
+  let herdDebug: Ticker | null = null;
+  if (DEBUG && herd) {
+    const { installHerdDebug } = await import('./dev/herd-debug');
+    herdDebug = installHerdDebug({ root: app, scene, herd, home: data.anchors[mascot.start]?.pos ?? [0, 0], flyTo: (x, z) => stage.flyTo(x, z, 160) });
+  }
 
   const syncFound = () => {
     poiLayer.markers.forEach((m) => m.setFound(discovered.has(m.poi.id)));
@@ -293,8 +297,8 @@ async function main() {
     perfHud?.end(raw);
   });
 
-  // Accès debug depuis la console : window.diorama
-  Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, clock, herd, hunt, slots } });
+  // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, clock, herd, hunt, slots } });
 }
 
 main();
