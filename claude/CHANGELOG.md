@@ -1,5 +1,26 @@
 # Journal des itérations
 
+## Itération 35 — 30/09/2026
+
+**Retour de Dasco sur l'itération 34 :** pas amusant, on n'arrive pas vraiment à le bloquer dans un coin, et la souris l'attrape trop facilement. Idées : il disparaît au survol et on le recherche ; un message pour narguer ; puis : quatre éléphants à ramener sur la fontaine, avec animation de retour et feu d'artifice.
+
+**Décisions de Dasco :** transformation en bronze sur la fontaine ; progression gardée comme les lieux découverts ; nombre de fuites au hasard entre 1 et 5 ; indice avec le nom de la rue.
+
+**Changements :**
+- `src/scene/mascot.ts` réécrit en troupeau : réseau de voies calculé une fois et partagé ; 4 éléphants (matériaux propres, pour que chacun marche à son rythme) ; états promenade, disparition, caché, épuisé, en vol, rentré. Les mécaniques de fuite et de coin de l'itération 34 sont retirées.
+- `src/game/hunt.ts` (remplace `catch.ts`) : survol ou toucher = disparition + bulle (phrase au hasard + rue de réapparition avec son article, ou direction) ; clic sur un éléphant épuisé = vol jusqu'à sa place (courbe, 2,4 s, rotation, caméra vers la fontaine) ; place qui sort du socle avec un rebond (transformation en bronze) ; points ; fontaine complète : bonus, grand feu d'artifice, nouvelle partie après 45 s.
+- `src/scene/particles.ts` : particules (fumée, étincelles) et feux d'artifice (fusée avec traînée puis gerbe) ; couleurs saturées en mélange normal pour rester visibles de jour.
+- `src/scene/models/elephants.ts` : les 4 éléphants de bronze nommés `elephant-0` à `elephant-3`.
+- `src/state/herd.ts` : éléphants ramenés, gardés dans le navigateur. Compteur « ⛲ n / 4 » à côté des points ; bulle au-dessus de l'éléphant.
+- `mascot.json` : bloc `game` remplacé (les réglages de fuite de l'itération 34, dont ceux modifiés par Dasco, n'ont plus d'usage).
+
+**Vérifié dans le navigateur de test :**
+- vrai survol de souris : disparition, nuage, bulle « La fontaine attendra encore un peu ! / Je file vers l'ouest 🐘 » ;
+- éléphant épuisé avec ses étoiles ; vrais clics : les 4 éléphants ramenés, compteur 60 points (4 × 10 + 20), fontaine complète, feu d'artifice visible ;
+- partie reprise après rechargement (éléphants déjà ramenés sur la fontaine, les autres dans les rues).
+
+**Non vérifié :** le jeu en conditions réelles (fluidité, difficulté pour les retrouver), au doigt sur téléphone, et la nouvelle partie après 45 s (logique relue, pas observée).
+
 ## Itération 34 — 30/09/2026
 
 **Demande de Dasco :** le mini-jeu « trouve l'éléphant ». Quand on essaie de cliquer ou de passer la souris dessus, il accélère ; il faut le diriger vers un coin ou un angle pour le bloquer ; bloqué, il fait un rebond et on peut l'attraper ; on gagne des points ; un compteur, réutilisable plus tard pour les bâtiments.

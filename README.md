@@ -20,7 +20,7 @@ point par point, c'est assez plaisant pour que mes amis y passent 10 minutes et 
 5. [Gérer les lieux d'histoire](#gérer-les-lieux-dhistoire)
 6. [Monuments modélisés](#monuments-modélisés)
 7. [Arbres modélisés (pack nature)](#arbres-modélisés-pack-nature)
-8. [Mascotte (l'éléphant qui se promène)](#mascotte-léléphant-qui-se-promène)
+8. [Mascottes (les éléphants qui se promènent)](#mascottes-les-éléphants-qui-se-promènent)
 9. [Outil de placement (mode dev)](#outil-de-placement-mode-dev)
 10. [Rendu : ce qui se passe à l'écran](#rendu--ce-qui-se-passe-à-lécran)
 11. [Structure du code](#structure-du-code)
@@ -115,7 +115,7 @@ source et dénivelé du relief, types de toits, et quels lieux d'histoire ont é
 | Découvrir un lieu | clic sur une gemme ✦ | toucher une gemme |
 | Voir un bar / café / restaurant | survoler son épingle (la fiche s'affiche à côté) ; clic = la fiche reste ouverte | toucher l'épingle |
 | Fermer une fiche | Échap, ✕ ou clic dans le vide | ✕ ou toucher dans le vide |
-| Attraper l'éléphant | l'approcher avec la souris pour le faire fuir, le pousser dans un cul-de-sac, puis clic quand il rebondit | toucher près de lui pour le faire fuir, puis toucher l'éléphant quand il rebondit |
+| Ramener un éléphant à la fontaine | le survoler le fait disparaître (il réapparaît plus loin) ; épuisé (étoiles), clic pour le ramener | le toucher le fait disparaître ; épuisé, le toucher pour le ramener |
 
 Zoom maximum : 70 m du point visé (120 m avant). De près, la caméra reste à au moins 30 m au-dessus du sol pour ne pas entrer dans les toits ni dans les collines. Gestes à deux doigts : `src/scene/touch.ts` ; réglages de la caméra : `src/scene/stage.ts`.
 
@@ -276,9 +276,9 @@ Les `.blend` d'origine ont été supprimés (pack retéléchargeable sur quatern
 
 ---
 
-## Mascotte (l'éléphant qui se promène)
+## Mascottes (les éléphants qui se promènent)
 
-Un éléphant se promène dans le diorama, **uniquement sur les rues et chemins** d'OpenStreetMap. Réglages dans
+Quatre éléphants se promènent dans le diorama, **uniquement sur les rues et chemins** d'OpenStreetMap. Réglages dans
 `src/content/mascot.json`, code dans `src/scene/mascot.ts`.
 
 - **Chemin** : les voies OSM forment un graphe (les voies qui se croisent partagent leurs points). L'éléphant
@@ -297,22 +297,28 @@ Un éléphant se promène dans le diorama, **uniquement sur les rues et chemins*
 - **Modèle** : « Elephant » par jeremy, [Poly Pizza](https://poly.pizza/m/9J-cG39KYFC), CC BY 3.0. Source dans
   `assets-src/` (le `.glb` et l'`.obj` d'origine), converti par `npm run mascot`.
 
-### Mini-jeu « Attrape l'éléphant »
+### Mini-jeu « Ramène les éléphants à la fontaine »
 
-- **Fuite** : quand la souris passe à moins de `game.fleeRadius` mètres (16 m), il s'enfuit au galop
-  (`fleeSpeed`, 5 m/s) ; à chaque carrefour il prend la voie qui s'éloigne le plus de la souris, et fait
-  demi-tour si la souris lui barre la route. Cliquer sur lui sans l'avoir coincé le fait sprinter
-  (`boostSpeed`). Il se calme `calmSeconds` après que la souris s'est éloignée.
-- **Coincé** : arrivé à un carrefour dont toutes les issues repartent vers la souris (cul-de-sac, bout
-  de la carte, angle fermé par la souris), il s'arrête face à elle et **rebondit**. Réglage :
-  `cornerScore` (−0,3 : chaque issue doit aller vers la souris). Au bout de `cornerSeconds` (4 s), ou si la
-  souris s'éloigne, il force le passage en sprint.
-- **Attrapé** : un clic pendant qu'il rebondit rapporte `game.points` (10) ; il fait un grand saut en
-  tournant, disparaît et réapparaît à la fontaine.
-- **Points** : compteur 🐘 sous la progression, gardé dans le navigateur (`src/state/points.ts`),
-  indépendant de « Recommencer l'exploration ». Prévu pour être dépensé plus tard (bâtiments…).
-- **Mobile** : un toucher près de lui fait office de souris pendant 1,5 s ; toucher l'éléphant = clic.
-- Code : `src/game/catch.ts` (souris → position sur la carte, score), comportement dans `src/scene/mascot.ts`.
+Les quatre éléphants de la fontaine se sont échappés : au départ, la fontaine n'a plus ses éléphants,
+et quatre éléphants se promènent dans les rues (entre 80 et 300 m de la fontaine, `game.startDistance`).
+
+- **Cache-cache** : survoler un éléphant à la souris (ou le toucher) le fait disparaître dans un nuage.
+  Une bulle le fait narguer (`game.taunts`) et donne un indice : la rue OSM où il réapparaît
+  (« Je file vers la rue de Boigne »), ou la direction si la voie n'a pas de nom. Il réapparaît de 100
+  à 250 m plus loin (`respawnDistance`).
+- **Épuisé** : chaque éléphant tire au hasard son nombre de fuites (1 à 5, `escapes`). Après la dernière,
+  il réapparaît assis, des étoiles au-dessus de la tête, et ne bouge plus.
+- **Ramené** : un clic sur l'éléphant épuisé l'envoie en vol jusqu'à sa place ; la caméra suit, il se
+  change en bronze en sortant du socle, gerbe d'étincelles et petit feu d'artifice. `points` (10) par
+  éléphant, plus `bonus` (20) quand la fontaine est complète, avec un grand feu d'artifice.
+- **Nouvelle partie** : `restartSeconds` (45 s) après la fontaine complète, les éléphants s'échappent de
+  nouveau.
+- **Sauvegarde** : éléphants ramenés (`src/state/herd.ts`) et points (`src/state/points.ts`) gardés dans
+  le navigateur, comme les lieux découverts. « Recommencer l'exploration » ne touche ni l'un ni l'autre.
+- **Compteur** : « 🐘 N points · ⛲ n / 4 » sous la progression.
+- Code : `src/game/hunt.ts` (règles, bulle, score), `src/scene/mascot.ts` (troupeau, états, animations),
+  `src/scene/particles.ts` (fumée, étincelles, feux d'artifice), places sur la fontaine :
+  `elephant-0` à `elephant-3` dans `src/scene/models/elephants.ts`.
 
 ## Outil de placement (mode dev)
 
@@ -386,7 +392,9 @@ src/
   ui/ui.ts                 HUD, fiche, journal, toasts, contrôles
   state/progress.ts        Progression et préférences (localStorage)
   state/points.ts          Points du mini-jeu (localStorage)
-  game/catch.ts            Mini-jeu « Attrape l'éléphant » : souris → menace, clic, score
+  state/herd.ts            Éléphants ramenés sur la fontaine (localStorage)
+  game/hunt.ts             Mini-jeu « Ramène les éléphants » : cache-cache, bulle, retour, score
+  scene/particles.ts       Fumée, étincelles, feux d'artifice
   dev/placement.ts         Outil de placement (chargé seulement en dev)
 
 public/data/city.json      Données générées (ne pas modifier à la main)
