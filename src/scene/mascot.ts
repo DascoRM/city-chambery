@@ -5,28 +5,34 @@ import { dataUrl } from '../dataurl';
 import { pointInRing } from './nature';
 
 /**
- * Mascotte : un éléphant qui se promène dans le diorama (itération 33).
+ * Mascottes : les quatre éléphants échappés de la fontaine se promènent dans le diorama
+ * (itération 33 pour la marche, itération 35 pour le troupeau et le cache-cache).
  *
  * Déplacement : uniquement sur les voies OSM (data.roads). Les voies sont transformées en graphe
  * (un nœud par point, relié à ses voisins sur la voie ; les voies qui se croisent partagent leurs nœuds).
  * L'éléphant va de nœud en nœud le long des segments, donc il reste toujours sur une rue ou un chemin.
  * À chaque carrefour il choisit une suite au hasard, en préférant aller tout droit, les rues piétonnes,
- * et en revenant vers son point de départ quand il s'en éloigne trop (roamRadius).
+ * et en revenant vers la fontaine quand il s'en éloigne trop (roamRadius).
  * Sont retirés du graphe : les types de voies exclus (escaliers), les tronçons qui passent sous un
  * bâtiment (passages couverts : l'éléphant, haut de 4,5 m, traverserait la façade), ceux qui frôlent
  * une façade à moins de `clearance` (trottoirs cartographiés le long des murs) et les zones
  * « avoid » (autour de la fontaine des Éléphants, dont le bassin déborde sur le chemin OSM).
+ * Le graphe est calculé une fois et partagé par les quatre éléphants.
  *
  * Marche : le modèle est statique (pas de squelette). Les pattes, la trompe, les oreilles et la queue
  * sont animées dans le shader, en fonction de la position des sommets (voir WALK_GLSL). Les seuils
  * sont ceux du modèle converti par scripts/convert-mascot.mjs (4,5 m de haut, trompe vers +X).
  *
+ * Cache-cache (src/game/hunt.ts) : survolé ou touché, un éléphant disparaît dans un nuage et réapparaît
+ * plus loin ; après un nombre de fuites tiré au hasard, il réapparaît épuisé (assis, étoiles au-dessus
+ * de la tête) et un clic l'attrape : il s'envole alors vers sa place sur la fontaine.
+ *
  * Ombre : les ombres de la scène ne sont recalculées que quand le soleil bouge (itération 25) ;
- * un objet qui se déplace ne peut donc pas projeter d'ombre. L'éléphant a une ombre « tache » sous lui.
+ * un objet qui se déplace ne peut donc pas projeter d'ombre. Chaque éléphant a une ombre « tache ».
  */
 export interface MascotConfig {
   model: string;
-  /** Identifiant d'ancrage (data.anchors) près duquel l'éléphant démarre */
+  /** Identifiant d'ancrage (data.anchors) : la fontaine, autour de laquelle ils se promènent */
   start: string;
   scale: number;
   /** Vitesse de marche en m/s */
@@ -40,63 +46,78 @@ export interface MascotConfig {
   clearance: number;
   /** Zones interdites : cercle autour d'un ancrage (data.anchors), rayon en mètres */
   avoid: { anchor: string; radius: number }[];
-  /** Au-delà de cette distance du départ (m), il tend à revenir */
+  /** Au-delà de cette distance de la fontaine (m), il tend à revenir */
   roamRadius: number;
   /** Durée de marche entre deux pauses, et durée des pauses (s) : [min, max] */
   walkSeconds: [number, number];
   pauseSeconds: [number, number];
-  /** Mini-jeu « Attrape l'éléphant » (itération 34) */
+  /** Mini-jeu « Ramène les éléphants à la fontaine » (itération 35) */
   game: {
-    /** Distance (m) à laquelle la souris le fait fuir */
-    fleeRadius: number;
-    fleeSpeed: number;
-    /** Sprint après un clic raté, en m/s, pendant boostSeconds */
-    boostSpeed: number;
-    boostSeconds: number;
-    /** Temps sans menace avant qu'il se calme */
-    calmSeconds: number;
-    /** Temps pendant lequel il reste coincé avant de forcer le passage */
-    cornerSeconds: number;
-    /**
-     * Coincé si la meilleure issue d'un carrefour ne s'éloigne pas assez de la menace :
-     * produit scalaire entre la direction de la voie et la direction opposée à la menace (−1 à 1).
-     * −0,3 : toutes les issues repartent vers la souris (cul-de-sac, bout de carte, coin fermé).
-     */
-    cornerScore: number;
+    /** Nombre d'éléphants (un par place sur la fontaine) */
+    count: number;
+    /** Nombre de fuites avant qu'il soit épuisé, tiré au hasard entre [min, max] pour chaque éléphant */
+    escapes: [number, number];
+    /** Distance (m) entre l'endroit où il disparaît et celui où il réapparaît : [min, max] */
+    respawnDistance: [number, number];
+    /** Distance (m) de la fontaine où ils apparaissent en début de partie : [min, max] */
+    startDistance: [number, number];
+    /** Points par éléphant ramené, et bonus quand la fontaine est complète */
     points: number;
+    bonus: number;
+    /** Délai (s) après la fontaine complète avant qu'ils s'échappent de nouveau */
+    restartSeconds: number;
+    /** Phrases pour narguer (une au hasard à chaque fuite) */
+    taunts: string[];
   };
 }
 
-/** calm : promenade · flee : fuit la souris · cornered : coincé, il rebondit · caught : attrapé */
-export type MascotMode = 'calm' | 'flee' | 'cornered' | 'caught';
+/**
+ * walk : se promène · poof : disparaît dans un nuage · hidden : invisible, va réapparaître ·
+ * tired : épuisé, attrapable · flying : vole vers la fontaine · home : sur la fontaine (plus dans les rues)
+ */
+export type ElephantState = 'walk' | 'poof' | 'hidden' | 'tired' | 'flying' | 'home';
 
-export interface Mascot {
+export interface Escape {
+  /** Où il a disparu, et où il réapparaît (mètres) */
+  from: Pt;
+  to: Pt;
+  /** Nom de la voie où il réapparaît (OSM), s'il y en a un */
+  road?: string;
+  /** Il réapparaîtra épuisé */
+  tired: boolean;
+}
+
+export interface Elephant {
+  id: number;
   group: THREE.Group;
   /** Zone de clic (invisible), pour le lancer de rayon */
   hit: THREE.Object3D;
-  update(dt: number, t: number): void;
-  /**
-   * Position de la menace (souris ou doigt) en mètres, null si elle a quitté la carte.
-   * click = tentative de clic : s'il n'est pas coincé, il sprinte.
-   */
-  setThreat(p: Pt | null, click?: boolean): void;
-  /** Tentative de capture : réussit seulement s'il est coincé (renvoie true), sinon il sprinte. */
-  tryCatch(): boolean;
-  /** Position actuelle [x, y] en mètres (coordonnées OSM projetées) */
+  state(): ElephantState;
   position(): Pt;
-  mode(): MascotMode;
   /** Altitude actuelle (Three.js y) */
   height(): number;
-  time(): number;
-  /** État interne (tests) */
-  debug(): { from: number; to: number; s: number; len: number; mode: MascotMode; deg: number };
+  escapesLeft(): number;
+  /** Survolé ou touché : il s'échappe (sauf s'il est épuisé ou déjà en train de disparaître). */
+  escape(): Escape | null;
+  /** Attrapé (seulement s'il est épuisé) : il vole jusqu'à `target` puis appelle onLand. */
+  catchTo(target: THREE.Vector3, onLand: () => void): boolean;
+  /** Nouvelle partie : il réapparaît dans les rues, loin de la fontaine. */
+  release(): void;
+  /** Déjà ramené (partie sauvegardée) : il reste sur la fontaine. */
+  setHome(): void;
+}
+
+export interface Herd {
+  group: THREE.Group;
+  elephants: Elephant[];
+  update(dt: number, t: number): void;
 }
 
 /** Hauteur des rubans de voies au-dessus du relief (mêmes valeurs que buildFlat, scene/city.ts) */
 const FOOT = new Set(['footway', 'path', 'steps', 'cycleway', 'track', 'pedestrian', 'living_street']);
 const roadLift = (kind: string, bridge?: boolean) => (bridge ? 0.9 : FOOT.has(kind) ? 0.14 : 0.18);
 
-interface Edge { to: number; len: number; lift: number; w: number }
+interface Edge { to: number; len: number; lift: number; w: number; name?: string }
 interface Graph { x: Float64Array; y: Float64Array; adj: Edge[][] }
 
 function buildGraph(data: CityData, cfg: MascotConfig): Graph {
@@ -118,12 +139,13 @@ function buildGraph(data: CityData, cfg: MascotConfig): Graph {
     if (exclude.has(r.kind)) continue;
     const lift = roadLift(r.kind, r.bridge);
     const w = cfg.preferKinds[r.kind] ?? 1;
+    const name = r.name;
     for (let k = 1; k < r.pts.length; k++) {
       const a = node(r.pts[k - 1]), b = node(r.pts[k]);
       if (a === b || blocked(r.pts[k - 1], r.pts[k])) continue;
       const len = Math.hypot(xs[b] - xs[a], ys[b] - ys[a]);
-      adj[a].push({ to: b, len, lift, w });
-      adj[b].push({ to: a, len, lift, w });
+      adj[a].push({ to: b, len, lift, w, name });
+      adj[b].push({ to: a, len, lift, w, name });
     }
   }
   return { x: Float64Array.from(xs), y: Float64Array.from(ys), adj };
@@ -244,298 +266,300 @@ function blobShadow(): THREE.Mesh {
   return m;
 }
 
-const rnd = (r: [number, number]) => r[0] + Math.random() * (r[1] - r[0]);
 
-export async function buildMascot(cfg: MascotConfig, data: CityData, heightAt: (x: number, y: number) => number): Promise<Mascot | null> {
+const rnd = (r: [number, number]) => r[0] + Math.random() * (r[1] - r[0]);
+const rndInt = (r: [number, number]) => Math.floor(r[0] + Math.random() * (r[1] - r[0] + 1));
+const ease = (k: number) => (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2);
+
+/** Texture d'étoile partagée (sprites : toujours face à la caméra, lisibles même vues du dessus) */
+let starTexture: THREE.CanvasTexture | null = null;
+function starMaterial(): THREE.SpriteMaterial {
+  if (!starTexture) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const x = c.getContext('2d')!;
+    x.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const r = i % 2 ? 12 : 30, a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+      x.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r);
+    }
+    x.closePath();
+    x.fillStyle = '#ffd23f';
+    x.strokeStyle = '#b8860b';
+    x.lineWidth = 3;
+    x.fill();
+    x.stroke();
+    starTexture = new THREE.CanvasTexture(c);
+    starTexture.colorSpace = THREE.SRGBColorSpace;
+  }
+  return new THREE.SpriteMaterial({ map: starTexture, depthWrite: false });
+}
+
+/** Petites étoiles qui tournent au-dessus de la tête d'un éléphant épuisé */
+function dizzyStars(): THREE.Group {
+  const g = new THREE.Group();
+  const mat = starMaterial();
+  for (let i = 0; i < 5; i++) {
+    const s = new THREE.Sprite(mat);
+    s.scale.setScalar(0.9);
+    const a = (i / 5) * Math.PI * 2;
+    s.position.set(Math.cos(a) * 1.1, 0, Math.sin(a) * 1.1);
+    g.add(s);
+  }
+  g.position.set(2.2, 5.1, 0);
+  g.visible = false;
+  return g;
+}
+
+export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: (x: number, y: number) => number): Promise<Herd | null> {
   const g = buildGraph(data, cfg);
   const main = mainComponent(g);
   if (!main.size) return null;
-
-  // Départ : nœud du réseau principal le plus proche de l'ancrage (fontaine des Éléphants)
+  const mainList = [...main];
   const home: Pt = data.anchors[cfg.start]?.pos ?? [0, 0];
-  let from = -1, bestD = Infinity;
-  for (const i of main) {
-    const d = Math.hypot(g.x[i] - home[0], g.y[i] - home[1]);
-    if (d < bestD) { bestD = d; from = i; }
-  }
+  const b = data.bounds;
+  const G = cfg.game;
+
+  /** Nœud au hasard à une distance de `from` comprise dans [min, max], à 30 m au moins des bords de la carte */
+  const randomNode = (from: Pt, range: [number, number]): number => {
+    let best = mainList[0], bestErr = Infinity;
+    for (let k = 0; k < 400; k++) {
+      const i = mainList[Math.floor(Math.random() * mainList.length)];
+      const x = g.x[i], y = g.y[i];
+      if (x < b.minX + 30 || x > b.maxX - 30 || y < b.minY + 30 || y > b.maxY - 30) continue;
+      const d = Math.hypot(x - from[0], y - from[1]);
+      const err = d < range[0] ? range[0] - d : d > range[1] ? d - range[1] : 0;
+      if (err === 0) return i;
+      if (err < bestErr) { bestErr = err; best = i; }
+    }
+    return best;
+  };
 
   const gltf = await new GLTFLoader().loadAsync(dataUrl(cfg.model));
-  const uniforms = { uPhase: { value: 0 }, uAmp: { value: 0 }, uTime: { value: 0 } };
-  gltf.scene.traverse((o) => {
-    const mesh = o as THREE.Mesh;
-    if (!mesh.isMesh) return;
-    mesh.castShadow = false; // voir l'en-tête : ombre « tache » à la place
-    mesh.receiveShadow = true;
-    mesh.frustumCulled = false; // les sommets bougent dans le shader
-    const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
-    mat.flatShading = true;
-    mat.onBeforeCompile = (shader) => {
-      Object.assign(shader.uniforms, uniforms);
-      shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nuniform float uPhase;\nuniform float uAmp;\nuniform float uTime;')
-        .replace('#include <begin_vertex>', `#include <begin_vertex>\n${WALK_GLSL}`);
-    };
-    mesh.material = mat;
-  });
-
   const group = new THREE.Group();
-  group.name = 'mascot';
-  const body = new THREE.Group();
-  body.scale.setScalar(cfg.scale);
-  body.add(gltf.scene);
-  group.add(body);
-  const shadow = blobShadow();
-  shadow.scale.multiplyScalar(cfg.scale);
-  group.add(shadow);
+  group.name = 'mascots';
+  const elephants: Elephant[] = [];
+  const updaters: ((dt: number, t: number) => void)[] = [];
 
-  // Zone de clic plus large que l'éléphant (plus facile à attraper), invisible
-  const hit = new THREE.Mesh(new THREE.BoxGeometry(7, 5.5, 4.5), new THREE.MeshBasicMaterial({ visible: false }));
-  hit.position.set(1, 2.4, 0);
-  hit.scale.multiplyScalar(cfg.scale);
-  hit.name = 'mascot-hit';
-  group.add(hit);
-
-  const G = cfg.game;
-  // --- État ------------------------------------------------------------------
-  let edge = pickNext(-1, from);
-  let s = 0; // distance parcourue sur le segment courant
-  let mode: MascotMode = 'calm';
-  let walking = true;
-  let timer = rnd(cfg.walkSeconds);
-  let heading = Math.atan2(g.y[edge.to] - g.y[from], g.x[edge.to] - g.x[from]);
-  let y = NaN;
-  let amp = 0;
-  let speed = cfg.speed;
-  let threat: Pt | null = null;
-  let calmIn = 0; // fuite : temps restant avant de se calmer
-  let boostIn = 0; // clic raté : sprint
-  let reverseCooldown = 0;
-  let modeT = 0; // temps passé dans le mode courant
-  let lastT = 0;
-  const pos: Pt = [g.x[from], g.y[from]];
-
-  const setMode = (m: MascotMode) => {
-    mode = m;
-    modeT = 0;
-  };
-  const dirOf = (a: number, e: Edge): [number, number] => {
-    const dx = g.x[e.to] - g.x[a], dy = g.y[e.to] - g.y[a];
-    const l = Math.hypot(dx, dy) || 1;
-    return [dx / l, dy / l];
-  };
-  /** Direction opposée à la menace (unitaire), depuis la position actuelle */
-  const away = (): [number, number] => {
-    if (!threat) return [0, 0];
-    const dx = pos[0] - threat[0], dy = pos[1] - threat[1];
-    const l = Math.hypot(dx, dy) || 1;
-    return [dx / l, dy / l];
-  };
-  const threatDist = () => (threat ? Math.hypot(pos[0] - threat[0], pos[1] - threat[1]) : Infinity);
-
-  function pickNext(prev: number, at: number): Edge {
-    const opts = g.adj[at].filter((e) => main.has(e.to));
-    const forward = opts.filter((e) => e.to !== prev);
-    const list = forward.length ? forward : opts; // cul-de-sac : demi-tour
-    if (prev < 0) return list[Math.floor(Math.random() * list.length)];
-    const dirIn = Math.atan2(g.y[at] - g.y[prev], g.x[at] - g.x[prev]);
-    const far = Math.hypot(g.x[at] - home[0], g.y[at] - home[1]) > cfg.roamRadius;
-    const weights = list.map((e) => {
-      const dir = Math.atan2(g.y[e.to] - g.y[at], g.x[e.to] - g.x[at]);
-      const straight = (1 + Math.cos(dir - dirIn)) / 2; // 1 = tout droit, 0 = demi-tour
-      let w = e.w * (0.08 + straight * straight);
-      if (far) {
-        const closer = Math.hypot(g.x[e.to] - home[0], g.y[e.to] - home[1]) < Math.hypot(g.x[at] - home[0], g.y[at] - home[1]);
-        w *= closer ? 4 : 0.25;
-      }
-      return w;
+  for (let id = 0; id < G.count; id++) {
+    // Chaque éléphant a ses propres matériaux : ses pattes bougent à son rythme
+    const uniforms = { uPhase: { value: Math.random() }, uAmp: { value: 0 }, uTime: { value: 0 } };
+    const model = gltf.scene.clone(true);
+    model.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = false; // voir l'en-tête : ombre « tache » à la place
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false; // les sommets bougent dans le shader
+      const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
+      mat.flatShading = true;
+      mat.onBeforeCompile = (shader) => {
+        Object.assign(shader.uniforms, uniforms);
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', '#include <common>\nuniform float uPhase;\nuniform float uAmp;\nuniform float uTime;')
+          .replace('#include <begin_vertex>', `#include <begin_vertex>\n${WALK_GLSL}`);
+      };
+      mat.customProgramCacheKey = () => 'mascot-walk';
+      mesh.material = mat;
     });
-    let r = Math.random() * weights.reduce((a, b) => a + b, 0);
-    for (let i = 0; i < list.length; i++) if ((r -= weights[i]) <= 0) return list[i];
-    return list[list.length - 1];
-  }
 
-  /**
-   * En fuite : la voie qui s'éloigne le plus de la menace (un peu de hasard pour ne pas être prévisible).
-   * Renvoie null si toutes les voies ramènent vers la menace : l'éléphant est coincé.
-   */
-  function pickFlee(at: number): Edge | null {
-    const [ax, ay] = away();
-    let best: Edge | null = null, bestScore = -Infinity;
-    for (const e of g.adj[at]) {
-      if (!main.has(e.to)) continue;
-      const [dx, dy] = dirOf(at, e);
-      const score = dx * ax + dy * ay + Math.random() * 0.15;
-      if (score > bestScore) { bestScore = score; best = e; }
+    const root = new THREE.Group();
+    root.name = `mascot-${id}`;
+    const body = new THREE.Group();
+    body.add(model);
+    root.add(body);
+    const shadow = blobShadow();
+    shadow.scale.multiplyScalar(cfg.scale);
+    root.add(shadow);
+    const stars = dizzyStars();
+    body.add(stars);
+    // Zone de clic plus large que l'éléphant (plus facile à attraper), invisible
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(7, 5.5, 4.5), new THREE.MeshBasicMaterial({ visible: false }));
+    hit.position.set(1, 2.4, 0);
+    hit.scale.multiplyScalar(cfg.scale);
+    hit.userData.elephant = id;
+    root.add(hit);
+    group.add(root);
+
+    // --- État ----------------------------------------------------------------
+    let from = randomNode(home, G.startDistance);
+    let edge = pickNext(-1, from);
+    let s = 0; // distance parcourue sur le segment courant
+    let state: ElephantState = 'walk';
+    let stateT = 0;
+    let walking = true;
+    let timer = rnd(cfg.walkSeconds);
+    let heading = Math.random() * Math.PI * 2;
+    let y = NaN;
+    let amp = 0;
+    let escapes = rndInt(G.escapes);
+    let next = -1; // nœud de réapparition
+    let appearT = 0; // animation d'apparition (0 → 1)
+    const pos: Pt = [g.x[from], g.y[from]];
+    let fly: { a: THREE.Vector3; b: THREE.Vector3; top: number; onLand: () => void } | null = null;
+
+    function pickNext(prev: number, at: number): Edge {
+      const opts = g.adj[at].filter((e) => main.has(e.to));
+      const forward = opts.filter((e) => e.to !== prev);
+      const list = forward.length ? forward : opts; // cul-de-sac : demi-tour
+      if (prev < 0) return list[Math.floor(Math.random() * list.length)];
+      const dirIn = Math.atan2(g.y[at] - g.y[prev], g.x[at] - g.x[prev]);
+      const far = Math.hypot(g.x[at] - home[0], g.y[at] - home[1]) > cfg.roamRadius;
+      const weights = list.map((e) => {
+        const dir = Math.atan2(g.y[e.to] - g.y[at], g.x[e.to] - g.x[at]);
+        const straight = (1 + Math.cos(dir - dirIn)) / 2; // 1 = tout droit, 0 = demi-tour
+        let w = e.w * (0.08 + straight * straight);
+        if (far) {
+          const closer = Math.hypot(g.x[e.to] - home[0], g.y[e.to] - home[1]) < Math.hypot(g.x[at] - home[0], g.y[at] - home[1]);
+          w *= closer ? 4 : 0.25;
+        }
+        return w;
+      });
+      let r = Math.random() * weights.reduce((a, c) => a + c, 0);
+      for (let i = 0; i < list.length; i++) if ((r -= weights[i]) <= 0) return list[i];
+      return list[list.length - 1];
     }
-    return bestScore < G.cornerScore && threatDist() < G.fleeRadius * 1.5 ? null : best;
-  }
 
-  /** Demi-tour sur place : on repart vers le nœud d'où l'on vient. */
-  function reverse() {
-    const back = g.adj[edge.to].find((e) => e.to === from);
-    if (!back) return;
-    const len = edge.len;
-    from = edge.to;
-    edge = back;
-    s = Math.max(0, len - s);
-  }
+    const setState = (st: ElephantState) => {
+      state = st;
+      stateT = 0;
+    };
+    /** Se poser sur un nœud (réapparition, nouvelle partie) */
+    const placeAt = (node: number) => {
+      from = node;
+      edge = pickNext(-1, from);
+      s = 0;
+      y = NaN;
+      heading = Math.atan2(g.y[edge.to] - g.y[from], g.x[edge.to] - g.x[from]);
+      appearT = 0;
+    };
+    const roadName = (node: number) => g.adj[node].find((e) => e.name)?.name;
 
-  function setThreat(p: Pt | null, click = false) {
-    if (mode === 'caught') return;
-    threat = p;
-    if (!p) return;
-    const d = threatDist();
-    if (d < G.fleeRadius) {
-      if (mode === 'calm') setMode('flee');
-      if (mode === 'flee') calmIn = G.calmSeconds;
-      // Clic à côté de lui (ou sur lui sans l'avoir coincé) : il sprinte
-      if (click && mode === 'flee') boostIn = G.boostSeconds;
-    }
-  }
+    const el: Elephant = {
+      id, group: root, hit,
+      state: () => state,
+      position: () => [pos[0], pos[1]],
+      height: () => y,
+      escapesLeft: () => escapes,
+      escape() {
+        if (state !== 'walk') return null;
+        escapes = Math.max(0, escapes - 1);
+        next = randomNode(pos, G.respawnDistance);
+        setState('poof');
+        return { from: [pos[0], pos[1]], to: [g.x[next], g.y[next]], road: roadName(next), tired: escapes === 0 };
+      },
+      catchTo(target, onLand) {
+        if (state !== 'tired') return false;
+        fly = { a: root.position.clone(), b: target.clone(), top: Math.max(root.position.y, target.y) + 24, onLand };
+        setState('flying');
+        return true;
+      },
+      release() {
+        escapes = rndInt(G.escapes);
+        placeAt(randomNode(home, G.startDistance));
+        walking = true;
+        timer = rnd(cfg.walkSeconds);
+        setState('walk');
+      },
+      setHome() {
+        setState('home');
+      },
+    };
+    elephants.push(el);
 
-  let respawnAt = -1;
-  function tryCatch(): boolean {
-    if (mode !== 'cornered') {
-      setThreat(threat ?? pos.slice() as Pt, true);
-      return false;
-    }
-    setMode('caught');
-    threat = null;
-    return true;
-  }
-
-  function bounceAt(t: number) {
-    // Rebond « coincé » : petits sauts avec écrasement à l'atterrissage
-    const hop = Math.abs(Math.sin(t * 9));
-    body.position.y = hop * 0.9 * cfg.scale;
-    const squash = 1 - (1 - hop) * 0.18;
-    body.scale.set(cfg.scale * (2 - squash), cfg.scale * squash, cfg.scale * (2 - squash));
-  }
-
-  function update(dt: number, t: number) {
-    uniforms.uTime.value = t;
-    lastT = t;
-    modeT += dt;
-    reverseCooldown -= dt;
-    boostIn -= dt;
-    body.position.y = 0;
-    body.scale.setScalar(cfg.scale);
-    body.rotation.set(0, 0, 0);
-    group.visible = true;
-
-    let targetAmp = 1;
-    // Souris immobile sur son chemin : il la voit en arrivant
-    if (mode === 'calm' && threatDist() < G.fleeRadius) { setMode('flee'); calmIn = G.calmSeconds; }
-    if (mode === 'calm') {
-      timer -= dt;
-      if (timer <= 0) {
-        walking = !walking;
-        timer = rnd(walking ? cfg.walkSeconds : cfg.pauseSeconds);
+    updaters.push((dt, t) => {
+      uniforms.uTime.value = t + id * 1.7;
+      stateT += dt;
+      root.visible = state !== 'hidden' && state !== 'home';
+      if (!root.visible) {
+        // Réapparition, plus loin (épuisé s'il n'a plus de fuite)
+        if (state === 'hidden' && stateT > 0.8) {
+          placeAt(next);
+          setState(escapes === 0 ? 'tired' : 'walk');
+          walking = true;
+          timer = rnd(cfg.walkSeconds);
+        }
+        return;
       }
-      targetAmp = walking ? 1 : 0;
-      speed += (cfg.speed - speed) * Math.min(1, dt * 2);
-    } else if (mode === 'flee') {
-      calmIn -= dt;
-      if (threatDist() < G.fleeRadius) calmIn = G.calmSeconds;
-      if (calmIn <= 0) { setMode('calm'); walking = true; timer = rnd(cfg.walkSeconds); }
-      const want = boostIn > 0 ? G.boostSpeed : G.fleeSpeed;
-      speed += (want - speed) * Math.min(1, dt * 4);
-      // La menace est devant lui sur la voie : demi-tour immédiat
-      if (threat && reverseCooldown <= 0 && threatDist() < G.fleeRadius) {
-        const [dx, dy] = dirOf(from, edge);
-        const [ax, ay] = away();
-        if (dx * ax + dy * ay < -0.35) { reverse(); reverseCooldown = 0.5; }
-      }
-    } else if (mode === 'cornered') {
-      targetAmp = 0;
-      speed = 0;
-      bounceAt(t);
-      // Menace partie, ou trop lent à cliquer : il force le passage et repart en sprint
-      if (modeT > G.cornerSeconds || threatDist() > G.fleeRadius * 1.8) {
-        setMode('flee');
-        calmIn = G.calmSeconds;
-        boostIn = G.boostSeconds;
-        const e = g.adj[from].filter((q) => main.has(q.to));
-        edge = e[Math.floor(Math.random() * e.length)] ?? edge;
-        s = 0;
-        threat = null;
-      }
-    } else if (mode === 'caught') {
-      // Célébration : grand saut en tournant, puis il disparaît et revient à la fontaine
-      targetAmp = 0;
-      speed = 0;
-      const k = modeT / 1.4;
-      if (k < 1) {
-        body.position.y = Math.sin(k * Math.PI) * 4 * cfg.scale;
-        body.rotation.y = k * Math.PI * 2;
-        const sc = cfg.scale * (k < 0.75 ? 1 : 1 - (k - 0.75) / 0.25);
+      body.position.set(0, 0, 0);
+      body.rotation.set(0, 0, 0);
+      stars.visible = state === 'tired';
+      appearT = Math.min(1, appearT + dt / 0.45);
+      // Apparition : il sort de terre avec un petit rebond
+      const pop = appearT < 1 ? Math.sin(appearT * Math.PI * 0.5) * (1 + 0.25 * Math.sin(appearT * Math.PI)) : 1;
+      let sc = cfg.scale * pop;
+
+      let targetAmp = 0;
+      if (state === 'walk') {
+        timer -= dt;
+        if (timer <= 0) {
+          walking = !walking;
+          timer = rnd(walking ? cfg.walkSeconds : cfg.pauseSeconds);
+        }
+        targetAmp = walking ? 1 : 0;
+      } else if (state === 'poof') {
+        // Il tourne sur lui-même et rétrécit, puis disparaît dans le nuage
+        const k = Math.min(1, stateT / 0.35);
+        sc *= 1 - k;
+        body.rotation.y = k * Math.PI * 1.5;
+        body.position.y = Math.sin(k * Math.PI) * 1.2;
+        if (k >= 1) setState('hidden');
+      } else if (state === 'tired') {
+        // Assis, la tête en l'air, il souffle ; les étoiles tournent
+        body.rotation.z = 0.28;
+        body.position.set(-0.6, 0.35 + Math.sin(t * 2.4) * 0.06, 0);
+        stars.rotation.y = t * 2.2;
+        stars.position.y = 5.1 + Math.sin(t * 3) * 0.15;
+      } else if (state === 'flying' && fly) {
+        const k = Math.min(1, stateT / 2.4);
+        const e = ease(k);
+        const p = new THREE.Vector3().lerpVectors(fly.a, fly.b, e);
+        p.y = (1 - e) * (1 - e) * fly.a.y + 2 * (1 - e) * e * fly.top + e * e * fly.b.y;
+        root.position.copy(p);
+        body.rotation.y = e * Math.PI * 4;
+        sc *= 1 - 0.55 * e;
+        if (k >= 1) {
+          const done = fly.onLand;
+          fly = null;
+          setState('home');
+          done();
+        }
         body.scale.setScalar(Math.max(0.01, sc));
-      } else {
-        group.visible = false;
-        if (respawnAt < 0) respawnAt = t + 1.2;
-        if (t >= respawnAt) {
-          respawnAt = -1;
-          from = startNode;
-          edge = pickNext(-1, from);
-          s = 0;
-          y = NaN;
-          setMode('calm');
-          walking = false;
-          timer = 1.5;
-        }
+        return;
       }
-    }
+      body.scale.setScalar(Math.max(0.01, sc));
 
-    // Démarrage et arrêt en douceur
-    amp += (targetAmp - amp) * Math.min(1, dt * (mode === 'flee' ? 8 : 3));
-    const step = speed * amp * dt;
-    s += step;
-    while (s >= edge.len) {
-      s -= edge.len;
-      const prev = from;
-      from = edge.to;
-      if (mode === 'flee') {
-        const next = pickFlee(from);
-        if (!next) {
-          // Coincé au nœud : toutes les issues passent par la menace
-          s = 0;
-          setMode('cornered');
-          break;
-        }
-        edge = next;
-      } else edge = pickNext(prev, from);
-    }
-    const k = edge.len > 0 ? Math.min(1, s / edge.len) : 0;
-    pos[0] = g.x[from] + (g.x[edge.to] - g.x[from]) * k;
-    pos[1] = g.y[from] + (g.y[edge.to] - g.y[from]) * k;
-    // Au galop, les pas sont plus longs
-    const stride = cfg.stride * cfg.scale * (mode === 'flee' ? 1.8 : 1);
-    uniforms.uPhase.value = (uniforms.uPhase.value + step / stride) % 1;
-    uniforms.uAmp.value = amp;
+      amp = state === 'walk' ? amp + (targetAmp - amp) * Math.min(1, dt * 3) : 0;
+      const step = cfg.speed * amp * dt;
+      s += step;
+      while (s >= edge.len) {
+        s -= edge.len;
+        const prev = from;
+        from = edge.to;
+        edge = pickNext(prev, from);
+      }
+      const k = edge.len > 0 ? Math.min(1, s / edge.len) : 0;
+      pos[0] = g.x[from] + (g.x[edge.to] - g.x[from]) * k;
+      pos[1] = g.y[from] + (g.y[edge.to] - g.y[from]) * k;
+      uniforms.uPhase.value = (uniforms.uPhase.value + step / (cfg.stride * cfg.scale)) % 1;
+      uniforms.uAmp.value = amp;
 
-    // Cap lissé (la position, elle, reste exactement sur la voie). Coincé : il fait face à la menace
-    let target = Math.atan2(g.y[edge.to] - g.y[from], g.x[edge.to] - g.x[from]);
-    if (mode === 'cornered' && threat) target = Math.atan2(threat[1] - pos[1], threat[0] - pos[0]);
-    let d = target - heading;
-    d = Math.atan2(Math.sin(d), Math.cos(d));
-    heading += d * Math.min(1, dt * (mode === 'flee' ? 10 : 4));
-    // Altitude lissée : pas de saut à l'entrée d'un pont
-    const ty = heightAt(pos[0], pos[1]) + edge.lift;
-    y = Number.isNaN(y) ? ty : y + (ty - y) * Math.min(1, dt * 6);
+      // Cap lissé (la position, elle, reste exactement sur la voie)
+      const target = Math.atan2(g.y[edge.to] - g.y[from], g.x[edge.to] - g.x[from]);
+      let d = target - heading;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      if (state === 'walk') heading += d * Math.min(1, dt * 4);
+      // Altitude lissée : pas de saut à l'entrée d'un pont
+      const ty = heightAt(pos[0], pos[1]) + edge.lift;
+      y = Number.isNaN(y) ? ty : y + (ty - y) * Math.min(1, dt * 6);
 
-    group.position.set(pos[0], y, -pos[1]);
-    // Modèle orienté vers +X ; en Three.js, le nord (y OSM) est vers -Z
-    group.rotation.y = heading;
+      root.position.set(pos[0], y, -pos[1]);
+      // Modèle orienté vers +X ; en Three.js, le nord (y OSM) est vers -Z
+      root.rotation.y = heading;
+    });
   }
 
-  const startNode = from;
+  const update = (dt: number, t: number) => updaters.forEach((u) => u(dt, t));
   update(0, 0);
-  return {
-    group, hit, update, setThreat, tryCatch,
-    position: () => [pos[0], pos[1]],
-    mode: () => mode,
-    height: () => y,
-    time: () => lastT,
-    debug: () => ({ from, to: edge.to, s: +s.toFixed(2), len: +edge.len.toFixed(2), mode, deg: g.adj[from].length }),
-  };
+  return { group, elephants, update };
 }

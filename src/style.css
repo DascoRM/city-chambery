@@ -38,6 +38,11 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
 .progress .count { margin: 6px 0 0; font-size: 13px; font-weight: 600; }
 .points { margin: 8px 0 0; font-size: 13px; font-weight: 600; display: inline-block; transform-origin: left center; }
 .points b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.points .herd { font-style: normal; color: var(--muted); margin-left: 4px; }
+.elephant-bubble { position: fixed; left: -9999px; top: 0; transform: translate(-50%, calc(-100% - 12px)) scale(0.6); max-width: 240px; padding: 8px 12px; border-radius: 14px; background: #fffaf0; color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.35; text-align: center; white-space: pre-line; box-shadow: 0 6px 18px rgba(45, 38, 34, 0.25); pointer-events: none; opacity: 0; transition: opacity 0.25s; z-index: 5; }
+.elephant-bubble::after { content: ''; position: absolute; left: 50%; bottom: -7px; margin-left: -7px; border: 7px solid transparent; border-bottom: 0; border-top-color: #fffaf0; }
+.elephant-bubble.show { opacity: 1; animation: bubble-pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) forwards; }
+@keyframes bubble-pop { from { transform: translate(-50%, calc(-100% - 12px)) scale(0.6); } to { transform: translate(-50%, calc(-100% - 12px)) scale(1); } }
 .points.pop { animation: points-pop 0.7s cubic-bezier(0.3, 1.6, 0.5, 1); }
 @keyframes points-pop { 0% { transform: scale(1); } 35% { transform: scale(1.35); color: var(--teal); } 100% { transform: scale(1); } }
 

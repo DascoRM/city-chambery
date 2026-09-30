@@ -14,7 +14,8 @@ import { createTiltShift } from './scene/tiltshift';
 import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildNature, type NatureConfig } from './scene/nature';
-import { buildMascot, type Mascot, type MascotConfig } from './scene/mascot';
+import { buildHerd, type Herd, type MascotConfig } from './scene/mascot';
+import { createParticles, createFireworks } from './scene/particles';
 import { createClock } from './time/clock';
 import { createOpenStates, type OpenState } from './time/openinghours';
 import { placeCategory } from './scene/palette';
@@ -26,7 +27,8 @@ import { setupPwa } from './pwa';
 import { createUi, showFatal } from './ui/ui';
 import { loadDiscovered, resetDiscovered, saveDiscovered } from './state/progress';
 import { loadPoints, savePoints } from './state/points';
-import { createCatchGame, type CatchGame } from './game/catch';
+import { createHunt, type Hunt } from './game/hunt';
+import { loadReturned, saveReturned } from './state/herd';
 
 const app = document.getElementById('app')!;
 
@@ -78,14 +80,15 @@ async function main() {
     console.warn('[nature] arbres modélisés non chargés', e);
   }
   // Monuments modélisés (formes simples en code ou fichiers glTF)
-  scene.add(await buildModels(models, pois, { night: city.night.uNight, data, heightAt: terrain.heightAt, minUnder: terrain.minUnder }));
-  // Mascotte : un éléphant qui se promène sur les rues et chemins (src/content/mascot.json)
-  let mascot: Mascot | null = null;
+  const modelsRoot = await buildModels(models, pois, { night: city.night.uNight, data, heightAt: terrain.heightAt, minUnder: terrain.minUnder });
+  scene.add(modelsRoot);
+  // Les quatre éléphants échappés de la fontaine, sur les rues et chemins (src/content/mascot.json)
+  let herd: Herd | null = null;
   try {
-    mascot = await buildMascot(mascotContent as unknown as MascotConfig, data, terrain.heightAt);
-    if (mascot) scene.add(mascot.group);
+    herd = await buildHerd(mascotContent as unknown as MascotConfig, data, terrain.heightAt);
+    if (herd) scene.add(herd.group);
   } catch (e) {
-    console.warn('[mascotte] non chargée', e);
+    console.warn('[mascottes] non chargées', e);
   }
   const labels = await buildLabels(data.labels ?? [], terrain.heightAt);
   // Effet maquette : les étiquettes passent par-dessus le flou pour rester lisibles
@@ -158,31 +161,42 @@ async function main() {
     }
   });
 
-  // --- Mini-jeu « Attrape l'éléphant » (itération 34) -------------------------
+  // --- Mini-jeu « Ramène les éléphants à la fontaine » (itération 35) --------
   let points = loadPoints();
+  const returned = loadReturned();
+  const herdTotal = herd?.elephants.length ?? 0;
   ui.setPoints(points);
-  let fleeHint = false;
-  let cornerHints = 0;
-  const game: CatchGame | null = mascot
-    ? createCatchGame({
-        mascot, camera, canvas: renderer.domElement, points, gain: mascotContent.game.points,
-        onScore: (total, gained) => {
+  ui.setHerd(returned.size, herdTotal);
+  const fountain = modelsRoot.getObjectByName('fontaine-des-elephants');
+  const slots = [0, 1, 2, 3].map((i) => fountain?.getObjectByName(`elephant-${i}`)).filter((o): o is THREE.Object3D => !!o);
+  const smoke = createParticles(400, false);
+  // Étincelles en mélange normal (et non additif) : visibles aussi de jour, sur fond clair
+  const sparks = createParticles(3000, false);
+  const fireworks = createFireworks(sparks);
+  scene.add(smoke.points, sparks.points);
+  const hunt: Hunt | null = herd && slots.length === herdTotal
+    ? createHunt({
+        herd, camera, canvas: renderer.domElement, slots, smoke, sparks, fireworks, returned, points,
+        gain: mascotContent.game.points, bonus: mascotContent.game.bonus,
+        restartSeconds: mascotContent.game.restartSeconds, taunts: mascotContent.game.taunts,
+        bubble: ui.bubble,
+        onReturned: (r) => { saveReturned(r); ui.setHerd(r.size, herdTotal); },
+        onScore: (total, gained, text) => {
           points = total;
           savePoints(points);
           ui.setPoints(points, gained);
-          ui.flash(`🐘 Attrapé ! +${gained} points`);
+          ui.flash(text);
         },
-        onMode: (m) => {
-          if (m === 'flee' && !fleeHint) {
-            fleeHint = true;
-            ui.flash('🐘 Il s\'enfuit ! Pousse-le dans un cul-de-sac pour l\'attraper');
-          } else if (m === 'cornered' && cornerHints < 3) {
-            cornerHints++;
-            ui.flash('🐘 Coincé ! Clique vite sur lui');
-          }
-        },
+        onComplete: () => undefined,
+        onRestart: () => ui.flash('🐘 Oh non ! Les éléphants se sont encore échappés…'),
+        flyTo: (x, z) => stage.flyTo(x, z, 160),
       })
     : null;
+  if (hunt && returned.size < herdTotal) {
+    window.setTimeout(() => ui.flash(returned.size
+      ? `🐘 Encore ${herdTotal - returned.size} éléphant${herdTotal - returned.size > 1 ? 's' : ''} à ramener à la fontaine`
+      : '🐘 Les quatre éléphants de la fontaine se sont échappés ! Retrouve-les dans les rues'), 2500);
+  }
 
   const syncFound = () => {
     poiLayer.markers.forEach((m) => m.setFound(discovered.has(m.poi.id)));
@@ -279,8 +293,7 @@ async function main() {
       lastTap = { t: now, x: e.clientX, y: e.clientY };
     }
     if (placement?.handleClick(e.clientX, e.clientY)) return;
-    if (game?.click(e.clientX, e.clientY)) { ui.showTooltip(null); return; }
-    if (e.pointerType === 'touch') game?.touch(e.clientX, e.clientY);
+    if (hunt?.click(e.clientX, e.clientY)) { ui.showTooltip(null); return; }
     const h = pick(e.clientX, e.clientY);
     if (h && 'poi' in h) { closePlace(); openPoi(h.poi.id); }
     else if (h && 'place' in h) openPlace(h.index, true); // clic ou toucher : la fiche reste ouverte
@@ -291,7 +304,6 @@ async function main() {
     if (e.pointerType === 'mouse') hoverQueued = e;
   });
   renderer.domElement.addEventListener('pointerleave', () => {
-    game?.pointerLeave();
     ui.showTooltip(null);
     if (!ui.placeCardState().pinned && ui.placeCardState().place) closePlace();
   });
@@ -302,9 +314,10 @@ async function main() {
     hoverQueued = null;
     if (placement?.isActive()) return ui.showTooltip(null);
     // L'éléphant d'abord : survolé, il fuit (ou, coincé, attend le clic)
-    if (game?.pointerMove(e.clientX, e.clientY)) {
+    const el = hunt?.pointerMove(e.clientX, e.clientY);
+    if (el) {
       renderer.domElement.style.cursor = 'pointer';
-      ui.showTooltip(mascot?.mode() === 'cornered' ? '🐘 Attrape-le !' : null, e.clientX, e.clientY);
+      ui.showTooltip(el.state() === 'tired' ? '🐘 Épuisé ! Clique pour le ramener à la fontaine' : null, e.clientX, e.clientY);
       return;
     }
     const h = pick(e.clientX, e.clientY);
@@ -335,8 +348,11 @@ async function main() {
     poiLayer.animate(timer.getElapsed());
     placeLayer.animate(timer.getElapsed());
     city.update(timer.getElapsed());
-    mascot?.update(dt, timer.getElapsed());
-    game?.update(dt);
+    herd?.update(dt, timer.getElapsed());
+    hunt?.update(dt);
+    fireworks.update(dt);
+    smoke.update(dt);
+    sparks.update(dt);
     clock.update(dt);
     labels.update(camera);
     hover();
@@ -348,7 +364,7 @@ async function main() {
   });
 
   // Accès debug depuis la console : window.diorama
-  Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, clock, mascot, game } });
+  Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, clock, herd, hunt, slots } });
 }
 
 main();

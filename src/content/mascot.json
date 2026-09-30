@@ -13,14 +13,25 @@
   "walkSeconds": [20, 45],
   "pauseSeconds": [4, 8],
   "game": {
-    "note": "Mini-jeu « Attrape l'éléphant » (itération 34) : la souris le fait fuir ; coincé dans un cul-de-sac il rebondit et un clic l'attrape",
-    "fleeRadius": 16,
-    "fleeSpeed": 5,
-    "boostSpeed": 8,
-    "boostSeconds": 1.5,
-    "calmSeconds": 2.5,
-    "cornerSeconds": 4,
-    "cornerScore": -0.3,
-    "points": 10
+    "note": "Mini-jeu « Ramène les éléphants à la fontaine » (itération 35) : survolé ou touché, un éléphant disparaît et réapparaît plus loin ; après 1 à 5 fuites il est épuisé et un clic le ramène sur la fontaine",
+    "count": 4,
+    "escapes": [1, 5],
+    "respawnDistance": [100, 250],
+    "startDistance": [80, 300],
+    "points": 10,
+    "bonus": 20,
+    "restartSeconds": 45,
+    "taunts": [
+      "Trop lent !",
+      "Raté ! 😜",
+      "Pouet pouet, pas cette fois !",
+      "Tu ne m'auras pas si facilement !",
+      "Même un escargot de Savoie va plus vite !",
+      "Hé hé, je connais les ruelles mieux que toi !",
+      "Coucou… et au revoir !",
+      "Presque ! Enfin… non.",
+      "On ne m'appelle pas « sans cul » pour rien, tu ne me verras pas de dos !",
+      "La fontaine attendra encore un peu !"
+    ]
   }
 }
