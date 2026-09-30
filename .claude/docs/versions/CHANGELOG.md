@@ -1,5 +1,21 @@
 # Journal des itérations
 
+## Itération 39 — 30/09/2026 (branche `feat/EN-01-module-geo-voies`)
+
+**Demande de Dasco :** lancer EN-01 (module commun géométrie et voies), prérequis de « la ville vit ».
+
+**Changements (aucun changement visible) :**
+- `src/scene/geo.ts` : `pointInRing`, `pointInPoly`, `segDist2`, `distToSegment`, `screenRay` ; remplace les copies de `nature.ts` et `markers.ts` et les 4 calculs « clic → rayon » (`main.ts` ×2, `hunt.ts`, `placement.ts`) ; `city.ts` et `mascot.ts` n'importent plus rien de `nature.ts` ;
+- `src/scene/roads.ts` : `FOOT_KINDS`, hauteurs des rubans (`LIFT`), `roadLift()` ; plus de doublon entre `city.ts` et `mascot.ts` ;
+- `src/scene/walkways.ts` : réseau des voies (graphe, obstacles, distance aux façades, plus grande partie connexe) sorti de `mascot.ts` ; grille des bâtiments construite par une seule fonction ;
+- `scripts/geo.mjs` : point dans un polygone et distance à un segment pour `fetch-osm.mjs` et `bdtopo.mjs` ;
+- `src/scene/models/mesh.ts` : `mesh()` commun aux 5 fichiers de monuments ; type `HeightFn` dans `types.ts` (7 réécritures) ;
+- README : structure du code.
+
+**Vérifié :** `npm run build` ; `npm run data -- --offline` → `city.json` identique à l'ancien hors `generatedAt` (fichier du dépôt conservé, pour ne pas publier de nouvelle version pour rien) ; dans Chromium, avant / après : même réseau des éléphants (3 717 lieux de réapparition sur 4 459 nœuds), clic sur un éléphant → il disparaît, survol d'une épingle de bar → la fiche s'affiche.
+
+**Non vérifié :** clic sur la gemme d'un lieu (mon test automatique ne l'ouvre ni avant ni après : cible mal visée par le test, à vérifier à la main) ; double toucher sur mobile ; outil de placement en dev ; éléphants qui marchent à l'œil.
+
 ## Itération 38 — 30/09/2026 (branche `fix/audit-bugs`)
 
 **Demande de Dasco :** corriger les bugs P0 de l'audit (BUG-01, BUG-02) ; review ensuite.

@@ -18,7 +18,7 @@ Détail et `fichier:ligne` dans `.claude/docs/tasks/audit-2026-09-30-{rendu,code
 
 ## P1 — Enablers et technical improvements (audit du 30/09)
 Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-02 → TI-01 → TI-02.
-- ⬜ **EN-01 — Module commun géométrie et voies** (prérequis des passants) — *moyen* :
+- ✅ *itération 39* **EN-01 — Module commun géométrie et voies** (prérequis des passants) — *moyen* :
   - `src/scene/geo.ts` : un seul « point dans un polygone » (4 copies aujourd'hui : `markers.ts`, `nature.ts`, et côté scripts `fetch-osm.mjs`, `bdtopo.mjs`), `distToSegment`, et `screenRay()` pour le calcul « clic → rayon » (réécrit 4 fois : `main.ts` ×2, `hunt.ts`, `placement.ts`) ;
   - `city.ts` et `mascot.ts` n'importent plus `pointInRing` depuis `nature.ts` ;
   - `src/scene/roads.ts` : liste des voies piétonnes `FOOT` et hauteurs des rubans, aujourd'hui dupliquées entre `city.ts` et `mascot.ts` ;
