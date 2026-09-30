@@ -179,23 +179,34 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     placeCard.classList.remove('pop');
     void placeCard.offsetWidth;
     placeCard.classList.add('pop');
+    cardSize = null;
   };
   /** Met à jour la ligne « ouvert / fermé » de la fiche affichée (l'heure a changé). */
   let lastStatus = '';
   const setPlaceStatus = (status: OpenState) => {
     const el = placeBody.querySelector<HTMLElement>('.pc-status');
-    if (el && lastStatus !== status + (shownPlace?.id ?? '')) { el.innerHTML = OPEN_LINE[status]; lastStatus = status + (shownPlace?.id ?? ''); }
+    if (el && lastStatus !== status + (shownPlace?.id ?? '')) {
+      el.innerHTML = OPEN_LINE[status];
+      lastStatus = status + (shownPlace?.id ?? '');
+      cardSize = null;
+    }
   };
   const hidePlaceCard = () => {
     placeCard.hidden = true;
     shownPlace = null;
     pinned = false;
   };
+  // La fiche suit son épingle à chaque image : sa taille est mesurée une fois (nouveau contenu,
+  // redimensionnement), et le style n'est réécrit que s'il change. Relire offsetWidth après avoir
+  // écrit le style forcerait le navigateur à recalculer la mise en page à chaque image.
+  let cardSize: { w: number; h: number } | null = null;
+  let cardStyle = '';
+  window.addEventListener('resize', () => { cardSize = null; });
   /** Place la fiche à côté du point (x, y) de l'écran : à droite sur ordinateur, au-dessus sur mobile. */
   const movePlaceCard = (x: number, y: number, visible: boolean) => {
     if (placeCard.hidden) return;
-    placeCard.style.visibility = visible ? 'visible' : 'hidden';
-    const w = placeCard.offsetWidth, hgt = placeCard.offsetHeight, W = window.innerWidth, H = window.innerHeight, m = 12;
+    cardSize ??= { w: placeCard.offsetWidth, h: placeCard.offsetHeight };
+    const { w, h: hgt } = cardSize, W = window.innerWidth, H = window.innerHeight, m = 12;
     let left: number, top: number;
     if (W <= 720) {
       left = x - w / 2;
@@ -210,6 +221,10 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     top = Math.max(m, Math.min(H - hgt - m, top));
     // Position via left/top (et non transform) : la propriété transform reste libre pour les
     // animations CSS de la fiche (rebond de .place-card.pop dans style.css)
+    const style = `${Math.round(left)}|${Math.round(top)}|${visible}`;
+    if (style === cardStyle) return;
+    cardStyle = style;
+    placeCard.style.visibility = visible ? 'visible' : 'hidden';
     placeCard.style.left = `${Math.round(left)}px`;
     placeCard.style.top = `${Math.round(top)}px`;
   };
@@ -231,6 +246,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   bubbleEl.className = 'elephant-bubble';
   bubbleEl.setAttribute('aria-live', 'polite');
   root.appendChild(bubbleEl);
+  let lastBubblePos = '';
 
   const hideHint = () => hint.classList.add('gone');
   window.setTimeout(hideHint, 9000);
@@ -308,6 +324,9 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
         bubbleEl.classList.add('show');
       }
       if (x !== undefined && y !== undefined) {
+        const pos = `${Math.round(x)}|${Math.round(y)}`;
+        if (pos === lastBubblePos) return; // la bulle suit l'éléphant à chaque image : pas d'écriture inutile
+        lastBubblePos = pos;
         bubbleEl.style.left = `${Math.round(x)}px`;
         bubbleEl.style.top = `${Math.round(y)}px`;
       }

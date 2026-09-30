@@ -22,14 +22,12 @@ const DAY: Keyframe = { sky: '#fff4e0', ground: '#6b5a4a', hemi: 1.1, key: '#ffe
 const DUSK: Keyframe = { sky: '#ffc9a3', ground: '#5a4550', hemi: 0.8, key: '#ff9a5c', keyI: 1.6, bg: ['#ffe0bf', '#f2a98a', '#8a6a8f'], exposure: 1.0 };
 const NIGHT: Keyframe = { sky: '#5a6aa8', ground: '#1c1a2a', hemi: 0.55, key: '#9fb4ff', keyI: 0.55, bg: ['#34406a', '#1d2442', '#0d1122'], exposure: 1.0 };
 
-const mixHex = (a: string, b: string, t: number) => new THREE.Color(a).lerp(new THREE.Color(b), t);
-function mixKey(a: Keyframe, b: Keyframe, t: number) {
-  return {
-    sky: mixHex(a.sky, b.sky, t), ground: mixHex(a.ground, b.ground, t), hemi: THREE.MathUtils.lerp(a.hemi, b.hemi, t),
-    key: mixHex(a.key, b.key, t), keyI: THREE.MathUtils.lerp(a.keyI, b.keyI, t),
-    bg: a.bg.map((c, i) => mixHex(c, b.bg[i], t)), exposure: THREE.MathUtils.lerp(a.exposure, b.exposure, t),
-  };
-}
+// Couleurs des ambiances converties une fois : pendant la lecture ▶, apply() tourne à chaque image
+const toColors = (k: Keyframe) => ({
+  sky: new THREE.Color(k.sky), ground: new THREE.Color(k.ground), key: new THREE.Color(k.key),
+  bg: k.bg.map((c) => new THREE.Color(c)),
+});
+const DAY_C = toColors(DAY), DUSK_C = toColors(DUSK), NIGHT_C = toColors(NIGHT);
 
 export interface DayNightDeps {
   scene: THREE.Scene;
@@ -50,6 +48,15 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
     if ((o as THREE.Mesh).isMesh && o.userData.nightGlow) glowMeshes.push(o as THREE.Mesh);
   });
   const warm = new THREE.Color('#ffa94d');
+  // Couleurs de travail réutilisées à chaque appel
+  const sky = new THREE.Color(), ground = new THREE.Color(), keyCol = new THREE.Color();
+  const bg = [new THREE.Color(), new THREE.Color(), new THREE.Color()];
+  // Halos des bars : uniforme de lueur et nuages de points cherchés une seule fois
+  const glowU = d.placeHalos?.parent?.children.find((c) => c.userData.glowUniform)?.userData.glowUniform as { value: number } | undefined;
+  const haloPoints: THREE.PointsMaterial[] = [];
+  d.placeHalos?.traverse((p) => {
+    if ((p as THREE.Points).isPoints) haloPoints.push((p as THREE.Points).material as THREE.PointsMaterial);
+  });
 
   let day = initial.day, hour = initial.hour, night = 0;
   let lastBg = '';
@@ -65,12 +72,15 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
     night = 1 - dayF;
 
     // Ambiance : nuit ↔ jour, avec une teinte de crépuscule autour du lever/coucher
-    const base = mixKey(NIGHT, DAY, dayF);
+    const lerp = THREE.MathUtils.lerp;
     const duskMix = dusk * 0.85;
-    const sky = base.sky.lerp(new THREE.Color(DUSK.sky), duskMix);
-    base.hemi = THREE.MathUtils.lerp(base.hemi, DUSK.hemi, duskMix * dayF);
-    const keyCol = base.key.lerp(new THREE.Color(DUSK.key), duskMix * dayF);
-    const bg = base.bg.map((c, i) => c.lerp(new THREE.Color(DUSK.bg[i]), duskMix));
+    sky.lerpColors(NIGHT_C.sky, DAY_C.sky, dayF).lerp(DUSK_C.sky, duskMix);
+    ground.lerpColors(NIGHT_C.ground, DAY_C.ground, dayF);
+    keyCol.lerpColors(NIGHT_C.key, DAY_C.key, dayF).lerp(DUSK_C.key, duskMix * dayF);
+    bg.forEach((c, i) => c.lerpColors(NIGHT_C.bg[i], DAY_C.bg[i], dayF).lerp(DUSK_C.bg[i], duskMix));
+    const hemiI = lerp(lerp(NIGHT.hemi, DAY.hemi, dayF), DUSK.hemi, duskMix * dayF);
+    const keyI = lerp(NIGHT.keyI, DAY.keyI, dayF);
+    const exposure = lerp(NIGHT.exposure, DAY.exposure, dayF);
 
     // Soleil le jour (repère : x = est, −z = nord, y = haut), lune la nuit (fixe, haute, un peu à l'ouest)
     const { sun, hemi, fill } = d.lights;
@@ -86,12 +96,12 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
       d.renderer.shadowMap.needsUpdate = true;
     }
     sun.color.copy(keyCol);
-    sun.intensity = base.keyI * (dayF > 0.02 ? 0.7 + 0.3 * THREE.MathUtils.clamp(elev * 2, 0, 1) : 1);
+    sun.intensity = keyI * (dayF > 0.02 ? 0.7 + 0.3 * THREE.MathUtils.clamp(elev * 2, 0, 1) : 1);
     hemi.color.copy(sky);
-    hemi.groundColor.copy(base.ground);
-    hemi.intensity = base.hemi;
+    hemi.groundColor.copy(ground);
+    hemi.intensity = hemiI;
     fill.intensity = 0.35 * dayF + 0.15 * night;
-    d.renderer.toneMappingExposure = base.exposure;
+    d.renderer.toneMappingExposure = exposure;
 
     // Lumières de la ville
     d.night.uNight.value = THREE.MathUtils.smoothstep(night + dusk * 0.4, 0.25, 0.9);
@@ -104,11 +114,8 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
     if (d.placeHalos) {
       const o = d.night.uNight.value;
       d.placeHalos.visible = o > 0.02;
-      const glowU = d.placeHalos.parent?.children.find((c) => c.userData.glowUniform)?.userData.glowUniform as { value: number } | undefined;
       if (glowU) glowU.value = 1.4 * o;
-      d.placeHalos.traverse((p) => {
-        if ((p as THREE.Points).isPoints) ((p as THREE.Points).material as THREE.PointsMaterial).opacity = 0.9 * o;
-      });
+      for (const m of haloPoints) m.opacity = 0.9 * o;
     }
 
     // Fond de page (dégradé CSS)

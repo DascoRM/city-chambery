@@ -27,7 +27,8 @@ export interface Hunt {
 export interface HuntOptions {
   herd: Herd;
   camera: THREE.Camera;
-  canvas: HTMLCanvasElement;
+  /** Rectangle du canevas à l'écran (mis en cache par main.ts : pas de relecture à chaque image) */
+  canvasRect(): DOMRect;
   /** Les quatre éléphants de bronze de la fontaine, dans l'ordre des places */
   slots: THREE.Object3D[];
   smoke: Particles;
@@ -45,7 +46,6 @@ export interface HuntOptions {
   bubble(text: string | null, x?: number, y?: number): void;
   onReturned(returned: Set<number>): void;
   onScore(total: number, gained: number, text: string): void;
-  onComplete(): void;
   onRestart(): void;
   flyTo(x: number, z: number): void;
 }
@@ -66,7 +66,7 @@ function direction(a: Pt, b: Pt): string {
 }
 
 export function createHunt(o: HuntOptions): Hunt {
-  const { herd, camera, canvas } = o;
+  const { herd, camera } = o;
   const raycaster = new THREE.Raycaster();
   const ndc = new THREE.Vector2();
   const tmp = new THREE.Vector3();
@@ -85,7 +85,7 @@ export function createHunt(o: HuntOptions): Hunt {
   });
 
   const pickElephant = (clientX: number, clientY: number): Elephant | null => {
-    const r = canvas.getBoundingClientRect();
+    const r = o.canvasRect();
     ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
     const hits = raycaster.intersectObjects(herd.elephants.filter((e) => e.group.visible).map((e) => e.hit), false);
@@ -132,7 +132,6 @@ export function createHunt(o: HuntOptions): Hunt {
     for (let i = 0; i < (complete ? 3 : 2); i++) o.fireworks.launch(base, i * 0.35);
     if (complete) {
       for (let i = 0; i < 12; i++) o.fireworks.launch(base, 1 + i * 0.4, true);
-      o.onComplete();
       restartIn = o.restartSeconds;
     }
   };
@@ -170,7 +169,7 @@ export function createHunt(o: HuntOptions): Hunt {
         if (bubbleLeft <= 0) { bubbleAt = null; o.bubble(null); }
         else {
           tmp.copy(bubbleAt).project(camera);
-          const r = canvas.getBoundingClientRect();
+          const r = o.canvasRect();
           if (tmp.z < 1) o.bubble('', r.left + ((tmp.x + 1) / 2) * r.width, r.top + ((1 - tmp.y) / 2) * r.height);
           else o.bubble('', -9999, -9999);
         }

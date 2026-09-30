@@ -137,7 +137,7 @@ export function createTiltShift(
     const strength = THREE.MathUtils.clamp(dist / zoomRef, 0.25, 1);
     // Même rayon à l'écran qu'avant (7 px × densité), exprimé en pixels demi-résolution
     const maxBlur = (7 * renderer.getPixelRatio() * strength) / 2;
-    for (const m of [blurH, blurV, composite]) m.uniforms.uFocus.value = focusY;
+    blurH.uniforms.uFocus.value = blurV.uniforms.uFocus.value = composite.uniforms.uFocus.value = focusY;
     blurH.uniforms.uMaxBlur.value = blurV.uniforms.uMaxBlur.value = maxBlur;
   };
 
