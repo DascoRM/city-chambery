@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 30/09/2026 — itération 46.
+État au 30/09/2026 — itération 47.
 
 ## Carte / diorama
 
@@ -30,6 +30,7 @@
 | Cycle jour/nuit | ✅ | **Heure réelle de Chambéry par défaut** (bouton « Direct », relue chaque minute, quel que soit le fuseau de l'appareil) ; curseur d'heure (quitte le direct) + lecture (une journée en 2 min) ; **vraie course du soleil** (azimut et hauteur calculés pour la date : lever/coucher réels affichés, soleil bas l'hiver), crépuscule orangé, nuit bleutée avec lune, fond de page assorti |
 | Auvents des bars, cafés et restaurants | 🟡 | Itération 46 (EP001-US008, **en attente du go de Dasco**) : pièces du pack de bâtiments de Kenney (CC0), posées sur la façade côté rue de 148 lieux sur 169, à hauteur de rez-de-chaussée, à la couleur de la catégorie (éclaircie) ; masquées avec la catégorie dans la légende ; 6 appels de rendu en plus. Dalles plates, discrètes, sombres la nuit |
 | Horaires provisoires des bars | 🟡 | Itération 46 (EP001-US011) : horaires fictifs pour 23 bars, pubs et boîtes de nuit (`src/content/place-hours.json`), servant à l'éclairage de nuit seulement, jamais affichés dans la fiche |
+| Bâtiment d'essai (pack de bâtiments) | 🟡 | Itération 47, **en attente du go de Dasco** : un bâtiment isolé (OSM 101968677) reconstruit avec des modules du pack (fenêtres à appuis, porte, balcon, toit gris-bleu), fenêtres allumées la nuit ; bouton « Bâtiment d'essai » en dev ; désactivable par `prototype.id: null` dans `buildings.json` |
 | Saisons | ✅ | Puce Auto / Printemps / Été / Automne / Hiver ; auto = date du jour. Feuillage : vert, couleurs d'automne (15 oct. – 30 nov.), branches nues (1er déc. – 14 mars) — dates approximatives, choix de style ; parcs : variantes Automne / Dead du pack Quaternius (pins inchangés) ; arbres des rues : couronnes orangées ou petites couronnes nues. Saison choisie = date typique (20 avril, 15 juillet, 28 octobre, 15 janvier) |
 | Fenêtres éclairées la nuit | ✅ | Grille de fenêtres calculée dans le shader (pas de modèle), 15 % à 35 % allumées selon l'heure |
 | Lueur des rues la nuit | ✅ | Rues, chemins et places légèrement éclairés |

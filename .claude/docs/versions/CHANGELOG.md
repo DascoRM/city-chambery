@@ -1,5 +1,28 @@
 # Journal des itérations
 
+## Itération 47 — 30/09/2026 (branche `feat/EP001-US007-US008-batiments`, essai du pack)
+
+**Retour de Dasco sur les auvents :** « je vois un rectangle sur la partie basse du bâtiment, j'ai pas l'impression que le bâtiment est intégré ». Il choisit d'**essayer le pack autrement, sur un seul bâtiment** (fenêtres, porte, toit), avant de décider.
+
+**Changements :**
+- `src/scene/modular.ts` : le bâtiment OSM **101968677** (14,1 × 9,9 m, gouttière 10,4 m, toit 5,7 m, 4 côtés dégagés, à l'ouest, isolé) est masqué et remplacé par un assemblage de modules du pack : anneau de cubes à fenêtres sur les faces extérieures (modules étirés pour remplir exactement le rectangle), pilastres pleins aux angles, porte et balcon sur la façade côté voie, toit à quatre pans ; hauteur de toit tirée des données (sinon `roofHeight`) ;
+- `src/content/buildings.json` : 7 pièces de plus (`wall-*`, `roof-gable*`) et le réglage `prototype` (`id: null` désactive l'essai) ; `scripts/convert-buildings.mjs` : option `slate` qui remplace l'ardoise très sombre du pack par le gris-bleu de la palette du diorama ;
+- la nuit : les fenêtres (faces bleues) brillent avec `uNight` / `uLit` de la ville ; pas les toits (ils ont leur propre matériau) ;
+- bouton « 🏠 Bâtiment d'essai » en dev ou avec `?debug` (vole vers le bâtiment) ;
+- trois captures dans `specs/epics/EP001-la-ville-vit/assets/`.
+
+**Essais qui ont échoué en route :** un premier bâtiment coincé entre de grands voisins (on n'en voyait qu'une colonne aveugle) → choisi un bâtiment isolé ; toit noir (ardoise du pack trop sombre) → recolorée ; trame de points sur les murs (réception d'ombre sur modules étirés) → supprimée ; toit qui brillait la nuit (le gris-bleu pris pour une fenêtre) → matériau séparé.
+
+**Vérifié :** dans Chrome avec la carte graphique, avant / après sur les mêmes caméras (zoom maximal du jeu à 70 m et vue moyenne à 126 m), de jour (14 h) et de nuit (23 h) ; aucune erreur console ; **coût de l'essai : 44 instances, 1 156 triangles, 7 maillages (2 397 → 2 404 appels de rendu)**, cadence inchangée.
+
+**Constats :**
+- de jour, le diorama actuel n'a **aucune fenêtre visible** (elles n'apparaissent que la nuit, dans le shader) : le bâtiment d'essai se remarque donc beaucoup plus que ses voisins ; du coup **un seul bâtiment détaillé dans un quartier de boîtes** se voit comme une exception ;
+- extrapolation : les 2 067 bâtiments refaits de la même façon donneraient environ 2,4 M de triangles en plus (aujourd'hui 1,4 M) et des dizaines de milliers d'instances : **infaisable tel quel sur mobile**, il faudrait une distance limite (seulement près de la caméra) et/ou seulement les façades côté voie ;
+- les contours OSM sont irréguliers (ici un rectangle presque parfait) : un assemblage général demande des modules le long de chaque arête, des angles et des cours ;
+- couleurs : le crème du pack est proche de la palette, les fenêtres bleues tranchent ; toits : recolorés.
+
+**Non vérifié :** le rendu sur téléphone ; la décision de Dasco (en attente) ; un second bâtiment (façades plus complexes, contour irrégulier) ; le coût d'un groupe de 50 à 100 bâtiments.
+
 ## Itération 46 — 30/09/2026 (branche `feat/EP001-US007-US008-batiments`)
 
 **Demande de Dasco :** réponses aux questions de la spec (Q1 à Q8) ; horaires fictifs pour les bars ; commencer par le pack de bâtiments (US007 puis US008) et lui faire un retour pour qu'il teste et donne son go avant la suite de l'epic.

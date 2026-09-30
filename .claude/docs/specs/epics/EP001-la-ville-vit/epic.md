@@ -69,6 +69,12 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 
 ---
 
+## Essai du pack de bâtiments (itération 47) — en attente du go de Dasco
+
+Les auvents seuls (US008) ne convainquent pas : de petites dalles plates. Dasco a demandé un essai plus large : **un bâtiment isolé reconstruit avec les modules du pack** (fenêtres, porte, balcon, toit). Captures : [avant, zoom maximal](assets/essai-batiment-avant-zoommax-nord-est.png) · [après](assets/essai-batiment-apres-zoommax-nord-est.png) · [après, de nuit](assets/essai-batiment-apres-h23-zoommax-sud-est.png). Code : `src/scene/modular.ts`, bouton « Bâtiment d'essai » en dev. Constats et chiffres : CHANGELOG, itération 47. Suites possibles, selon le go : (a) écarter le pack et retirer les 4 commits ; (b) quelques bâtiments remarquables détaillés (places, rue de Boigne) ; (c) un vrai chantier « bâtiments » à part, avec distance limite et façades côté voie seulement.
+
+---
+
 ## Flux principal
 ```
 Ouverture de la carte (12 h) → zoom dans la rue de Boigne → des passants marchent, des pigeons sur la place

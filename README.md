@@ -403,6 +403,7 @@ src/
   scene/models.ts          Chargement et placement des monuments
   scene/nature.ts          Arbres modélisés dans les parcs
   scene/mascot.ts          Mascotte : promenade sur le réseau des voies, marche dans le shader
+  scene/modular.ts         Essai : un bâtiment reconstruit avec les modules du pack (mur à fenêtres, porte, balcon, toit), réglé par buildings.json → prototype
   scene/facades.ts         Auvents des bars, cafés et restaurants (pièces du pack de bâtiments, couleur de la catégorie)
   scene/models/            Monuments générés en code + éclairage de nuit et mesh() partagés
   ui/ui.ts                 HUD, fiche, journal, toasts, contrôles
