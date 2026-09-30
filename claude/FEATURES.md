@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 30/09/2026 — itération 33.
+État au 30/09/2026 — itération 34.
 
 ## Carte / diorama
 
@@ -26,6 +26,7 @@
 | Château des ducs de Savoie | 🟡 | 7 bâtiments reconstruits sur leurs contours OSM : tours Trésorerie, demi-ronde et des Archives (cordon, meurtrières, toits pointus), Sainte-Chapelle (contreforts à pinacles, grandes baies), Porterie (mâchicoulis), aile du Midi et Conseil départemental (fenêtres, toits d'ardoise raides) ; hauteurs et toits supposés ; tour Yolande absente ; côté esplanade : mur bas et grille en fer, portail fermé sur l'allée, escalier de pierre (tracés OSM) ; éclairé la nuit |
 | Carré Curial | 🟡 | Formes simples sur le contour OSM avec sa cour ; gouttière 16,7 m et toit 5,4 m (BD TOPO) ; toit à pans autour de la cour, soubassement, corniche, fenêtres régulières côté rue et côté cour ; éclairé la nuit ; médiathèque J.-J.-Rousseau accolée intégrée (mêmes matériaux, toit plat) ; étages et couleurs supposés |
 | Mascotte : éléphant qui se promène | ✅ | Itération 33. Marche uniquement sur les voies OSM (graphe des rues et chemins ; sans escaliers, passages sous bâtiment, trottoirs collés aux façades, abords de la fontaine), part de la fontaine des Éléphants et reste dans un rayon d'≈ 380 m ; va plutôt tout droit et préfère les rues piétonnes ; pauses de 4 à 8 s ; pattes, trompe, oreilles et queue animées dans le shader ; ombre en tache ; 4,5 m de haut ; modèle « Elephant » de jeremy (Poly Pizza, CC BY 3.0, crédité en bas à droite) ; `mascot.json`, `npm run mascot` |
+| Mini-jeu « Attrape l'éléphant » | ✅ | Itération 34. La souris (ou un toucher) à moins de 16 m le fait fuir au galop (5 m/s) : il prend la voie qui s'éloigne le plus et fait demi-tour si on lui barre la route ; clic raté = sprint (8 m/s). Coincé (toutes les issues d'un carrefour vont vers la souris : cul-de-sac, bout de carte, angle fermé) il s'arrête face à la souris et rebondit 4 s ; un clic l'attrape (+10 points), grand saut, il réapparaît à la fontaine. Compteur 🐘 dans le cartouche, gardé dans le navigateur, indépendant de la progression. Réglages : `mascot.json` → `game` |
 | Cycle jour/nuit | ✅ | **Heure réelle de Chambéry par défaut** (bouton « Direct », relue chaque minute, quel que soit le fuseau de l'appareil) ; curseur d'heure (quitte le direct) + lecture (une journée en 2 min) ; **vraie course du soleil** (azimut et hauteur calculés pour la date : lever/coucher réels affichés, soleil bas l'hiver), crépuscule orangé, nuit bleutée avec lune, fond de page assorti |
 | Saisons | ✅ | Puce Auto / Printemps / Été / Automne / Hiver ; auto = date du jour. Feuillage : vert, couleurs d'automne (15 oct. – 30 nov.), branches nues (1er déc. – 14 mars) — dates approximatives, choix de style ; parcs : variantes Automne / Dead du pack Quaternius (pins inchangés) ; arbres des rues : couronnes orangées ou petites couronnes nues. Saison choisie = date typique (20 avril, 15 juillet, 28 octobre, 15 janvier) |
 | Fenêtres éclairées la nuit | ✅ | Grille de fenêtres calculée dans le shader (pas de modèle), 15 % à 35 % allumées selon l'heure |

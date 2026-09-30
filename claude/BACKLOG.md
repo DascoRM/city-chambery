@@ -80,7 +80,11 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ⬜ Étendre à d'autres quartiers (plusieurs dioramas reliés)
 - Avoir un luncher pour lancer la map (mode choix, exploration ou mode histoire
 - Avoir de la vie dans les rue
-- Jeux trouve l’éléphant (si j’essaye de clique dessus il court plus vite
+- ✅ Jeu « trouve l'éléphant » (il accélère quand on veut cliquer dessus ; coincé il rebondit, un clic l'attrape, compteur de points) — itération 34
+- ⬜ Mini-jeu : à régler avec de vrais essais (rayon de fuite, vitesse, temps coincé, points)
+- ⬜ Mini-jeu : l'éléphant peut tourner en rond sur les petits ronds-points ou les boucles de chemins quand on le pousse par derrière
+- ⬜ Mini-jeu : aide pour le trouver (flèche au bord de l'écran, ou bouton « où est l'éléphant ? »)
+- ⬜ Points : à quoi les dépenser (bâtiments débloqués, décorations…) — *Dasco*
 - Mode histoire qui fait visiter la ville
 
 ## Fait

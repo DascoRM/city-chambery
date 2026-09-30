@@ -1,5 +1,27 @@
 # Journal des itérations
 
+## Itération 34 — 30/09/2026
+
+**Demande de Dasco :** le mini-jeu « trouve l'éléphant ». Quand on essaie de cliquer ou de passer la souris dessus, il accélère ; il faut le diriger vers un coin ou un angle pour le bloquer ; bloqué, il fait un rebond et on peut l'attraper ; on gagne des points ; un compteur, réutilisable plus tard pour les bâtiments.
+
+**Changements :**
+- `src/scene/mascot.ts` : quatre états (promenade, fuite, coincé, attrapé) :
+  - fuite : voie la plus éloignée de la souris à chaque carrefour, demi-tour si elle barre la route, sprint après un clic raté ;
+  - coincé : quand toutes les issues d'un carrefour repartent vers la souris ; rebond avec écrasement, face à la souris ; il force le passage après 4 s ou si la souris s'éloigne ;
+  - attrapé : grand saut en tournant, disparition, retour à la fontaine ;
+  - zone de clic invisible plus large que le modèle ; réglages dans `mascot.json` → `game`.
+- `src/game/catch.ts` : position de la souris sur la carte (plan à l'altitude de l'éléphant), toucher sur mobile (menace pendant 1,5 s), clic, score.
+- `src/state/points.ts` + compteur 🐘 dans le cartouche (animation à chaque gain) ; messages : première fuite, « Coincé ! » (3 premières fois), « Attrapé ! +10 points ».
+- Cercle interdit autour de la fontaine passé de 11 à 15 m : coincé près du bassin, l'éléphant se tournait et sa trompe entrait dans la margelle.
+- README : commandes, section du mini-jeu, structure.
+
+**Vérifié dans le navigateur de test :**
+- un « joueur » simulé qui le pousse par derrière le coince en 4 à 120 s selon les essais, ou pas du tout en 2 min (il tourne alors sur une boucle de chemins) ;
+- vrai clic de souris sur l'éléphant coincé : attrapé, compteur à 10, retour à la fontaine ;
+- rebond visible entre deux images ; 30 min de promenade : jamais dans un bâtiment ni à moins de 15 m de la fontaine.
+
+**Non vérifié :** le plaisir de jeu et la difficulté avec une vraie souris, et le jeu au doigt sur téléphone.
+
 ## Itération 33 — 30/09/2026
 
 **Demande de Dasco :** le ticket « Mascotte (éléphant ?) qui se promène dans le diorama », avec le modèle déposé dans `assets-src/`. L'éléphant doit toujours marcher sur les chemins ou les routes.
