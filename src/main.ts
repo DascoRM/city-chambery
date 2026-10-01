@@ -19,6 +19,7 @@ import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildPeople, type PeopleConfig } from './scene/people';
 import { buildBirds, type BirdsConfig } from './scene/birds';
 import { buildChimneys, type SmokeConfig } from './scene/chimneys';
+import { buildFlags, type FlagSpec } from './scene/flags';
 import lifeContent from './content/life.json';
 import { buildNature, type NatureConfig } from './scene/nature';
 import { buildHerd, type Herd, type MascotConfig } from './scene/mascot';
@@ -126,6 +127,17 @@ async function main() {
     if (chimneys) scene.add(chimneys.group);
   } catch (e) {
     console.warn('[cheminées] non créées', e);
+  }
+  // Drapeaux de la Savoie sur le château et l'hôtel de ville (EP001-US006), posés sur le point le plus haut du toit
+  let flags: ReturnType<typeof buildFlags> = null;
+  try {
+    flags = buildFlags(lifeContent.flags.list as FlagSpec[], data, { targets: [modelsRoot, city.group], wind: lifeContent.smoke.wind });
+    if (flags) {
+      scene.add(flags.group);
+      if (DEBUG) console.info('[drapeaux]', flags.placed.map((f) => `${f.id} à ${f.top.toFixed(1)} m`).join(', '));
+    }
+  } catch (e) {
+    console.warn('[drapeaux] non créés', e);
   }
   const labels = await buildLabels(data.labels ?? [], terrain.heightAt);
   // Effet maquette : les étiquettes passent par-dessus le flou pour rester lisibles
@@ -326,6 +338,7 @@ async function main() {
     ...(people ? [people] : []),
     ...(birds ? [birds] : []),
     ...(chimneys ? [chimneys] : []),
+    ...(flags ? [flags] : []),
     game.ticker,
     ...(herdDebug ? [herdDebug] : []),
     clock,
@@ -376,7 +389,7 @@ async function main() {
   });
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, people, birds, chimneys, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, people, birds, chimneys, flags, clock, herd, hunt, slots } });
 }
 
 main();

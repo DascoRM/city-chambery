@@ -1,5 +1,21 @@
 # Journal des itérations
 
+## Itération 59 — 01/10/2026 (branche `feat/EP001-US006-drapeaux`)
+
+**Demande de Dasco :** faire l'US006 (drapeaux).
+
+**Changements :**
+- `src/scene/flags.ts` : deux drapeaux de la Savoie (croix blanche sur fond rouge, dessinée sur un canevas), **seulement le château et l'hôtel de ville** (décision de Dasco) ; sources : l'ancrage OSM du château (`way/237986027`) et le bâtiment OSM 101971619 « Hôtel de ville de Chambéry » ;
+- mât posé sur le point le plus haut du toit ou du monument près de l'emplacement (rayons verticaux sur une grille de 9 × 9 points, dans le contour pour l'hôtel de ville) : château à 32,5 m (sur une tour du modèle), hôtel de ville à 26,7 m ;
+- tissu subdivisé qui ondule dans le shader (vagues qui partent du mât, bord libre plus mobile), tourné dans le sens du vent de la fumée (`smoke.wind`), force qui varie lentement ; aucun asset tiers ;
+- `src/content/life.json` → `flags`.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique, au zoom du jeu : drapeau lisible sur la tour du château et sur le toit de l'hôtel de ville ; animation : 730 pixels changent en 0,3 s dans la zone du drapeau (scène immobile autour) ; aucune erreur console ; captures dans la spec (`assets/drapeau-*.png`).
+
+**Non vérifié :** le motif validé par Dasco (à confirmer : croix pleine jusqu'aux bords, proportions 2:3) ; nuit ; téléphone. Les vues plus proches que le zoom du jeu ne sont pas atteignables (caméra à 30 m du sol au minimum).
+
+**Epic EP001 « La ville vit » : toutes les user stories prévues sont livrées** (US001 à US009, US011 ; US010 abandonnée).
+
 ## Itération 58 — 01/10/2026 (branche `feat/EP001-US005-fumee`)
 
 **Demande de Dasco :** faire la fumée (US005).
