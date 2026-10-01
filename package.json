@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "nature": "node scripts/convert-nature.mjs",
     "mascot": "node scripts/convert-mascot.mjs",
+    "buildings": "node scripts/convert-buildings.mjs",
     "docker:up": "docker compose up --build -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f web"

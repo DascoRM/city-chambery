@@ -49,6 +49,7 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 
 ## P1 — Fiabiliser le POC
 - ⬜ Reprendre la position des 8 lieux (champ `pos` ou `osm.match` dans `src/content/pois.json`) — *Dasco*
+- ⬜ Récupérer par script les données du projet bar / restau de Dasco (base scrappée il y a un an) : vrais horaires des bars, pubs et boîtes de nuit pour remplacer les horaires fictifs de `src/content/place-hours.json` (EP001-US011), et peut-être d'autres informations sur les lieux — *Dasco (script, à regarder ensemble), puis Claude*
 - ⬜ Relire les fiches (Trivelli/Trivelly, « plus vaste ensemble de trompe-l'œil d'Europe » sourcé uniquement Wikipédia)
 - ⬜ Pack nature : buissons, fleurs, rochers moussus, nénuphars dans les parcs
 - ⬜ Épingles des lieux : icône par catégorie sur l'épingle (verre, tasse, couverts), après la v1 « pointeur de couleur »
@@ -57,12 +58,14 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 
 
 ## P2 — La ville vit (suite des enablers P1)
-Gros chantier : à passer en epic (`specs/epics/`) une fois EN-01 et EN-02 faits.
+**Epic [EP001 — La ville vit](../../specs/epics/EP001-la-ville-vit/epic.md) : 📝 spec rédigée le 30/09 (itération 45), à valider par Dasco avant de coder.** 9 user stories, 34 points : US001 passants de jour · US002 rythme jour / nuit et groupes devant les bars ouverts · US003 fenêtres qui s'allument et s'éteignent · US004 pigeons et oiseaux · US005 fumée de cheminées · US006 drapeaux · US007 préparer le pack Kenney · US008 auvents des lieux · US009 portes, balcons, climatiseurs, lucarnes · US010 personnages animés (option, non planifiée). Décisions de Dasco : silhouettes simples d'abord, décor sans interaction, pas de voitures, pack de bâtiments en détails de façade. 8 questions ouvertes (échelle des passants, grandes rues, fumée l'été, mâts de drapeaux, couleur des auvents, nom du dossier du pack, lieux sans horaires, légende).
+**Itération 46 : US011 (horaires provisoires des bars) faite ; US007 (pack de bâtiments converti) et US008 (auvents des lieux) livrées, en attente du go de Dasco avant la suite** (le pack est écarté s'il ne lui plaît pas).
+Le détail ci-dessous est l'ancien énoncé, gardé pour mémoire.
 - ⬜ **Petites animations le jour et la nuit** (la ville vit) — évolution du code existant, pas de refonte. Estimation : socle ≈ 1 session, éléphant ≈ 1 session, passants simples ≈ ½ à 1 session, personnages animés + 1 à 2 sessions, variantes de nuit ≈ ½ session :
   - 🟡 socle commun : réseau de chemins tiré des voies OSM et ombre « pastille » au sol faits avec la mascotte (itération 33, `src/scene/mascot.ts`) ; extraction en module partagé = **EN-01** ; point d'ajout dans la boucle = **EN-02** ; comportement jour / nuit à faire ;
   - ✅ l'éléphant qui se promène dans Chambéry (itération 33 : modèle de jeremy sur Poly Pizza, CC BY 3.0, marche animée dans le shader) ;
   - des passants : d'abord des silhouettes simples en grand nombre, puis éventuellement des personnages animés (pack Quaternius en CC0, à convertir de FBX en glb) près de la caméra seulement ;
-  - la nuit : moins de monde dans les rues, du monde devant les bars ouverts ;
+  - la nuit : moins de monde dans les rues, du monde devant les bars ouverts (seuls 10 bars sur 25, 3 pubs sur 7 et aucune boîte de nuit ont des horaires dans OSM : voir Q7 de l'epic) ;
   - cadence : les passants comptent comme « ça bouge » ou non selon **TI-02**
 
 ## P1 — Fluidité (audit du 29/09, détail dans [PERF-AUDIT.md](../../architecture/PERF-AUDIT.md))

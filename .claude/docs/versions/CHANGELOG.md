@@ -1,5 +1,101 @@
 # Journal des itérations
 
+## Itération 50 — 01/10/2026 (branche `feat/EP001-US009-fenetres-de-jour`)
+
+**Retour de Dasco :** « c'est trop gris, il faut faire dans la même idée que le mode nuit ; ça fait très volet fermé en pleine journée. Donc pas verre sombre. »
+
+**Changements (`src/scene/city.ts`, shader des façades) :** vitre **claire qui reflète le ciel** (bleu, plus clair en haut) au lieu du verre sombre, avec un **encadrement crème** d'environ 12 cm ; la nuit, les vitres éteintes redeviennent sombres (mélange selon `uNight`), les allumées ne changent pas ; portes inchangées.
+
+**Vérifié :** `npm run build` ; dans Chrome avec la carte graphique, rue de Boigne, place Saint-Léger, théâtre à 14 h et 23 h, et une grande place (portes visibles) ; aucune erreur console ; triangles et appels de rendu inchangés.
+
+**Non vérifié :** l'aube et le crépuscule (mélange jour / nuit des vitres), téléphone.
+
+## Itération 49 — 01/10/2026 (branche `feat/EP001-US009-fenetres-de-jour`, empilée sur `feat/EP001-US007-US008-batiments`)
+
+**Demande de Dasco (EP001-US009) :** fenêtres et portes visibles de jour ; « un verre sombre, juste du verre dans un premier temps, porte côté rue ».
+
+**Changements :**
+- `src/scene/city.ts`, shader des façades : la grille de fenêtres de la nuit (3 m × 3,2 m) est aussi dessinée **de jour, en verre sombre** (couleur du mur assombrie à 85 % vers un gris-bleu) ; la nuit, les fenêtres allumées restent aux mêmes endroits, les éteintes sont désormais en verre sombre au lieu de la couleur du mur ;
+- **portes** : panneau brun de 1,2 × 2,3 m au rez-de-chaussée, environ une case de 3 m sur trois, **seulement sur les murs côté rue** : attribut par face `aStreet` calculé au chargement (devant du mur à moins de 9 m d'une voie, et pas dans un bâtiment voisin : un mur mitoyen n'en a pas), plus `aBase` (pied du bâtiment) pour la hauteur ; pas de fenêtre au rez-de-chaussée au-dessus d'une porte ; pas de porte sur les parties de bâtiment qui ne touchent pas le sol ;
+- `src/scene/roads.ts` : `roadDistanceIndex` (distance à la voie la plus proche par grille), partagé avec les auvents (`facades.ts` n'a plus sa propre copie) ;
+- README, FEATURES, BACKLOG, spec.
+
+**Vérifié :** `npm run build` ; dans Chrome avec la carte graphique, à 14 h et 23 h (rue de Boigne, place Saint-Léger, théâtre) et au-dessus des 4 plus grandes places : fenêtres visibles de jour, nuit comme avant, portes visibles là où le pied des façades est dégagé ; 15 803 triangles de mur « côté rue » sur 117 579 ; **triangles et appels de rendu inchangés** (1,36 M, même maillage) ; aucune erreur console.
+
+**Non vérifié / limites :** dans les rues étroites, le pied des façades est presque toujours caché par l'immeuble d'en face (la caméra reste à au moins 30 m du sol) : **les portes se voient surtout sur les places et les grandes rues** ; images/s non mesurées avant / après (le travail est dans le shader, par pixel de mur) ; mémoire : deux valeurs de plus par sommet des bâtiments ; téléphone.
+
+## Itération 48 — 30/09/2026 (branche `feat/EP001-US007-US008-batiments`)
+
+**Retour de Dasco :** « autant les auvents ça me va, autant les bâtiments non, je trouve que les autres sont mieux ; le seul truc c'est qu'ils n'ont pas de fenêtres et portes la journée. Supprime les obj buildings. »
+
+**Changements :**
+- **essai du bâtiment modulaire retiré** : `src/scene/modular.ts`, son branchement et son bouton dans `main.ts`, le réglage `prototype`, les 7 pièces de mur et de toit, l'option `slate` du script, les 3 captures de la spec ;
+- **pack de bâtiments supprimé**, sauf ce qu'il faut aux auvents gardés : `assets-src/buildings` ne contient plus que `roof-flat-awning-b`, `roof-flat-awning-c` (`.obj` et `.mtl`) et `Textures/colormap.png` (28 Ko au lieu de 1,1 Mo) ; `buildings.json` réduit aux 2 pièces d'auvent ; `details.glb` régénéré (3,2 Ko) ;
+- spec : US008 validée ; ancienne US009 (portes, balcons, climatiseurs, lucarnes du pack) **remplacée** par « fenêtres et portes visibles de jour », à faire dans le shader existant des façades, sans pack, à préciser avec Dasco ;
+- README, FEATURES, DECISIONS.
+
+**Vérifié :** `npm run buildings` puis `npm run build` ; dans Chrome avec la carte graphique : toujours 148 auvents posés, légende qui masque et remet ceux d'une catégorie, aucune erreur console ; plus aucune référence à l'essai dans `main.ts`.
+
+**Non vérifié :** rien de visible n'a changé pour les auvents (même pièces, même réglages) ; pas de nouvelle capture.
+
+## Itération 47 — 30/09/2026 (branche `feat/EP001-US007-US008-batiments`, essai du pack)
+
+**Retour de Dasco sur les auvents :** « je vois un rectangle sur la partie basse du bâtiment, j'ai pas l'impression que le bâtiment est intégré ». Il choisit d'**essayer le pack autrement, sur un seul bâtiment** (fenêtres, porte, toit), avant de décider.
+
+**Changements :**
+- `src/scene/modular.ts` : le bâtiment OSM **101968677** (14,1 × 9,9 m, gouttière 10,4 m, toit 5,7 m, 4 côtés dégagés, à l'ouest, isolé) est masqué et remplacé par un assemblage de modules du pack : anneau de cubes à fenêtres sur les faces extérieures (modules étirés pour remplir exactement le rectangle), pilastres pleins aux angles, porte et balcon sur la façade côté voie, toit à quatre pans ; hauteur de toit tirée des données (sinon `roofHeight`) ;
+- `src/content/buildings.json` : 7 pièces de plus (`wall-*`, `roof-gable*`) et le réglage `prototype` (`id: null` désactive l'essai) ; `scripts/convert-buildings.mjs` : option `slate` qui remplace l'ardoise très sombre du pack par le gris-bleu de la palette du diorama ;
+- la nuit : les fenêtres (faces bleues) brillent avec `uNight` / `uLit` de la ville ; pas les toits (ils ont leur propre matériau) ;
+- bouton « 🏠 Bâtiment d'essai » en dev ou avec `?debug` (vole vers le bâtiment) ;
+- trois captures dans `specs/epics/EP001-la-ville-vit/assets/`.
+
+**Essais qui ont échoué en route :** un premier bâtiment coincé entre de grands voisins (on n'en voyait qu'une colonne aveugle) → choisi un bâtiment isolé ; toit noir (ardoise du pack trop sombre) → recolorée ; trame de points sur les murs (réception d'ombre sur modules étirés) → supprimée ; toit qui brillait la nuit (le gris-bleu pris pour une fenêtre) → matériau séparé.
+
+**Vérifié :** dans Chrome avec la carte graphique, avant / après sur les mêmes caméras (zoom maximal du jeu à 70 m et vue moyenne à 126 m), de jour (14 h) et de nuit (23 h) ; aucune erreur console ; **coût de l'essai : 44 instances, 1 156 triangles, 7 maillages (2 397 → 2 404 appels de rendu)**, cadence inchangée.
+
+**Constats :**
+- de jour, le diorama actuel n'a **aucune fenêtre visible** (elles n'apparaissent que la nuit, dans le shader) : le bâtiment d'essai se remarque donc beaucoup plus que ses voisins ; du coup **un seul bâtiment détaillé dans un quartier de boîtes** se voit comme une exception ;
+- extrapolation : les 2 067 bâtiments refaits de la même façon donneraient environ 2,4 M de triangles en plus (aujourd'hui 1,4 M) et des dizaines de milliers d'instances : **infaisable tel quel sur mobile**, il faudrait une distance limite (seulement près de la caméra) et/ou seulement les façades côté voie ;
+- les contours OSM sont irréguliers (ici un rectangle presque parfait) : un assemblage général demande des modules le long de chaque arête, des angles et des cours ;
+- couleurs : le crème du pack est proche de la palette, les fenêtres bleues tranchent ; toits : recolorés.
+
+**Non vérifié :** le rendu sur téléphone ; la décision de Dasco (en attente) ; un second bâtiment (façades plus complexes, contour irrégulier) ; le coût d'un groupe de 50 à 100 bâtiments.
+
+## Itération 46 — 30/09/2026 (branche `feat/EP001-US007-US008-batiments`)
+
+**Demande de Dasco :** réponses aux questions de la spec (Q1 à Q8) ; horaires fictifs pour les bars ; commencer par le pack de bâtiments (US007 puis US008) et lui faire un retour pour qu'il teste et donne son go avant la suite de l'epic.
+
+**Changements :**
+- spec EP001 mise à jour (questions tranchées, US011 ajoutée, US007 renommée, dossier `assets-src/buildings`) ;
+- **US011** : `src/content/place-hours.json`, horaires fictifs pour 23 bars, pubs et boîtes de nuit sans horaires OSM ; ils ne servent qu'à l'éclairage de nuit (`main.ts` : deux listes d'états, la fiche garde les vrais horaires), jamais affichés ; ligne au BACKLOG pour le script de récupération des données du projet bar / restau de Dasco ;
+- **US007** : licence vérifiée (« Building Kit » de Kenney, CC0 1.0) ; `npm run buildings` (`scripts/convert-buildings.mjs`, `scripts/lib/kenney-obj.mjs`, `src/content/buildings.json`) → `public/models/buildings/details.glb` (8 pièces, 13,9 Ko, 4,1 Ko gzip) ; palette PNG lue par les UV et écrite en couleurs de sommet ; pièces dédoublonnées (chaque pièce est répétée deux fois dans les `.obj`) ; échelle 4,2 m par unité (porte de 0,5 unité = 2,1 m) ;
+- **US008** : `src/scene/facades.ts`, auvents sur la façade côté rue de chaque lieu dans un bâtiment : arête du contour proche d'une voie, pas mitoyenne, près du lieu ; hauteur de rez-de-chaussée ; couleur de la catégorie éclaircie d'un tiers ; masqués avec la catégorie dans la légende ; README, FEATURES, BACKLOG.
+
+**Vérifié :**
+- horaires provisoires, avec le vrai parseur : mardi 3 h tout fermé, mardi 23 h bars ouverts et boîte fermée, vendredi 1 h boîte ouverte, samedi 4 h boîte ouverte ;
+- `npm run buildings` deux fois : fichier identique ; `npm run build` ;
+- Chrome avec la carte graphique : 148 auvents posés sur 169 lieux (12 dans un bâtiment remplacé par un monument, 8 hors bâtiment, 1 sans façade côté rue), 6 maillages, aucune erreur console ; légende : décocher « Restaurants » masque leurs auvents, recocher les remet ; **coût : 2 371 → 2 377 appels de rendu, 1,46 → 1,47 M triangles, cadence inchangée** ; captures à 14 h et 23 h au zoom maximal du jeu (70 m) ;
+- constat de rendu : les auvents du pack sont de petites **dalles plates** (pas des toiles inclinées), discrètes ; sur 148, seulement 26 sont visibles en ligne droite depuis une caméra basse dans l'axe de leur façade (les autres sont cachés par les immeubles d'en face) ; la nuit ils sont sombres (aucune lumière propre).
+
+**Non vérifié :** que le dossier est bien le « Building Kit » (les noms des pièces correspondent, mais il n'y a pas de fichier de licence dans le dossier : Dasco confirme où il l'a téléchargé) ; le rendu sur téléphone ; la fiche d'un bar aux horaires provisoires (vérifié par lecture du code : elle lit les vrais horaires), pas à l'écran ; l'éclairage de nuit des bars avec les horaires provisoires, à l'écran ; les pièces convertie mais non utilisées (portes, balcon, climatiseurs, lucarne) : **le balcon extrait garde les deux faces du module** (4,8 m de profondeur), à reprendre en US009.
+
+## Itération 45 — 30/09/2026 (branche `docs/EP001-la-ville-vit`, pas de code applicatif)
+
+**Demande de Dasco :** regarder la spec de « la ville vit » ; choix : silhouettes simples d'abord, fenêtres, oiseaux, fumée et drapeaux (pas de voitures), décor sans interaction, et intégrer le pack de bâtiments (en détails de façade).
+
+**Changements :** documents seulement : `specs/epics/EP001-la-ville-vit/` (`epic.md` et `US001` à `US010`), BACKLOG (section P2 renvoyée vers l'epic), DECISIONS.
+
+**À retenir de la spec :**
+- 9 user stories (34 points, ≈ 6 à 8 sessions), US010 en option ; budget de fluidité de l'epic : au plus +25 appels de rendu et +0,5 M de triangles, tout en instances ; les animations lentes (passants, pigeons, fumée, drapeaux) ne forcent pas la pleine vitesse (TI-02) ;
+- **constat sur les données** : seuls 10 bars sur 25, 3 pubs sur 7 et aucune des 4 boîtes de nuit ont des horaires OSM (63 lieux sur 169 sans horaires, 2 illisibles) : « du monde devant les bars ouverts » ne suffirait pas ; proposition : groupes aussi devant les bars sans horaires, entre 21 h et 2 h, à poids réduit, déclarés décor (Q7) ;
+- **constat sur le pack** : pièces Kenney colorées par une texture de palette (pas par des couleurs de matériau) : `convert-nature.mjs` ne suffit pas (US007) ; licence à confirmer (aucun fichier de licence dans le dossier) ;
+- OpenStreetMap n'est pas interrogé pour les mâts de drapeaux ni les cheminées : les drapeaux dépendent d'une décision de Dasco (Q4), les cheminées sont du décor déclaré ;
+- `uLit` (part de fenêtres allumées) ne dépend aujourd'hui que du soleil : une courbe horaire suffit pour US003.
+
+**Vérifié :** nombres de lieux, horaires, voies et espaces lus dans `city.json` ; existence des pièces Kenney citées ; format et taille de la palette (512 × 512) ; valeurs de `uLit`, `OpenState` et saisons lues dans le code.
+
+**Non vérifié :** la licence du pack Kenney ; l'échelle réelle des pièces (une unité ≈ un étage, à mesurer) ; le coût des passants et des détails (budgets à confirmer par la mesure) ; la taille de la plus grande partie connexe du réseau piéton sans les grandes rues (à mesurer en US001).
+
 ## Itération 44 — 30/09/2026 (branche `feat/EN-03-analyse-meshopt`, pas de code applicatif)
 
 **Demande de Dasco :** EN-03, analyse de la compression meshopt des modèles (go / no go).
