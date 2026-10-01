@@ -343,7 +343,7 @@ En production, ni le code de l'outil ni l'endpoint `/__dev/poi` du serveur Vite 
 
 ## Rendu : ce qui se passe à l'écran
 
-- **Socle** : sol en relief (maillage suivant la grille d'altitudes), bords qui épousent le profil du terrain (bande d'herbe + strates de terre), plinthe en bois. Parcs, places et plans d'eau sont peints sur une texture du sol ; rues, berges, rivière et ponts sont des rubans drapés sur le relief.
+- **Socle** : sol en relief (maillage suivant la grille d'altitudes), bords qui épousent le profil du terrain (bande d'herbe + strates de terre), plinthe en bois. Parcs, places et plans d'eau sont peints sur une texture du sol ; rues, berges, rivière et ponts sont des rubans drapés sur le relief : un ruban est découpé le long des arêtes du sol là où il s'en écarterait de plus de 6 cm (`ribbons()` dans `src/scene/city.ts`), si bien que le terrain ne traverse pas les chaussées.
 - **Bâtiments** : contours OSM extrudés, posés sur le point le plus bas du terrain sous leur emprise. Couleurs pastel stables (dérivées de l'identifiant OSM).
 - **Toits** (décidés par `scripts/roofs.mjs`) : emprise quasi rectangulaire → deux pans, quatre pans ou pyramide ; forme irrégulière, en L, avec cour → toit à pans par *squelette droit* (librairie `straight-skeleton`) ; plats pour garages, abris, très grandes surfaces sans toit mesuré par BD TOPO. La hauteur du toit vient de BD TOPO quand elle existe.
 - **Eau** : matériau brillant animé, berges en pierre.

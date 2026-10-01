@@ -32,8 +32,7 @@ const GUTTER = 2; // px entre deux cases
 const HALO_PX = 8; // épaisseur du liseré clair, en pixels de l'atlas
 const TRACKING = 0.05; // espacement ajouté entre les lettres (em)
 const ATLAS_W = 1024;
-const LIFT = 0.05; // au-dessus du ruban de la rue
-const RIBBON_STEP = 4; // m : pas des sommets du ruban d'une rue (city.ts)
+const LIFT = 0.1; // au-dessus du ruban de la rue (qui s'écarte du sol d'au plus 6 cm, voir city.ts)
 const PREBUILD = 60; // m avant le début du fondu, on prépare l'atlas (sans le montrer)
 
 interface Glyph { ch: string; x: number; y: number; w: number; h: number; adv: number }
@@ -176,21 +175,8 @@ export function buildStreetNames(
       let k = label.size; // mètres par em
       if (totalEm * k > label.len * 1.12) k = (label.len * 1.12) / totalEm;
       const lift = roadLift(label.kind, label.bridge) + LIFT;
-      // Hauteur de la chaussée près d'un point : le ruban de la rue relie en ligne droite des sommets posés sur
-      // le sol tous les 4 m, aux deux bords ; il passe donc au-dessus du terrain dans un creux, et au-dessous sur
-      // une bosse. Le nom se pose au plus haut des sommets voisins, pour n'être ni recouvert ni enfoncé.
-      const half = label.w / 2;
-      const surface = (a: number, b: number) => {
-        let top = -Infinity;
-        for (const da of [-RIBBON_STEP, 0, RIBBON_STEP]) {
-          for (const db of [-half, half]) {
-            const aa = a + da, bb = db; // en travers : les bords de la rue, pas la position de la lettre
-            top = Math.max(top, heightAt(label.pos[0] + d[0] * aa + n[0] * bb, label.pos[1] + d[1] * aa + n[1] * bb));
-          }
-        }
-        top = Math.max(top, heightAt(label.pos[0] + d[0] * a + n[0] * b, label.pos[1] + d[1] * a + n[1] * b));
-        return top + lift;
-      };
+      // La chaussée épouse le terrain (city.ts découpe les rubans le long des arêtes du sol) : le nom se pose dessus
+      const surface = (a: number, b: number) => heightAt(label.pos[0] + d[0] * a + n[0] * b, label.pos[1] + d[1] * a + n[1] * b) + lift;
       let pen = -(totalEm * k) / 2; // abscisse (m) du début de la lettre, depuis le centre
       [...text].forEach((c, i) => {
         const step = (adv[i] + TRACKING) * k;

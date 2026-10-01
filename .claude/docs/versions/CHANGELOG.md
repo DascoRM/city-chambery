@@ -1,5 +1,22 @@
 # Journal des itérations
 
+## Itération 62 — 01/10/2026 (branche `fix/rues-sous-le-terrain`)
+
+**Demande de Dasco :** gérer le bug du terrain qui passe au-dessus de certaines rues (plaques vertes et beiges sur des boulevards).
+
+**Changements :**
+- `src/scene/city.ts` (`ribbons`) : un triangle de ruban dont les trois sommets sont posés sur le sol ne suit pas le terrain entre eux (le sol est fait de triangles de 10 m). Là où une arête du sol traverse le triangle et où l'écart dépasse **6 cm**, le triangle est **découpé le long de ces arêtes** : chaque morceau est dans un seul triangle du sol, donc exact. Préfiltre à 4 mesures (milieux des côtés et centre : l'écart est maximal là où une arête du sol coupe un côté, au pire à moitié mesuré), puis écart exact aux sommets des morceaux ;
+- `src/scene/terrain.ts` : `Terrain.grid` expose l'origine et le pas de la grille pour retrouver ces arêtes ;
+- `src/scene/street-names.ts` : la chaussée épouse le terrain, les noms de rues se posent donc directement dessus (plus besoin du plus haut des sommets voisins) ; `LIFT` 0,1.
+
+**Vérifié :** `npm run build`, `npm run check:streets` ; mesure dans Chrome (carte graphique) sur les rubans construits, un triangle sur sept, 4 points chacun, contre le maillage du sol : **avant** 331 points sous le sol sur les rues (1,03 %, jusqu'à **2,35 m** d'enfouissement) et 72 sur les chemins (0,2 %, jusqu'à 0,8 m) ; **après** aucun sur les deux (0 %), la chaussée reste à plus de 10 cm du sol sauf 0,07 % des chemins ; captures avant/après rue André Jacques (coins verts à travers la chaussée → chaussée continue), boulevard de Lémenc, pont des Amours (inchangé) ; compteur « repos (30 max) », 62 → 63 appels de rendu avec les noms ; noms de rues toujours entiers sur la pente raide du boulevard de Lémenc.
+
+**Coût :** **+51 000 à +60 000 triangles** (1,45 → 1,51 M avec les noms masqués, +4 %) ; temps de construction des rubans **118 ms contre 46 ms** (+72 ms, une fois au chargement, mesuré sur Mac M1 en dev, médiane de 5) ; temps de chargement total +0,3 s environ en dev, bruité (4,5 s contre 4,75 s en médiane).
+
+**Aspect :** les rues montrent maintenant les mêmes facettes de relief que le sol (légères différences de ton entre morceaux), au lieu de bandes lisses qui traversaient le terrain.
+
+**Non vérifié :** téléphone (le surcoût de chargement y sera plus grand : ≈ ×3 ?) ; les éléphants, passants et arbres sur les rues corrigées (ils suivent `heightAt`, inchangé, mais non regardés de près) ; nuit sur les zones corrigées ; hiver.
+
 ## Itération 61 — 01/10/2026 (branche `feat/EP002-US002-US003-noms-de-rues-rendu`)
 
 **Retour de Dasco :** zoom et dézoom OK. Mais le début et la fin des noms de rues sont tronqués, à beaucoup d'endroits c'est coupé, hachuré, souvent pixelisé ; et il voit des artefacts beige et vert sur certaines rues et boulevards, qu'il attribue au nivellement.

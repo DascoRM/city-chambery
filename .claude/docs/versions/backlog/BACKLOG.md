@@ -87,8 +87,8 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ⬜ Chargement : ~~vérifier gzip~~ (gzip actif dans `deploy/nginx.conf`, vérifié à l'audit du 30/09) ; brotli (−23 % sur `city.json`, absent de l'image nginx alpine) ; regrouper les fichiers d'arbres (45 `.glb` aujourd'hui) ; `city.json` en binaire (entiers + deltas : −15 % mesuré) — *P3*
 - ⏸ Mode hors-ligne : le service worker retélécharge `city.json` et les `.glb` à la première visite au lieu de reprendre le cache HTTP (≈ 0,55 Mo gzip en double, estimé) — *pas grave pour l'instant (Dasco, 30/09)*
 
-## P1 — Bug : terrain qui passe au-dessus des rues (retour de Dasco, 01/10/2026)
-- ⬜ **Plaques vertes et beiges sur certaines rues et boulevards** (existait avant les noms de rues) — *moyen* : le ruban d'une rue relie en ligne droite des sommets posés sur le sol tous les 4 m, aux deux bords ; le terrain (grille de 10 m) se courbe ou monte raide entre eux. Mesuré (itération 61, tous les tronçons) : **55 rues sur 1 795** ont un endroit où le terrain dépasse la chaussée de plus de 18 cm, jusqu'à **2,5 m** boulevard de Lémenc, 1,6 m rue André Jacques, 1,5 m chemin de la Cassine, 1,4 m avenue de la Grande Chartreuse, 1,1 m faubourg Reclus. Un découpage plus fin du ruban ne suffit pas (0,8 m d'écart à 1,5 m de pas, 6 fois plus de triangles). Pistes : **creuser le terrain sous les rues** (abaisser les sommets de la grille proches d'une chaussée, `heightAt` restant cohérent pour tout ce qui est posé dessus), ou poser la chaussée au plus haut des sommets voisins (elle flotte alors un peu au-dessus du sol côté aval). À décider avec Dasco après un essai visuel ; vérifier ensuite les éléphants, passants, arbres, bâtiments (`minUnder`), noms de rues
+## P1 — Bug : terrain qui passe au-dessus des rues (retour de Dasco, 01/10/2026) — corrigé à l'itération 62
+- ✅ *itération 62* **Plaques vertes et beiges sur certaines rues et boulevards** (rubans découpés le long des arêtes du sol, voir CHANGELOG ; ancien énoncé :) (existait avant les noms de rues) — *moyen* : le ruban d'une rue relie en ligne droite des sommets posés sur le sol tous les 4 m, aux deux bords ; le terrain (grille de 10 m) se courbe ou monte raide entre eux. Mesuré (itération 61, tous les tronçons) : **55 rues sur 1 795** ont un endroit où le terrain dépasse la chaussée de plus de 18 cm, jusqu'à **2,5 m** boulevard de Lémenc, 1,6 m rue André Jacques, 1,5 m chemin de la Cassine, 1,4 m avenue de la Grande Chartreuse, 1,1 m faubourg Reclus. Un découpage plus fin du ruban ne suffit pas (0,8 m d'écart à 1,5 m de pas, 6 fois plus de triangles). Pistes : **creuser le terrain sous les rues** (abaisser les sommets de la grille proches d'une chaussée, `heightAt` restant cohérent pour tout ce qui est posé dessus), ou poser la chaussée au plus haut des sommets voisins (elle flotte alors un peu au-dessus du sol côté aval). À décider avec Dasco après un essai visuel ; vérifier ensuite les éléphants, passants, arbres, bâtiments (`minUnder`), noms de rues
 
 ## Suites d'EP002 « Noms de rues au sol » (itérations 60 et 61)
 - ⬜ Style des noms de rues à revoir à l'usage (demande de Dasco) : `ink`, `halo`, `nightGlow` dans `src/content/streets.json`, polices et tailles dans `diorama.config.json` → `streetNames`
@@ -160,6 +160,8 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ⬜ Mini-jeu : distance des réapparitions (aujourd'hui ≤ 380 m de la fontaine) — Dasco aimait aussi quand ils partaient loin, à revoir
 - ⬜ Points : à quoi les dépenser (bâtiments débloqués, décorations…) — *Dasco*
 - Mode histoire qui fait visiter la ville
+
+- ⬜ Rues : surcoût de chargement et de triangles du découpage des rubans (+72 ms, +55 000 triangles) à mesurer sur téléphone ; si trop lourd : calculer le découpage dans le script de données plutôt qu'au chargement
 
 ## Fait
 Voir [FEATURES.md](../FEATURES.md) et [CHANGELOG.md](../CHANGELOG.md).
