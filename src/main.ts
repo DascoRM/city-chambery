@@ -169,6 +169,7 @@ async function main() {
   const dayNight = createDayNight({
     scene, renderer, lights: stage.lights, size: stage.size, night: city.night,
     placeHalos: placeLayer.root.getObjectByName('placeHalos'),
+    litCurve: lifeContent.windows.litCurve as [number, number][],
   }, { day: start.day, hour: start.hour });
 
   // La nuit, seuls les lieux ouverts à l'heure choisie restent allumés (horaires OSM opening_hours)

@@ -98,5 +98,50 @@
         "cafe": 0.3
       }
     }
+  },
+  "windows": {
+    "note": "Part des fenêtres allumées selon l'heure (EP001-US003) : [heure, part 0-1], interpolée ; visibles seulement quand il fait sombre",
+    "litCurve": [
+      [
+        0,
+        0.2
+      ],
+      [
+        2,
+        0.1
+      ],
+      [
+        4,
+        0.05
+      ],
+      [
+        6,
+        0.12
+      ],
+      [
+        7,
+        0.2
+      ],
+      [
+        9,
+        0.1
+      ],
+      [
+        16,
+        0.15
+      ],
+      [
+        18,
+        0.35
+      ],
+      [
+        22,
+        0.4
+      ],
+      [
+        24,
+        0.25
+      ]
+    ]
   }
 }

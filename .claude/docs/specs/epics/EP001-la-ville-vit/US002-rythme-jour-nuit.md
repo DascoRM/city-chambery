@@ -89,4 +89,4 @@ Comparer 3 h, 12 h, 18 h, 23 h ; un bar aux horaires OSM ouvert à 23 h et ferm�
 ---
 
 **Priorité** : High
-**Status** : 🟡 Livrée (itération 55), à valider par Dasco
+**Status** : ✅ Done (itération 55, validée par Dasco ; PR #15)

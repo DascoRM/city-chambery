@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 30/09/2026 — itération 55.
+État au 30/09/2026 — itération 56.
 
 ## Carte / diorama
 
@@ -31,6 +31,7 @@
 | Auvents des bars, cafés et restaurants | ✅ | Itération 46 (EP001-US008), **validés par Dasco** (itération 48) : pièces du pack de bâtiments de Kenney (CC0), posées sur la façade côté rue de 148 lieux sur 169, à hauteur de rez-de-chaussée, à la couleur de la catégorie (éclaircie) ; masquées avec la catégorie dans la légende ; 6 appels de rendu en plus. Dalles plates, discrètes, sombres la nuit |
 | Horaires provisoires des bars | 🟡 | Itération 46 (EP001-US011) : horaires fictifs pour 23 bars, pubs et boîtes de nuit (`src/content/place-hours.json`), servant à l'éclairage de nuit seulement, jamais affichés dans la fiche |
 | Fenêtres et portes de jour | ✅ | Itération 49 (EP001-US009) : la grille de fenêtres des façades est dessinée de jour (itération 50 : vitre claire qui reflète le ciel, encadrement crème) ; portes au rez-de-chaussée des murs côté rue (≈ une case de 3 m sur trois, jamais sur un mur mitoyen) ; aucun triangle de plus. Les portes se voient surtout sur les places (les rues étroites cachent le pied des façades) |
+| Fenêtres qui vivent la nuit | ✅ | Itération 56 (EP001-US003) : la part de fenêtres allumées suit l'heure (35 % à 18 h, 40 % à 22 h, 5 % à 4 h, 20 % au réveil à 7 h) ; elles s'éteignent une à une dans un ordre stable ; réglage `windows.litCurve` de `life.json` |
 | Passants | ✅ | Itérations 51 et 55 (EP001-US001, US002) : 300 silhouettes de 1,7 m (×0,5 sur téléphone) qui marchent sur toutes les voies sauf les escaliers, jamais dans l'eau, regroupées dans un rayon de 250 m autour du point regardé ; **foule selon l'heure** (5 % la nuit, 100 % à midi), arrivées et départs hors champ ; **la nuit, petits groupes devant les bars, pubs, boîtes de nuit ouverts** (et plus rarement restaurants, cafés), qui repartent à la fermeture et suivent la légende. Réglages : `src/content/life.json` |
 | Saisons | ✅ | Puce Auto / Printemps / Été / Automne / Hiver ; auto = date du jour. Feuillage : vert, couleurs d'automne (15 oct. – 30 nov.), branches nues (1er déc. – 14 mars) — dates approximatives, choix de style ; parcs : variantes Automne / Dead du pack Quaternius (pins inchangés) ; arbres des rues : couronnes orangées ou petites couronnes nues. Saison choisie = date typique (20 avril, 15 juillet, 28 octobre, 15 janvier) |
 | Fenêtres éclairées la nuit | ✅ | Grille de fenêtres calculée dans le shader (pas de modèle), 15 % à 35 % allumées selon l'heure |

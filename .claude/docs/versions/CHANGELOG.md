@@ -1,5 +1,19 @@
 # Journal des itérations
 
+## Itération 56 — 01/10/2026 (branche `feat/EP001-US003-fenetres-soiree`)
+
+**Demande de Dasco :** faire l'US003 (fenêtres qui s'allument et s'éteignent au fil de la soirée).
+
+**Changements :**
+- `src/scene/daynight.ts` : la part de fenêtres allumées (`uLit`) suit une **courbe horaire** (`windows.litCurve` de `life.json`) au lieu de ne dépendre que du soleil : 35 % à 18 h, 40 % à 22 h, 20 % à minuit, 5 % à 4 h, 20 % au réveil à 7 h, 10 % à 9 h ; les fenêtres restent invisibles le jour (multipliées par `uNight`, inchangé) ;
+- le shader (inchangé) allume une fenêtre quand son hachage est sous `uLit` : quand la part baisse, **elles s'éteignent une à une, toujours dans le même ordre, sans clignoter** ;
+- `src/scene/curve.ts` : `curveAt` (courbe horaire bouclant sur 24 h) partagée avec les passants ;
+- aucun maillage ni appel de rendu en plus : seule la valeur d'un uniforme change.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique, en hiver, même vue de la rue de Boigne : 18 h 30 (environ un tiers des fenêtres allumées), 4 h (quelques-unes), 7 h (environ une sur cinq, avant le lever de 8 h 13) ; aucune erreur console ; trois captures dans la spec (`assets/fenetres-hiver-*.png`).
+
+**Non vérifié :** l'été (nuit courte, la courbe s'applique aux seules heures sombres) ; la lecture ▶ complète à l'œil ; téléphone.
+
 ## Itération 55 — 01/10/2026 (branche `feat/EP001-US002-rythme-jour-nuit`)
 
 **Demande de Dasco :** passer à l'US002 (la foule suit l'heure, groupes devant les bars ouverts).
