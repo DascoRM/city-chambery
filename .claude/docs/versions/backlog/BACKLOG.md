@@ -70,7 +70,7 @@ Le détail ci-dessous est l'ancien énoncé, gardé pour mémoire.
   - cadence : les passants comptent comme « ça bouge » ou non selon **TI-02**
 
 ## P2 — Epic à venir : « Reprise vie dans la ville » (retours de Dasco, 01/10/2026)
-À passer en epic (`specs/epics/EP002-…`) quand EP001 sera terminée. Contexte : US001 et US002 jugées « très bien » par Dasco.
+À passer en epic (`specs/epics/EP003-…`) après EP002 « Noms de rues au sol » (décision de Dasco, 01/10/2026). Contexte : US001 et US002 jugées « très bien » par Dasco.
 - ⬜ **Le Carré Curial vit la nuit** : des passants la nuit au Carré Curial (lieu de vie nocturne), même quand le reste des rues est calme
 - ⬜ **Plus de monde devant les bars la nuit** : au moins 6 personnes par groupe (aujourd'hui 2 à 5, `groups.size` dans `life.json`)
 - ⬜ **Tous les bars ouverts ont du monde après 21 h** : chaque bar dont l'horaire dit « ouvert » (OSM ou provisoire) a son groupe dès 21 h, au lieu d'un tirage limité à 12 groupes près de la caméra ; à mesurer (≈ 36 bars, pubs et boîtes de nuit × 6 personnes)
