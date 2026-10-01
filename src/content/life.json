@@ -143,5 +143,32 @@
         0.25
       ]
     ]
+  },
+  "birds": {
+    "note": "Pigeons et oiseaux (EP001-US004), de jour seulement : volées sur les places (espaces plaza d'au moins minPlazaArea m²) près du point regardé, qui s'envolent toutes les takeoffSeconds ; oiseaux qui tournent au-dessus des ancrages circlingAnchors. scale : taille (1 = un vrai pigeon), agrandie pour être vue. Décor.",
+    "pigeons": 40,
+    "flockSize": [
+      4,
+      9
+    ],
+    "circling": 8,
+    "circlingAnchors": [
+      "cathedrale",
+      "chateau"
+    ],
+    "scale": 2.5,
+    "radius": 300,
+    "minPlazaArea": 300,
+    "takeoffSeconds": [
+      40,
+      90
+    ],
+    "mobileFactor": 0.5,
+    "avoid": [
+      {
+        "anchor": "elephants",
+        "radius": 15
+      }
+    ]
   }
 }

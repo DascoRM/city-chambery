@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 57 — 01/10/2026 (branche `feat/EP001-US004-pigeons`, empilée sur `feat/EP001-US003-fenetres-soiree`)
+
+**Demande de Dasco :** « c'est top, tu peux avancer » (PR #16 ouverte pour l'US003), puis US004.
+
+**Changements :**
+- `src/scene/birds.ts` : pigeons et oiseaux faits en code (corps, tête, queue, deux ailes plates), un seul maillage instancié, battement d'ailes dans le shader, ailes repliées au sol ; aucun asset tiers ;
+- **pigeons** : 40 en volées de 4 à 9 sur les places (espaces `plaza` d'au moins 300 m², hors du bassin de la fontaine) dans un rayon de 300 m autour du point regardé ; ils picorent et font quelques pas ; toutes les 40 à 90 s une volée s'envole, tourne au-dessus de la place puis se pose sur la même (60 %) ou une autre place proche ; quand on change de quartier, les volées hors du rayon y volent (si on les voit) ou y sont replacées (sinon) ;
+- **oiseaux qui tournent** : 8 au-dessus de la cathédrale et du château, à 32-46 m, battements puis vol plané ;
+- **de jour seulement** : fondu quand la nuit tombe ; ×0,5 sur téléphone ; taille ×2,5 (un vrai pigeon serait invisible à l'échelle de la maquette) ;
+- `src/content/life.json` → `birds`.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : 7 volées et 40 pigeons au sol à 13 h, 8 oiseaux au-dessus des monuments ; envols observés (jusqu'à 17 pigeons en vol en même temps sur 100 s) ; invisibles à 23 h, de retour à 13 h ; après un saut vers le Carré Curial, 28 pigeons sur 40 déjà dans le rayon, les autres en vol vers lui ; **coût : +1 appel de rendu**, cadence au repos inchangée ; aucune erreur console ; captures d'une volée au sol (après correction : ailes d'abord déployées au sol, repliées maintenant).
+
+**Non vérifié / limites :** les pigeons sont petits et souvent cachés par les immeubles ou les arbres (on les voit surtout sur les grandes places, vue plongeante) ; la nuit, une volée en vol au moment du coucher reste figée en l'air (invisible) et repart au matin ; téléphone.
+
 ## Itération 56 — 01/10/2026 (branche `feat/EP001-US003-fenetres-soiree`)
 
 **Demande de Dasco :** faire l'US003 (fenêtres qui s'allument et s'éteignent au fil de la soirée).

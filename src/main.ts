@@ -17,6 +17,7 @@ import { createTiltShift } from './scene/tiltshift';
 import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildPeople, type PeopleConfig } from './scene/people';
+import { buildBirds, type BirdsConfig } from './scene/birds';
 import lifeContent from './content/life.json';
 import { buildNature, type NatureConfig } from './scene/nature';
 import { buildHerd, type Herd, type MascotConfig } from './scene/mascot';
@@ -106,6 +107,14 @@ async function main() {
     }
   } catch (e) {
     console.warn('[passants] non créés', e);
+  }
+  // Pigeons et oiseaux (EP001-US004) : de jour, sur les places et au-dessus de la cathédrale et du château
+  let birds: ReturnType<typeof buildBirds> = null;
+  try {
+    birds = buildBirds(lifeContent.birds as unknown as BirdsConfig, data, terrain.heightAt, city.night, { camera, focus: () => controls.target });
+    if (birds) scene.add(birds.group);
+  } catch (e) {
+    console.warn('[oiseaux] non créés', e);
   }
   const labels = await buildLabels(data.labels ?? [], terrain.heightAt);
   // Effet maquette : les étiquettes passent par-dessus le flou pour rester lisibles
@@ -304,6 +313,7 @@ async function main() {
     { update: (_, t) => city.update(t) },
     ...(herd ? [herd] : []),
     ...(people ? [people] : []),
+    ...(birds ? [birds] : []),
     game.ticker,
     ...(herdDebug ? [herdDebug] : []),
     clock,
@@ -354,7 +364,7 @@ async function main() {
   });
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, people, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, people, birds, clock, herd, hunt, slots } });
 }
 
 main();
