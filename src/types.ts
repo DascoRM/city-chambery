@@ -45,6 +45,8 @@ export interface Road { kind: string; w: number; pts: Pt[]; name?: string; bridg
 export interface Area extends Poly { kind: 'plaza' | 'green'; name?: string }
 export type Water = ({ kind: 'line'; w: number; pts: Pt[]; name?: string; covered?: boolean }) | ({ kind: 'area' } & Poly);
 export interface Label { text: string; kind: 'park' | 'water'; pos: Pt; size: number }
+/** Nom de rue posé au sol (EP002) : angle en degrés dans le plan (0 = est), size = hauteur des lettres en mètres */
+export interface StreetLabel { text: string; pos: Pt; angle: number; size: number; len: number; w: number; kind: string; bridge?: boolean }
 export interface Place { id: string; kind: string; name: string; pos: Pt; cuisine?: string; hours?: string }
 
 export interface CityData {
@@ -60,6 +62,7 @@ export interface CityData {
   places: Place[];
   anchors: Record<string, { pos: Pt; osm: string; osmName: string }>;
   labels?: Label[];
+  streetLabels?: StreetLabel[];
   /** Relief : grille d'altitudes (décimètres au-dessus de base), pas de step mètres */
   terrain?: { x0: number; y0: number; step: number; nx: number; ny: number; base: number; exaggeration: number; source: string; z: number[] } | null;
   stats: { estimatedHeights: number };

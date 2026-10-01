@@ -12,5 +12,7 @@
   "terrainExaggeration": 1,
   "showCoveredWater": ["La Leysse"],
   "_comment_water": "Cours d'eau dessinés même là où ils sont couverts (tunnel dans OSM). La Leysse passe sous les boulevards du centre : l'afficher est un choix de lisibilité, pas la réalité.",
+  "streetNames": { "skipKinds": ["cycleway", "path", "service"], "minLength": 25, "minSize": 1.4, "maxSize": 4.5, "sizeOfWidth": 0.6, "maxBend": 0.1, "gap": 60 },
+  "_comment_streetNames": "Noms de rues au sol (EP002) : voies exclues, longueur minimale (m), hauteur des lettres min/max (m) et part de la largeur de la voie, écart toléré au bord droit (part de la longueur du texte), distance max entre tronçons d'une même rue (m)",
   "_comment_terrain": "Relief : pas de la grille en mètres, et exagération verticale (1 = réel)"
 }
