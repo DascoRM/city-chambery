@@ -69,7 +69,15 @@ Le détail ci-dessous est l'ancien énoncé, gardé pour mémoire.
   - la nuit : moins de monde dans les rues, du monde devant les bars ouverts (seuls 10 bars sur 25, 3 pubs sur 7 et aucune boîte de nuit ont des horaires dans OSM : voir Q7 de l'epic) ;
   - cadence : les passants comptent comme « ça bouge » ou non selon **TI-02**
 
-## P1 — Fluidité (audit du 29/09, détail dans [PERF-AUDIT.md](../../architecture/PERF-AUDIT.md))
+## P2 — Epic à venir : « Reprise vie dans la ville » (retours de Dasco, 01/10/2026)
+À passer en epic (`specs/epics/EP002-…`) quand EP001 sera terminée. Contexte : US001 et US002 jugées « très bien » par Dasco.
+- ⬜ **Le Carré Curial vit la nuit** : des passants la nuit au Carré Curial (lieu de vie nocturne), même quand le reste des rues est calme
+- ⬜ **Plus de monde devant les bars la nuit** : au moins 6 personnes par groupe (aujourd'hui 2 à 5, `groups.size` dans `life.json`)
+- ⬜ **Tous les bars ouverts ont du monde après 21 h** : chaque bar dont l'horaire dit « ouvert » (OSM ou provisoire) a son groupe dès 21 h, au lieu d'un tirage limité à 12 groupes près de la caméra ; à mesurer (≈ 36 bars, pubs et boîtes de nuit × 6 personnes)
+- ⬜ **Personnages qui dansent au Carré Curial la nuit** : ajouter des personnages avec des animations (danse) ; leçon de l'US010 : le pack Kenney était trop cartoon et le personnage Mixamo n'avait pas d'animation (télécharger les animations « Dancing » sur Mixamo, viser un modèle léger), faire un essai visuel d'abord
+- ⬜ **Lumières animées au Carré Curial la nuit** : animation lumineuse (projecteurs, couleurs qui changent, guirlandes…) pour montrer que le lieu est animé ; à préciser avec Dasco
+
+, détail dans [PERF-AUDIT.md](../../architecture/PERF-AUDIT.md))
 Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par image. Après (ombres à la demande, arbres simplifiés) : ≈ 2 400 appels et ≈ 1,5 M triangles par image la plupart du temps.
 - ✅ **Mesurer** : compteur avec `?debug` dans l'adresse (images/s, pire image, appels de rendu, triangles, densité, taille du rendu) — itération 29
 - ⏸ **Monuments : fusionner la géométrie par matériau** — *en attente, Dasco garde les monuments tels quels pour l'instant ; à reprendre avec le chantier bâtiments (confirmé à l'audit du 30/09)* (Carré Curial 1 683 objets, château 561, fontaine 54, cathédrale 42 → ~30 appels) — gain le plus fort, aucun changement visuel — *petit*
