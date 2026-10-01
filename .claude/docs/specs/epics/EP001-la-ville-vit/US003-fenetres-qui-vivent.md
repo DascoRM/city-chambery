@@ -85,4 +85,4 @@ Captures à 18 h 30, 22 h, 4 h, 7 h en décembre, et 22 h en juillet ; lecture �
 ---
 
 **Priorité** : High
-**Status** : 🟡 Livrée (itération 56), à valider par Dasco
+**Status** : ✅ Done (itération 56, validée par Dasco ; PR #16)

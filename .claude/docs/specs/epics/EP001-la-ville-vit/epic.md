@@ -55,8 +55,8 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 |----|------------|----------|--------|-----------|--------|
 | [US001](US001-passants-de-jour.md) | Des passants qui marchent dans les rues, de jour | High | 5 | — | ✅ Done (itération 51) |
 | [US002](US002-rythme-jour-nuit.md) | Le monde suit l'heure : rues plus calmes la nuit, groupes devant les bars ouverts | High | 5 | US001 | ✅ Done (itération 55) |
-| [US003](US003-fenetres-qui-vivent.md) | Des fenêtres qui s'allument et s'éteignent au fil de la soirée | High | 2 | — | 🟡 Livrée (itération 56), à valider par Dasco |
-| [US004](US004-pigeons-et-oiseaux.md) | Des pigeons sur les places et des oiseaux autour des monuments | Medium | 3 | — | 🔲 Todo |
+| [US003](US003-fenetres-qui-vivent.md) | Des fenêtres qui s'allument et s'éteignent au fil de la soirée | High | 2 | — | ✅ Done (itération 56) |
+| [US004](US004-pigeons-et-oiseaux.md) | Des pigeons sur les places et des oiseaux autour des monuments | Medium | 3 | — | 🟡 Livrée (itération 57), à valider par Dasco |
 | [US005](US005-fumee-de-cheminees.md) | De la fumée qui sort de cheminées, en automne et en hiver | Medium | 3 | — | 🔲 Todo |
 | [US006](US006-drapeaux.md) | Des drapeaux qui flottent sur des mâts sourcés | Medium | 3 | décision sur les emplacements | 🔲 Todo |
 | [US007](US007-preparer-le-pack-batiments.md) | Préparer le pack de bâtiments (nom, licence, conversion) : réduit aux 2 pièces d'auvent | Medium | 3 | — | ✅ Done (itération 46) |
