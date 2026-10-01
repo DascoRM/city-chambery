@@ -5,5 +5,5 @@
   "nightGlow": 0.35,
   "_comment_nightGlow": "Lueur ajoutée la nuit (0 = les noms sombrent avec les rues, 1 = lisibles comme de jour)",
   "ink": "#3a3f47",
-  "halo": "rgba(244, 240, 228, 0.95)"
+  "halo": "#f4f0e4"
 }
