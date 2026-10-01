@@ -67,4 +67,4 @@
 ---
 
 **Priorité** : High
-**Status** : 🟡 Livrée (itération 60), à valider par Dasco
+**Status** : ✅ Done (validée par Dasco, 01/10/2026)

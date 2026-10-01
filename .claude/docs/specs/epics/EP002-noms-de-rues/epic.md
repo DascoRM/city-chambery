@@ -1,6 +1,6 @@
 # Epic EP002 - Noms de rues au sol
 
-**Statut : 🔄 spec validée le 01/10/2026 (réponses Q1 à Q5 ci-dessous), les 4 US livrées (itération 60), à valider par Dasco à l'écran.** Passe avant « Reprise vie dans la ville » (qui devient EP003).
+**Statut : 🔄 spec validée le 01/10/2026 (réponses Q1 à Q5 ci-dessous), ✅ livrée et validée par Dasco le 01/10/2026 (itérations 60 et 61).** Passe avant « Reprise vie dans la ville » (qui devient EP003).
 
 ## Résumé
 Écrire le nom des rues à plat sur le sol, dans le sens de la rue. Les noms n'apparaissent que quand on zoome : en vue d'ensemble la carte reste propre, en s'approchant on lit les rues et on se repère.
@@ -48,9 +48,9 @@ Les données sont déjà là : `public/data/city.json` contient 1 823 tronçons 
 | ID | User Story | Priorité | Points | Dépend de | Status |
 |----|------------|----------|--------|-----------|--------|
 | [US001](US001-choisir-les-noms-a-afficher.md) | Choisir où écrire chaque nom de rue (une rue = un nom, pas 738) | High | 3 | — | ✅ Done (01/10/2026) |
-| [US002](US002-dessiner-les-noms-sur-le-sol.md) | Dessiner les noms à plat sur le sol, dans le sens de la rue | High | 5 | US001 | 🟡 Livrée (itération 60), à valider par Dasco |
-| [US003](US003-apparition-au-zoom.md) | Les noms apparaissent en fondu quand je zoome, et disparaissent quand je dézoome | High | 3 | US002 | 🟡 Livrée (itération 60), à valider par Dasco |
-| [US004](US004-cas-de-test.md) | Un cas de test pour vérifier l'affichage des noms | Medium | 2 | US003 | 🟡 Livrée (itération 60), à valider par Dasco |
+| [US002](US002-dessiner-les-noms-sur-le-sol.md) | Dessiner les noms à plat sur le sol, dans le sens de la rue | High | 5 | US001 | ✅ Done (validée par Dasco, 01/10/2026) |
+| [US003](US003-apparition-au-zoom.md) | Les noms apparaissent en fondu quand je zoome, et disparaissent quand je dézoome | High | 3 | US002 | ✅ Done (validée par Dasco, 01/10/2026) |
+| [US004](US004-cas-de-test.md) | Un cas de test pour vérifier l'affichage des noms | Medium | 2 | US003 | ✅ Done (validée par Dasco, 01/10/2026) |
 
 **Ordre** : US001 → US002 → US003 → US004. 13 points.
 
@@ -92,7 +92,7 @@ Ouverture de la carte (vue d'ensemble) : aucun nom de rue
 - [ ] `npm run build` passe
 - [ ] Le scénario de l'US004 est joué et consigné dans le CHANGELOG (ce qui est vérifié, ce qui ne l'est pas)
 - [ ] Fluidité : pas de baisse sensible des images/s avec `?debug`, rue de Boigne zoomée
-- [ ] Revue PO validée par Dasco
+- [x] Revue PO validée par Dasco (01/10/2026)
 
 ---
 

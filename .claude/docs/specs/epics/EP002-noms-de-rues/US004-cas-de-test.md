@@ -99,4 +99,4 @@ Contrôle des données : `npm run check:streets` passe (182 noms) et échoue sur
 ---
 
 **Priorité** : Medium
-**Status** : 🟡 Livrée (itération 60), à valider par Dasco
+**Status** : ✅ Done (validée par Dasco, 01/10/2026)
