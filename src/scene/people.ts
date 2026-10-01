@@ -4,6 +4,7 @@ import type { CityData, HeightFn, Place, Ticker } from '../types';
 import { buildWalkways, largeComponents, type Edge, type WalkwayOptions } from './walkways';
 import { blobShadow } from './mascot';
 import { placeCategory } from './palette';
+import { curveAt } from './curve';
 
 /**
  * Passants (EP001-US001) : petites silhouettes qui marchent sur les voies OSM, comme les éléphants mais sur
@@ -125,19 +126,6 @@ export interface PeopleView {
   focus(): THREE.Vector3;
   /** Heure de l'horloge du diorama (0 à 24) */
   hour(): number;
-}
-
-/** Courbe [heure, valeur] interpolée, bouclant sur 24 h */
-function curveAt(curve: [number, number][], h: number): number {
-  const n = curve.length;
-  if (!n) return 1;
-  for (let i = 0; i < n; i++) {
-    const [h0, v0] = curve[i], [h1, v1] = curve[(i + 1) % n];
-    const hh = i + 1 < n ? h1 : h1 + 24;
-    const x = h < h0 && i === 0 ? h + 24 : h;
-    if (x >= h0 && x <= hh) return hh === h0 ? v0 : v0 + ((v1 - v0) * (x - h0)) / (hh - h0);
-  }
-  return curve[0][1];
 }
 
 /** Hasard stable par indice (même lieu, même tirage à chaque chargement) */

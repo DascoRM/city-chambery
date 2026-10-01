@@ -347,7 +347,7 @@ En production, ni le code de l'outil ni l'endpoint `/__dev/poi` du serveur Vite 
 - **Eau** : matériau brillant animé, berges en pierre.
 - **Arbres** : ceux d'OSM + quelques-uns semés dans les parcs ; arbres modélisés (pack Quaternius) dans les parcs et le long de la Leysse (`nature.json`) ; les rues gardent les arbres simples.
 - **Ombres** : calculées une fois au chargement, puis seulement quand le soleil bouge (curseur d'heure, lecture ▶), pas à chaque image. Les gemmes et les épingles, qui bougent, ne projettent pas d'ombre.
-- **Fenêtres et portes** : la façade de chaque bâtiment porte une grille de fenêtres (3 m × 3,2 m), vitre bleu ciel avec encadrement crème le jour, allumées en partie la nuit (les éteintes redeviennent sombres) ; des portes brunes au rez-de-chaussée des murs côté rue (à moins de 9 m d'une voie, jamais sur un mur mitoyen). Tout est calculé dans le shader des façades (`src/scene/city.ts`) : décor, pas un relevé des vraies fenêtres.
+- **Fenêtres et portes** : la façade de chaque bâtiment porte une grille de fenêtres (3 m × 3,2 m), vitre bleu ciel avec encadrement crème le jour, allumées en partie la nuit selon l'heure (`windows.litCurve` de `life.json` : la ville rentre le soir, s'endort, se réveille vers 7 h ; les éteintes redeviennent sombres) ; des portes brunes au rez-de-chaussée des murs côté rue (à moins de 9 m d'une voie, jamais sur un mur mitoyen). Tout est calculé dans le shader des façades (`src/scene/city.ts`) : décor, pas un relevé des vraies fenêtres.
 - **Jour / nuit** : soleil (lever 6 h, coucher 18 h), crépuscule, lune ; la nuit, fenêtres éclairées (calculées dans le shader), lueur des rues, bars/clubs/restaurants mis en avant par un halo.
 - **Bars, cafés, restaurants** : une épingle 3D (pointeur de carte) par lieu OSM, colorée par catégorie : violet = bar (bar, pub, biergarten, boîte de nuit), bleu = café (café, glacier), orange = restaurant (`PLACE_CATEGORIES` dans `src/scene/palette.ts`). L'épingle est posée sur le toit du bâtiment qui contient le point OSM (161 lieux sur 169 sont à l'intérieur d'un bâtiment), sinon au sol. Au survol, l'épingle rebondit et grossit, et une fiche apparaît à côté (catégorie, nom avec un petit rebond, cuisine, horaires OSM avec les jours en français). La fiche suit l'épingle quand la caméra bouge ; sur mobile, elle s'ouvre au toucher, au-dessus de l'épingle.
 - **Effet maquette** : flou tilt-shift en post-traitement, toujours actif (plus d'interrupteur), bande nette sur le point visé ; les noms restent nets. Le flou est calculé en demi-résolution (`src/scene/tiltshift.ts`).
@@ -382,7 +382,7 @@ src/
   content/models.json      Monuments modélisés
   content/nature.json      Arbres modélisés : mélanges et zones
   content/mascot.json      Mascotte : modèle, vitesse, voies autorisées, zones interdites
-  content/life.json        La ville vit : réglages des passants (nombre, rayon, taille, vitesse, pauses, voies)
+  content/life.json        La ville vit : passants (nombre, rayon, taille, vitesse, pauses, voies, courbe horaire, groupes) et fenêtres allumées selon l'heure
   content/buildings.json   Auvents : pièces du pack, échelle, décalages, réglages de pose
   content/place-hours.json Horaires PROVISOIRES (fictifs) des bars, pubs et boîtes de nuit, pour l'éclairage de nuit
   scene/stage.ts           Renderer, caméra « maquette », lumières, contrôles, boussole (cap, retour au nord)

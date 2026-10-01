@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { curveAt } from './curve';
 import type { NightUniforms } from './city';
 import { CHAMBERY, chamberyInstant, type LocalDate } from '../time/chambery';
 import { sunPosition } from '../time/sun';
@@ -36,6 +37,8 @@ export interface DayNightDeps {
   size: number;
   night: NightUniforms;
   placeHalos?: THREE.Object3D;
+  /** Part des fenêtres allumées selon l'heure (EP001-US003) : points [heure, part 0-1] ; sans courbe, l'ancienne règle (selon le soleil) */
+  litCurve?: [number, number][];
 }
 
 /** Hauteur minimale de la lumière du soleil (≈ 7°) : en dessous, les ombres deviendraient trop longues pour le plateau. */
@@ -105,7 +108,10 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
 
     // Lumières de la ville
     d.night.uNight.value = THREE.MathUtils.smoothstep(night + dusk * 0.4, 0.25, 0.9);
-    d.night.uLit.value = 0.15 + 0.2 * night;
+    // Fenêtres (EP001-US003) : la part allumée suit l'heure (rentrée le soir, extinction dans la nuit, réveil le matin) ;
+    // le shader allume une fenêtre si son hachage est sous uLit : quand uLit baisse, elles s'éteignent une à une, sans
+    // clignoter, toujours dans le même ordre. On ne les voit que quand il fait sombre (uNight)
+    d.night.uLit.value = d.litCurve ? THREE.MathUtils.clamp(curveAt(d.litCurve, hour), 0, 1) : 0.15 + 0.2 * night;
     for (const m of glowMeshes) {
       const mat = m.material as THREE.MeshStandardMaterial;
       mat.emissive.copy(warm);
