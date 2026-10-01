@@ -10,16 +10,16 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** j'ouvre le site, **When** la page arrive, **Then** un écran de chargement (nom du projet, indicateur) s'affiche avant que le code de l'appli soit téléchargé (HTML et CSS dans `index.html`)
-- [ ] **Given** la ville se charge, **When** une étape se termine (données, relief, bâtiments, arbres, monuments, mascottes…), **Then** l'indicateur avance et le texte nomme l'étape en cours
-- [ ] **Given** le code de l'appli démarre, **When** le lobby est prêt à s'afficher, **Then** l'écran initial s'efface en fondu et laisse place au lobby (US003), sans attendre que la ville soit chargée
-- [ ] **Given** la ville se charge derrière le lobby, **When** une étape se termine, **Then** la barre du lobby avance et nomme l'étape ; à la fin, elle indique « La ville est prête » (Q2)
-- [ ] **Given** une connexion lente, **When** le chargement dépasse quelques secondes, **Then** un message rassure (« ça arrive, la ville est détaillée ») sans fausse promesse de durée
-- [ ] **Given** `?debug` ou `?lobby=0`, **When** j'ouvre le site, **Then** l'écran initial reste affiché pendant le chargement, puis la carte s'ouvre directement, sans lobby
-- [ ] **Given** j'ai coché « Ne plus afficher cet écran » (US003), **When** je reviens, **Then** l'écran initial mène directement à la carte, avec sa progression, sans lobby
+- [x] **Given** j'ouvre le site, **When** la page arrive, **Then** un écran de chargement (nom du projet, indicateur) s'affiche avant que le code de l'appli soit téléchargé (HTML et CSS dans `index.html`)
+- [x] **Given** la ville se charge, **When** une étape se termine (données, relief, bâtiments, arbres, monuments, mascottes…), **Then** l'indicateur avance et le texte nomme l'étape en cours
+- [x] **Given** le code de l'appli démarre, **When** le lobby est prêt à s'afficher, **Then** l'écran initial s'efface en fondu et laisse place au lobby (US003), sans attendre que la ville soit chargée
+- [x] **Given** la ville se charge derrière le lobby, **When** une étape se termine, **Then** la barre du lobby avance et nomme l'étape ; à la fin, elle indique « La ville est prête » (Q2)
+- [ ] *(non fait)* **Given** une connexion lente, **When** le chargement dépasse quelques secondes, **Then** un message rassure (« ça arrive, la ville est détaillée ») sans fausse promesse de durée
+- [x] **Given** `?debug` ou `?lobby=0`, **When** j'ouvre le site, **Then** l'écran initial reste affiché pendant le chargement, puis la carte s'ouvre directement, sans lobby
+- [x] **Given** j'ai coché « Ne plus afficher cet écran » (US003), **When** je reviens, **Then** l'écran initial mène directement à la carte, avec sa progression, sans lobby
 - [ ] **Given** une visite hors ligne (service worker), **When** le chargement est rapide, **Then** l'écran ne clignote pas (durée minimale d'affichage d'une fraction de seconde, ou pas d'écran si tout est déjà prêt)
 - [ ] **Given** `prefers-reduced-motion`, **When** l'indicateur s'anime, **Then** l'animation est réduite à un changement simple
-- [ ] **Given** `?debug`, **When** je compare avec avant, **Then** le temps de chargement de la carte n'augmente pas de façon sensible
+- [x] **Given** `?debug`, **When** je compare avec avant, **Then** le temps de chargement de la carte n'augmente pas de façon sensible *(mesuré : +0,27 s, 4,54 s → 4,81 s sur Mac en dev)*
 
 ---
 
@@ -55,12 +55,12 @@
 
 ## Checklist dev
 
-- [ ] Code implémenté (`index.html`, `src/ui/loading.ts`, `main.ts`)
-- [ ] `npm run build` passe
+- [x] Code implémenté (`index.html`, `src/ui/loading.ts`, `main.ts`)
+- [x] `npm run build` passe
 - [ ] Vérifié avec une connexion lente simulée
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Livrée (itération 63), à valider par Dasco. Non fait : le message « ça arrive » sur connexion lente. Non vérifié : `prefers-reduced-motion`, visite hors ligne, JavaScript désactivé (implémentés)

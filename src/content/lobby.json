@@ -1,0 +1,17 @@
+{
+  "_comment": "Textes du lobby (EP004, piste B). À modifier ici, sans toucher au code. {lieux} = nombre de lieux d'histoire (pois.json), {elephants} = nombre d'éléphants du mini-jeu (mascot.json) : jamais écrits en dur. Le surtitre s'affiche en capitales.",
+  "eyebrow": "Centre historique",
+  "title": "Chambéry",
+  "tagline": "Explorer la ville, et découvrez",
+  "cards": [
+    { "icon": "gem", "title": "{lieux} lieux d'histoire", "text": "Dont des lieux mystère à découvrir." },
+    { "icon": "ring", "title": "Mini-jeu des éléphants", "text": "Ramène les {elephants} éléphants à la fontaine." },
+    { "icon": "sun", "title": "Jour, nuit, saisons", "text": "À l'heure réelle de Chambéry, ou à l'heure que tu choisis." }
+  ],
+  "loading": "La ville se charge",
+  "ready": "La ville est prête",
+  "enter": "Explorer la carte",
+  "back": "Retour à la carte",
+  "skip": "Ne plus afficher cet écran",
+  "credits": "Crédits et licences"
+}

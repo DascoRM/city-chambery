@@ -1,6 +1,6 @@
 # Epic EP004 - Page de chargement et lobby de démarrage
 
-**Statut : 📝 brouillon du 01/10/2026 ; maquettes (3 pistes) à choisir par Dasco avant de coder** — [maquettes](https://claude.ai/artifact/LPkAkBp3rTdBqa3VRykMZL) (page privée). Passe avant EP003 « Reprise vie dans la ville ».
+**Statut : 🟡 US001 à US003 livrées (itération 63), à valider par Dasco ; US004 (démarrage raté) à faire.** [Maquettes](https://claude.ai/artifact/LPkAkBp3rTdBqa3VRykMZL) (page privée). Passe avant EP003 « Reprise vie dans la ville ».
 
 ## Résumé
 Quand on arrive sur le site : un écran de chargement standard (plus soigné plus tard) laisse tout de suite la place à un **lobby** épuré qui explique ce qu'est le projet et ce qu'on peut y faire (exploration, mini-jeu, ambiances) pendant que la ville se charge derrière ; « Explorer » s'active quand elle est prête. Le lobby est pensé pour devenir plus tard une **page d'arrimage** qui redirige vers d'autres jeux ou expériences.
@@ -28,6 +28,9 @@ Si le chargement échoue, le visiteur voit le message développeur « Lance `npm
 | Enchaînement (Q2) | **Le lobby tout de suite, la ville charge derrière** ; le bouton « Explorer » s'active quand la ville est prête |
 | Fond (Q3) | **À choisir sur maquette** : fond uni (piste A), carte vivante derrière un voile (piste B), tuiles d'expériences (piste C) |
 | Design (Q5) | **Maquettes HTML**, 2 ou 3 pistes (01/10/2026) |
+| **Piste retenue (Q9)** | **B « Carte vivante »** : « ça fait plus jeu, gamification ». **Écran initial : « très stylé »**, gardé tel quel. A écartée (« beaucoup de texte », le chapitre « voir la ville vivre » avec les bars et restaurants « pas ouf »). C écartée (« peut-être pas dans la DA ») |
+| Fond (Q3) | **La ville doit vivre en arrière-plan** : le diorama animé (passants, oiseaux, fumée) derrière le voile, pas une image fixe |
+| Textes | Dasco a modifié les textes de la maquette « en chargement » : surtitre **CENTRE HISTORIQUE**, titre **Chambéry**, accroche **« Explorer la ville, et découvrez »** (phrase à compléter par Dasco). Ils sont repris tels quels dans `src/content/lobby.json` |
 
 ---
 
@@ -53,9 +56,9 @@ Si le chargement échoue, le visiteur voit le message développeur « Lance `npm
 
 | ID | User Story | Priorité | Points | Dépend de | Status |
 |----|------------|----------|--------|-----------|--------|
-| [US001](US001-design-chargement-et-lobby.md) | Un design du chargement et du lobby, validé par Dasco avant de coder | High | 3 | réponses aux questions | 🔲 Todo |
-| [US002](US002-page-de-chargement.md) | Un écran initial standard dès l'ouverture, et une vraie progression du chargement | High | 3 | US001 | 🔲 Todo |
-| [US003](US003-lobby.md) | Un lobby épuré qui explique le projet, les jeux et les fonctionnalités, pendant que la ville charge, puis mène à la carte | High | 5 | US001, US002 | 🔲 Todo |
+| [US001](US001-design-chargement-et-lobby.md) | Un design du chargement et du lobby, validé par Dasco avant de coder | High | 3 | réponses aux questions | ✅ Done (01/10/2026, piste B) |
+| [US002](US002-page-de-chargement.md) | Un écran initial standard dès l'ouverture, et une vraie progression du chargement | High | 3 | US001 | 🟡 Livrée (itération 63), à valider |
+| [US003](US003-lobby.md) | Un lobby épuré qui explique le projet, les jeux et les fonctionnalités, pendant que la ville charge, puis mène à la carte | High | 5 | US001, US002 | 🟡 Livrée (itération 63), à valider |
 | [US004](US004-demarrage-rate.md) | Un message lisible quand le démarrage échoue | Medium | 2 | US002 | 🔲 Todo |
 | [US005](US005-chargement-style.md) | Une page de chargement plus stylée (plus tard) | Low | à estimer | US002 | ⏳ Plus tard |
 | [US006](US006-page-d-arrimage.md) | Le lobby devient une page d'arrimage vers plusieurs expériences (plus tard) | Low | à estimer | US003 | ⏳ Plus tard |
@@ -93,16 +96,14 @@ J'ouvre le site → un écran initial s'affiche tout de suite (nom du projet, ba
 
 ## Questions
 
-**Tranchées le 01/10/2026** : Q1 (à chaque visite, avec « Ne plus afficher »), Q2 (lobby tout de suite, ville derrière), Q5 (maquettes HTML). **Q3** (fond) : à choisir sur les maquettes.
+**Tranchées le 01/10/2026** : Q1 (à chaque visite, avec « Ne plus afficher »), Q2 (lobby tout de suite, ville derrière), Q3 (la ville vivante derrière, piste B), Q5 (maquettes HTML), Q9 (piste B + écran initial).
 
 | # | Question | Proposition par défaut |
 |---|----------|------------------------|
-| Q3 | **Fond du lobby** : A uni et doux, B carte vivante derrière un voile, C tuiles d'expériences | Au choix de Dasco sur [les maquettes](https://claude.ai/artifact/LPkAkBp3rTdBqa3VRykMZL) ; B demande de vérifier que la scène derrière ne coûte rien au repos, et reste sur fond uni tant que la ville charge |
 | Q4 | **Contenu du lobby** : quelles sections ? | Le projet · les lieux d'histoire · le mini-jeu des éléphants · les ambiances (heure réelle, saisons) · comment se déplacer · crédits (c'est ce que montrent les maquettes) |
 | Q6 | **Ton et voix** : tutoiement ou vouvoiement, une ligne sur le créateur ? | Tutoiement (comme l'app) ; une ligne sur le créateur au pied du lobby, à ta main |
-| Q7 | **Bandeau d'aide actuel** (« Glisse pour tourner… ») | Il disparaît quand le lobby explique déjà comment se déplacer ; il reste si on a coché « Ne plus afficher » |
+| Q7 | **Bandeau d'aide actuel** (« Glisse pour tourner… ») | **Tranché à l'implémentation** : la maquette B n'explique pas les gestes, donc le bandeau s'affiche 9 s à l'entrée sur la carte (et comme avant si le lobby est sauté) |
 | Q8 | **Case cochée** : ce que voit le visiteur la fois suivante | L'écran initial (chargement), puis directement la carte, sans lobby ; l'icône « ? » rouvre le lobby |
-| Q9 | **Piste choisie** : A, B ou C, ou un mélange, et tes retours | À écrire dans l'epic (Décisions) avant tout code |
 
 ---
 

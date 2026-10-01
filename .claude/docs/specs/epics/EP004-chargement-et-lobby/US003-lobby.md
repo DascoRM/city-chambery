@@ -10,18 +10,18 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** j'ouvre le site, **When** le lobby apparaît (tout de suite, la ville charge derrière), **Then** il montre le nom du projet, une courte présentation, une barre de progression et un bouton « Explorer la carte » grisé
-- [ ] **Given** la ville est prête, **When** la dernière étape se termine, **Then** « La ville est prête » s'affiche et le bouton « Explorer la carte » s'active
-- [ ] **Given** le lobby, **When** je le lis, **Then** il présente : le projet, les lieux d'histoire (exploration), le mini-jeu des éléphants, les ambiances (heure réelle, saisons, ville qui vit) et comment se déplacer (sections à confirmer, Q4)
-- [ ] **Given** une présentation chiffrée (« 8 lieux d'histoire », « 169 bars, cafés et restaurants »), **When** je lis le lobby, **Then** les chiffres viennent des données chargées, pas d'un texte écrit en dur
-- [ ] **Given** je clique sur « Explorer la carte » (ou j'appuie sur Entrée), **When** la transition se termine, **Then** le lobby disparaît et la carte est utilisable, sans nouveau chargement
-- [ ] **Given** la case « Ne plus afficher cet écran » est cochée, **When** je reviens, **Then** le lobby n'apparaît plus (je vais à la carte après l'écran initial), et l'icône « ? » de la carte le rouvre
-- [ ] **Given** la case n'est pas cochée, **When** je reviens, **Then** le lobby apparaît de nouveau
-- [ ] **Given** `?debug` ou `?lobby=0`, **When** j'ouvre le site, **Then** je vais directement à la carte
-- [ ] **Given** un écran de 320 px, **When** j'ouvre le lobby, **Then** tout est lisible sans dépasser, et le bouton « Explorer » est accessible sans longue recherche
-- [ ] **Given** le clavier ou un lecteur d'écran, **When** je navigue, **Then** le focus est sur le bouton « Explorer », les titres sont des titres, et la touche Échap ou Entrée fait entrer
-- [ ] **Given** la piste B (carte vivante) retenue, **When** la ville est prête, **Then** le fond passe en fondu du fond uni à la carte derrière un voile, et `?debug` indique toujours « repos (30 max) »
-- [ ] **Given** les attributions, **When** je regarde le lobby ou la carte, **Then** les crédits et licences restent visibles (règle projet 5)
+- [x] **Given** j'ouvre le site, **When** le lobby apparaît (tout de suite, la ville charge derrière), **Then** il montre le nom du projet, une courte présentation, une barre de progression et un bouton « Explorer la carte » grisé
+- [x] **Given** la ville est prête, **When** la dernière étape se termine, **Then** « La ville est prête » s'affiche et le bouton « Explorer la carte » s'active
+- [x] **Given** le lobby, **When** je le lis, **Then** il présente : les lieux d'histoire, le mini-jeu des éléphants et les ambiances (jour, nuit, saisons) — trois cartes de la maquette B ; « comment se déplacer » n'y est pas : l'aide s'affiche à l'entrée sur la carte
+- [x] **Given** une présentation chiffrée (« 8 lieux d'histoire », « 169 bars, cafés et restaurants »), **When** je lis le lobby, **Then** les chiffres viennent des données chargées, pas d'un texte écrit en dur
+- [x] **Given** je clique sur « Explorer la carte » (ou j'appuie sur Entrée), **When** la transition se termine, **Then** le lobby disparaît et la carte est utilisable, sans nouveau chargement
+- [x] **Given** la case « Ne plus afficher cet écran » est cochée, **When** je reviens, **Then** le lobby n'apparaît plus (je vais à la carte après l'écran initial), et l'icône « ? » de la carte le rouvre
+- [x] **Given** la case n'est pas cochée, **When** je reviens, **Then** le lobby apparaît de nouveau
+- [x] **Given** `?debug` ou `?lobby=0`, **When** j'ouvre le site, **Then** je vais directement à la carte
+- [x] **Given** un écran de 320 px, **When** j'ouvre le lobby, **Then** tout est lisible sans dépasser, et le bouton « Explorer » est accessible sans longue recherche
+- [x] **Given** le clavier ou un lecteur d'écran *(focus sur le bouton, Échap ferme : testés ; lecteur d'écran non testé)*, **When** je navigue, **Then** le focus est sur le bouton « Explorer », les titres sont des titres, et la touche Échap ou Entrée fait entrer
+- [x] **Given** la piste B (carte vivante) retenue, **When** la ville est prête, **Then** le fond passe en fondu du fond uni à la carte derrière un voile, et `?debug` indique toujours « repos (30 max) »
+- [x] **Given** les attributions, **When** je regarde le lobby ou la carte, **Then** les crédits et licences restent visibles (règle projet 5)
 
 ---
 
@@ -74,14 +74,14 @@
 
 ## Checklist dev
 
-- [ ] Code implémenté (`src/ui/lobby.ts`, `src/content/lobby.json`, style)
-- [ ] `npm run build` passe
-- [ ] Vérifié ordinateur et 320 px, clavier
-- [ ] `?debug` : repos 30 max
-- [ ] README et FEATURES à jour
+- [x] Code implémenté (`src/ui/lobby.ts`, `src/content/lobby.json`, style)
+- [x] `npm run build` passe
+- [x] Vérifié ordinateur et 320 px, clavier
+- [x] `?debug` : repos 30 max
+- [x] README et FEATURES à jour
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Livrée (itération 63), à valider par Dasco. Non vérifié : téléphone réel, lecteur d'écran ; l'accroche du lobby est à compléter par Dasco

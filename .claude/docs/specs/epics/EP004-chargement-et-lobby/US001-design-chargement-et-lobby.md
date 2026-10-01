@@ -64,12 +64,12 @@
 
 ## Checklist dev
 
-- [ ] Questions Q1 à Q7 répondues
-- [ ] 2 ou 3 pistes présentées
-- [ ] Piste choisie et retours notés dans l'epic
-- [ ] Validé par Dasco
+- [x] Questions répondues
+- [x] 2 ou 3 pistes présentées
+- [x] Piste choisie et retours notés dans l'epic
+- [x] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : ✅ Done (01/10/2026) : piste B « Carte vivante » et écran initial validés par Dasco ; A et C écartées

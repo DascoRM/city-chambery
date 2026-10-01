@@ -10,9 +10,43 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" /></noscript>
+    <!-- Écran initial (EP004-US002) : affiché avant le code de l'appli, sans aucune ressource externe -->
+    <style>
+      html, body { margin: 0; height: 100%; }
+      body { background: radial-gradient(ellipse at 50% 35%, #fdf3e1 0%, #f0dfc4 55%, #d9c3a3 100%); }
+      #boot { position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center; font-family: Inter, system-ui, sans-serif; color: #2d2622; background: radial-gradient(ellipse at 50% 35%, #fdf3e1 0%, #f0dfc4 55%, #d9c3a3 100%); transition: opacity 0.5s ease; }
+      #boot.boot-out { opacity: 0; pointer-events: none; }
+      .boot-inner { display: flex; flex-direction: column; align-items: center; gap: 32px; width: min(380px, calc(100vw - 48px)); }
+      .boot-gem { width: 44px; height: 44px; }
+      .boot-title { text-align: center; }
+      .boot-eyebrow { margin: 0 0 10px; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: #5d5148; font-weight: 600; }
+      .boot-title h1 { margin: 0; font-family: Fraunces, Georgia, serif; font-weight: 700; font-size: clamp(48px, 9vw, 68px); line-height: 1; }
+      .boot-progress { width: 100%; }
+      .boot-bar { height: 8px; background: #efe4d2; border-radius: 99px; overflow: hidden; }
+      #boot-fill { display: block; height: 100%; width: 6%; background: linear-gradient(90deg, #e3a52d, #2a9d8f); transition: width 0.4s ease; }
+      #boot-label { margin: 12px 0 0; text-align: center; font-size: 14px; color: #5d5148; font-weight: 500; }
+      .boot-credit { position: absolute; left: 0; right: 0; bottom: 28px; margin: 0; text-align: center; font-size: 12px; color: #5d5148; }
+      @media (prefers-reduced-motion: reduce) { #boot, #boot-fill { transition: none; } }
+    </style>
   </head>
   <body>
+    <div id="boot" role="status">
+      <div class="boot-inner">
+        <svg class="boot-gem" viewBox="0 0 24 24" fill="none" stroke="#e3a52d" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5l6.5 9.5L12 21.5 5.5 12z" fill="#f6dc9a"/><path d="M5.5 12h13M12 2.5v19"/></svg>
+        <div class="boot-title">
+          <p class="boot-eyebrow">Diorama · Centre historique</p>
+          <h1>Chambéry</h1>
+        </div>
+        <div class="boot-progress">
+          <div class="boot-bar"><span id="boot-fill"></span></div>
+          <p id="boot-label">Chargement de la ville…</p>
+        </div>
+      </div>
+      <p class="boot-credit">Données © contributeurs OpenStreetMap · IGN</p>
+      <noscript><p class="boot-credit" style="bottom: 80px">Cette carte 3D demande JavaScript.</p></noscript>
+    </div>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

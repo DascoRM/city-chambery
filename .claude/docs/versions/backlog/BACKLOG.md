@@ -69,11 +69,11 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ **Lumières animées au Carré Curial la nuit** : animation lumineuse (projecteurs, couleurs qui changent, guirlandes…) pour montrer que le lieu est animé ; à préciser avec Dasco
 - ⬜ **Végétation dans les parcs** : buissons, fleurs, herbes, rochers moussus et nénuphars (le pack Quaternius de `assets-src/quaternius-nature/obj/vegetation` et `rochers` les contient déjà, avec des buissons et des rochers enneigés pour l'hiver) ; à instancier comme les arbres (`nature.json`, `npm run nature`) — *déplacé ici le 01/10/2026 (décision de Dasco)*
 
-## Epic à venir : EP004 « Page de chargement et lobby de démarrage » (décision de Dasco, 01/10/2026)
-À passer en epic (`specs/epics/EP004-…`) ; pas urgent.
-- ⬜ **Page de chargement** : un écran pendant le chargement de la ville (bâtiments, modèles ; ≈ 4 s mesurés en dev sur un Mac)
-- ⬜ **Lobby de démarrage** : lancer la carte depuis un écran de choix (mode exploration, mode histoire…)
-- ⬜ **Démarrage raté** (audit du 30/09) : aujourd'hui, si `city.json` ne se charge pas, les visiteurs voient le message développeur « Lance `npm run data` » ; et une erreur après le chargement (terrain, monuments…) donne une page vide, car `main()` n'a pas de `catch` (`src/main.ts`). À prévoir avec le lobby : un message lisible pour les visiteurs (forme à définir) — *pas grave pour le moment*
+## EP004 « Page de chargement et lobby de démarrage » : US001 à US003 livrées (itération 63)
+[Epic EP004](../../specs/epics/EP004-chargement-et-lobby/epic.md) : design validé (piste B), écran initial, lobby, bouton « ? ». À valider par Dasco. Reste : **US004** démarrage raté (message lisible), **US005** chargement plus stylé (plus tard), **US006** page d'arrimage (plus tard).
+- ⬜ Compléter l'accroche du lobby : « Explorer la ville, et découvrez » semble inachevée (`src/content/lobby.json`, clé `tagline`) — *Dasco*
+- ⬜ Chargement lent : message qui rassure après quelques secondes (critère de l'US002 non fait)
+- ⬜ Lobby : vérifier `prefers-reduced-motion`, la visite hors ligne et JavaScript désactivé (implémentés, non essayés), puis un vrai téléphone
 
 ## P2 — Fluidité mobile
 Détail dans [PERF-AUDIT.md](../../architecture/PERF-AUDIT.md).
