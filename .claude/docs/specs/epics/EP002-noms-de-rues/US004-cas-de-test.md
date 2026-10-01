@@ -15,9 +15,9 @@ Le projet n'a pas de tests automatisés : la vérification passe par `npm run bu
 
 ## Critères d'acceptation
 
-- [ ] **Given** l'epic terminée, **When** je cherche le scénario, **Then** il est dans ce fichier (section « Scénario »), avec des étapes numérotées et un résultat attendu pour chacune
-- [ ] **Given** le scénario, **When** Claude le joue dans le navigateur, **Then** le résultat de chaque étape (réussi / échoué / non vérifié) est consigné dans le CHANGELOG
-- [ ] **Given** les données, **When** le contrôle de données est lancé (Q5), **Then** il échoue si un nom de la liste n'est pas dans `city.json`, si deux emplacements du même nom sont à moins de 60 m, ou si une liste est vide
+- [x] **Given** l'epic terminée, **When** je cherche le scénario, **Then** il est dans ce fichier (section « Scénario »), avec des étapes numérotées et un résultat attendu pour chacune
+- [x] **Given** le scénario, **When** Claude le joue dans le navigateur, **Then** le résultat de chaque étape (réussi / échoué / non vérifié) est consigné dans le CHANGELOG
+- [x] **Given** les données, **When** le contrôle de données est lancé (Q5), **Then** il échoue si un nom de la liste n'est pas dans `city.json`, si deux emplacements du même nom sont à moins de 60 m, ou si une liste est vide
 - [ ] **Given** une modification ultérieure du rendu (EP003 ou autre), **When** je rejoue le scénario, **Then** je sais si les noms sont toujours corrects
 
 ---
@@ -37,6 +37,24 @@ Le projet n'a pas de tests automatisés : la vérification passe par `npm run bu
 | 9 | Ouvrir une fiche de lieu puis la fermer, lancer le mini-jeu | Aucun nom ne gêne, aucune erreur dans la console |
 | 10 | Avec `?debug`, zoomer rue de Boigne sans bouger | Compteur « repos (30 max) » ; appels de rendu augmentés d'au plus quelques unités |
 | 11 | Téléphone ou fenêtre à 320 px | Noms lisibles, pas de dépassement |
+
+### Résultat du 01/10/2026 (Chrome avec carte graphique, `npm run dev`)
+
+| # | Résultat | Détail |
+|---|----------|--------|
+| 1 | ✅ | Vue d'ensemble (2 844 m) : groupe invisible, texture non construite |
+| 2 | ✅ | Opacité 0,11 à 295 m, 0,56 à 255 m, 1 à 195 m ; noms à plat dans le sens de la rue (rue de Boigne) — caméra placée par script, pas à la molette |
+| 3 | 🟡 | Lisibles à 90 m, jamais à l'envers ; le zoom maximum (70 m) n'a été relevé que par l'opacité (1) |
+| 4 | ✅ | 0 dès 345 m ; groupe masqué |
+| 5 | 🟡 | Stable par construction (fonction continue de la distance) ; non observé à l'écran |
+| 6 | 🟡 | Quai Sénateur Antoine Borrel (long, vue du dessus) et rue Saint-Réal lisibles ; **la Leysse et un pont n'ont pas été regardés** |
+| 7 | ✅ | 23 h : lisibles (clair sur fond sombre), en vue oblique et vue du dessus |
+| 8 | 🟡 | Non cliqué : lu dans le code (les raycasts ne visent que des listes explicites) |
+| 9 | ❌ | Non joué (fiche de lieu, mini-jeu) ; aucune erreur ni avertissement console pendant les essais |
+| 10 | ✅ | « repos (30 max) » ; 62 → 63 appels de rendu avec les noms, triangles inchangés |
+| 11 | ❌ | Non joué (téléphone, 320 px) |
+
+Contrôle des données : `npm run check:streets` passe (182 noms) et échoue sur une copie cassée (7 erreurs, sortie 1).
 
 ---
 
@@ -73,10 +91,10 @@ Le projet n'a pas de tests automatisés : la vérification passe par `npm run bu
 
 - [ ] Scénario relu par Dasco
 - [ ] Scénario joué, résultats dans le CHANGELOG
-- [ ] Contrôle de données ajouté (si Q5 retenue)
+- [x] Contrôle de données ajouté (si Q5 retenue)
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : Medium
-**Status** : 🔲 Todo
+**Status** : 🟡 Livrée (itération 60), à valider par Dasco

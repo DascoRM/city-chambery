@@ -10,13 +10,13 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** la caméra près d'une rue, **When** je regarde le sol, **Then** le nom est posé à plat sur la chaussée, orienté selon l'axe de la rue
-- [ ] **Given** une rue orientée de gauche à droite ou de droite à gauche, **When** je la regarde depuis le sud, **Then** le texte n'est jamais à l'envers (il se lit de gauche à droite à l'écran, quel que soit le sens du tracé)
-- [ ] **Given** un nom au sol, **When** le soleil ou la nuit change, **Then** il reste lisible (contraste suffisant de jour comme de nuit, comme les rues elles-mêmes)
-- [ ] **Given** un nom au sol, **When** un bâtiment ou un arbre est devant, **Then** le nom est caché par lui comme un objet du sol (il ne flotte pas par-dessus)
+- [x] **Given** la caméra près d'une rue, **When** je regarde le sol, **Then** le nom est posé à plat sur la chaussée, orienté selon l'axe de la rue
+- [x] **Given** une rue orientée de gauche à droite ou de droite à gauche, **When** je la regarde depuis le sud, **Then** le texte n'est jamais à l'envers (il se lit de gauche à droite à l'écran, quel que soit le sens du tracé)
+- [x] **Given** un nom au sol, **When** le soleil ou la nuit change, **Then** il reste lisible (contraste suffisant de jour comme de nuit, comme les rues elles-mêmes)
+- [x] **Given** un nom au sol, **When** un bâtiment ou un arbre est devant, **Then** le nom est caché par lui comme un objet du sol (il ne flotte pas par-dessus)
 - [ ] **Given** une rue en pente ou un pont, **When** je regarde le nom, **Then** il est à la hauteur de la chaussée (pas dans le sol, pas au-dessus)
 - [ ] **Given** le texte, **When** il dépasse la largeur de la rue, **Then** il ne déborde pas sur les bâtiments voisins (taille adaptée à la rue ou à la longueur)
-- [ ] **Given** les mêmes noms dessinés partout, **When** je regarde `?debug`, **Then** les appels de rendu augmentent d'au plus quelques unités (noms regroupés, pas un objet par nom)
+- [x] **Given** les mêmes noms dessinés partout, **When** je regarde `?debug`, **Then** les appels de rendu augmentent d'au plus quelques unités (noms regroupés, pas un objet par nom)
 
 ---
 
@@ -68,8 +68,8 @@
 
 ## Checklist dev
 
-- [ ] Code implémenté (nouveau module sous `src/scene/`, câblé dans `main.ts`)
-- [ ] `npm run build` passe
+- [x] Code implémenté (nouveau module sous `src/scene/`, câblé dans `main.ts`)
+- [x] `npm run build` passe
 - [ ] Vérifié rue de Boigne, quai de la Leysse (courbe), un pont, de jour et à 23 h
 - [ ] Vérifié sur petit écran (320 px) et mobile si possible
 - [ ] Validé par Dasco
@@ -77,4 +77,4 @@
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Livrée (itération 60), à valider par Dasco

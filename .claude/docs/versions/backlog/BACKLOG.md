@@ -87,6 +87,12 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ⬜ Chargement : ~~vérifier gzip~~ (gzip actif dans `deploy/nginx.conf`, vérifié à l'audit du 30/09) ; brotli (−23 % sur `city.json`, absent de l'image nginx alpine) ; regrouper les fichiers d'arbres (45 `.glb` aujourd'hui) ; `city.json` en binaire (entiers + deltas : −15 % mesuré) — *P3*
 - ⏸ Mode hors-ligne : le service worker retélécharge `city.json` et les `.glb` à la première visite au lieu de reprendre le cache HTTP (≈ 0,55 Mo gzip en double, estimé) — *pas grave pour l'instant (Dasco, 30/09)*
 
+## Suites d'EP002 « Noms de rues au sol » (itération 60)
+- ⬜ Style des noms de rues à revoir à l'usage (demande de Dasco) : `ink`, `halo`, `nightGlow` dans `src/content/streets.json`, polices et tailles dans `diorama.config.json` → `streetNames`
+- ⬜ Rues étroites : le nom est caché par les immeubles sauf en vue oblique le long de la rue (rue de Boigne) ; à voir avec Dasco : plus gros, ou répété, ou en gras
+- ⬜ Places sans nom (Saint-Léger, Lucien Biset…), ronds-points et ruelles de moins de 25 m : afficher le nom sur la place (`areas` ne porte pas le nom des places aujourd'hui)
+- ⬜ Mémoire de l'atlas des noms (≈ 16 Mo, 21 Mo avec mipmaps) : à mesurer sur téléphone ; réduire (police 28 px, ou noms en une seule ligne plus étroite) si besoin
+
 ## Architecture — à trancher avant d'ouvrir le diorama aux amis
 - ❓ **Back-end : pas nécessaire aujourd'hui.** Il le devient seulement pour : progression partagée entre appareils ou entre amis (comptes, classement), ajout de lieux par d'autres que Dasco sans redéployer, données qui changent souvent (événements, horaires). Pistes légères si besoin : PocketBase ou Supabase auto-hébergé sur le Pi (Coolify) ; pour les événements des bars, consommer l'API d'ACME plutôt que créer un back-end dédié
 - ✅ **Cache HTTP** : fait dans `deploy/nginx.conf` (itération 28) — `assets/` en cache 1 an, `index.html` / `city.json` / `.glb` revalidés (ETag, 304), gzip. Brotli : pas dans l'image nginx standard, à voir si besoin

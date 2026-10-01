@@ -89,6 +89,7 @@ npm run nature                   # reconvertit les arbres du pack nature (après
 | `npm run data -- --offline --relief` | Idem, mais retélécharge seulement le relief RGE ALTI |
 | `npm run nature` | Convertit et simplifie les arbres du pack Quaternius (`assets-src/` → `public/models/nature/`) selon `src/content/nature.json` |
 | `npm run mascot` | Convertit l'éléphant mascotte (`assets-src/Elephant by jeremy - 9J-cG39KYFC.glb` → `public/models/mascotte/elephant.glb`) : mètres, 4,5 m de haut, trompe vers +X |
+| `npm run check:streets` | Contrôle les noms de rues de `city.json` (texte identique à OSM, sur une voie du même nom, lisibles, un seul par rue, fichier à jour) ; sans modification, sortie 1 si une règle est violée |
 | `npm run buildings` | Convertit les 2 pièces d'auvent du pack de bâtiments (`assets-src/buildings` → `public/models/buildings/details.glb`) selon `src/content/buildings.json` : couleurs de la palette lues et écrites en couleurs de sommet, échelle en mètres |
 
 Variables d'environnement utiles :
@@ -160,6 +161,7 @@ change, relancer `npm run data` complet) :
 | `defaultLevelHeight` | Hauteur d'un étage pour les hauteurs estimées (m) |
 | `terrainStep` | Pas de la grille de relief (m). Plus petit = plus fin mais plus de points à télécharger |
 | `terrainExaggeration` | Exagération verticale du relief (1 = réel, 1.5 = plus marqué) |
+| `streetNames` | Noms de rues au sol : `skipKinds` (types de voies sans nom : pistes cyclables, sentiers, desserte), `minLength` (m), `minSize` / `maxSize` / `sizeOfWidth` (hauteur des lettres), `maxBend` (écart toléré au bord droit), `gap` (distance max entre tronçons d'une même rue) |
 | `showCoveredWater` | Cours d'eau dessinés même là où ils sont couverts (nom OSM). Par défaut `["La Leysse"]` : la rivière passe sous les boulevards du centre, mais on l'affiche pour la lisibilité. `[]` = fidèle au terrain |
 
 ---
@@ -350,6 +352,7 @@ En production, ni le code de l'outil ni l'endpoint `/__dev/poi` du serveur Vite 
 - **Fenêtres et portes** : la façade de chaque bâtiment porte une grille de fenêtres (3 m × 3,2 m), vitre bleu ciel avec encadrement crème le jour, allumées en partie la nuit selon l'heure (`windows.litCurve` de `life.json` : la ville rentre le soir, s'endort, se réveille vers 7 h ; les éteintes redeviennent sombres) ; des portes brunes au rez-de-chaussée des murs côté rue (à moins de 9 m d'une voie, jamais sur un mur mitoyen). Tout est calculé dans le shader des façades (`src/scene/city.ts`) : décor, pas un relevé des vraies fenêtres.
 - **Jour / nuit** : soleil (lever 6 h, coucher 18 h), crépuscule, lune ; la nuit, fenêtres éclairées (calculées dans le shader), lueur des rues, bars/clubs/restaurants mis en avant par un halo.
 - **Bars, cafés, restaurants** : une épingle 3D (pointeur de carte) par lieu OSM, colorée par catégorie : violet = bar (bar, pub, biergarten, boîte de nuit), bleu = café (café, glacier), orange = restaurant (`PLACE_CATEGORIES` dans `src/scene/palette.ts`). L'épingle est posée sur le toit du bâtiment qui contient le point OSM (161 lieux sur 169 sont à l'intérieur d'un bâtiment), sinon au sol. Au survol, l'épingle rebondit et grossit, et une fiche apparaît à côté (catégorie, nom avec un petit rebond, cuisine, horaires OSM avec les jours en français). La fiche suit l'épingle quand la caméra bouge ; sur mobile, elle s'ouvre au toucher, au-dessus de l'épingle.
+- **Noms de rues** : peints à plat sur la chaussée, dans le sens de la rue, en majuscules (Inter) ; un nom par rue, sur sa partie la plus droite (`scripts/street-names.mjs`, 182 noms). Invisibles en vue d'ensemble, ils apparaissent en fondu entre 320 m et 200 m de la caméra (`src/content/streets.json`), rien n'est construit ni dessiné au-delà. Un seul maillage et une seule texture : +1 appel de rendu. Cachés par les bâtiments comme tout objet du sol : dans une rue étroite, on les voit sous un angle oblique le long de la rue.
 - **Effet maquette** : flou tilt-shift en post-traitement, toujours actif (plus d'interrupteur), bande nette sur le point visé ; les noms restent nets. Le flou est calculé en demi-résolution (`src/scene/tiltshift.ts`).
 - **Résolution** : densité de pixels plafonnée à 1,5, puis baissée automatiquement si les images/s chutent sous 40 pendant les mouvements (`src/scene/quality.ts`).
 - **Cadence** : 30 images/s quand rien ne bouge ; pleine vitesse quand la caméra bouge (et 0,5 s après), quand la souris bouge sur la carte, pendant la lecture ▶ et les animations du mini-jeu. Un module de la boucle le signale par `moving()` (`Ticker`, `src/types.ts`).
@@ -369,6 +372,8 @@ scripts/
   terrain.mjs              Relief RGE ALTI (ou interpolation BD TOPO)
   roofs.mjs                Choix du toit de chaque bâtiment
   geo.mjs                  Géométrie 2D des scripts (point dans un polygone, distance à un segment)
+  street-names.mjs         Emplacement du nom de chaque rue (partie la plus droite) → `streetLabels` de city.json
+  check-street-labels.mjs  Contrôle des noms de rues (npm run check:streets)
   convert-nature.mjs       Pack nature : .obj → .glb (npm run nature)
   convert-mascot.mjs       Éléphant mascotte : mise à l'échelle et orientation (npm run mascot)
   convert-buildings.mjs    Auvents du pack de bâtiments → public/models/buildings/details.glb (npm run buildings)
@@ -395,6 +400,7 @@ src/
   scene/roofs.ts           Dessin des toits
   scene/markers.ts         Gemmes des lieux + épingles 3D et halos des bars, cafés, restaurants
   scene/labels.ts          Noms des parcs et cours d'eau
+  scene/street-names.ts    Noms de rues peints au sol (un maillage, une texture), visibles seulement en zoomant
   scene/daynight.ts        Cycle jour/nuit
   scene/tiltshift.ts       Effet maquette (flou en demi-résolution)
   scene/quality.ts         Résolution adaptative (densité de pixels selon les images/s)

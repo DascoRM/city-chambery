@@ -1,5 +1,23 @@
 # Journal des itérations
 
+## Itération 60 — 01/10/2026 (branches `feat/EP002-US001-noms-de-rues-donnees` puis `feat/EP002-US002-US003-noms-de-rues-rendu`, empilées)
+
+**Demande de Dasco :** une petite epic avant « Reprise vie dans la ville » : le nom des rues écrit sur le sol, visible seulement quand on zoome, pour se situer en naviguant ; avec un cas de test. Réponses : toutes les voies sauf pistes cyclables, sentiers et desserte ; distances proposées (320 m → 200 m) ; style à revoir à l'usage ; nom écrit une seule fois par rue ; test manuel **et** contrôle des données. « Reprise vie dans la ville » devient EP003.
+
+**Changements :**
+- Spec `docs/specs/epics/EP002-noms-de-rues/` (epic + US001 à US004), questions Q1 à Q5 tranchées ;
+- **US001** `scripts/street-names.mjs` : tronçons de même nom regroupés en rues (extrémités à moins de 60 m), chaînes continues, emplacement = fenêtre la plus droite de la longueur du texte, taille de lettres selon la largeur de la voie (1,4 à 4,5 m) ; `streetLabels` dans `city.json` : **182 noms sur 212 noms de voies** ; 32 sans emplacement (ruelles de moins de 25 m, ronds-points, places) ; réglages `streetNames` (`diorama.config.json`) ;
+- **US002** `src/scene/street-names.ts` : tous les noms dans une texture (atlas 2048 × 1944, police 32 px), un seul maillage dont chaque nom épouse le relief (ruban redécoupé tous les 3 m, hauteur de la voie + 5 cm, `polygonOffset`), lueur légère la nuit ;
+- **US003** fondu continu de 320 m à 200 m entre la caméra et le centre de vue (`src/content/streets.json`), rien de construit avant 380 m, rien de dessiné au-delà de 320 m ;
+- **US004** `scripts/check-street-labels.mjs` (`npm run check:streets`) + scénario dans la spec ;
+- README, FEATURES, DECISIONS (2 lignes).
+
+**Vérifié :** `npm run build` ; `npm run check:streets` passe, et échoue (7 erreurs, sortie 1) sur une copie de `city.json` volontairement cassée (nom inventé, angle à l'envers, doublon) ; `city.json` : seules les clés `streetLabels` et `generatedAt` changent ; Chrome avec carte graphique : vue d'ensemble (2 844 m) sans nom, opacité 0 à 345 m, 0,11 à 295 m, 0,56 à 255 m, 0,89 à 225 m, 1 à 195 m et en deçà ; noms lisibles et dans le sens de la rue sur la rue de Boigne (oblique), le quai Sénateur Antoine Borrel (vue du dessus, jour et nuit) et la rue Saint-Réal ; cachés par les bâtiments et les arbres ; nuit (23 h) : lisibles ; **+1 appel de rendu** (62 → 63), triangles inchangés, compteur « repos (30 max) » ; aucune erreur ni avertissement console.
+
+**Non vérifié :** téléphone (pincer, mémoire de l'atlas ≈ 16 Mo, 21 Mo avec les mipmaps) ; écran de 320 px ; clic au travers d'un nom (lu dans le code : les raycasts ne visent que des listes explicites) ; images/s en mouvement (seul le compteur au repos a été relevé) ; hiver ; vol `flyTo` (caméra déplacée directement).
+
+**Limites connues :** dans une rue étroite entre des immeubles hauts (rue de Boigne en vue presque verticale), le nom est caché : il se lit sous un angle oblique le long de la rue ; place Saint-Léger, ronds-points et ruelles de moins de 25 m n'ont pas de nom ; style à revoir à l'usage (demande de Dasco).
+
 ## Itération 59 — 01/10/2026 (branche `feat/EP001-US006-drapeaux`)
 
 **Demande de Dasco :** faire l'US006 (drapeaux).
