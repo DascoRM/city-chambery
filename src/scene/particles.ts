@@ -22,6 +22,8 @@ export interface EmitOptions {
   drag?: number;
   /** Rayon du point d'émission (m) */
   spread?: number;
+  /** Vitesse ajoutée à toutes les particules (m/s, x / y / z de Three.js) : le vent, pour la fumée des cheminées */
+  drift?: [number, number, number];
 }
 
 export interface Particles {
@@ -102,9 +104,10 @@ export function createParticles(max: number, additive: boolean): Particles {
         // Direction au hasard sur la sphère
         const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, r = Math.sqrt(1 - u * u);
         const v = o.speed[0] + Math.random() * (o.speed[1] - o.speed[0]);
-        vel[i * 3] = r * Math.cos(a) * v;
-        vel[i * 3 + 1] = u * v + (o.up ?? 0);
-        vel[i * 3 + 2] = r * Math.sin(a) * v;
+        const [wx, wy, wz] = o.drift ?? [0, 0, 0];
+        vel[i * 3] = r * Math.cos(a) * v + wx;
+        vel[i * 3 + 1] = u * v + (o.up ?? 0) + wy;
+        vel[i * 3 + 2] = r * Math.sin(a) * v + wz;
         life[i] = life0[i] = o.life[0] + Math.random() * (o.life[1] - o.life[0]);
         size0[i] = o.size * (0.7 + Math.random() * 0.6);
         grow[i] = o.grow ?? 0;

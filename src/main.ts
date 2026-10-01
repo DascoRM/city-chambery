@@ -18,6 +18,7 @@ import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildPeople, type PeopleConfig } from './scene/people';
 import { buildBirds, type BirdsConfig } from './scene/birds';
+import { buildChimneys, type SmokeConfig } from './scene/chimneys';
 import lifeContent from './content/life.json';
 import { buildNature, type NatureConfig } from './scene/nature';
 import { buildHerd, type Herd, type MascotConfig } from './scene/mascot';
@@ -115,6 +116,16 @@ async function main() {
     if (birds) scene.add(birds.group);
   } catch (e) {
     console.warn('[oiseaux] non créés', e);
+  }
+  // Cheminées et fumée (EP001-US005) : la fumée suit la saison de l'horloge
+  let chimneys: ReturnType<typeof buildChimneys> = null;
+  try {
+    chimneys = buildChimneys(lifeContent.smoke as unknown as SmokeConfig, data, {
+      minUnder: terrain.minUnder, hidden, night: city.night, season: () => clock.state().current, focus: () => controls.target,
+    });
+    if (chimneys) scene.add(chimneys.group);
+  } catch (e) {
+    console.warn('[cheminées] non créées', e);
   }
   const labels = await buildLabels(data.labels ?? [], terrain.heightAt);
   // Effet maquette : les étiquettes passent par-dessus le flou pour rester lisibles
@@ -314,6 +325,7 @@ async function main() {
     ...(herd ? [herd] : []),
     ...(people ? [people] : []),
     ...(birds ? [birds] : []),
+    ...(chimneys ? [chimneys] : []),
     game.ticker,
     ...(herdDebug ? [herdDebug] : []),
     clock,
@@ -364,7 +376,7 @@ async function main() {
   });
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, people, birds, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, people, birds, chimneys, clock, herd, hunt, slots } });
 }
 
 main();
