@@ -1,5 +1,18 @@
 # Journal des itérations
 
+## Itération 52 — 01/10/2026 (branche `feat/EP001-US001-passants`)
+
+**Retour de Dasco :** « les PNJ peuvent marcher sur l'eau : il faudrait un système de hitbox pour qu'ils ne puissent pas marcher sur l'eau. »
+
+**Changements :**
+- `src/scene/walkways.ts` : option `avoidWater` : un tronçon de voie qui entre dans l'eau est retiré du réseau, **sauf sur les ponts** (voies marquées `bridge`). « Dans l'eau » = dans un plan d'eau (polygone) ou à moins de la demi-largeur du ruban d'une rivière (la largeur dessinée) ; points testés tous les 1,5 m ; un chemin sur la berge de pierre reste permis ;
+- **la Leysse coupe alors le réseau en deux rives** (les croisements ne sont pas tous des ponts dans les données) : la plus grande partie passe de 59,5 à 48,1 km, une deuxième rive compte 982 nœuds ; plutôt que de ne garder que la plus grande, `largeComponents` (nouveau) garde **toutes les parties de plus de 100 nœuds** (`minComponent`) : chaque passant reste sur sa rive, les deux sont peuplées ;
+- `src/content/life.json` : `avoidWater: true`, `minComponent: 100`.
+
+**Vérifié :** mesure sur le réseau : tronçons hors pont dans l'eau 46 → 0 ; en direct, caméra centrée sur la Leysse, 8 relevés sur 40 s : **0 passant dans l'eau sur 300** (témoin, interdiction désactivée : 6 sur 300, donc le test voit bien le problème) ; les passants longent les quais ; aucune erreur console ; `npm run build`.
+
+**Non vérifié :** les éléphants : leur réseau compte aussi 43 tronçons hors pont dans l'eau (non modifié, ils n'étaient pas dans la demande) ; téléphone.
+
 ## Itération 51 — 01/10/2026 (branche `feat/EP001-US001-passants`)
 
 **Demande de Dasco :** attaquer l'US001 (passants de jour). Premier essai vu par Dasco : « je vois bien des gens sur certains axes ».

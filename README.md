@@ -504,7 +504,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 - **Positions des lieux** : celles trouvées automatiquement dans OSM sont approximatives ; à vérifier.
 - **Contenu** : 8 fiches rédigées à partir des sources citées ; à relire avant de montrer.
 - **Bars et cafés** : noms et horaires bruts d'OSM ; la nuit, ils s'allument selon leur type, pas selon leurs horaires.
-- **Passants** : du décor ; ils ne se tiennent que dans un rayon de 250 m autour du point regardé (pour qu'il y ait du monde à l'écran sans en dessiner partout), et réapparaissent hors du champ quand on se déplace.
+- **Passants** : du décor, jamais dans l'eau (sauf sur les ponts) ; ils ne se tiennent que dans un rayon de 250 m autour du point regardé (pour qu'il y ait du monde à l'écran sans en dessiner partout), et réapparaissent hors du champ quand on se déplace.
 - **Horaires provisoires** : 23 bars, pubs et boîtes de nuit sans horaires dans OSM reçoivent des horaires fictifs (`src/content/place-hours.json`), utilisés seulement pour leur éclairage de nuit ; ils ne sont jamais affichés. À remplacer par les vraies données (voir le backlog).
 - **Auvents** : 148 lieux sur 169 en ont un, posé sur la façade côté rue d'après les contours OSM et les voies ; c'est du décor, pas un relevé des commerces. Les 12 lieux dans un bâtiment remplacé par un monument et les 8 lieux hors bâtiment n'en ont pas.
 - **Soleil** : lever 6 h, coucher 18 h toute l'année (pas de saisons).

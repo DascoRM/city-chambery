@@ -1,5 +1,5 @@
 {
-  "note": "La ville vit (epic EP001). Réglages des passants (US001) : nombre maximal, réduction sur téléphone, rayon (m) autour du point regardé où ils se trouvent (un passant qui en sort réapparaît hors de l'écran, à l'intérieur), taille (1 = 1,7 m), vitesse de marche en m/s, pauses, et réseau des voies où ils marchent (toutes sauf les escaliers, à 1 m des façades, hors du bassin de la fontaine). Décor : ce ne sont pas de vrais passants.",
+  "note": "La ville vit (epic EP001). Réglages des passants (US001) : nombre maximal, réduction sur téléphone, rayon (m) autour du point regardé où ils se trouvent (un passant qui en sort réapparaît hors de l'écran, à l'intérieur), taille (1 = 1,7 m), vitesse de marche en m/s, pauses, et réseau des voies où ils marchent (toutes sauf les escaliers, à 1 m des façades, hors du bassin de la fontaine, jamais dans l'eau sauf sur les ponts). Décor : ce ne sont pas de vrais passants.",
   "people": {
     "max": 300,
     "mobileFactor": 0.5,
@@ -14,6 +14,7 @@
       2,
       6
     ],
+    "minComponent": 100,
     "network": {
       "excludeKinds": [
         "steps"
@@ -24,6 +25,7 @@
         "footway": 1.2
       },
       "clearance": 1.0,
+      "avoidWater": true,
       "avoid": [
         {
           "anchor": "elephants",

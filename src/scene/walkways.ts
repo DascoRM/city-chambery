@@ -1,5 +1,5 @@
 import type { CityData, Pt } from '../types';
-import { pointInRing, segDist2 } from './geo';
+import { pointInPoly, pointInRing, segDist2 } from './geo';
 import { roadLift } from './roads';
 
 /**
@@ -9,7 +9,8 @@ import { roadLift } from './roads';
  *
  * Sont retirés du réseau : les types de voies exclus (escaliers…), les tronçons qui passent sous
  * un bâtiment (passages couverts), ceux qui frôlent une façade à moins de `clearance` (trottoirs
- * cartographiés le long des murs) et les zones « avoid » (cercles autour d'un ancrage).
+ * cartographiés le long des murs), les zones « avoid » (cercles autour d'un ancrage) et, avec `avoidWater`,
+ * les tronçons qui entrent dans l'eau (rivière, plans d'eau) hors des ponts.
  */
 export interface WalkwayOptions {
   excludeKinds: string[];
@@ -19,6 +20,8 @@ export interface WalkwayOptions {
   clearance: number;
   /** Zones interdites : cercle autour d'un ancrage (data.anchors), rayon en mètres */
   avoid: { anchor: string; radius: number }[];
+  /** Pas de tronçon dans l'eau (rivière, plans d'eau), sauf sur les ponts (voies marquées `bridge`) */
+  avoidWater?: boolean;
 }
 
 /** Tronçon vers le nœud `to` : longueur (m), hauteur du ruban, préférence, nom de la voie */
@@ -40,6 +43,7 @@ export function buildWalkways(data: CityData, opts: WalkwayOptions): Walkways {
   };
   const exclude = new Set(opts.excludeKinds);
   const blocked = blocker(data, opts);
+  const inWater = opts.avoidWater ? waterTest(data) : null;
   for (const r of data.roads) {
     if (exclude.has(r.kind)) continue;
     const lift = roadLift(r.kind, r.bridge);
@@ -48,12 +52,47 @@ export function buildWalkways(data: CityData, opts: WalkwayOptions): Walkways {
     for (let k = 1; k < r.pts.length; k++) {
       const a = node(r.pts[k - 1]), b = node(r.pts[k]);
       if (a === b || blocked(r.pts[k - 1], r.pts[k])) continue;
+      if (inWater && !r.bridge && inWater(r.pts[k - 1], r.pts[k])) continue;
       const len = Math.hypot(xs[b] - xs[a], ys[b] - ys[a]);
       adj[a].push({ to: b, len, lift, w, name });
       adj[b].push({ to: a, len, lift, w, name });
     }
   }
   return { x: Float64Array.from(xs), y: Float64Array.from(ys), adj };
+}
+
+/**
+ * Test « ce tronçon entre-t-il dans l'eau ? » : points testés tous les 1,5 m, dans un plan d'eau (polygone) ou
+ * à moins de la demi-largeur du ruban d'une rivière (la largeur dessinée, city.ts). Un chemin qui longe la berge
+ * (dans la bande de pierre) reste permis : seule l'eau elle-même est interdite.
+ */
+function waterTest(data: CityData): (a: Pt, b: Pt) => boolean {
+  const CELL_W = 25;
+  const areas = data.water.filter((w): w is Extract<typeof w, { kind: 'area' }> => w.kind === 'area');
+  const grid = new Map<string, number[][]>();
+  for (const w of data.water) {
+    if (w.kind !== 'line') continue;
+    const half = w.w / 2;
+    for (let k = 1; k < w.pts.length; k++) {
+      const [ax, ay] = w.pts[k - 1], [bx, by] = w.pts[k];
+      for (let i = Math.floor((Math.min(ax, bx) - half) / CELL_W); i <= Math.floor((Math.max(ax, bx) + half) / CELL_W); i++)
+        for (let j = Math.floor((Math.min(ay, by) - half) / CELL_W); j <= Math.floor((Math.max(ay, by) + half) / CELL_W); j++) {
+          const key = `${i},${j}`;
+          const list = grid.get(key);
+          if (list) list.push([ax, ay, bx, by, half * half]); else grid.set(key, [[ax, ay, bx, by, half * half]]);
+        }
+    }
+  }
+  const wet = (x: number, y: number) => {
+    if (areas.some((a) => pointInPoly(x, y, a))) return true;
+    for (const [ax, ay, bx, by, h2] of grid.get(`${Math.floor(x / CELL_W)},${Math.floor(y / CELL_W)}`) ?? []) if (segDist2(x, y, ax, ay, bx, by) < h2) return true;
+    return false;
+  };
+  return (a, b) => {
+    const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 1.5));
+    for (let i = 0; i <= n; i++) if (wet(a[0] + ((b[0] - a[0]) * i) / n, a[1] + ((b[1] - a[1]) * i) / n)) return true;
+    return false;
+  };
 }
 
 /** Grille de 25 m : contours des bâtiments dont la boîte englobante touche chaque case. */
@@ -139,4 +178,23 @@ export function mainComponent(g: Walkways): Set<number> {
     if (comp.length > best.length) best = comp;
   }
   return new Set(best);
+}
+
+/**
+ * Nœuds de toutes les parties connexes d'au moins `minSize` nœuds. Quand une rivière coupe le réseau (avoidWater),
+ * il reste plusieurs rives : chacune garde ses passants, qui ne la quittent pas (les éléphants, eux, n'utilisent que
+ * la plus grande, `mainComponent`).
+ */
+export function largeComponents(g: Walkways, minSize: number): Set<number> {
+  const seen = new Int32Array(g.x.length).fill(-1);
+  const out = new Set<number>();
+  for (let s = 0; s < g.x.length; s++) {
+    if (seen[s] >= 0 || !g.adj[s].length) continue;
+    const comp = [s];
+    seen[s] = s;
+    for (let q = 0; q < comp.length; q++)
+      for (const e of g.adj[comp[q]]) if (seen[e.to] < 0) { seen[e.to] = s; comp.push(e.to); }
+    if (comp.length >= minSize) for (const n of comp) out.add(n);
+  }
+  return out;
 }

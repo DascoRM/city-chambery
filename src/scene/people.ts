@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { CityData, HeightFn, Ticker } from '../types';
-import { buildWalkways, mainComponent, type Edge, type WalkwayOptions } from './walkways';
+import { buildWalkways, largeComponents, type Edge, type WalkwayOptions } from './walkways';
 import { blobShadow } from './mascot';
 
 /**
@@ -27,6 +27,8 @@ export interface PeopleConfig {
   /** Probabilité de faire une pause en arrivant à un carrefour, et durée des pauses (s) */
   pauseChance: number;
   pauseSeconds: [number, number];
+  /** Une partie du réseau doit avoir au moins ce nombre de nœuds pour avoir des passants (les îlots minuscules sont ignorés) */
+  minComponent: number;
   network: WalkwayOptions;
 }
 
@@ -71,9 +73,9 @@ export function buildPeople(
   view: { camera: THREE.Camera; /** Point regardé (coordonnées Three.js) */ focus(): THREE.Vector3 },
 ): (Ticker & { group: THREE.Group; count: number; nodes: number }) | null {
   const g = buildWalkways(data, cfg.network);
-  const main = [...mainComponent(g)];
+  const mainSet = largeComponents(g, cfg.minComponent);
+  const main = [...mainSet];
   if (!main.length) return null;
-  const mainSet = new Set(main);
   const mobile = typeof matchMedia === 'function' && (matchMedia('(pointer: coarse)').matches || innerWidth < 700);
   const count = Math.max(0, Math.round(cfg.max * (mobile ? cfg.mobileFactor : 1)));
   const group = new THREE.Group();
