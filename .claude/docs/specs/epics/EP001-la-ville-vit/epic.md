@@ -24,7 +24,7 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 
 | Sujet | Décision |
 |---|---|
-| Style des passants | **Silhouettes simples d'abord** (figurines low-poly instanciées), livrées en US001 ; **personnages animés planifiés le 01/10** avec le pack Kenney « Mini Characters » (US010, essai visuel d'abord) |
+| Style des passants | **Silhouettes simples** (figurines low-poly instanciées, US001). Personnages animés essayés (pack Kenney, puis personnage Mixamo) et **abandonnés le 01/10/2026** : on garde les silhouettes |
 | Autres « vies » | Fenêtres qui s'allument / s'éteignent, pigeons et oiseaux, fumée de cheminées, drapeaux. **Pas de voitures ni de bus** |
 | Interaction | **Décor seulement** : pas de clic sur les passants, ils ne réagissent ni aux éléphants ni au jeu |
 | Pack de bâtiments (`assets-src/buildings`, auteur : Kenney) | **Auvents gardés** (« ça me va »). Le reste du pack, y compris un essai de bâtiment reconstruit en modules, **écarté** : Dasco préfère les bâtiments actuels. Les 2 067 bâtiments OSM restent tels quels |
@@ -42,7 +42,7 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 
 ## Hors scope
 - Voitures, bus, vélos
-- Personnages animés au lieu des silhouettes : US010, planifiée le 01/10 (pack `assets-src/characters`), essai visuel d'abord
+- Personnages animés au lieu des silhouettes : essayés puis abandonnés le 01/10 (US010) ; les silhouettes de l'US001 restent
 - Passants cliquables, anecdotes, réactions aux éléphants (décision ci-dessus)
 - Remplacer les bâtiments OSM par des assemblages de modules : c'est une autre epic (« bâtiments »), à part
 - Back-end, comptes, partage entre amis
@@ -62,7 +62,7 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 | [US007](US007-preparer-le-pack-batiments.md) | Préparer le pack de bâtiments (nom, licence, conversion) : réduit aux 2 pièces d'auvent | Medium | 3 | — | ✅ Done (itération 46) |
 | [US008](US008-auvents-des-lieux.md) | Des auvents devant les bars, cafés et restaurants | Medium | 5 | US007 | ✅ Done (itérations 46 et 48, validée par Dasco) |
 | [US009](US009-fenetres-et-portes-de-jour.md) | Des fenêtres et des portes visibles de jour sur les bâtiments (dans le shader, sans pack) | Medium | 3 | — | ✅ Done (itération 49) |
-| [US010](US010-personnages-animes.md) | Des personnages animés à la place des silhouettes (pack Kenney « Mini Characters », CC0) | Medium | 10 à 13 | US001, US002 | 📝 Planifiée, essai d'abord (go de Dasco) |
+| [US010](US010-personnages-animes.md) | ~~Des personnages animés à la place des silhouettes~~ | — | — | — | ❌ Abandonnée (01/10 : style cartoon, coût ; on garde les silhouettes) |
 | [US011](US011-horaires-provisoires-des-bars.md) | Des horaires provisoires pour les bars, pubs et boîtes de nuit | High | 1 | — | ✅ Done (itération 46) |
 
 **Ordre** : US007, US008 et US011 sont faites. Suite conseillée : US001 → US002 → US003 → US004 → US005 → US006, et US009 (fenêtres et portes de jour) quand Dasco veut la préciser : elle est indépendante des passants et peu coûteuse.

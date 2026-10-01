@@ -1,5 +1,15 @@
 # Journal des itérations
 
+## Itération 54 — 01/10/2026 (branche `feat/EP001-US001-passants`, documents seulement)
+
+**Demande de Dasco :** essai d'un personnage animé du pack Kenney (en mode `?debug`), puis d'un personnage Mixamo « Rigged Character » ; finalement : « laisse tomber, pas rentable, garde les personnages que tu as modélisés ».
+
+**Résultat : US010 abandonnée.** Kenney : « très cartoon », marchait « de côté » (**erreur de ma formule d'orientation**, corrigée et vérifiée avant l'abandon). Mixamo : proportions réalistes mais aucune animation de marche dans le fichier, 4 864 triangles et 65 os pour un seul personnage ; il a fallu une marche de remplacement calculée dans le code pour le voir bouger. Détail et conseils si l'idée revient : `US010-personnages-animes.md`.
+
+**Changements :** tout l'essai retiré : la branche `feat/EP001-US010-essai-personnage` supprimée (locale et distante, donc le pack Kenney de 3,3 Mo n'entre pas dans l'historique de `main`), aucun code d'essai ne reste (`main.ts`, `stage.ts`, `vite.config.ts` inchangés). Spec, epic et BACKLOG mis à jour. Les silhouettes de l'US001 restent.
+
+**À noter :** ton fichier `assets-src/RIgged Character.fbx` est toujours là, non commité ; supprime-le si tu n'en as plus besoin.
+
 ## Itération 53 — 01/10/2026 (branche `feat/EP001-US001-passants`, documents seulement)
 
 **Demande de Dasco :** ajouter une tâche pour intégrer les modèles de `assets-src/characters` aux passants ; « dis-moi si ok pour toi ».
