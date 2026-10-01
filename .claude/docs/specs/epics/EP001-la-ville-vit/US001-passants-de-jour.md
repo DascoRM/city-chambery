@@ -89,4 +89,4 @@
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Livrée (itération 51), à valider par Dasco ; foule autour du point regardé (R6) activée après le premier essai

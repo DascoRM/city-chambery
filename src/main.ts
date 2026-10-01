@@ -16,6 +16,8 @@ import { buildAwnings, type AwningConfig } from './scene/facades';
 import { createTiltShift } from './scene/tiltshift';
 import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
+import { buildPeople, type PeopleConfig } from './scene/people';
+import lifeContent from './content/life.json';
 import { buildNature, type NatureConfig } from './scene/nature';
 import { buildHerd, type Herd, type MascotConfig } from './scene/mascot';
 import { createClock } from './time/clock';
@@ -93,6 +95,17 @@ async function main() {
     if (herd) scene.add(herd.group);
   } catch (e) {
     console.warn('[mascottes] non chargées', e);
+  }
+  // Passants (EP001-US001) : décor, sur leur propre réseau de voies
+  let people: ReturnType<typeof buildPeople> = null;
+  try {
+    people = buildPeople(lifeContent.people as unknown as PeopleConfig, data, terrain.heightAt, { camera, focus: () => controls.target });
+    if (people) {
+      scene.add(people.group);
+      if (DEBUG) console.info(`[passants] ${people.count} sur un réseau de ${people.nodes} nœuds`);
+    }
+  } catch (e) {
+    console.warn('[passants] non créés', e);
   }
   const labels = await buildLabels(data.labels ?? [], terrain.heightAt);
   // Effet maquette : les étiquettes passent par-dessus le flou pour rester lisibles
@@ -286,6 +299,7 @@ async function main() {
     { update: (_, t) => placeLayer.animate(t), moving: placeLayer.moving },
     { update: (_, t) => city.update(t) },
     ...(herd ? [herd] : []),
+    ...(people ? [people] : []),
     game.ticker,
     ...(herdDebug ? [herdDebug] : []),
     clock,
@@ -336,7 +350,7 @@ async function main() {
   });
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, people, clock, herd, hunt, slots } });
 }
 
 main();

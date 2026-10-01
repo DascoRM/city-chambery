@@ -1,5 +1,52 @@
 # Journal des itérations
 
+## Itération 54 — 01/10/2026 (branche `feat/EP001-US001-passants`, documents seulement)
+
+**Demande de Dasco :** essai d'un personnage animé du pack Kenney (en mode `?debug`), puis d'un personnage Mixamo « Rigged Character » ; finalement : « laisse tomber, pas rentable, garde les personnages que tu as modélisés ».
+
+**Résultat : US010 abandonnée.** Kenney : « très cartoon », marchait « de côté » (**erreur de ma formule d'orientation**, corrigée et vérifiée avant l'abandon). Mixamo : proportions réalistes mais aucune animation de marche dans le fichier, 4 864 triangles et 65 os pour un seul personnage ; il a fallu une marche de remplacement calculée dans le code pour le voir bouger. Détail et conseils si l'idée revient : `US010-personnages-animes.md`.
+
+**Changements :** tout l'essai retiré : la branche `feat/EP001-US010-essai-personnage` supprimée (locale et distante, donc le pack Kenney de 3,3 Mo n'entre pas dans l'historique de `main`), aucun code d'essai ne reste (`main.ts`, `stage.ts`, `vite.config.ts` inchangés). Spec, epic et BACKLOG mis à jour. Les silhouettes de l'US001 restent.
+
+**À noter :** ton fichier `assets-src/RIgged Character.fbx` est toujours là, non commité ; supprime-le si tu n'en as plus besoin.
+
+## Itération 53 — 01/10/2026 (branche `feat/EP001-US001-passants`, documents seulement)
+
+**Demande de Dasco :** ajouter une tâche pour intégrer les modèles de `assets-src/characters` aux passants ; « dis-moi si ok pour toi ».
+
+**Changements :** US010 réécrite (de « option non planifiée » à planifiée), epic et BACKLOG mis à jour. Aucun code, aucun fichier du pack commité.
+
+**Constats sur le pack (lus dans les fichiers) :** « Mini Characters 1.0 » de Kenney, **CC0** (`License.txt`) ; 12 personnages (6 femmes, 6 hommes) de 700 à 880 triangles ; squelette de **7 os** ; 32 animations dont `walk` (0,67 s) et `idle` (1,33 s) ; 0,67 unité de haut (× 2,54 pour 1,7 m) ; une texture de palette partagée ; 14 Mo au total, dont 8,8 Mo de FBX inutiles. Deux méthodes d'animation comparées dans la spec (instances avec matrices d'os cuites, ou personnages classiques près de la caméra).
+
+**Non vérifié :** le rendu de ces personnages dans le diorama (c'est l'objet de l'essai).
+
+## Itération 52 — 01/10/2026 (branche `feat/EP001-US001-passants`)
+
+**Retour de Dasco :** « les PNJ peuvent marcher sur l'eau : il faudrait un système de hitbox pour qu'ils ne puissent pas marcher sur l'eau. »
+
+**Changements :**
+- `src/scene/walkways.ts` : option `avoidWater` : un tronçon de voie qui entre dans l'eau est retiré du réseau, **sauf sur les ponts** (voies marquées `bridge`). « Dans l'eau » = dans un plan d'eau (polygone) ou à moins de la demi-largeur du ruban d'une rivière (la largeur dessinée) ; points testés tous les 1,5 m ; un chemin sur la berge de pierre reste permis ;
+- **la Leysse coupe alors le réseau en deux rives** (les croisements ne sont pas tous des ponts dans les données) : la plus grande partie passe de 59,5 à 48,1 km, une deuxième rive compte 982 nœuds ; plutôt que de ne garder que la plus grande, `largeComponents` (nouveau) garde **toutes les parties de plus de 100 nœuds** (`minComponent`) : chaque passant reste sur sa rive, les deux sont peuplées ;
+- `src/content/life.json` : `avoidWater: true`, `minComponent: 100`.
+
+**Vérifié :** mesure sur le réseau : tronçons hors pont dans l'eau 46 → 0 ; en direct, caméra centrée sur la Leysse, 8 relevés sur 40 s : **0 passant dans l'eau sur 300** (témoin, interdiction désactivée : 6 sur 300, donc le test voit bien le problème) ; les passants longent les quais ; aucune erreur console ; `npm run build`.
+
+**Non vérifié :** les éléphants : leur réseau compte aussi 43 tronçons hors pont dans l'eau (non modifié, ils n'étaient pas dans la demande) ; téléphone.
+
+## Itération 51 — 01/10/2026 (branche `feat/EP001-US001-passants`)
+
+**Demande de Dasco :** attaquer l'US001 (passants de jour). Premier essai vu par Dasco : « je vois bien des gens sur certains axes ».
+
+**Changements :**
+- `src/scene/people.ts` : 300 silhouettes de 1,7 m (jambes et torse, tête), couleurs de vêtements et de peau variées, jambes qui se balancent dans le shader, petit rebond, ombre « tache » ; 3 maillages instanciés ; ils marchent sur leur propre réseau de voies (`buildWalkways` : toutes les voies sauf les escaliers, à 1 m des façades, hors du bassin de la fontaine), vont plutôt tout droit, font parfois une pause de 2 à 6 s à un carrefour ; décor, non cliquables, sans lien avec le jeu ; pas de pleine vitesse forcée (la carte reste à 30 images/s au repos) ;
+- **foule autour du point regardé** (règle R6 de la spec) : le réseau couvre 59,5 km de voies sur 65, donc 300 passants répartis partout faisaient un passant tous les 200 m (« certains axes ») ; ils se tiennent maintenant dans un rayon de 250 m autour de la cible de la caméra, et un passant qui en sort réapparaît sur une voie du rayon, hors du champ quand c'est possible (sauf après un grand saut de la caméra) ;
+- `src/content/life.json` (réglages), `blobShadow` exportée de `mascot.ts` ; ×0,5 sur téléphone ;
+- README, FEATURES, spec.
+
+**Vérifié :** `npm run build` ; Chrome avec la carte graphique : réseau de 5 011 nœuds (partie principale) ; **coût : +3 appels de rendu, +0,02 M de triangles, 60 images/s en mouvement avec et sans passants** ; après des sauts de caméra (Saint-Léger, rue de Boigne), 296 à 300 passants sur 300 dans le rayon ; passants visibles autour de la fontaine, au zoom maximal ; aucune erreur console.
+
+**Non vérifié :** téléphone ; qu'aucun passant ne traverse un bâtiment (même réseau que les éléphants, avec une marge de 1 m au lieu de 2,2 : à regarder) ; l'apparition hors champ à l'œil ; dans les rues étroites ils sont souvent cachés par les immeubles (comme le pied des façades).
+
 ## Itération 50 — 01/10/2026 (branche `feat/EP001-US009-fenetres-de-jour`)
 
 **Retour de Dasco :** « c'est trop gris, il faut faire dans la même idée que le mode nuit ; ça fait très volet fermé en pleine journée. Donc pas verre sombre. »

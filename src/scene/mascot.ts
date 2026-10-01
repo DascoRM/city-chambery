@@ -159,7 +159,8 @@ const WALK_GLSL = /* glsl */ `
   transformed.z += bw * uAmp * 0.04 * sin(6.2831853 * uPhase) * (p0.y - 1.4);
 `;
 
-function blobShadow(): THREE.Mesh {
+/** Ombre « tache » au sol (ce qui bouge ne projette pas d'ombre : la carte des ombres ne suit que le soleil). Partagée avec les passants. */
+export function blobShadow(): THREE.Mesh {
   const c = document.createElement('canvas');
   c.width = c.height = 64;
   const g = c.getContext('2d')!;
