@@ -53,7 +53,7 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 
 | ID | User Story | Priorité | Points | Dépend de | Status |
 |----|------------|----------|--------|-----------|--------|
-| [US001](US001-passants-de-jour.md) | Des passants qui marchent dans les rues, de jour | High | 5 | — | 🔲 Todo |
+| [US001](US001-passants-de-jour.md) | Des passants qui marchent dans les rues, de jour | High | 5 | — | 🟡 Livrée (itération 51), à valider par Dasco |
 | [US002](US002-rythme-jour-nuit.md) | Le monde suit l'heure : rues plus calmes la nuit, groupes devant les bars ouverts | High | 5 | US001 | 🔲 Todo |
 | [US003](US003-fenetres-qui-vivent.md) | Des fenêtres qui s'allument et s'éteignent au fil de la soirée | High | 2 | — | 🔲 Todo |
 | [US004](US004-pigeons-et-oiseaux.md) | Des pigeons sur les places et des oiseaux autour des monuments | Medium | 3 | — | 🔲 Todo |

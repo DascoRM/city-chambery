@@ -382,6 +382,7 @@ src/
   content/models.json      Monuments modélisés
   content/nature.json      Arbres modélisés : mélanges et zones
   content/mascot.json      Mascotte : modèle, vitesse, voies autorisées, zones interdites
+  content/life.json        La ville vit : réglages des passants (nombre, rayon, taille, vitesse, pauses, voies)
   content/buildings.json   Auvents : pièces du pack, échelle, décalages, réglages de pose
   content/place-hours.json Horaires PROVISOIRES (fictifs) des bars, pubs et boîtes de nuit, pour l'éclairage de nuit
   scene/stage.ts           Renderer, caméra « maquette », lumières, contrôles, boussole (cap, retour au nord)
@@ -404,6 +405,7 @@ src/
   scene/models.ts          Chargement et placement des monuments
   scene/nature.ts          Arbres modélisés dans les parcs
   scene/mascot.ts          Mascotte : promenade sur le réseau des voies, marche dans le shader
+  scene/people.ts          Passants : silhouettes instanciées qui marchent sur les voies, autour du point regardé
   scene/facades.ts         Auvents des bars, cafés et restaurants (pièces du pack de bâtiments, couleur de la catégorie)
   scene/models/            Monuments générés en code + éclairage de nuit et mesh() partagés
   ui/ui.ts                 HUD, fiche, journal, toasts, contrôles
@@ -502,6 +504,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 - **Positions des lieux** : celles trouvées automatiquement dans OSM sont approximatives ; à vérifier.
 - **Contenu** : 8 fiches rédigées à partir des sources citées ; à relire avant de montrer.
 - **Bars et cafés** : noms et horaires bruts d'OSM ; la nuit, ils s'allument selon leur type, pas selon leurs horaires.
+- **Passants** : du décor ; ils ne se tiennent que dans un rayon de 250 m autour du point regardé (pour qu'il y ait du monde à l'écran sans en dessiner partout), et réapparaissent hors du champ quand on se déplace.
 - **Horaires provisoires** : 23 bars, pubs et boîtes de nuit sans horaires dans OSM reçoivent des horaires fictifs (`src/content/place-hours.json`), utilisés seulement pour leur éclairage de nuit ; ils ne sont jamais affichés. À remplacer par les vraies données (voir le backlog).
 - **Auvents** : 148 lieux sur 169 en ont un, posé sur la façade côté rue d'après les contours OSM et les voies ; c'est du décor, pas un relevé des commerces. Les 12 lieux dans un bâtiment remplacé par un monument et les 8 lieux hors bâtiment n'en ont pas.
 - **Soleil** : lever 6 h, coucher 18 h toute l'année (pas de saisons).

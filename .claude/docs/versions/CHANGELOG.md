@@ -1,5 +1,19 @@
 # Journal des itérations
 
+## Itération 51 — 01/10/2026 (branche `feat/EP001-US001-passants`)
+
+**Demande de Dasco :** attaquer l'US001 (passants de jour). Premier essai vu par Dasco : « je vois bien des gens sur certains axes ».
+
+**Changements :**
+- `src/scene/people.ts` : 300 silhouettes de 1,7 m (jambes et torse, tête), couleurs de vêtements et de peau variées, jambes qui se balancent dans le shader, petit rebond, ombre « tache » ; 3 maillages instanciés ; ils marchent sur leur propre réseau de voies (`buildWalkways` : toutes les voies sauf les escaliers, à 1 m des façades, hors du bassin de la fontaine), vont plutôt tout droit, font parfois une pause de 2 à 6 s à un carrefour ; décor, non cliquables, sans lien avec le jeu ; pas de pleine vitesse forcée (la carte reste à 30 images/s au repos) ;
+- **foule autour du point regardé** (règle R6 de la spec) : le réseau couvre 59,5 km de voies sur 65, donc 300 passants répartis partout faisaient un passant tous les 200 m (« certains axes ») ; ils se tiennent maintenant dans un rayon de 250 m autour de la cible de la caméra, et un passant qui en sort réapparaît sur une voie du rayon, hors du champ quand c'est possible (sauf après un grand saut de la caméra) ;
+- `src/content/life.json` (réglages), `blobShadow` exportée de `mascot.ts` ; ×0,5 sur téléphone ;
+- README, FEATURES, spec.
+
+**Vérifié :** `npm run build` ; Chrome avec la carte graphique : réseau de 5 011 nœuds (partie principale) ; **coût : +3 appels de rendu, +0,02 M de triangles, 60 images/s en mouvement avec et sans passants** ; après des sauts de caméra (Saint-Léger, rue de Boigne), 296 à 300 passants sur 300 dans le rayon ; passants visibles autour de la fontaine, au zoom maximal ; aucune erreur console.
+
+**Non vérifié :** téléphone ; qu'aucun passant ne traverse un bâtiment (même réseau que les éléphants, avec une marge de 1 m au lieu de 2,2 : à regarder) ; l'apparition hors champ à l'œil ; dans les rues étroites ils sont souvent cachés par les immeubles (comme le pied des façades).
+
 ## Itération 50 — 01/10/2026 (branche `feat/EP001-US009-fenetres-de-jour`)
 
 **Retour de Dasco :** « c'est trop gris, il faut faire dans la même idée que le mode nuit ; ça fait très volet fermé en pleine journée. Donc pas verre sombre. »
