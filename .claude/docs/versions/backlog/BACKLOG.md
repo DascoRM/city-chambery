@@ -2,7 +2,7 @@
 
 Priorités : **P0** bugs à corriger d'abord · **P1** prochaine itération · **P2** bientôt · **P3** un jour
 
-*Dernier tri : 01/10/2026 (chaque ticket ouvert vérifié contre le code et les données).*
+*Dernier tri : 01/10/2026 (chaque ticket ouvert vérifié contre le code et les données, puis arbitré par Dasco : 11 tickets retirés, 2 epics à venir EP003 et EP004).*
 
 Tickets issus de l'audit du 30/09 : identifiants `BUG-`, `EN-` (enabler), `TI-` (technical improvement).
 Détail et `fichier:ligne` dans `.claude/docs/tasks/audit-2026-09-30-{rendu,code,donnees}-plan.md`.
@@ -53,8 +53,6 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ Reprendre la position des 8 lieux (champ `pos` ou `osm.match` dans `src/content/pois.json`) — *Dasco*
 - ⬜ Récupérer par script les données du projet bar / restau de Dasco (base scrappée il y a un an) : vrais horaires des bars, pubs et boîtes de nuit pour remplacer les horaires fictifs de `src/content/place-hours.json` (EP001-US011), et peut-être d'autres informations sur les lieux — *Dasco (script, à regarder ensemble), puis Claude*
 - ⬜ Relire les fiches : « Trivelli » et « Trivelly » dans la même fiche (rue de Boigne, `pois.json`) ; « plus vaste ensemble de trompe-l'œil d'Europe » (cathédrale) sourcé uniquement Wikipédia — *Dasco*
-- ⬜ Pack nature : buissons, fleurs, rochers moussus, nénuphars dans les parcs
-- ⬜ Épingles des lieux : icône par catégorie sur l'épingle (verre, tasse, couverts), après la v1 « pointeur de couleur »
 - ⬜ Bars / restaurants en double (retour de Dasco, itération 42) : doublons dans OSM, deux points pour le même lieu — Le Maharaja (node/462016883 et node/8809074519, à 15 m), Le Thali (node/13144805796 et node/14104261001, à 6 m). Corriger dans OSM, ou fusionner dans le script de données les lieux de même nom à moins de ~25 m (Columbus Café : 2 points à 330 m, sans doute 2 boutiques, à garder) — *petit*
 - ⬜ Fiche des lieux : horaires OSM regroupés par jour. La ligne « Ouvert / Fermé à cette heure » existe déjà ; reste la mise en forme (aujourd'hui le texte OSM, jours traduits, séparés par « · », `hoursFr` dans `src/ui/ui.ts`)
 
@@ -62,23 +60,29 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 ## EP001 « La ville vit » : livrée (01/10/2026)
 [Epic EP001](../../specs/epics/EP001-la-ville-vit/epic.md) : US001 à US009 et US011 livrées (US006 drapeaux à valider par Dasco, US010 personnages animés abandonnée : on garde les silhouettes). Détail dans [CHANGELOG.md](../CHANGELOG.md). La suite est l'epic EP003 ci-dessous.
 
-## P2 — Epic à venir : « Reprise vie dans la ville » (retours de Dasco, 01/10/2026)
+## P2 — Epic à venir : EP003 « Reprise vie dans la ville » (retours de Dasco, 01/10/2026)
 À passer en epic (`specs/epics/EP003-…`) après EP002 « Noms de rues au sol » (décision de Dasco, 01/10/2026). Contexte : US001 et US002 jugées « très bien » par Dasco.
 - ⬜ **Le Carré Curial vit la nuit** : des passants la nuit au Carré Curial (lieu de vie nocturne), même quand le reste des rues est calme
 - ⬜ **Plus de monde devant les bars la nuit** : au moins 6 personnes par groupe (aujourd'hui 2 à 5, `groups.size` dans `life.json`)
 - ⬜ **Tous les bars ouverts ont du monde après 21 h** : chaque bar dont l'horaire dit « ouvert » (OSM ou provisoire) a son groupe dès 21 h, au lieu d'un tirage limité à 12 groupes près de la caméra ; à mesurer (≈ 36 bars, pubs et boîtes de nuit × 6 personnes)
 - ⬜ **Personnages qui dansent au Carré Curial la nuit** : ajouter des personnages avec des animations (danse) ; leçon de l'US010 : le pack Kenney était trop cartoon et le personnage Mixamo n'avait pas d'animation (télécharger les animations « Dancing » sur Mixamo, viser un modèle léger), faire un essai visuel d'abord
 - ⬜ **Lumières animées au Carré Curial la nuit** : animation lumineuse (projecteurs, couleurs qui changent, guirlandes…) pour montrer que le lieu est animé ; à préciser avec Dasco
+- ⬜ **Végétation dans les parcs** : buissons, fleurs, herbes, rochers moussus et nénuphars (le pack Quaternius de `assets-src/quaternius-nature/obj/vegetation` et `rochers` les contient déjà, avec des buissons et des rochers enneigés pour l'hiver) ; à instancier comme les arbres (`nature.json`, `npm run nature`) — *déplacé ici le 01/10/2026 (décision de Dasco)*
+
+## Epic à venir : EP004 « Page de chargement et lobby de démarrage » (décision de Dasco, 01/10/2026)
+À passer en epic (`specs/epics/EP004-…`) ; pas urgent.
+- ⬜ **Page de chargement** : un écran pendant le chargement de la ville (bâtiments, modèles ; ≈ 4 s mesurés en dev sur un Mac)
+- ⬜ **Lobby de démarrage** : lancer la carte depuis un écran de choix (mode exploration, mode histoire…)
+- ⬜ **Démarrage raté** (audit du 30/09) : aujourd'hui, si `city.json` ne se charge pas, les visiteurs voient le message développeur « Lance `npm run data` » ; et une erreur après le chargement (terrain, monuments…) donne une page vide, car `main()` n'a pas de `catch` (`src/main.ts`). À prévoir avec le lobby : un message lisible pour les visiteurs (forme à définir) — *pas grave pour le moment*
 
 ## P2 — Fluidité mobile
 Détail dans [PERF-AUDIT.md](../../architecture/PERF-AUDIT.md).
 Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par image. Après (ombres à la demande, arbres simplifiés) : ≈ 2 400 appels et ≈ 1,5 M triangles par image la plupart du temps.
 - ✅ **Mesurer** : compteur avec `?debug` dans l'adresse (images/s, pire image, appels de rendu, triangles, densité, taille du rendu) — itération 29
 - ⏸ **Monuments : fusionner la géométrie par matériau** — *en attente, Dasco garde les monuments tels quels pour l'instant ; à reprendre avec le chantier bâtiments (confirmé à l'audit du 30/09)* (Carré Curial 1 683 objets, château 561, fontaine 54, cathédrale 42 → ~30 appels) — gain le plus fort, aucun changement visuel — *petit*
-- ⬜ **Arbres modélisés** : découper les instances par quartier pour ne pas dessiner les arbres hors écran (simplification à −50 % faite, itération 25) — *moyen*
 - 🟡 **Effet maquette moins gourmand** — fait à l'itération 29 : flou en demi-résolution sans anticrénelage, une seule passe finale, anticrénelage ×2 sur écran haute densité, densité plafonnée à 1,5 puis adaptée aux images/s. Reste à trancher pour mobile : suffisant, ou effet coupé sur petit écran ? — à mesurer avec `?debug`
 - ➡ **Moins d'images quand rien ne bouge** → devenu **TI-02** (30 images/s au repos)
-- ⬜ Chargement : ~~vérifier gzip~~ (gzip actif dans `deploy/nginx.conf`, vérifié à l'audit du 30/09) ; brotli (−23 % sur `city.json`, absent de l'image nginx alpine) ; regrouper les fichiers d'arbres (45 `.glb` aujourd'hui) ; `city.json` en binaire (entiers + deltas : −15 % mesuré) — *P3*
+- ⬜ Chargement : ~~vérifier gzip~~ (gzip actif dans `deploy/nginx.conf`, vérifié à l'audit du 30/09) ; brotli (mesuré le 01/10 sur `city.json` : 400 Ko en gzip, 361 Ko en brotli à un réglage moyen, −23 % annoncé au réglage maximal ; absent de l'image nginx alpine ; Vercel compresse déjà ses fichiers) ; regrouper les fichiers d'arbres (45 `.glb` aujourd'hui) ; `city.json` en binaire (entiers + deltas : −15 % mesuré) — *P3*
 - ⏸ Mode hors-ligne : le service worker retélécharge `city.json` et les `.glb` à la première visite au lieu de reprendre le cache HTTP (≈ 0,55 Mo gzip en double, estimé) — *pas grave pour l'instant (Dasco, 30/09)*
 
 ## P1 — Bug : terrain qui passe au-dessus des rues (retour de Dasco, 01/10/2026) — corrigé à l'itération 62
@@ -106,7 +110,6 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ✅ Option « heure réelle » (suivre l'heure de Chambéry) et saisons (lever/coucher du soleil réels) (itération 31 : bouton Direct, puce saison)
 - ✅ Nuit : n'allumer que les lieux ouverts à l'heure choisie (lecture du tag OSM `opening_hours`) (itération 31 : 104 horaires sur 106 lus ; les 2 textes libres restent allumés)
 - ⬜ Hiver : reprendre les arbres — de la neige plutôt que les branches nues / arbres morts (brun) actuels (demande de Dasco, à traiter plus tard) ; neige aussi au sol et sur les toits
-- ⬜ Horaires : jours fériés et vacances scolaires (aujourd'hui ignorés, l'horaire habituel du jour s'applique)
 - ⬜ Simplifier l'heure : prendre l'heure de l'appareil du visiteur au lieu de forcer le fuseau Europe/Paris (demande de Dasco, pour simplifier le code). Précision : « heure de Chambéry » dans le code est déjà l'heure de France (fuseau Europe/Paris) ; la simplification consiste à supprimer la conversion de fuseau (`src/time/chambery.ts` : `chamberyClock`, `chamberyInstant`, ≈ 25 lignes). Conséquence : un visiteur hors de France verrait la carte à son heure locale. La position du soleil garde la latitude et la longitude de Chambéry.
 - ❓ Double toucher (zoom) : sans effet dans le navigateur de test, sur `main` comme après EN-02 (itération 40) — à vérifier sur un vrai téléphone
 - ⬜ Cadence : curseur d'heure tiré à la main encore à 30 images/s (TI-02, itération 42) — à passer en pleine vitesse si c'est gênant
@@ -116,15 +119,13 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 
 *Refacto et stab*
 - ➡ Découper `src/main.ts` → devenu **EN-02** (P1)
-- ❓ Supprimer `assets-src/quaternius-nature/fbx/` (doublon des .obj) ?
 - Alléger les assets
-- ⬜ Arbres modélisés : utiliser `leaf_type` d'OSM (7 résineux → pins) — demande de garder ce tag dans le script de données
+- ❓ Arbres modélisés : utiliser `leaf_type` d'OSM (7 résineux → pins) — *à voir (Dasco, 01/10)* — demande de garder ce tag dans le script de données
 - ❓ Carré Curial : vérifier étages, portes/passages, couleurs ; replacer la gemme au centre du Carré (elle est sur la médiathèque)
 - ❓ Château : vérifier sur place la grille côté esplanade (tracé, hauteur, portail) et l'escalier ; modéliser le Portail Saint-Dominique (vestige gothique en haut de l'escalier, contour OSM 235607769) ?
 - ❓ Château : ajouter la tour Yolande (clocher du grand carillon, 70 cloches) — où est-elle ? ; vérifier hauteurs et toits des tours ; façade baroque de la Sainte-Chapelle non représentée
 - ❓ Cathédrale : vérifier sur place l'emplacement et la hauteur du clocher, la forme de son toit, la couleur des toits
 
-- ⬜ reprendre l'indicateur pour les lieux
 
 
 *Deploiement*
@@ -140,18 +141,10 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ⬜ Mode « sur place » : débloquer un lieu par géolocalisation (phot des piuxel art)
 - ⬜ Curseur d'époques : afficher les bâtiments selon leur date
 - ✅ Mascotte (éléphant) qui se promène dans le diorama — itération 33
-- ⬜ Mascotte : bouton ou clic pour suivre l'éléphant avec la caméra (il part loin, on le perd de vue)
-- ⬜ Mascotte : la nuit, il rentre dormir près de la fontaine (ou marche plus lentement)
-- ⬜ Mascotte : il traverse parfois la couronne d'un arbre de rue (les arbres ne sont pas pris en compte dans ses chemins)
 - ⬜ Partage de progression entre amis
 - ⬜ Étendre à d'autres quartiers (plusieurs dioramas reliés)
-- Avoir un luncher pour lancer la map (mode choix, exploration ou mode histoire
-  - ⬜ y gérer le démarrage raté (audit du 30/09) : aujourd'hui, si `city.json` ne se charge pas, les visiteurs voient le message développeur « Lance `npm run data` » ; et une erreur après le chargement (terrain, monuments…) donne une page vide, car `main()` n'a pas de `catch` (`src/main.ts`). À prévoir avec le launcher : un message lisible pour les visiteurs (forme à définir)
-- Avoir de la vie dans les rue
 - ✅ Jeu « trouve l'éléphant » — itération 34 (coincer l'éléphant : abandonné, pas amusant), remplacé à l'itération 35 par « Ramène les quatre éléphants à la fontaine » (cache-cache, 1 à 5 fuites, épuisé, retour en vol, feu d'artifice)
 - ⬜ Mini-jeu : régler après de vrais essais : nombre de fuites (1 à 5), points (10, bonus 20) et distance de réapparition (aujourd'hui 100 à 250 m, promenade jusqu'à 380 m de la fontaine : `mascot.json`) — Dasco aimait aussi quand ils partaient loin, à revoir
-- ⬜ Mini-jeu : aide pour les trouver (flèche au bord de l'écran, ou bouton « où sont les éléphants ? ») — pour les joueurs ; le mode debug `?debug` (itération 36) montre déjà où ils sont
-- ⬜ Mini-jeu : points selon la rapidité (idée écartée pour la v1)
 - ⬜ Points : à quoi les dépenser (bâtiments débloqués, décorations…) — *Dasco*
 - Mode histoire qui fait visiter la ville
 

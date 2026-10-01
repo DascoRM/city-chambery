@@ -273,7 +273,7 @@ Elle **simplifie** aussi les modèles (meshoptimizer), réglé par `simplify` da
 revenir aux modèles complets, retirer `simplify` puis relancer `npm run nature`. Après la mise à
 jour, lancer `npm install` une fois (nouvelles dépendances de conversion).
 
-Sources du pack : `assets-src/quaternius-nature/` (`obj/` et `fbx/`, rangés en `arbres`, `rochers`,
+Sources du pack : `assets-src/quaternius-nature/` (`obj/`, rangés en `arbres`, `rochers`,
 `vegetation`, `bois`). Cactus, palmiers, maïs et blé ont été retirés (hors sujet pour Chambéry).
 Les `.blend` d'origine ont été supprimés (pack retéléchargeable sur quaternius.com).
 
@@ -431,7 +431,7 @@ public/models/             Fichiers glTF des monuments (export Blender)
 public/models/nature/      Arbres du pack nature convertis (.glb)
 public/models/mascotte/    Éléphant mascotte converti (.glb)
 public/icons/              Icônes de l'appli (mode hors-ligne, écran d'accueil)
-assets-src/                Sources des modèles (pack Quaternius en .obj/.fbx), pas servies par le site
+assets-src/                Sources des modèles (pack Quaternius en .obj), pas servies par le site
 data/raw/                  Caches des téléchargements (non versionnés)
 .claude/                   Consignes pour Claude (CLAUDE.md) et suivi du projet (docs/)
 ```
