@@ -1,5 +1,15 @@
 # Journal des itérations
 
+## Itération 53 — 01/10/2026 (branche `feat/EP001-US001-passants`, documents seulement)
+
+**Demande de Dasco :** ajouter une tâche pour intégrer les modèles de `assets-src/characters` aux passants ; « dis-moi si ok pour toi ».
+
+**Changements :** US010 réécrite (de « option non planifiée » à planifiée), epic et BACKLOG mis à jour. Aucun code, aucun fichier du pack commité.
+
+**Constats sur le pack (lus dans les fichiers) :** « Mini Characters 1.0 » de Kenney, **CC0** (`License.txt`) ; 12 personnages (6 femmes, 6 hommes) de 700 à 880 triangles ; squelette de **7 os** ; 32 animations dont `walk` (0,67 s) et `idle` (1,33 s) ; 0,67 unité de haut (× 2,54 pour 1,7 m) ; une texture de palette partagée ; 14 Mo au total, dont 8,8 Mo de FBX inutiles. Deux méthodes d'animation comparées dans la spec (instances avec matrices d'os cuites, ou personnages classiques près de la caméra).
+
+**Non vérifié :** le rendu de ces personnages dans le diorama (c'est l'objet de l'essai).
+
 ## Itération 52 — 01/10/2026 (branche `feat/EP001-US001-passants`)
 
 **Retour de Dasco :** « les PNJ peuvent marcher sur l'eau : il faudrait un système de hitbox pour qu'ils ne puissent pas marcher sur l'eau. »
