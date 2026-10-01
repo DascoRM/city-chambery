@@ -70,6 +70,51 @@ function toShape(p: Poly): THREE.Shape {
   return shape;
 }
 
+/** Écart toléré (m) entre un triangle de ruban et le sol, avant de le découper le long des arêtes du terrain. */
+const MAX_DEV = 0.06;
+
+/**
+ * Les arêtes des triangles du sol, en coordonnées (x scène, z scène) : x = k, y = k et x + y = k (en cases de la
+ * grille), avec y = -z. Même découpage que `terrain.ts` (diagonale entre (i+1, j) et (i, j+1)).
+ */
+const EDGE_FAMILIES: [number, number][] = [[1, 0], [0, 1], [1, 1]];
+const cellCoord = (g: { x0: number; y0: number; step: number }, x: number, z: number, a: number, b: number) => (a * (x - g.x0) + b * (-z - g.y0)) / g.step;
+
+function crossesTerrainEdge(g: { x0: number; y0: number; step: number }, ax: number, az: number, bx: number, bz: number, cx: number, cz: number): boolean {
+  for (const [a, b] of EDGE_FAMILIES) {
+    const u = cellCoord(g, ax, az, a, b), v = cellCoord(g, bx, bz, a, b), w = cellCoord(g, cx, cz, a, b);
+    if (Math.floor(Math.min(u, v, w)) !== Math.floor(Math.max(u, v, w))) return true;
+  }
+  return false;
+}
+
+/** Découpe un polygone convexe par une droite a·fx + b·fy = k (en cases) : les deux morceaux. */
+function splitConvex(g: { x0: number; y0: number; step: number }, poly: [number, number][], a: number, b: number, k: number): [number, number][][] {
+  const L: [number, number][] = [], R: [number, number][] = [];
+  const f = (p: [number, number]) => cellCoord(g, p[0], p[1], a, b) - k;
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length], fp = f(p), fq = f(q);
+    if (fp >= 0) L.push(p);
+    if (fp <= 0) R.push(p);
+    if ((fp > 0 && fq < 0) || (fp < 0 && fq > 0)) {
+      const t = fp / (fp - fq), m: [number, number] = [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+      L.push(m);
+      R.push(m);
+    }
+  }
+  return [L, R].filter((piece) => piece.length >= 3);
+}
+
+function splitAtTerrainEdges(g: { x0: number; y0: number; step: number }, poly: [number, number][]): [number, number][][] {
+  let pieces = [poly];
+  for (const [a, b] of EDGE_FAMILIES) {
+    const v = poly.map((p) => cellCoord(g, p[0], p[1], a, b));
+    for (let k = Math.ceil(Math.min(...v)); k <= Math.floor(Math.max(...v)); k++)
+      pieces = pieces.flatMap((piece) => splitConvex(g, piece, a, b, k));
+  }
+  return pieces;
+}
+
 /**
  * Ruban posé sur le relief le long d'une polyligne + disques aux jonctions (joints arrondis).
  * Les segments sont redécoupés tous les 4 m pour épouser la pente.
@@ -79,11 +124,40 @@ function ribbons(lines: { pts: Pt[]; w: number }[], lift: number, material: THRE
   const pos: number[] = [];
   const H = (x: number, zNeg: number) => terrain.heightAt(x, -zNeg) + lift;
   // Tous les triangles orientés vers le haut (sinon ils sont vus de dos et apparaissent noirs)
-  const tri = (ax: number, az: number, bx: number, bz: number, cx: number, cz: number) => {
+  const rawTri = (ax: number, az: number, bx: number, bz: number, cx: number, cz: number) => {
     const up = (bz - az) * (cx - ax) - (bx - ax) * (cz - az) > 0;
     const A = [ax, H(ax, az), az], B = [bx, H(bx, bz), bz], C = [cx, H(cx, cz), cz];
     if (up) pos.push(...A, ...B, ...C);
     else pos.push(...A, ...C, ...B);
+  };
+  // Un triangle dont les trois sommets sont posés sur le sol ne suit pas le terrain entre eux : le sol est fait de
+  // triangles de 10 m, et si une arête de ces triangles le traverse en courbe ou en pente raide, le terrain passe
+  // au-dessus de la chaussée (plaques vertes) ou elle flotte. Là où l'écart dépasse MAX_DEV, on découpe le triangle
+  // le long de ces arêtes : chaque morceau est alors dans un seul triangle du sol, donc exact.
+  const grid = terrain.grid;
+  const tri = (ax: number, az: number, bx: number, bz: number, cx: number, cz: number) => {
+    if (!grid || !crossesTerrainEdge(grid, ax, az, bx, bz, cx, cz)) return rawTri(ax, az, bx, bz, cx, cz);
+    const ha = H(ax, az), hb = H(bx, bz), hc = H(cx, cz);
+    // Préfiltre : milieux des côtés et centre. L'écart entre le triangle et le sol est une fonction affine par morceaux,
+    // maximale là où une arête du sol coupe un côté ; le milieu d'un côté en est au pire à la moitié, donc en dessous de
+    // MAX_DEV / 2 en ces points, le triangle est sûrement dans la tolérance.
+    const mid = (x1: number, z1: number, h1: number, x2: number, z2: number, h2: number) => Math.abs(H((x1 + x2) / 2, (z1 + z2) / 2) - (h1 + h2) / 2);
+    const quick = Math.max(
+      mid(ax, az, ha, bx, bz, hb), mid(bx, bz, hb, cx, cz, hc), mid(cx, cz, hc, ax, az, ha),
+      Math.abs(H((ax + bx + cx) / 3, (az + bz + cz) / 3) - (ha + hb + hc) / 3),
+    );
+    if (quick < MAX_DEV / 2) return rawTri(ax, az, bx, bz, cx, cz);
+    // Écart exact : maximal à un sommet d'un morceau (le sol y est linéaire)
+    const pieces = splitAtTerrainEdges(grid, [[ax, az], [bx, bz], [cx, cz]]);
+    const det = (bx - ax) * (cz - az) - (cx - ax) * (bz - az);
+    let dev = 0;
+    for (const piece of pieces) for (const [x, z] of piece) {
+      const u = ((x - ax) * (cz - az) - (cx - ax) * (z - az)) / det, v = ((bx - ax) * (z - az) - (x - ax) * (bz - az)) / det;
+      dev = Math.max(dev, Math.abs(H(x, z) - (ha + (hb - ha) * u + (hc - ha) * v)));
+    }
+    if (dev <= MAX_DEV) return rawTri(ax, az, bx, bz, cx, cz);
+    for (const piece of pieces)
+      for (let k = 1; k < piece.length - 1; k++) rawTri(piece[0][0], piece[0][1], piece[k][0], piece[k][1], piece[k + 1][0], piece[k + 1][1]);
   };
   const MAX_SEG = 4;
   for (const { pts: raw, w } of lines) {

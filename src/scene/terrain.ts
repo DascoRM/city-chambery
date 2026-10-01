@@ -18,6 +18,8 @@ export interface Terrain {
   /** Altitude la plus basse sous une emprise (pour poser un bâtiment sans qu'il flotte). */
   minUnder(ring: Pt[]): number;
   hasRelief: boolean;
+  /** Grille d'altitudes (origine et pas, en mètres) : les arêtes de ses triangles, pour que les rubans de voie épousent le sol exactement */
+  grid?: { x0: number; y0: number; step: number };
 }
 
 export function createTerrain(data: CityData): Terrain {
@@ -40,7 +42,7 @@ export function createTerrain(data: CityData): Terrain {
     const cx = ring.reduce((s, p) => s + p[0], 0) / ring.length, cy = ring.reduce((s, p) => s + p[1], 0) / ring.length;
     return Math.min(m, heightAt(cx, cy));
   };
-  return { heightAt, minUnder, hasRelief: true };
+  return { heightAt, minUnder, hasRelief: true, grid: { x0, y0, step } };
 }
 
 // ---------------------------------------------------------------------------
