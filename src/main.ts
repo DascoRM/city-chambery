@@ -99,7 +99,7 @@ async function main() {
   // Passants (EP001-US001) : décor, sur leur propre réseau de voies
   let people: ReturnType<typeof buildPeople> = null;
   try {
-    people = buildPeople(lifeContent.people as unknown as PeopleConfig, data, terrain.heightAt, { camera, focus: () => controls.target });
+    people = buildPeople(lifeContent.people as unknown as PeopleConfig, data, terrain.heightAt, { camera, focus: () => controls.target, hour: () => clock.state().hour });
     if (people) {
       scene.add(people.group);
       if (DEBUG) console.info(`[passants] ${people.count} sur un réseau de ${people.nodes} nœuds`);
@@ -144,6 +144,7 @@ async function main() {
     onToggleCategory: (cat, v) => {
       placeLayer.setCategoryVisible(cat, v);
       awnings?.setCategoryVisible(cat, v);
+      people?.setCategoryVisible(cat, v);
       // La fiche ouverte disparaît si sa catégorie est masquée
       if (!v && placeIdx !== null && placeCategory(placeLayer.places[placeIdx].kind).id === cat) closePlace();
     },
@@ -186,7 +187,9 @@ async function main() {
     if (key !== openKey) {
       openKey = key;
       openStates = openStatesAt(c.day, c.hour);
-      placeLayer.setClosed(litStatesAt(c.day, c.hour).map((s) => s === 'closed'));
+      const lit = litStatesAt(c.day, c.hour);
+      placeLayer.setClosed(lit.map((s) => s === 'closed'));
+      people?.setOpen(lit.map((s) => s === 'open')); // les groupes de passants : seulement devant les lieux ouverts (horaires OSM ou provisoires)
       if (placeIdx !== null) ui.setPlaceStatus(openStates[placeIdx]);
     }
     if (c.foliage !== foliage) {

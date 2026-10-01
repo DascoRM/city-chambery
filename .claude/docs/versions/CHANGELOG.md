@@ -1,5 +1,21 @@
 # Journal des itérations
 
+## Itération 55 — 01/10/2026 (branche `feat/EP001-US002-rythme-jour-nuit`)
+
+**Demande de Dasco :** passer à l'US002 (la foule suit l'heure, groupes devant les bars ouverts).
+
+**Changements (`src/scene/people.ts`, `src/content/life.json`, `main.ts`) :**
+- **foule des rues selon l'heure** : courbe `dayCurve` (part des 300 passants) : 5 % de 0 h à 5 h, 40 % à 7 h, 80 % à 8 h, 100 % à 12 h, 90 % à 17 h, 25 % à 22 h ; à l'heure du chargement la foule est déjà là ; ensuite au plus 25 naissances ou départs par demi-seconde ;
+- **arrivées et départs hors champ** : un nouveau passant naît sur une voie hors de l'écran quand c'est possible (sinon il grandit en fondu) ; un passant en trop continue de marcher et s'éteint dès qu'il sort du champ, ou s'efface en fondu s'il reste visible plus de 15 s ;
+- **groupes de 2 à 5 silhouettes** de 20 h à 3 h (montée et descente sur 1 h 30), au plus 12 (×0,5 sur téléphone), devant les lieux **ouverts** d'après leurs horaires (OSM ou provisoires, US011) et à moins de 25 m d'une voie : bars, pubs (poids 1), boîtes de nuit (1,5), restaurants (0,5), cafés (0,3), jamais les glaciers ; tirage stable par lieu, lieux près du point regardé ; en arc, tournés vers l'entrée, avec un léger balancement ;
+- **à la fermeture**, le groupe repart à pied sur la voie (dans un sens ou l'autre) puis disparaît hors champ ;
+- **légende** : décocher une catégorie efface ses groupes en fondu (Q8) ; les passants des rues ne sont pas concernés ;
+- 60 instances de plus réservées aux groupes (même maillage, aucun appel de rendu en plus).
+
+**Vérifié (Chrome avec carte graphique, caméra sur la fontaine) :** foule mesurée = foule attendue à 12 h (300), 3 h (15), 8 h (240), 18 h (210), 23 h (45) ; à 23 h, 8 groupes (27 silhouettes), chacun à 4 à 13 m de son lieu (bars, pubs, un restaurant, un café) ; « Bars » décochée : 1 groupe reste (un café), recochée : 9 groupes ; à 4 h : groupes partis à pied, plus personne debout 25 s plus tard ; balayage rapide 12 h → 2 h → 18 h → 5 h → 23 h → 9 h : 180 passants à 9 h comme attendu ; coût inchangé (≈ 2 400 appels de rendu, 30 images/s au repos) ; aucune erreur console.
+
+**Non vérifié / à noter :** **la nuit, les silhouettes sont très sombres** (aucune lumière propre) : les groupes se devinent plus qu'ils ne se voient, surtout dans les rues étroites ; à regarder à l'œil, une petite lueur des halos sur eux est possible si besoin. L'écart réel au lieu dépend de la voie la plus proche (pas la porte). Téléphone.
+
 ## Itération 54 — 01/10/2026 (branche `feat/EP001-US001-passants`, documents seulement)
 
 **Demande de Dasco :** essai d'un personnage animé du pack Kenney (en mode `?debug`), puis d'un personnage Mixamo « Rigged Character » ; finalement : « laisse tomber, pas rentable, garde les personnages que tu as modélisés ».

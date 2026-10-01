@@ -89,4 +89,4 @@
 ---
 
 **Priorité** : High
-**Status** : 🟡 Livrée (itération 51), à valider par Dasco ; foule autour du point regardé (R6) activée après le premier essai
+**Status** : ✅ Done (itération 51, validée par Dasco ; PR #14)
