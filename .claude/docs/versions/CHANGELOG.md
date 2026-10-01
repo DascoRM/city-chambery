@@ -1,5 +1,45 @@
 # Journal des itérations
 
+## Itération 61 — 01/10/2026 (branche `feat/EP002-US002-US003-noms-de-rues-rendu`)
+
+**Retour de Dasco :** zoom et dézoom OK. Mais le début et la fin des noms de rues sont tronqués, à beaucoup d'endroits c'est coupé, hachuré, souvent pixelisé ; et il voit des artefacts beige et vert sur certaines rues et boulevards, qu'il attribue au nivellement.
+
+**Diagnostic (noms) :**
+- tronqué : l'atlas mesurait chaque nom **sans** l'espacement des lettres, puis le dessinait avec : cases trop étroites, début et fin coupés (« 3OULEVARD », « C » final perdu) ;
+- pixelisé : 32 px par lettre, ≈ 2,5 fois trop peu au zoom maximum ;
+- hachuré : cases voisines qui se mélangent dans les mipmaps, et lettres passant sous le terrain là où la pente se courbe ;
+- retrouvé en regardant les captures : en tournant la vue, certains noms apparaissaient **à l'envers** (la règle « lisible » ne valait que vu du sud).
+
+**Changements (`src/scene/street-names.ts`, réécrit) :**
+- **champ de distance** : un atlas d'une case par lettre (33 lettres, 1024 × 316, **2 Mo au lieu de 16**), calculé une fois à l'approche (≈ 70 ms) ; chaque lettre est un petit quad dont le shader dessine le contour net et le liseré clair à n'importe quel zoom ;
+- **toujours à l'endroit** : chaque nom a une seconde position tournée de 180° ; le shader choisit celle qui se lit de gauche à droite vue de la caméra ;
+- **posé sur la chaussée** : chaque sommet prend la hauteur du plus haut des sommets voisins du ruban de la rue (le ruban relie en ligne droite des points posés sur le sol tous les 4 m : il passe au-dessus du terrain dans un creux) ;
+- liseré : `halo` de `streets.json` en couleur Three.js (`#f4f0e4`).
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : « BOULEVARD DE LÉMENC » (pente forte) et « QUAI SÉNATEUR ANTOINE BORREL » entiers, contours nets ; vue depuis le nord : texte toujours de gauche à droite ; fondu inchangé (0 à 345 m, 0,11 à 295 m, 0,56 à 255 m, 1 à 195 m) ; **+1 appel de rendu** (62 → 63), triangles 1,45 → 1,47 M ; compteur « repos (30 max) » ; atlas construit en 70 ms ; nuit (23 h) rejouée après la réécriture : lettres nettes, liseré clair, lisibles.
+
+**Non vérifié :** téléphone ; l'écran de 320 px ; la Leysse et un pont. À noter : des mascottes et des arbres ont échoué à charger une fois (« Failed to fetch ») juste après un redémarrage du serveur de développement, sans se reproduire (fichiers servis normalement : 200).
+
+**Artefacts beige et vert : mesurés, pas corrigés.** Ils existent **sans** les noms. Cause : le ruban d'une rue est une bande dont les sommets (tous les 4 m, aux deux bords) sont posés sur le terrain ; entre les sommets, il relie en ligne droite, alors que le terrain (grille de 10 m) se courbe ou monte raide. Calcul sur toutes les voies : **55 rues sur 1 795** ont des endroits où le terrain passe au-dessus de la chaussée de plus de 18 cm (le décalage de la chaussée), jusqu'à **2,5 m** boulevard de Lémenc, 1,6 m rue André Jacques, 1,5 m chemin de la Cassine, 1,4 m avenue de la Grande Chartreuse. Un découpage plus fin ne suffit pas (écart max encore 0,8 m à 1,5 m de pas, pour 6 fois plus de triangles) : le sol y est très raide. Piste : creuser le terrain sous les rues ; voir BACKLOG.
+
+## Itération 60 — 01/10/2026 (branches `feat/EP002-US001-noms-de-rues-donnees` puis `feat/EP002-US002-US003-noms-de-rues-rendu`, empilées)
+
+**Demande de Dasco :** une petite epic avant « Reprise vie dans la ville » : le nom des rues écrit sur le sol, visible seulement quand on zoome, pour se situer en naviguant ; avec un cas de test. Réponses : toutes les voies sauf pistes cyclables, sentiers et desserte ; distances proposées (320 m → 200 m) ; style à revoir à l'usage ; nom écrit une seule fois par rue ; test manuel **et** contrôle des données. « Reprise vie dans la ville » devient EP003.
+
+**Changements :**
+- Spec `docs/specs/epics/EP002-noms-de-rues/` (epic + US001 à US004), questions Q1 à Q5 tranchées ;
+- **US001** `scripts/street-names.mjs` : tronçons de même nom regroupés en rues (extrémités à moins de 60 m), chaînes continues, emplacement = fenêtre la plus droite de la longueur du texte, taille de lettres selon la largeur de la voie (1,4 à 4,5 m) ; `streetLabels` dans `city.json` : **182 noms sur 212 noms de voies** ; 32 sans emplacement (ruelles de moins de 25 m, ronds-points, places) ; réglages `streetNames` (`diorama.config.json`) ;
+- **US002** `src/scene/street-names.ts` : tous les noms dans une texture (atlas 2048 × 1944, police 32 px), un seul maillage dont chaque nom épouse le relief (ruban redécoupé tous les 3 m, hauteur de la voie + 5 cm, `polygonOffset`), lueur légère la nuit ;
+- **US003** fondu continu de 320 m à 200 m entre la caméra et le centre de vue (`src/content/streets.json`), rien de construit avant 380 m, rien de dessiné au-delà de 320 m ;
+- **US004** `scripts/check-street-labels.mjs` (`npm run check:streets`) + scénario dans la spec ;
+- README, FEATURES, DECISIONS (2 lignes).
+
+**Vérifié :** `npm run build` ; `npm run check:streets` passe, et échoue (7 erreurs, sortie 1) sur une copie de `city.json` volontairement cassée (nom inventé, angle à l'envers, doublon) ; `city.json` : seules les clés `streetLabels` et `generatedAt` changent ; Chrome avec carte graphique : vue d'ensemble (2 844 m) sans nom, opacité 0 à 345 m, 0,11 à 295 m, 0,56 à 255 m, 0,89 à 225 m, 1 à 195 m et en deçà ; noms lisibles et dans le sens de la rue sur la rue de Boigne (oblique), le quai Sénateur Antoine Borrel (vue du dessus, jour et nuit) et la rue Saint-Réal ; cachés par les bâtiments et les arbres ; nuit (23 h) : lisibles ; **+1 appel de rendu** (62 → 63), triangles inchangés, compteur « repos (30 max) » ; aucune erreur ni avertissement console.
+
+**Non vérifié :** téléphone (pincer, mémoire de l'atlas ≈ 16 Mo, 21 Mo avec les mipmaps) ; écran de 320 px ; clic au travers d'un nom (lu dans le code : les raycasts ne visent que des listes explicites) ; images/s en mouvement (seul le compteur au repos a été relevé) ; hiver ; vol `flyTo` (caméra déplacée directement).
+
+**Limites connues :** dans une rue étroite entre des immeubles hauts (rue de Boigne en vue presque verticale), le nom est caché : il se lit sous un angle oblique le long de la rue ; place Saint-Léger, ronds-points et ruelles de moins de 25 m n'ont pas de nom ; style à revoir à l'usage (demande de Dasco).
+
 ## Itération 59 — 01/10/2026 (branche `feat/EP001-US006-drapeaux`)
 
 **Demande de Dasco :** faire l'US006 (drapeaux).

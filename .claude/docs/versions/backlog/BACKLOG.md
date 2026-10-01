@@ -70,7 +70,7 @@ Le détail ci-dessous est l'ancien énoncé, gardé pour mémoire.
   - cadence : les passants comptent comme « ça bouge » ou non selon **TI-02**
 
 ## P2 — Epic à venir : « Reprise vie dans la ville » (retours de Dasco, 01/10/2026)
-À passer en epic (`specs/epics/EP002-…`) quand EP001 sera terminée. Contexte : US001 et US002 jugées « très bien » par Dasco.
+À passer en epic (`specs/epics/EP003-…`) après EP002 « Noms de rues au sol » (décision de Dasco, 01/10/2026). Contexte : US001 et US002 jugées « très bien » par Dasco.
 - ⬜ **Le Carré Curial vit la nuit** : des passants la nuit au Carré Curial (lieu de vie nocturne), même quand le reste des rues est calme
 - ⬜ **Plus de monde devant les bars la nuit** : au moins 6 personnes par groupe (aujourd'hui 2 à 5, `groups.size` dans `life.json`)
 - ⬜ **Tous les bars ouverts ont du monde après 21 h** : chaque bar dont l'horaire dit « ouvert » (OSM ou provisoire) a son groupe dès 21 h, au lieu d'un tirage limité à 12 groupes près de la caméra ; à mesurer (≈ 36 bars, pubs et boîtes de nuit × 6 personnes)
@@ -86,6 +86,15 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ➡ **Moins d'images quand rien ne bouge** → devenu **TI-02** (30 images/s au repos)
 - ⬜ Chargement : ~~vérifier gzip~~ (gzip actif dans `deploy/nginx.conf`, vérifié à l'audit du 30/09) ; brotli (−23 % sur `city.json`, absent de l'image nginx alpine) ; regrouper les fichiers d'arbres (45 `.glb` aujourd'hui) ; `city.json` en binaire (entiers + deltas : −15 % mesuré) — *P3*
 - ⏸ Mode hors-ligne : le service worker retélécharge `city.json` et les `.glb` à la première visite au lieu de reprendre le cache HTTP (≈ 0,55 Mo gzip en double, estimé) — *pas grave pour l'instant (Dasco, 30/09)*
+
+## P1 — Bug : terrain qui passe au-dessus des rues (retour de Dasco, 01/10/2026)
+- ⬜ **Plaques vertes et beiges sur certaines rues et boulevards** (existait avant les noms de rues) — *moyen* : le ruban d'une rue relie en ligne droite des sommets posés sur le sol tous les 4 m, aux deux bords ; le terrain (grille de 10 m) se courbe ou monte raide entre eux. Mesuré (itération 61, tous les tronçons) : **55 rues sur 1 795** ont un endroit où le terrain dépasse la chaussée de plus de 18 cm, jusqu'à **2,5 m** boulevard de Lémenc, 1,6 m rue André Jacques, 1,5 m chemin de la Cassine, 1,4 m avenue de la Grande Chartreuse, 1,1 m faubourg Reclus. Un découpage plus fin du ruban ne suffit pas (0,8 m d'écart à 1,5 m de pas, 6 fois plus de triangles). Pistes : **creuser le terrain sous les rues** (abaisser les sommets de la grille proches d'une chaussée, `heightAt` restant cohérent pour tout ce qui est posé dessus), ou poser la chaussée au plus haut des sommets voisins (elle flotte alors un peu au-dessus du sol côté aval). À décider avec Dasco après un essai visuel ; vérifier ensuite les éléphants, passants, arbres, bâtiments (`minUnder`), noms de rues
+
+## Suites d'EP002 « Noms de rues au sol » (itérations 60 et 61)
+- ⬜ Style des noms de rues à revoir à l'usage (demande de Dasco) : `ink`, `halo`, `nightGlow` dans `src/content/streets.json`, polices et tailles dans `diorama.config.json` → `streetNames`
+- ⬜ Rues étroites : le nom est caché par les immeubles sauf en vue oblique le long de la rue (rue de Boigne) ; à voir avec Dasco : plus gros, ou répété, ou en gras
+- ⬜ Places sans nom (Saint-Léger, Lucien Biset…), ronds-points et ruelles de moins de 25 m : afficher le nom sur la place (`areas` ne porte pas le nom des places aujourd'hui)
+- ✅ *itération 61* Mémoire de l'atlas des noms : plus un sujet (champ de distance, 2 Mo au lieu de 16)
 
 ## Architecture — à trancher avant d'ouvrir le diorama aux amis
 - ❓ **Back-end : pas nécessaire aujourd'hui.** Il le devient seulement pour : progression partagée entre appareils ou entre amis (comptes, classement), ajout de lieux par d'autres que Dasco sans redéployer, données qui changent souvent (événements, horaires). Pistes légères si besoin : PocketBase ou Supabase auto-hébergé sur le Pi (Coolify) ; pour les événements des bars, consommer l'API d'ACME plutôt que créer un back-end dédié

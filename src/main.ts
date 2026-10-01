@@ -12,6 +12,7 @@ import { buildCity } from './scene/city';
 import { createTerrain } from './scene/terrain';
 import { buildPlaceMarkers, buildPoiMarkers } from './scene/markers';
 import { buildLabels } from './scene/labels';
+import { buildStreetNames, type StreetNamesConfig } from './scene/street-names';
 import { buildAwnings, type AwningConfig } from './scene/facades';
 import { createTiltShift } from './scene/tiltshift';
 import { createDayNight } from './scene/daynight';
@@ -21,6 +22,7 @@ import { buildBirds, type BirdsConfig } from './scene/birds';
 import { buildChimneys, type SmokeConfig } from './scene/chimneys';
 import { buildFlags, type FlagSpec } from './scene/flags';
 import lifeContent from './content/life.json';
+import streetsContent from './content/streets.json';
 import { buildNature, type NatureConfig } from './scene/nature';
 import { buildHerd, type Herd, type MascotConfig } from './scene/mascot';
 import { createClock } from './time/clock';
@@ -140,6 +142,9 @@ async function main() {
     console.warn('[drapeaux] non créés', e);
   }
   const labels = await buildLabels(data.labels ?? [], terrain.heightAt);
+  // Noms de rues peints au sol, visibles seulement en zoomant (EP002) ; texture construite à l'approche
+  const streetNames = buildStreetNames(data.streetLabels, terrain.heightAt, city.night, streetsContent as unknown as StreetNamesConfig, { camera, focus: () => controls.target }, DEBUG);
+  if (streetNames) scene.add(streetNames.group);
   // Effet maquette : les étiquettes passent par-dessus le flou pour rester lisibles
   const tiltShift = createTiltShift(renderer, scene, camera, labels.root);
   // Effet maquette toujours actif (plus d'interrupteur depuis l'itération 22)
@@ -342,6 +347,7 @@ async function main() {
     game.ticker,
     ...(herdDebug ? [herdDebug] : []),
     clock,
+    ...(streetNames ? [streetNames] : []),
     { update: () => labels.update(camera) },
     interaction, // survol
     { update: followPlace },

@@ -1,0 +1,9 @@
+{
+  "_comment": "Noms de rues au sol (EP002). Distances en mètres entre la caméra et le centre de la vue : invisibles au-delà de fadeStart, pleinement lisibles en deçà de fadeEnd.",
+  "fadeStart": 320,
+  "fadeEnd": 200,
+  "nightGlow": 0.35,
+  "_comment_nightGlow": "Lueur ajoutée la nuit (0 = les noms sombrent avec les rues, 1 = lisibles comme de jour)",
+  "ink": "#3a3f47",
+  "halo": "#f4f0e4"
+}

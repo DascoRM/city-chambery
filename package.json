@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "data": "node scripts/fetch-osm.mjs",
+    "check:streets": "node scripts/check-street-labels.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
