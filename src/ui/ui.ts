@@ -45,6 +45,8 @@ export interface UiHandlers {
   onPlaceClosed(): void;
   /** Boussole touchée : remettre le nord en haut. */
   onCompass(): void;
+  /** Bouton « ? » : rouvrir le lobby (accueil). */
+  onLobby?(): void;
 }
 
 export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: string, h: UiHandlers) {
@@ -99,6 +101,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     <button class="compass card" data-action="compass" aria-label="Boussole : remettre le nord en haut" title="Remettre le nord en haut">
       <svg viewBox="0 0 40 40" aria-hidden="true"><g class="needle"><path d="M20 5 L25 20 L15 20 Z" fill="#d1492e"/><path d="M20 35 L25 20 L15 20 Z" fill="#b9ab98"/><text x="20" y="4.6" text-anchor="middle" font-size="6.5" font-weight="700" fill="#2d2622">N</text></g></svg>
     </button>
+    <button class="help card" data-action="lobby" aria-label="À propos : revoir l'accueil" title="Revoir l'accueil">?</button>
     <div class="toast" role="status"></div>
     <div class="tooltip" hidden></div>
     <footer class="attribution">${esc(attribution)}<span class="long"> · Textes : sources citées dans chaque fiche</span></footer>
@@ -229,10 +232,20 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     placeCard.style.top = `${Math.round(top)}px`;
   };
 
-  const flash = (msg: string) => {
+  // Derrière le lobby, personne ne lirait le message : il attend l'entrée sur la carte (flushFlash)
+  let pendingFlash = '';
+  const showFlash = (msg: string) => {
     toast.textContent = msg;
     toast.classList.add('show');
     window.setTimeout(() => toast.classList.remove('show'), 2600);
+  };
+  const flash = (msg: string) => {
+    if (root.classList.contains('lobby-open')) pendingFlash = msg;
+    else showFlash(msg);
+  };
+  const flushFlash = () => {
+    if (pendingFlash) showFlash(pendingFlash);
+    pendingFlash = '';
   };
 
   const showTooltip = (text: string | null, x = 0, y = 0) => {
@@ -249,6 +262,11 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   let lastBubblePos = '';
 
   const hideHint = () => hint.classList.add('gone');
+  /** Réaffiche l'aide quelques secondes (à l'entrée sur la carte : le lobby n'explique pas les gestes). */
+  const showHint = () => {
+    hint.classList.remove('gone');
+    window.setTimeout(hideHint, 9000);
+  };
   window.setTimeout(hideHint, 9000);
 
   root.addEventListener('click', (e) => {
@@ -262,6 +280,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     if (action === 'close-place') { hidePlaceCard(); h.onPlaceClosed(); }
     if (action === 'reset') h.onReset();
     if (action === 'compass') h.onCompass();
+    if (action === 'lobby') h.onLobby?.();
   });
   const hourIn = root.querySelector<HTMLInputElement>('[data-action="hour"]')!;
   const playBtn = root.querySelector<HTMLButtonElement>('[data-action="play"]')!;
@@ -304,7 +323,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { panel.hidden = true; journal.hidden = true; if (shownPlace) { hidePlaceCard(); h.onPlaceClosed(); } } });
 
   return {
-    setFound, showPoi, flash, showTooltip, setClock, hidePanel: () => (panel.hidden = true),
+    setFound, showPoi, flash, flushFlash, showTooltip, hideHint, showHint, setClock, hidePanel: () => (panel.hidden = true),
     showPlaceCard, hidePlaceCard, movePlaceCard, setPlaceStatus,
     placeCardState: () => ({ place: shownPlace, pinned }),
     /** Éléphants ramenés sur la fontaine */

@@ -12,6 +12,9 @@ import { buildCity } from './scene/city';
 import { createTerrain } from './scene/terrain';
 import { buildPlaceMarkers, buildPoiMarkers } from './scene/markers';
 import { buildLabels } from './scene/labels';
+import { createLoading } from './ui/loading';
+import { createLobby, type LobbyContent } from './ui/lobby';
+import { loadLobbySkip } from './state/lobby';
 import { buildStreetNames, type StreetNamesConfig } from './scene/street-names';
 import { buildAwnings, type AwningConfig } from './scene/facades';
 import { createTiltShift } from './scene/tiltshift';
@@ -23,6 +26,7 @@ import { buildChimneys, type SmokeConfig } from './scene/chimneys';
 import { buildFlags, type FlagSpec } from './scene/flags';
 import lifeContent from './content/life.json';
 import streetsContent from './content/streets.json';
+import lobbyContent from './content/lobby.json';
 import { buildNature, type NatureConfig } from './scene/nature';
 import { buildHerd, type Herd, type MascotConfig } from './scene/mascot';
 import { createClock } from './time/clock';
@@ -52,8 +56,27 @@ async function loadCity(): Promise<CityData | null> {
 }
 
 async function main() {
+  // Écran initial (index.html) → lobby (EP004) : le lobby apparaît tout de suite et la ville charge derrière.
+  // ?lobby=0 : pas de lobby ; ?lobby=1 : toujours ; en mode ?debug : pas de lobby, sauf ?lobby=1
+  const loading = createLoading();
+  const lobbyParam = new URLSearchParams(location.search).get('lobby');
+  const lobbyAtStart = lobbyParam === '1' || (lobbyParam !== '0' && !DEBUG && !loadLobbySkip());
+  const lobby = createLobby(
+    app,
+    lobbyContent as unknown as LobbyContent,
+    { places: (poisContent as Poi[]).filter((p) => !p.draft || import.meta.env.DEV).length, elephants: (mascotContent as unknown as MascotConfig).game.count },
+    loadLobbySkip(),
+    lobbyAtStart,
+  );
+  if (lobbyAtStart) {
+    loading.onChange(lobby.setProgress);
+    loading.hideBoot();
+  }
+  await loading.set(3, 'données');
   const data = await loadCity();
   if (!data) {
+    lobby.destroy();
+    loading.hideBoot();
     showFatal(app, 'Données de la ville absentes', 'Lance <code>npm run data</code> pour télécharger les bâtiments depuis OpenStreetMap, puis recharge la page.');
     return;
   }
@@ -69,11 +92,13 @@ async function main() {
     return [{ ...p, position }];
   });
 
+  await loading.set(10, 'relief');
   const terrain = createTerrain(data);
   const stage = createStage(app, data.bounds, terrain.heightAt);
   const { scene, camera, renderer, controls } = stage;
   const models = modelsContent as ModelEntry[];
   const hidden = hiddenBuildings(models); // bâtiments remplacés par un monument modélisé
+  await loading.set(18, 'bâtiments');
   const city = buildCity(data, terrain, { hidden });
   scene.add(city.group);
   // Heure et saison (itération 31) : heure réelle de Chambéry par défaut
@@ -81,6 +106,7 @@ async function main() {
   let foliage = clock.state().foliage;
   city.trees.setFoliage(foliage);
   // Arbres modélisés dans certains parcs (src/content/nature.json) ; les arbres simples restent en repli
+  await loading.set(42, 'arbres');
   let nature: Awaited<ReturnType<typeof buildNature>> | null = null;
   try {
     nature = await buildNature(natureContent as unknown as NatureConfig, data, city.trees.spots, terrain.heightAt, foliage);
@@ -90,10 +116,12 @@ async function main() {
     console.warn('[nature] arbres modélisés non chargés', e);
   }
   // Monuments modélisés (formes simples en code ou fichiers glTF)
+  await loading.set(54, 'monuments');
   const modelsRoot = await buildModels(models, pois, { night: city.night.uNight, data, heightAt: terrain.heightAt, minUnder: terrain.minUnder });
   scene.add(modelsRoot);
   // Les quatre éléphants échappés de la fontaine, sur les rues et chemins (src/content/mascot.json)
   const mascot = mascotContent as unknown as MascotConfig;
+  await loading.set(64, 'éléphants');
   let herd: Herd | null = null;
   try {
     herd = await buildHerd(mascot, data, terrain.heightAt);
@@ -102,6 +130,7 @@ async function main() {
     console.warn('[mascottes] non chargées', e);
   }
   // Passants (EP001-US001) : décor, sur leur propre réseau de voies
+  await loading.set(72, 'passants');
   let people: ReturnType<typeof buildPeople> = null;
   try {
     people = buildPeople(lifeContent.people as unknown as PeopleConfig, data, terrain.heightAt, { camera, focus: () => controls.target, hour: () => clock.state().hour });
@@ -121,6 +150,7 @@ async function main() {
     console.warn('[oiseaux] non créés', e);
   }
   // Cheminées et fumée (EP001-US005) : la fumée suit la saison de l'horloge
+  await loading.set(80, 'cheminées');
   let chimneys: ReturnType<typeof buildChimneys> = null;
   try {
     chimneys = buildChimneys(lifeContent.smoke as unknown as SmokeConfig, data, {
@@ -141,6 +171,7 @@ async function main() {
   } catch (e) {
     console.warn('[drapeaux] non créés', e);
   }
+  await loading.set(86, 'noms de rues');
   const labels = await buildLabels(data.labels ?? [], terrain.heightAt);
   // Noms de rues peints au sol, visibles seulement en zoomant (EP002) ; texture construite à l'approche
   const streetNames = buildStreetNames(data.streetLabels, terrain.heightAt, city.night, streetsContent as unknown as StreetNamesConfig, { camera, focus: () => controls.target }, DEBUG);
@@ -160,6 +191,7 @@ async function main() {
   tiltShift.setSize(app.clientWidth, app.clientHeight);
   // Compteur de performance : ajouter ?debug à l'adresse
   const perfHud = DEBUG ? createPerfHud(renderer, () => quality.pixelRatio) : null;
+  await loading.set(92, 'lieux');
   const poiLayer = buildPoiMarkers(pois, terrain.heightAt);
   scene.add(poiLayer.root);
   const placeLayer = buildPlaceMarkers(data.places, terrain.heightAt, data.buildings, terrain.minUnder);
@@ -173,6 +205,7 @@ async function main() {
   } catch (e) {
     console.warn('[auvents] non chargés', e);
   }
+  await loading.set(97, 'interface');
   let discovered = loadDiscovered();
   let placeIdx: number | null = null; // fiche de lieu ouverte
   // Modèle de la mascotte sous licence CC BY 3.0 : crédit obligatoire, affiché avec les autres
@@ -187,6 +220,7 @@ async function main() {
     },
     onPlaceClosed: () => placeLayer.setActive(null),
     onCompass: () => stage.resetNorth(),
+    onLobby: () => lobby.open(),
     onHour: (h) => clock.setHour(h),
     onPlay: (p) => clock.setPlaying(p),
     onLive: () => clock.live(),
@@ -365,6 +399,24 @@ async function main() {
   controls.addEventListener('start', () => { still = 0; });
   const timer = new THREE.Timer();
   timer.connect(document);
+  // Lobby : la caméra se pose sur le vieux centre (la vie y est visible : passants, oiseaux, fumée) et tourne doucement
+  const lobbyView = () => {
+    const a = data.anchors.chateau?.pos, b = data.anchors.elephants?.pos;
+    const cx = a && b ? (a[0] + b[0]) / 2 : (data.bounds.minX + data.bounds.maxX) / 2;
+    const cy = a && b ? (a[1] + b[1]) / 2 : (data.bounds.minY + data.bounds.maxY) / 2;
+    controls.target.set(cx, terrain.heightAt(cx, cy), -cy);
+    camera.position.copy(controls.target).addScaledVector(new THREE.Vector3(-0.5, 0.58, 0.64).normalize(), 430);
+    controls.autoRotate = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    controls.autoRotateSpeed = 0.5;
+    controls.update();
+  };
+  if (lobby.isOpen()) lobbyView();
+  lobby.setCredits(`${data.attribution} · Éléphant : jeremy (Poly Pizza), CC BY 3.0`);
+  lobby.onEnter(() => {
+    controls.autoRotate = false;
+    ui.showHint(); // le lobby n'explique pas les gestes : l'aide s'affiche à l'entrée sur la carte
+    ui.flushFlash(); // le message de départ du jeu, retenu pendant le lobby
+  });
   // Tout est en place (ville, arbres, monuments) : première carte des ombres
   renderer.shadowMap.needsUpdate = true;
   renderer.setAnimationLoop(() => {
@@ -381,21 +433,28 @@ async function main() {
     quality.update(raw, busy && wasBusy);
     wasBusy = busy;
     stage.updateFlight(dt);
-    controls.update();
+    controls.update(controls.autoRotate ? dt : undefined);
     stage.clampTarget();
     if (camera.position.distanceToSquared(lastPos) > 1e-6 || controls.target.distanceToSquared(lastTarget) > 1e-6) {
       still = 0;
       lastPos.copy(camera.position);
       lastTarget.copy(controls.target);
     } else still += raw;
+    // Derrière le lobby, la caméra tourne doucement : 30 images/s suffisent (cadence au repos)
+    if (lobby.isOpen()) still = CAMERA_TAIL;
     for (const m of tickers) m.update(dt, t);
     tiltShift.update(controls.target, stage.size * 1.2);
     tiltShift.render();
     perfHud?.end(raw, busy);
   });
 
+  // La ville est prête : « Explorer la carte » s'active (ou la carte s'ouvre directement sans lobby)
+  await loading.set(100, '');
+  lobby.setReady();
+  if (!lobbyAtStart) loading.hideBoot();
+
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { scene, camera, controls, data, pois, placeLayer, awnings, people, birds, chimneys, flags, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, birds, chimneys, flags, clock, herd, hunt, slots } });
 }
 
 main();

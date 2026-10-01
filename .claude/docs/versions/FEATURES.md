@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 01/10/2026 — itération 61.
+État au 01/10/2026 — itération 63.
 
 ## Carte / diorama
 
@@ -47,6 +47,7 @@
 
 | Fonctionnalité | État | Détail |
 |---|---|---|
+| Écran initial et lobby de démarrage (EP004) | 🟡 | Itération 63 (US001 à US003, à valider) : un écran initial dans `index.html`, visible avant le code de l'appli ; puis le lobby, **tout de suite**, qui présente les lieux d'histoire, le mini-jeu des éléphants et les ambiances pendant que la ville charge (barre à étapes réelles) ; « Explorer la carte » s'active quand elle est prête ; la ville vivante tourne derrière un voile ; case « Ne plus afficher cet écran » ; bouton « ? » pour le rouvrir ; `?lobby=0` / `?lobby=1` ; textes dans `src/content/lobby.json` |
 | Lieux d'histoire (✦) | 🟡 | 8 lieux ; position tirée d'OSM par le nom → **pas toujours précise**, à reprendre à la main |
 | Lieux « mystère » à découvrir | ✅ | Nom caché tant que non découvert |
 | Fiche d'histoire (période, récit, anecdote, sources) | ✅ | Textes à relire (Trivelli/Trivelly, « plus vaste ensemble de trompe-l'œil ») |

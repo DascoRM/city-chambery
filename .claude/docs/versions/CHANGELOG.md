@@ -1,5 +1,26 @@
 # Journal des itérations
 
+## Itération 63 — 01/10/2026 (branche `feat/EP004-US002-US003-lobby`)
+
+**Demande de Dasco :** une epic avant « Reprise vie dans la ville » : à l'arrivée sur le site, une page de chargement puis un lobby qui explique le projet (jeux, fonctionnalités), épuré et beau, **avec un design validé avant de coder**. Retours sur les maquettes : écran initial « très stylé » ; piste A écartée (beaucoup de texte, le chapitre « voir la ville vivre » avec les bars et restaurants « pas ouf ») ; **piste B retenue** (« ça fait plus jeu, gamification »), à condition que la ville vive en arrière-plan ; piste C « peut-être pas dans la DA ». Dasco a modifié le texte de la maquette « en chargement », puis : « tu peux y aller ».
+
+**Changements :**
+- **Écran initial** (`index.html`) : HTML et CSS en ligne, sans ressource externe, visible avant le code de l'appli ; polices de Google chargées sans bloquer l'affichage ; message pour JavaScript désactivé ;
+- **`src/ui/loading.ts`** : progression réelle par étapes de `main()` (données, relief, bâtiments, arbres, monuments, éléphants, passants, cheminées, noms de rues, lieux, interface), qui laisse le navigateur repeindre entre deux étapes ;
+- **`src/ui/lobby.ts`**, `src/content/lobby.json`, `src/state/lobby.ts` : le lobby de la piste B s'affiche **tout de suite** et la ville charge derrière ; « Explorer la carte » est grisé puis s'active ; les nombres (8 lieux d'histoire, quatre éléphants) sont lus dans `pois.json` et `mascot.json` ; case « Ne plus afficher cet écran » mémorisée ; lien « Crédits et licences » qui déplie les attributions ; Échap ou le bouton ferment ; bouton « ? » sur la carte pour le rouvrir ;
+- **La ville vit derrière le lobby** : quand elle est prête, le fond uni s'efface en fondu et le diorama apparaît sous un voile ; la caméra se pose sur le vieux centre (milieu château – fontaine, 430 m) et tourne doucement ; cette rotation est exclue du « ça bouge » (cadence au repos, 30 images/s) ;
+- à l'entrée sur la carte : l'aide « Glisse pour tourner… » s'affiche 9 s (la maquette n'explique pas les gestes), et le message de départ du jeu des éléphants, retenu pendant le lobby, s'affiche ;
+- `?lobby=0` saute le lobby, `?lobby=1` le force, `?debug` le saute (sauf avec `?lobby=1`) ;
+- spec EP004 : design validé (piste B + écran initial), US001 faite.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : l'écran initial est affiché alors que le code de l'appli n'est pas encore exécuté (`main.ts` retenu 2 s) ; progression 3 % → 42 % → 80 % → 86 % → 97 % → 100 %, bouton grisé puis actif ; textes de Dasco affichés (Centre historique, Chambéry, « Explorer la ville, et découvrez ») ; la caméra tourne derrière le lobby ; compteur « repos (30 max) » lobby ouvert ; « Explorer la carte » : lobby fermé, interface visible, rotation arrêtée, aide et message du jeu affichés ; « ? » rouvre le lobby (« Retour à la carte ») ; case cochée : mémorisée, le lobby ne revient pas, la carte s'ouvre directement ; `?lobby=0` et `?debug` : pas de lobby ; crédits dépliés ; Échap ferme ; 320 × 640 : rien ne dépasse, bouton visible ; aucune erreur console.
+
+**Coût :** chargement +0,27 s environ (4,54 s → 4,81 s, médiane de 6, sur Mac en dev) à cause des pauses qui laissent repeindre la barre.
+
+**Non fait / non vérifié :** le message « ça arrive » sur connexion lente (US002) ; `prefers-reduced-motion`, visite hors ligne et JavaScript désactivé (implémentés, non essayés) ; téléphone réel et lecteur d'écran ; le panneau de debug des éléphants transparaît derrière le lobby (seulement avec `?debug&lobby=1`).
+
+**À compléter par Dasco :** l'accroche « Explorer la ville, et découvrez » (reprise telle quelle de la maquette, elle semble inachevée) : `src/content/lobby.json`, clé `tagline`.
+
 ## Itération 62 — 01/10/2026 (branche `fix/rues-sous-le-terrain`)
 
 **Demande de Dasco :** gérer le bug du terrain qui passe au-dessus de certaines rues (plaques vertes et beiges sur des boulevards).
