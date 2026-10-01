@@ -1,5 +1,27 @@
 # Journal des itérations
 
+## Itération 61 — 01/10/2026 (branche `feat/EP002-US002-US003-noms-de-rues-rendu`)
+
+**Retour de Dasco :** zoom et dézoom OK. Mais le début et la fin des noms de rues sont tronqués, à beaucoup d'endroits c'est coupé, hachuré, souvent pixelisé ; et il voit des artefacts beige et vert sur certaines rues et boulevards, qu'il attribue au nivellement.
+
+**Diagnostic (noms) :**
+- tronqué : l'atlas mesurait chaque nom **sans** l'espacement des lettres, puis le dessinait avec : cases trop étroites, début et fin coupés (« 3OULEVARD », « C » final perdu) ;
+- pixelisé : 32 px par lettre, ≈ 2,5 fois trop peu au zoom maximum ;
+- hachuré : cases voisines qui se mélangent dans les mipmaps, et lettres passant sous le terrain là où la pente se courbe ;
+- retrouvé en regardant les captures : en tournant la vue, certains noms apparaissaient **à l'envers** (la règle « lisible » ne valait que vu du sud).
+
+**Changements (`src/scene/street-names.ts`, réécrit) :**
+- **champ de distance** : un atlas d'une case par lettre (33 lettres, 1024 × 316, **2 Mo au lieu de 16**), calculé une fois à l'approche (≈ 70 ms) ; chaque lettre est un petit quad dont le shader dessine le contour net et le liseré clair à n'importe quel zoom ;
+- **toujours à l'endroit** : chaque nom a une seconde position tournée de 180° ; le shader choisit celle qui se lit de gauche à droite vue de la caméra ;
+- **posé sur la chaussée** : chaque sommet prend la hauteur du plus haut des sommets voisins du ruban de la rue (le ruban relie en ligne droite des points posés sur le sol tous les 4 m : il passe au-dessus du terrain dans un creux) ;
+- liseré : `halo` de `streets.json` en couleur Three.js (`#f4f0e4`).
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : « BOULEVARD DE LÉMENC » (pente forte) et « QUAI SÉNATEUR ANTOINE BORREL » entiers, contours nets ; vue depuis le nord : texte toujours de gauche à droite ; fondu inchangé (0 à 345 m, 0,11 à 295 m, 0,56 à 255 m, 1 à 195 m) ; **+1 appel de rendu** (62 → 63), triangles 1,45 → 1,47 M ; compteur « repos (30 max) » ; atlas construit en 70 ms ; nuit (23 h) rejouée après la réécriture : lettres nettes, liseré clair, lisibles.
+
+**Non vérifié :** téléphone ; l'écran de 320 px ; la Leysse et un pont. À noter : des mascottes et des arbres ont échoué à charger une fois (« Failed to fetch ») juste après un redémarrage du serveur de développement, sans se reproduire (fichiers servis normalement : 200).
+
+**Artefacts beige et vert : mesurés, pas corrigés.** Ils existent **sans** les noms. Cause : le ruban d'une rue est une bande dont les sommets (tous les 4 m, aux deux bords) sont posés sur le terrain ; entre les sommets, il relie en ligne droite, alors que le terrain (grille de 10 m) se courbe ou monte raide. Calcul sur toutes les voies : **55 rues sur 1 795** ont des endroits où le terrain passe au-dessus de la chaussée de plus de 18 cm (le décalage de la chaussée), jusqu'à **2,5 m** boulevard de Lémenc, 1,6 m rue André Jacques, 1,5 m chemin de la Cassine, 1,4 m avenue de la Grande Chartreuse. Un découpage plus fin ne suffit pas (écart max encore 0,8 m à 1,5 m de pas, pour 6 fois plus de triangles) : le sol y est très raide. Piste : creuser le terrain sous les rues ; voir BACKLOG.
+
 ## Itération 60 — 01/10/2026 (branches `feat/EP002-US001-noms-de-rues-donnees` puis `feat/EP002-US002-US003-noms-de-rues-rendu`, empilées)
 
 **Demande de Dasco :** une petite epic avant « Reprise vie dans la ville » : le nom des rues écrit sur le sol, visible seulement quand on zoome, pour se situer en naviguant ; avec un cas de test. Réponses : toutes les voies sauf pistes cyclables, sentiers et desserte ; distances proposées (320 m → 200 m) ; style à revoir à l'usage ; nom écrit une seule fois par rue ; test manuel **et** contrôle des données. « Reprise vie dans la ville » devient EP003.

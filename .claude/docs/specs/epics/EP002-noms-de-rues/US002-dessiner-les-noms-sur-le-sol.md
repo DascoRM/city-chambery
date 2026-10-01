@@ -24,8 +24,9 @@
 
 | Règle | Description |
 |-------|-------------|
-| R1 | Le nom est un **texte peint** (texture de texte ou décalque) posé juste au-dessus du ruban de la rue (hauteur : `roadLift()` de `src/scene/roads.ts`), pas un sprite tourné vers la caméra comme les parcs |
-| R2 | Un seul matériau et une seule géométrie fusionnée si possible (règle de performance de l'epic : pas d'objet par nom) |
+| R1 | Le nom est un **texte peint** posé juste au-dessus du ruban de la rue (hauteur : `roadLift()` de `src/scene/roads.ts`, au plus haut des sommets voisins du ruban), pas un sprite tourné vers la caméra comme les parcs |
+| R2 | Un seul matériau et une seule géométrie fusionnée (règle de performance de l'epic : pas d'objet par nom) ; **lettres en champ de distance** (un atlas d'une case par lettre, ≈ 2 Mo) : nettes à tous les zooms, pas de coupure aux extrémités (correctif du 01/10 après retour de Dasco) |
+| R2 bis | **Jamais à l'envers** : le nom se retourne de 180° quand la caméra tourne, pour se lire de gauche à droite à l'écran (correctif du 01/10) |
 | R3 | Style du texte : voir Q3 de l'epic (par défaut majuscules, sans empattement, gris foncé, halo clair) ; police déjà chargée dans l'app, pas de nouvelle ressource tierce |
 | R4 | Les noms ne projettent pas d'ombre et n'en reçoivent pas |
 | R5 | Position et angle viennent de l'US001 ; le rendu ne recalcule pas le choix |
@@ -51,7 +52,7 @@
 |-----|---------------------|
 | Nom très long (« Quai Sénateur Antoine Borrel ») | Taille réduite ou nom coupé sur deux lignes, jamais plus large que la rue plus de quelques mètres |
 | Rue très étroite (escalier, passage) | Texte plus petit, ou absent si illisible |
-| Texte à l'envers | Retourné de 180° pour rester lisible |
+| Texte à l'envers | Retourné de 180° pour rester lisible, y compris quand on tourne la vue |
 | Police pas encore chargée | Attente, ou police de secours (Georgia / sans-serif) sans bloquer le démarrage |
 | Écran haute densité | Texte net (résolution de texture suffisante) sans exploser la mémoire |
 

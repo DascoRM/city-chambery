@@ -54,6 +54,8 @@ Le projet n'a pas de tests automatisés : la vérification passe par `npm run bu
 | 10 | ✅ | « repos (30 max) » ; 62 → 63 appels de rendu avec les noms, triangles inchangés |
 | 11 | ❌ | Non joué (téléphone, 320 px) |
 
+**Rejoué le 01/10/2026 après le correctif du rendu** (étapes 2 et 3) : noms entiers (début et fin visibles), nets au zoom, toujours de gauche à droite en tournant la vue de 180° ; étape 7 (nuit, 23 h) rejouée : lisibles.
+
 Contrôle des données : `npm run check:streets` passe (182 noms) et échoue sur une copie cassée (7 erreurs, sortie 1).
 
 ---

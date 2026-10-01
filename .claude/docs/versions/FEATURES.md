@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 01/10/2026 — itération 60.
+État au 01/10/2026 — itération 61.
 
 ## Carte / diorama
 
@@ -20,7 +20,7 @@
 | Arbres modélisés (pack Quaternius) | 🟡 | 16 parcs et squares (classiques, bouleaux, quelques pins), jardin botanique (+ saules), bords de la Leysse (bouleaux) ; rues en arbres simples ; ≈ 880 arbres, 18 modèles ; `nature.json`, `npm run nature` |
 | Cours d'eau (la Leysse) | ✅ | Berges en pierre, eau brillante animée, largeur OSM ×1,8 ; tronçons couverts dessinés quand même (choix de lisibilité, `showCoveredWater`) |
 | Noms des parcs et cours d'eau | ✅ | 15 étiquettes, apparaissent en s'approchant (grands parcs d'abord), réduites quand la caméra est très proche |
-| Noms de rues au sol (EP002) | ✅ | 182 noms peints à plat sur la chaussée, dans le sens de la rue (un par rue, sur sa partie la plus droite), majuscules sans empattement ; invisibles en vue d'ensemble, fondu de 320 m à 200 m de la caméra ; cachés par les bâtiments ; lisibles de nuit (lueur légère) ; 32 voies sans nom (trop courtes, ronds-points, places) ; réglages : `streetNames` (`diorama.config.json`), `streets.json` ; contrôle : `npm run check:streets` |
+| Noms de rues au sol (EP002) | ✅ | 182 noms peints à plat sur la chaussée, dans le sens de la rue (un par rue, sur sa partie la plus droite), majuscules sans empattement, nettes à tous les zooms (champ de distance), toujours à l'endroit quel que soit le cap ; invisibles en vue d'ensemble, fondu de 320 m à 200 m de la caméra ; cachés par les bâtiments ; lisibles de nuit (lueur légère) ; 32 voies sans nom (trop courtes, ronds-points, places) ; réglages : `streetNames` (`diorama.config.json`), `streets.json` ; contrôle : `npm run check:streets` |
 | Ombres portées, lumière d'après-midi | ✅ | |
 | Monuments modélisés | 🟡 | Système prêt (formes en code ou fichiers glTF, config `src/content/models.json`) ; 1 monument en test : fontaine des Éléphants en formes simples (bassin de 13 m tiré d'OSM, 4 éléphants dos à dos avec jets d'eau, colonne, statue ; hauteur 17,65 m ; agrandie ×1,3) ; mise en lumière la nuit (éclairage par le bas, statue en projecteur, bassin bleuté, halo au sol) ; itération 38 : chaque matériau garde ses propres réglages de nuit (pierre, fonte, bronze), et chaque monument sa propre altitude de sol (BUG-01) |
 | Cathédrale Saint-François-de-Sales | 🟡 | Formes simples bâties sur le contour OSM réel : bas-côtés et chapelles, nef haute (≈ 25 m) à toit à deux pans et contreforts, abside, façade flamboyante simplifiée côté place Métropole (portail, grande baie, pinacles), clocher côté nord (position et hauteur supposées) ; éclairée la nuit, baies lumineuses |
