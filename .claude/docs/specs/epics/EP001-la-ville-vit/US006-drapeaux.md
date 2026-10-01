@@ -85,4 +85,4 @@ Le drapeau du château et celui de l'hôtel de ville de près et de loin ; motif
 ---
 
 **Priorité** : Medium
-**Status** : 🔲 Todo
+**Status** : 🟡 Livrée (itération 59), à valider par Dasco (motif à confirmer)

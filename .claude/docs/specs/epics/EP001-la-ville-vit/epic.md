@@ -1,6 +1,6 @@
 # Epic EP001 - La ville vit
 
-**Statut : ✅ spec validée par Dasco (questions tranchées le 30/09/2026)** · **pack de bâtiments jugé le 30/09 : auvents gardés, reste du pack écarté** · suite : passants (US001), puis le reste, dans l'ordre ci-dessous
+**Statut : 🟡 toutes les user stories livrées (01/10/2026), US006 en attente de validation ; US010 abandonnée.** Suite : epic « Reprise vie dans la ville » (BACKLOG).
 
 ## Résumé
 Faire vivre le diorama : des passants dans les rues (plus nombreux de jour, des petits groupes devant les bars
@@ -57,8 +57,8 @@ boucle de rendu (`Ticker`), cadence à 30 images/s au repos, `three.js` séparé
 | [US002](US002-rythme-jour-nuit.md) | Le monde suit l'heure : rues plus calmes la nuit, groupes devant les bars ouverts | High | 5 | US001 | ✅ Done (itération 55) |
 | [US003](US003-fenetres-qui-vivent.md) | Des fenêtres qui s'allument et s'éteignent au fil de la soirée | High | 2 | — | ✅ Done (itération 56) |
 | [US004](US004-pigeons-et-oiseaux.md) | Des pigeons sur les places et des oiseaux autour des monuments | Medium | 3 | — | ✅ Done (itération 57) |
-| [US005](US005-fumee-de-cheminees.md) | De la fumée qui sort de cheminées, en automne et en hiver | Medium | 3 | — | 🟡 Livrée (itération 58), à valider par Dasco |
-| [US006](US006-drapeaux.md) | Des drapeaux qui flottent sur des mâts sourcés | Medium | 3 | décision sur les emplacements | 🔲 Todo |
+| [US005](US005-fumee-de-cheminees.md) | De la fumée qui sort de cheminées, en automne et en hiver | Medium | 3 | — | ✅ Done (itération 58) |
+| [US006](US006-drapeaux.md) | Des drapeaux qui flottent sur des mâts sourcés | Medium | 3 | décision sur les emplacements | 🟡 Livrée (itération 59), à valider par Dasco |
 | [US007](US007-preparer-le-pack-batiments.md) | Préparer le pack de bâtiments (nom, licence, conversion) : réduit aux 2 pièces d'auvent | Medium | 3 | — | ✅ Done (itération 46) |
 | [US008](US008-auvents-des-lieux.md) | Des auvents devant les bars, cafés et restaurants | Medium | 5 | US007 | ✅ Done (itérations 46 et 48, validée par Dasco) |
 | [US009](US009-fenetres-et-portes-de-jour.md) | Des fenêtres et des portes visibles de jour sur les bâtiments (dans le shader, sans pack) | Medium | 3 | — | ✅ Done (itération 49) |

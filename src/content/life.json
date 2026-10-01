@@ -187,5 +187,24 @@
       "towards": 30,
       "speed": 0.7
     }
+  },
+  "flags": {
+    "note": "Drapeaux (EP001-US006) : seulement le château (ancrage OSM) et l'hôtel de ville (bâtiment OSM 101971619, « Hôtel de ville de Chambéry ») ; motif de la Savoie (croix blanche sur fond rouge). Le vent est celui de la fumée (smoke.wind). mast : hauteur du mât au-dessus du toit (m) ; width : largeur du drapeau (m).",
+    "list": [
+      {
+        "id": "chateau",
+        "anchor": "chateau",
+        "design": "savoie",
+        "mast": 7,
+        "width": 3.6
+      },
+      {
+        "id": "hotel-de-ville",
+        "building": 101971619,
+        "design": "savoie",
+        "mast": 6,
+        "width": 3.2
+      }
+    ]
   }
 }
