@@ -1,5 +1,21 @@
 # Journal des itérations
 
+## Itération 58 — 01/10/2026 (branche `feat/EP001-US005-fumee`)
+
+**Demande de Dasco :** faire la fumée (US005).
+
+**Changements :**
+- `src/scene/chimneys.ts` : **373 cheminées** en briques avec chapeau, faites en code (un maillage instancié), posées au hasard stable sur 40 % des toits en pente « rectangle » d'au moins 6 m (deux pans, croupes, pyramide), sur l'axe du toit à la bonne hauteur ; pas sous les monuments ; décor (OSM ne donne pas les cheminées) ;
+- **fumée selon la saison seulement** (décision de Dasco) : hiver 1, automne 0,7, printemps 0,4, **été 0** ; seules les 40 cheminées les plus proches du point regardé (à moins de 260 m) fument ; bouffées qui montent, grossissent et dérivent avec le vent (vers le nord-est, 0,7 m/s) ; la nuit, fumée émise en gris bleuté (pas de lueur) ;
+- réserve de particules à part (1 200) de celle du mini-jeu ; `src/scene/particles.ts` : option `drift` (vent) ; ne force pas la pleine vitesse ;
+- `src/content/life.json` → `smoke`.
+
+**En route :** premier essai avec 160 cheminées sur toute la carte : presque jamais à l'écran (≈ une par hectare) ; puis seulement deux pans et croupes longues : un quartier entier sans cheminée ; d'où 40 % de tous les toits rectangle.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : densité par saison (hiver 468 bouffées, automne et printemps moins, été 0) ; dans le cadre d'une vue moyenne : 2 cheminées rue de Boigne (quartier de toits à squelette, sans cheminée), 9 place Saint-Léger, 10 au théâtre ; coût : **+2 appels de rendu**, cadence au repos inchangée ; cheminée sur un toit à croupes bien posée ; nuit : fumée discrète ; aucune erreur console ; captures dans la spec (`assets/fumee-*.png`).
+
+**Non vérifié :** téléphone ; les toits à squelette (formes irrégulières, ≈ 680) n'ont pas de cheminée.
+
 ## Itération 57 — 01/10/2026 (branche `feat/EP001-US004-pigeons`, empilée sur `feat/EP001-US003-fenetres-soiree`)
 
 **Demande de Dasco :** « c'est top, tu peux avancer » (PR #16 ouverte pour l'US003), puis US004.

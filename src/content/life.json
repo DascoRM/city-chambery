@@ -170,5 +170,22 @@
         "radius": 15
       }
     ]
+  },
+  "smoke": {
+    "note": "Cheminées et fumée (EP001-US005) : décor, posées au hasard stable sur une part (share) des toits à pans. La fumée suit la saison seulement (pas l'heure) ; seules les cheminées à moins de `distance` m du point regardé fument (au plus maxEmitters). rate : bouffées par seconde à densité 1. wind.towards : direction où va le vent (degrés, 0 = est, 90 = nord).",
+    "share": 0.4,
+    "distance": 260,
+    "maxEmitters": 40,
+    "rate": 1.6,
+    "density": {
+      "spring": 0.4,
+      "summer": 0,
+      "autumn": 0.7,
+      "winter": 1
+    },
+    "wind": {
+      "towards": 30,
+      "speed": 0.7
+    }
   }
 }

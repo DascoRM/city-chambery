@@ -85,4 +85,4 @@ Une place, la cathédrale, le château de jour ; le même à 22 h ; un envol com
 ---
 
 **Priorité** : Medium
-**Status** : 🟡 Livrée (itération 57), à valider par Dasco
+**Status** : ✅ Done (itération 57 ; PR #17)

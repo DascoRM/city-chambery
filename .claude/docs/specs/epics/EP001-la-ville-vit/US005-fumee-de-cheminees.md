@@ -86,4 +86,4 @@ Hiver sur un toit à cheminée ; même toit en été ; printemps et automne ; `?
 ---
 
 **Priorité** : Medium
-**Status** : 🔲 Todo
+**Status** : 🟡 Livrée (itération 58), à valider par Dasco

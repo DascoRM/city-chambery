@@ -405,6 +405,7 @@ src/
   scene/models.ts          Chargement et placement des monuments
   scene/nature.ts          Arbres modélisés dans les parcs
   scene/mascot.ts          Mascotte : promenade sur le réseau des voies, marche dans le shader
+  scene/chimneys.ts        Cheminées sur les toits et fumée selon la saison (rien l'été), qui dérive avec le vent
   scene/birds.ts           Pigeons sur les places et oiseaux au-dessus des monuments (de jour), faits en code
   scene/people.ts          Passants : silhouettes instanciées qui marchent sur les voies, autour du point regardé
   scene/facades.ts         Auvents des bars, cafés et restaurants (pièces du pack de bâtiments, couleur de la catégorie)
@@ -505,6 +506,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 - **Positions des lieux** : celles trouvées automatiquement dans OSM sont approximatives ; à vérifier.
 - **Contenu** : 8 fiches rédigées à partir des sources citées ; à relire avant de montrer.
 - **Bars et cafés** : noms et horaires bruts d'OSM ; la nuit, ils s'allument selon leur type, pas selon leurs horaires.
+- **Cheminées** : du décor (OpenStreetMap ne les donne pas), sur 40 % des toits en pente « rectangle » ; fumée selon la saison seulement, rien l'été.
 - **Pigeons et oiseaux** : du décor (pas un relevé d'oiseaux réels), de jour seulement, agrandis ×2,5 pour être vus.
 - **Passants** : du décor, jamais dans l'eau (sauf sur les ponts) ; leur nombre suit une courbe horaire, et la nuit des groupes se tiennent devant les lieux ouverts d'après leurs horaires (y compris les horaires provisoires) ; ils ne se tiennent que dans un rayon de 250 m autour du point regardé (pour qu'il y ait du monde à l'écran sans en dessiner partout), et réapparaissent hors du champ quand on se déplace.
 - **Horaires provisoires** : 23 bars, pubs et boîtes de nuit sans horaires dans OSM reçoivent des horaires fictifs (`src/content/place-hours.json`), utilisés seulement pour leur éclairage de nuit ; ils ne sont jamais affichés. À remplacer par les vraies données (voir le backlog).
