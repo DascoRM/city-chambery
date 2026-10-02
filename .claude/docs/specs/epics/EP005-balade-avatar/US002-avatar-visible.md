@@ -10,7 +10,7 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** le mode balade, **When** l'avatar est créé, **Then** il apparaît sur le point regardé (accroché à la grande composante), avec une silhouette dans le style des passants, agrandie ×2 (3,4 m)
+- [ ] **Given** le mode balade, **When** l'avatar est créé, **Then** il apparaît à son point de départ (US007 ; en prototype : le point regardé, accroché à la grande composante), avec une silhouette dans le style des passants, agrandie ×2 (3,4 m)
 - [ ] **Given** une caméra à 30, 70 et 150 m, **When** je regarde l'avatar, **Then** il reste repérable (≈ 38 px de haut à 150 m sur un écran de 900 px) grâce à sa couleur franche et à l'anneau au sol
 - [ ] **Given** l'avatar en marche, **When** il avance, **Then** son cap est lissé, ses jambes bougent (foulée adaptée à sa vitesse) et il a un léger rebond ; à l'arrêt il reste debout, jambes immobiles
 - [ ] **Given** une destination, **When** l'ordre est donné, **Then** un anneau pulse sur le point d'arrivée et disparaît à l'arrivée

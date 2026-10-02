@@ -10,10 +10,10 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** le lobby, **When** je le lis, **Then** une carte « Balade » présente le mode (texte de `lobby.json`, à compléter par toi)
+- [ ] **Given** le lobby, **When** je le lis, **Then** une carte « Balade » présente le mode, qui s'ouvre depuis la carte (texte de `lobby.json`, à compléter par toi)
 - [ ] **Given** l'aide à l'écran, **When** je suis en balade, **Then** elle dit « Touche pour marcher » (tactile) ou « Clique pour marcher » (souris)
 - [ ] **Given** la documentation, **When** la balade est livrée, **Then** FEATURES, BACKLOG, CHANGELOG, DECISIONS (réseau partagé, caméra par translation du rig, technique d'effacement) et README sont à jour
-- [ ] **Given** PERF-AUDIT et FEATURES, **When** je les relis, **Then** les « ≈ 2 400 appels de rendu » périmés sont corrigés (63 mesurés depuis les itérations 61 à 63) ou expliqués
+- [ ] **Given** PERF-AUDIT, **When** je le relis, **Then** il donne les appels de rendu **par vue** (mesurés le 02/10/2026 : 2 406 en vue d'ensemble, 630 à 732 près des monuments, 63 dans les rues) et le budget de la balade s'y réfère
 
 ---
 

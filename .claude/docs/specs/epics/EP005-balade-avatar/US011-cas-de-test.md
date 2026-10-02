@@ -14,7 +14,7 @@
 - [ ] **Given** le scénario, **When** Claude le joue (Chrome avec carte graphique), **Then** chaque étape est consignée réussie, échouée ou non vérifiée dans le CHANGELOG
 - [ ] **Given** un parcours automatique via `window.diorama`, **When** je lance 50 destinations aléatoires et toutes les ✦, **Then** l'avatar n'est jamais dans un bâtiment (avec cours), jamais dans l'eau hors pont, jamais hors réseau (< 0,5 m), jamais sous le sol ou en l'air (`|y − heightAt|` < tolérance), arrive à chaque destination, et il n'y a aucune erreur console
 - [ ] **Given** un contrôle de données comme `npm run check:streets`, **When** je le lance, **Then** les 8 ✦ et la position de départ sont atteignables (dans la grande composante)
-- [ ] **Given** la cadence, **When** je relève `?debug`, **Then** marche ≥ 55 images/s (Mac GPU), repos 30, au plus +6 appels et +0,05 M de triangles
+- [ ] **Given** la cadence, **When** je relève `?debug`, **Then** marche ≥ 55 images/s (Mac GPU), repos 30, au plus +6 appels de rendu **par rapport à la même vue** (2 406 en vue d'ensemble, 630 à 732 près des monuments, 63 dans les rues) et +0,05 M de triangles
 
 ---
 

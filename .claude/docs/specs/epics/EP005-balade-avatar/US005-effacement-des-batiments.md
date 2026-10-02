@@ -1,23 +1,24 @@
-# EP005 - US005 - Les bâtiments, toits et arbres qui masquent l'avatar s'effacent
+# EP005 - US005 - Les bâtiments entiers et les monuments qui masquent l'avatar s'effacent
 
 ## User Story
 
 **En tant que** visiteur en mode balade,
-**je veux** voir mon avatar même quand un bâtiment, un toit ou un arbre est entre lui et la caméra,
+**je veux** voir mon avatar même quand un bâtiment ou un monument est entre lui et la caméra,
 **afin de** ne jamais le perdre dans une rue étroite.
 
 ---
 
 ## Critères d'acceptation
 
-- [ ] **Given** un bâtiment entre la caméra et l'avatar, **When** je regarde, **Then** un trou en pointillé (dither) s'ouvre autour de la ligne de vue et l'avatar reste visible, sans passe transparente ni maillage séparé
-- [ ] **Given** l'avatar contre un mur ou dans une cour, **When** je regarde, **Then** le trou ne mange pas le mur contre lequel il passe (fondu près de l'avatar) et ne coupe que ce qui est au-dessus de lui (sol et bas des murs gardés)
-- [ ] **Given** des arbres et les monuments (château, cathédrale, Carré Curial), **When** ils masquent l'avatar, **Then** ils s'effacent aussi (liste d'exceptions possible dans `models.json`)
-- [ ] **Given** un bâtiment qui reste devant, **When** il masque quand même l'avatar, **Then** une silhouette discrète de l'avatar, de couleur unie, reste visible à travers (+1 à 3 appels de rendu)
-- [ ] **Given** la nuit, **When** une zone s'efface, **Then** les fenêtres allumées autour du trou restent correctes (calculées au fragment) et l'avatar reste lisible
-- [ ] **Given** les ombres, **When** une partie s'efface, **Then** la carte d'ombres statique est inchangée et n'est pas recalculée (coût nul)
-- [ ] **Given** la carte libre, **When** je n'ai pas lancé la balade, **Then** aucun coût : la variante du shader n'est compilée ou activée qu'en balade (ou le coût mesuré est négligeable)
-- [ ] **Given** `?debug`, **When** j'ai l'avatar dans une rue dense, **Then** +0 appel de rendu pour l'effacement, images/s et chargement dans le budget de l'epic
+- [ ] **Given** un bâtiment entre la caméra et l'avatar, **When** je regarde, **Then** ce **bâtiment entier** disparaît (fondu en quelques dixièmes de seconde) et réapparaît quand il ne masque plus
+- [ ] **Given** deux bâtiments mitoyens, **When** l'un masque l'avatar, **Then** seul celui qui masque disparaît ; les murs et toits d'un même bâtiment disparaissent ensemble
+- [ ] **Given** un monument (château, cathédrale, Carré Curial, fontaine), **When** il masque l'avatar, **Then** il s'efface en transparence, façon Diablo ; **les arbres ne s'effacent pas** (décision de Dasco)
+- [ ] **Given** la liste d'exceptions de `avatar.json`, **When** un bâtiment ou monument y figure, **Then** il ne s'efface jamais (liste vide au départ : P1)
+- [ ] **Given** un bâtiment qui reste devant, **When** il masque quand même l'avatar, **Then** une silhouette discrète de l'avatar, de couleur unie, reste visible à travers (P2 ; +1 à 3 appels de rendu)
+- [ ] **Given** la nuit, **When** un bâtiment s'efface, **Then** les fenêtres allumées des autres sont correctes et l'avatar reste lisible
+- [ ] **Given** les ombres, **When** un bâtiment s'efface, **Then** la carte d'ombres statique est inchangée et n'est pas recalculée (l'ombre au sol reste)
+- [ ] **Given** la carte libre, **When** je ne suis pas en balade, **Then** aucun coût et aucun changement de rendu
+- [ ] **Given** `?debug`, **When** l'avatar est dans une rue dense, **Then** images/s, appels de rendu (par rapport à la même vue) et chargement restent dans le budget de l'epic
 
 ---
 
@@ -25,11 +26,13 @@
 
 | Règle | Description |
 |-------|-------------|
-| R1 | Technique : « cutaway » cylindrique / conique en shader (dither + `discard`), piloté par uniformes seulement (`uAvatar`, `uCam`, `uCutR`) : règle BUG-01 |
-| R2 | Module `src/scene/cutaway.ts` ; `applyCutaway(material, { instanced })` ; **instances** : la position monde doit passer par `instanceMatrix` (arbres, auvents) |
-| R3 | Les bâtiments sont **un seul maillage fusionné, un seul matériau** (`city.ts:311-315`), sans identifiant de bâtiment : le trou agit sur une zone, pas sur un bâtiment entier (phase 2 optionnelle : identifiant par bâtiment, +1 session) |
-| R4 | Réglages (rayon, pente du cône, fondu) dans `avatar.json` |
-| R5 | Épingles, cheminées, auvents, drapeaux au-dessus d'un toit effacé : les cacher dans le cylindre, cas par cas |
+| R1 | **Bâtiments entiers d'abord** (décision de Dasco) : il faut un **identifiant de bâtiment** par sommet (attribut `aId`, index 0 à N−1), une texture de facteurs de fondu (une valeur par bâtiment) mise à jour quand l'avatar ou la caméra bougent, et un test côté processeur « segment caméra → avatar contre les emprises » (grille `ringGrid` de `city.ts`), avec lissage dans le temps |
+| R2 | Aujourd'hui tous les bâtiments sont **un seul maillage fusionné, un seul matériau, sans identifiant** (`city.ts:311-315`) : le maillage reste unique (+0 appel de rendu), le fondu passe par un dither ou un test d'opacité selon le facteur du bâtiment |
+| R3 | Monuments : objets séparés avec leurs matériaux (`models/*.ts`) ; fondu d'opacité propre à chacun ; arbres exclus |
+| R4 | Réglages (durée du fondu, exceptions) dans `avatar.json` ; **uniformes seulement** dans les shaders (règle BUG-01) |
+| R5 | Repli si le coût sur mobile est trop élevé : cône de vue en shader (trou en pointillé), décrit dans l'analyse `tasks/ep005-effacement-batiments-plan.md` |
+| R6 | Le mode balade étant exclusif, la variante de shader n'est activée qu'en balade |
+| R7 | Épingles, cheminées, auvents, drapeaux au-dessus d'un bâtiment effacé : à cacher avec lui, cas par cas |
 
 ---
 
@@ -37,9 +40,10 @@
 
 | Cas | Comportement attendu |
 |-----|---------------------|
-| Grain de dither visible quand la densité de pixels baisse | Bruit intercalé, flou de l'effet maquette ; `alphaToCoverage` à tester |
-| Intérieur « creux » derrière le trou | À regarder ; intérieur sombre éventuel (sans doubler le coût) |
-| Bâtiments bas devant la caméra | Non effacés si l'avatar est visible (limite par distance et hauteur) |
+| Bâtiments mitoyens inégaux | Seul le bâtiment qui masque s'efface ; on regarde le rendu |
+| Fenêtres allumées d'un bâtiment qui s'efface | Atténuées avec lui |
+| Bâtiment très bas devant la caméra | Non effacé s'il ne masque pas l'avatar |
+| Plusieurs bâtiments à la fois | Tous ceux qui coupent le segment caméra → avatar s'effacent |
 
 ---
 
@@ -47,18 +51,19 @@
 
 | Critère | Valeur |
 |---------|--------|
-| Points | 8 |
-| Complexité | Complexe (coût du `discard` sur GPU mobile à tuiles non mesuré) |
+| Points | 13 |
+| Complexité | Complexe (la plus incertaine de l'epic : coût sur GPU mobile non mesuré ; 2 à 3 sessions) |
 
 ---
 
 ## Checklist dev
 
-- [ ] `cutaway.ts`
-- [ ] Bâtiments (`city.ts`), arbres, monuments
+- [ ] Attribut `aId` et texture de facteurs (`city.ts`)
+- [ ] Test caméra → avatar contre les emprises
+- [ ] Monuments : fondu d'opacité
 - [ ] Silhouette (matériau, ordre de rendu)
 - [ ] Cas : rue de Boigne, place Saint-Léger, château, nuit, hiver
-- [ ] Images/s, appels, triangles mesurés ; essai téléphone
+- [ ] Images/s, appels, triangles mesurés ; essai iPhone
 - [ ] Validé par Dasco
 
 ---

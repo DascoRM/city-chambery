@@ -1,9 +1,9 @@
 # Epic EP005 - Balade avec un avatar
 
-**Statut : 📝 spec rédigée le 02/10/2026 (analyse par trois agents), à valider par Dasco avant de coder. Planifiée, pas commencée.** Plan : [`.claude/docs/tasks/ep005-plan.md`](../../../tasks/ep005-plan.md).
+**Statut : 📝 spec rédigée le 02/10/2026 et complétée par les décisions de Dasco du même jour. À valider, puis prototype. Planifiée, pas commencée.** Plan : [`.claude/docs/tasks/ep005-plan.md`](../../../tasks/ep005-plan.md). Branche d'epic : `feat/EP005-balade-avatar`.
 
 ## Résumé
-Un petit personnage qu'on déplace en touchant ou cliquant dans la ville, **vue 3/4 de dessus façon Diablo / League of Legends**, la caméra le suit, et **les bâtiments et toits qui le masquent s'effacent** pour qu'on le voie toujours. Un mode en plus de la carte libre actuelle.
+Un **mode balade** : on y entre et on en sort. Dedans, un petit personnage qu'on déplace en touchant ou cliquant dans la ville, **vue 3/4 de dessus façon Diablo / League of Legends**, la caméra le suit, et **les bâtiments qui le masquent disparaissent**. L'interface y est restreinte et on peut y faire des choses qu'on ne fait pas dans la carte libre, sans conflit entre les deux.
 
 ---
 
@@ -12,30 +12,51 @@ Retour d'un utilisateur : se promener dans la ville avec un avatar, en vue à la
 
 ---
 
-## Décisions de Dasco (02/10/2026)
+## Décisions de Dasco
 
+### 02/10/2026, premier échange
 | Sujet | Décision |
 |---|---|
 | Type de vue | **Mode Diablo / LoL** : 3/4 de dessus, clic pour aller, caméra qui suit. **Pas de vue à la première personne** |
-| Masquage | Les **bâtiments ou toits qui masquent le personnage disparaissent** |
-| Process | Analyse par des agents, **spec et plan écrits, rien de codé** |
+| Masquage | Les **bâtiments qui masquent le personnage disparaissent** |
+| Process | Analyse par des agents ; spec et plan écrits, **rien de codé** |
 
-**Pourquoi pas la première personne** (analyse du 02/10) : au niveau de l'œil, les 2 067 volumes extrudés sans textures ne tiennent pas ; il faudrait refaire ombres (une carte de 2048 pour 1,3 km), ciel, effet maquette, collisions, commandes tactiles : 5 à 8 sessions, et le produit changerait de nature. Reprise possible plus tard sous forme d'un bouton « Voir d'ici » (caméra basse, sans marcher).
+### 02/10/2026, réponses aux questions
+| Sujet | Décision |
+|---|---|
+| **Un mode balade explicite et unique** | On entre dans le mode et on en sort. **Les limites de zoom et la caméra de balade n'existent que dans ce mode.** Un mode exclusif permet de faire des choses qu'on n'a pas dans la carte libre, **sans conflit** |
+| Interface | **Restreinte en mode balade.** La boussole « n'a pas de réel intérêt pour le moment » : elle est masquée. Quelles autres commandes restent : à voir au prototype |
+| Taille et vitesse de l'avatar | **À moi de les fixer** (×2 et ≈ 14 m/s au départ) ; on les réglera aux tests, en réel |
+| Effacement | **Au début, les bâtiments entiers** (par identifiant de bâtiment), pas un trou en pointillé. **Ensuite, une itération** pour masquer les bâtiments « en vue » **uniquement dans ce mode** (US013) |
+| Arbres | **Pas d'effacement** (« pas pertinent ») |
+| Monuments | **Oui, ils s'effacent**, éventuellement en transparence comme dans Diablo ; une **liste d'exceptions** est prévue |
+| Fiches des lieux | **À revoir en mode balade** (surtout sur mobile, où elles perturbent) ; on les garde, la forme est à définir |
+| Gestes sur téléphone | **Rester sur ce qui existe sur mobile** (League of Legends mobile et jeux de ce style) : toucher pour aller, ou croix directionnelle ; **à définir à l'usage, pas bloquant** |
+| Éléphants | **On garde le clic sur les éléphants** : en croiser un doit rester amusant |
+| Relief et escaliers | **Gros point d'attention** (« un des points les plus pénibles ») ; pas bloquant pour la démo |
+| « Recommencer l'exploration » | L'avatar **retourne à son point de départ** ; **définir un point de départ** pour l'exploration |
+| Clavier | **Non visé : on vise le clic souris** (et le toucher) |
+| Accessibilité | **Réduire les animations** et **silhouette contrastée** : oui ; le Journal reste l'équivalent pour le web |
+| Téléphone de référence | **iPhone 12 Pro**, en 5G ou Wi-Fi. Retours d'utilisateurs : la carte se charge très bien et reste fluide **même en 4G** |
+| Git | **Une branche d'epic dédiée** (`feat/EP005-balade-avatar`) pour itérer ; on fusionne dans `main` au besoin ; les corrections de `main` se reportent par **rebase** |
+
+**Pourquoi pas la première personne** (analyse du 02/10) : au niveau de l'œil, les 2 067 volumes extrudés sans textures ne tiennent pas ; il faudrait refaire ombres, ciel, effet maquette, collisions, commandes tactiles : 5 à 8 sessions, et le produit changerait de nature. Reprise possible plus tard sous forme d'un bouton « Voir d'ici » (caméra basse, sans marcher).
 
 ---
 
 ## Objectifs
+- Un **mode balade** qu'on entre et qu'on quitte, avec sa caméra, ses limites de zoom et son interface propres
 - Un avatar lisible, qu'on dirige par clic ou toucher, qui suit les rues sans traverser un bâtiment ni l'eau
-- Une caméra qui le suit, sans casser la carte libre actuelle
-- Un avatar toujours visible : bâtiments, toits et arbres qui le masquent s'effacent
-- Marcher jusqu'à un lieu d'histoire pour ouvrir sa fiche
-- Aucune perte de fluidité (30 images/s au repos, ≥ 55 en marche sur Mac), mobile compris
-- Un mode **facultatif** : la carte libre reste le mode par défaut
+- Un avatar toujours visible : les bâtiments (entiers) et monuments qui le masquent s'effacent
+- Marcher jusqu'à un lieu d'histoire pour ouvrir sa fiche, avec des fiches adaptées au mode
+- Aucune perte de fluidité (voir le budget, **par vue**), mobile compris
+- La carte libre reste inchangée
 
 ---
 
 ## Hors scope
 - Vue à la première personne
+- Contrôle au clavier (on vise la souris et le toucher)
 - Avatar animé en détail (personnages animés abandonnés : EP001-US010) ; modèle tiers
 - Navigation libre sur les places (surfaces) : l'avatar marche sur les rues, avec un « dernier mètre » d'au plus 15 m
 - Passages sous porche (aucune donnée aujourd'hui)
@@ -50,74 +71,74 @@ Retour d'un utilisateur : se promener dans la ville avec un avatar, en vue à la
 |----|------------|----------|--------|-----------|--------|
 | [US001](US001-reseau-et-chemin.md) | Un réseau de déplacement partagé et un chemin jusqu'au point cliqué | High | 5 | — | 🔲 Todo |
 | [US002](US002-avatar-visible.md) | Un avatar visible, lisible à toutes les distances | High | 5 | US001 | 🔲 Todo |
-| [US003](US003-camera-qui-suit.md) | Une caméra de balade qui suit l'avatar | High | 5 | US002 | 🔲 Todo |
+| [US003](US003-camera-qui-suit.md) | Un mode balade : caméra qui suit, limites et interface propres | High | 5 | US002 | 🔲 Todo |
 | [US004](US004-entrees.md) | Cliquer ou toucher pour aller, sans casser les gestes actuels | High | 5 | US001, US003 | 🔲 Todo |
-| [US005](US005-effacement-des-batiments.md) | Les bâtiments, toits et arbres qui masquent l'avatar s'effacent | High | 8 | US002, US003 | 🔲 Todo |
-| [US006](US006-decouverte-des-lieux.md) | Marcher jusqu'à un lieu d'histoire pour ouvrir sa fiche | Medium | 3 | US004 | 🔲 Todo |
-| [US007](US007-sauvegarde-de-la-position.md) | Retrouver son avatar là où on l'a laissé | Medium | 2 | US001 | 🔲 Todo |
-| [US008](US008-clavier-et-accessibilite.md) | Se déplacer au clavier et rester accessible | Medium | 3 | US002 | 🔲 Todo |
+| [US005](US005-effacement-des-batiments.md) | Les bâtiments entiers et les monuments qui masquent l'avatar s'effacent | High | 13 | US002, US003 | 🔲 Todo |
+| [US006](US006-decouverte-des-lieux.md) | Marcher jusqu'à un lieu d'histoire, avec des fiches adaptées au mode | Medium | 5 | US004 | 🔲 Todo |
+| [US007](US007-sauvegarde-de-la-position.md) | Un point de départ, et retrouver son avatar là où on l'a laissé | Medium | 2 | US001 | 🔲 Todo |
+| [US008](US008-accessibilite.md) | Une balade accessible : animations réduites, silhouette contrastée | Medium | 2 | US002 | 🔲 Todo |
 | [US009](US009-mobile-fluidite-et-gestes.md) | Une balade fluide et confortable sur téléphone | High | 3 | US004 | 🔲 Todo |
 | [US010](US010-lobby-aide-documentation.md) | Présenter la balade (lobby, aide) et mettre la documentation à jour | Medium | 2 | US003 | 🔲 Todo |
 | [US011](US011-cas-de-test.md) | Un scénario de test et un contrôle automatique du déplacement | Medium | 3 | US001 à US007 | 🔲 Todo |
 | [US012](US012-avatar-et-elephants.md) | L'avatar et les éléphants (optionnelle, plus tard) | Low | 3 | US004 | ⏳ Plus tard |
+| [US013](US013-masquer-les-batiments-en-vue.md) | Masquer les bâtiments « en vue » dans le mode balade (itération suivante) | Low | 5 | US005 | ⏳ Plus tard |
 
-**Total : 44 points hors US012 (≈ 8 à 12 sessions).** Le **jalon prototype** (US001 à US004 en version minimale, ≈ 1 à 1,5 session) sert à décider avant d'investir dans le reste : voir le plan.
+**Total : 50 points hors US012 et US013 (≈ 9 à 13 sessions).** Le **jalon prototype** (US001 à US004 en version minimale, ≈ 1 à 1,5 session) sert à décider avant d'investir dans le reste : voir le plan.
 
 ---
 
 ## Flux principal
 ```
-Carte libre (comme aujourd'hui) → bouton « Balade » → l'avatar apparaît sur le point regardé, la caméra descend derrière lui
+Carte libre (comme aujourd'hui) → bouton « Balade » → on entre dans le mode : interface restreinte,
+l'avatar apparaît à son point de départ, la caméra descend derrière lui
 → je clique une rue : un anneau marque l'arrivée, l'avatar y va en suivant les rues, la caméra le suit
-→ un bâtiment lui masque la vue : il s'efface en pointillé autour de lui, l'avatar reste visible
+→ un bâtiment lui masque la vue : il disparaît en entier, l'avatar reste visible
 → je clique une ✦ : il y marche, la fiche s'ouvre à l'arrivée
-→ « Vue libre » : je reprends la caméra, l'avatar attend ; « Retrouver mon avatar » le recentre
+→ « Vue libre » : je sors du mode, la carte libre reprend (limites et interface d'origine), l'avatar attend
 ```
 
 ---
 
 ## Règles métier de l'epic
-1. **Mode facultatif** : la carte libre actuelle (tourner, pincer, double toucher) reste le défaut ; rien ne change pour qui ne choisit pas la balade
-2. **Un seul propriétaire de la caméra à la fois** : suivi, vol (`flyTo`), boussole, lobby, journal s'arbitrent par un mode explicite
+1. **Un mode explicite et unique** : on entre, on sort. Caméra, limites de zoom, interface et entrées propres au mode ; la carte libre ne change pas
+2. **Un seul propriétaire de la caméra à la fois** : suivi, vol (`flyTo`), lobby, journal s'arbitrent par le mode
 3. **Priorité d'un clic court** : outil de placement (dev) → éléphant → gemme ou épingle → sol (marcher). Un glisser garde son sens actuel. Un toucher = une seule action
-4. **Rien d'inventé** (règle projet 1) : les positions des lieux ne changent pas ; l'avatar ne reçoit pas de fait historique
+4. **Rien d'inventé** (règle projet 1) : les positions des lieux ne changent pas
 5. **Pas d'ombre portée pour l'avatar** (carte d'ombres statique) : ombre en tache, comme les passants et les éléphants
-6. **Réglages dans `src/content/avatar.json`** (échelle, vitesse, foulée, couleur, rayon d'accrochage, caméra, effacement) : rien en dur dans les shaders (règle BUG-01 : uniformes)
-7. **Budget** : au plus +6 appels de rendu (63 aujourd'hui), +0,05 M de triangles, ≥ 55 images/s en marche sur Mac (59,8 mesurés en glissant la carte), 30 au repos, +0,2 s de chargement
+6. **Réglages dans `src/content/avatar.json`** (échelle, vitesse, foulée, couleur, rayon d'accrochage, caméra, effacement, point de départ) : rien en dur dans les shaders (règle BUG-01 : uniformes)
+7. **Budget de performance, mesuré par vue** (le compteur varie beaucoup d'une vue à l'autre : 2 406 appels en vue d'ensemble, 630 à 730 près des monuments, 63 dans les rues) : au plus +6 appels de rendu **par rapport à la même vue**, +0,05 M de triangles, ≥ 55 images/s en marche sur Mac, 30 au repos, +0,2 s de chargement
 8. **Pas d'asset tiers** : silhouette en formes simples (sinon licence au README, règle projet 5)
+9. **Git** : branche d'epic `feat/EP005-balade-avatar` ; une branche par user story `feat/EP005-US00X-<description>` fusionnée dans la branche d'epic ; `main` n'est fusionné qu'au besoin ; les correctifs de `main` se reportent par rebase
 
 ---
 
-## Questions ouvertes pour Dasco
+## Points restant à préciser
 
-| # | Question | Proposition par défaut |
-|---|----------|------------------------|
-| Q1 | **Balade facultative ou par défaut ?** | Facultative : bouton « Balade » à côté de la boussole ; la carte libre reste le défaut (session de test avec les amis) |
-| Q2 | **Vitesse et taille de l'avatar.** À l'échelle réelle (1,4 m/s) il faudrait 6 minutes pour 500 m | Avatar ×2 (3,4 m, lisible à 150 m), ≈ 14 m/s (500 m en ≈ 35 s), réglables |
-| Q3 | **Effacement : trou pointillé ou bâtiment entier ?** | Trou pointillé (cône de vue) d'abord ; bâtiment entier en phase 2 seulement si le rendu déplaît (+1 session) |
-| Q4 | **L'effacement touche-t-il aussi arbres et monuments ?** Et une silhouette de l'avatar à travers les murs ? | Oui pour les arbres et les monuments (liste d'exceptions possible) ; oui pour une silhouette discrète |
-| Q5 | **Fiche des lieux** : à l'arrivée seulement ? | Oui : on clique la ✦, l'avatar y marche, la fiche s'ouvre à l'arrivée (au prototype : ouverture immédiate) ; signe discret « lieu mystère tout proche » à ≤ 25 m, sans ouverture automatique |
-| Q6 | **Sur téléphone, un doigt qui glisse en balade** : déplacer la carte (et quitter le suivi) ou pivoter autour de l'avatar ? | Les deux agents ne sont pas d'accord. Je propose **pivoter autour de l'avatar** (comme les jeux), un toucher bref = aller, deux doigts inchangés, double toucher désactivé en balade ; à tester sur ton téléphone |
-| Q7 | **Éléphants** : le clic sur un éléphant garde son effet immédiat ? | Oui ; « s'approcher pour l'attraper » en US012 après la v1 |
-| Q8 | **Escaliers** : l'avatar peut-il les emprunter (les passants non) ? | Oui (111 voies) ; pas les passages sous bâtiment |
-| Q9 | **« Recommencer l'exploration »** : que devient l'avatar ? | Retour au point de départ ; les points ne bougent pas |
-| Q10 | **Niveau d'accessibilité** | Clavier (flèches, ZQSD), `aria-label` et annonces des lieux proches, réduction des animations, silhouette contrastée ; pas de promesse de parcours complet au lecteur d'écran (le Journal reste l'équivalent) |
-| Q11 | **Quel téléphone** pour mesurer les images/s ? Aucune mesure mobile n'existe | Le tien (modèle à noter) |
+| # | Point | Proposition |
+|---|-------|-------------|
+| P1 | **Liste d'exceptions de l'effacement** : j'ai compris « les bâtiments s'effacent, les monuments aussi (en transparence), avec une liste d'exceptions pour en exclure certains ». C'est bien ça ? | Oui ; liste dans `avatar.json` (aucune au départ) |
+| P2 | **Silhouette de l'avatar à travers ce qui reste devant** (comme Diablo) ? | Oui, discrète |
+| P3 | **Point de départ de l'exploration** : où ? | La fontaine des Éléphants (emblème du lieu, et départ du mini-jeu) ; à choisir avec toi |
+| P4 | **Interface du mode balade** : quelles commandes gardent leur place (Journal, heure, saisons, légende des lieux) ? | Garder le Journal, l'heure et les points ; masquer la boussole et la légende ; à voir au prototype |
+| P5 | **Fiches des lieux en balade** : quelle forme (surtout sur mobile) ? | Une maquette avant de coder (comme pour le lobby) |
+| P6 | **Geste sur téléphone** : toucher pour aller, ou croix directionnelle ? | Toucher pour aller d'abord ; à tester sur ton iPhone |
+| P7 | **Relief et escaliers** : l'avatar monte-t-il les escaliers ? | Oui ; le relief est le gros point d'attention (pente, caméra) |
+| P8 | **Autres téléphones** à tester en plus de l'iPhone 12 Pro ? | Un modèle plus ancien, plus tard |
 
 ---
 
 ## Critères d'acceptation
-- [ ] US001 à US011 livrées (US012 en option)
+- [ ] US001 à US011 livrées (US012 et US013 en option, plus tard)
 - [ ] `npm run build` passe
 - [ ] Scénario de test de l'US011 rejoué, résultats dans le CHANGELOG (réussi, échoué, non vérifié)
-- [ ] Mesuré : images/s au repos et en marche, appels de rendu, triangles, chargement, dans le budget ; téléphone relevé
+- [ ] Mesuré : images/s au repos et en marche, appels de rendu par vue, triangles, chargement, dans le budget ; relevé sur l'iPhone 12 Pro (`?debug`)
 - [ ] Revue PO validée par Dasco, sur le prototype puis sur le rendu final
 
 ---
 
 ## Estimation globale
 - **Complexité** : L
-- **Effort estimé** : 8 à 12 sessions (prototype 1 à 1,5). Incertain : le mobile (jamais mesuré), l'effacement (2 à 4 sessions), le réglage de la caméra (plusieurs allers-retours, comme pour les noms de rues)
+- **Effort estimé** : 9 à 13 sessions (prototype 1 à 1,5). Incertain : le relief et les escaliers, l'effacement par bâtiment (2 à 3 sessions), le réglage de la caméra (plusieurs allers-retours, comme pour les noms de rues), le téléphone (jamais mesuré)
 
 ---
 
@@ -128,5 +149,5 @@ Carte libre (comme aujourd'hui) → bouton « Balade » → l'avatar apparaît s
 
 ---
 
-**Version** : v1.0 (brouillon)
+**Version** : v1.1 (décisions du 02/10 intégrées)
 **Créé le** : 02/10/2026
