@@ -10,7 +10,7 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** le mode balade lancé pour la première fois, **When** j'entre, **Then** l'avatar apparaît au point de départ défini (P3, par défaut la fontaine des Éléphants), réglable dans `avatar.json`
+- [ ] **Given** le mode balade lancé pour la première fois, **When** j'entre, **Then** l'avatar apparaît au point de départ : **la fontaine des Éléphants** (décision de Dasco, 02/10), réglable dans `avatar.json`
 - [ ] **Given** l'avatar à l'arrêt, **When** je recharge la page, **Then** il est au même endroit (clé `chambery-diorama:avatar:v1`)
 - [ ] **Given** une position sauvegardée, **When** les données de la ville ont changé (`npm run data`), **Then** le point est contrôlé (sur le réseau, hors bâtiment, hors eau) et, s'il est invalide, l'avatar revient au point de départ
 - [ ] **Given** « Recommencer l'exploration », **When** je le choisis, **Then** les lieux sont remis à zéro et l'avatar **retourne à son point de départ** ; les points ne bougent pas

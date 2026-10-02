@@ -29,7 +29,7 @@ Retour d'un utilisateur : se promener dans la ville avec un avatar, en vue à la
 | Taille et vitesse de l'avatar | **À moi de les fixer** (×2 et ≈ 14 m/s au départ) ; on les réglera aux tests, en réel |
 | Effacement | **Au début, les bâtiments entiers** (par identifiant de bâtiment), pas un trou en pointillé. **Ensuite, une itération** pour masquer les bâtiments « en vue » **uniquement dans ce mode** (US013) |
 | Arbres | **Pas d'effacement** (« pas pertinent ») |
-| Monuments | **Oui, ils s'effacent**, éventuellement en transparence comme dans Diablo ; une **liste d'exceptions** est prévue |
+| Monuments | **Ils s'effacent** (disparaissent comme les bâtiments) ; la transparence façon Diablo reste une alternative à comparer au prototype ; une **liste d'exceptions** est prévue (précisé le 02/10 : « il faut partir sur les bâtiments s'effacent, ça c'est sûr ») |
 | Fiches des lieux | **À revoir en mode balade** (surtout sur mobile, où elles perturbent) ; on les garde, la forme est à définir |
 | Gestes sur téléphone | **Rester sur ce qui existe sur mobile** (League of Legends mobile et jeux de ce style) : toucher pour aller, ou croix directionnelle ; **à définir à l'usage, pas bloquant** |
 | Éléphants | **On garde le clic sur les éléphants** : en croiser un doit rester amusant |
@@ -38,6 +38,7 @@ Retour d'un utilisateur : se promener dans la ville avec un avatar, en vue à la
 | Clavier | **Non visé : on vise le clic souris** (et le toucher) |
 | Accessibilité | **Réduire les animations** et **silhouette contrastée** : oui ; le Journal reste l'équivalent pour le web |
 | Téléphone de référence | **iPhone 12 Pro**, en 5G ou Wi-Fi. Retours d'utilisateurs : la carte se charge très bien et reste fluide **même en 4G** |
+| **Première mesure sur téléphone** (Dasco, 02/10, iPhone 12 Pro, `?debug`) | **≤ 31 images/s, même en poussant les gestes**, et **750 à 1 000 appels de rendu** au plus ; Dasco n'y voit pas de contrainte. À comprendre : un plafond à ≈ 31 en mouvement n'est pas normal (le code monte à ≈ 60 en mouvement sur Mac) : mode économie d'énergie de l'iPhone, ou téléphone qui n'arrive pas à tenir plus (voir plan) |
 | Git | **Une branche d'epic dédiée** (`feat/EP005-balade-avatar`) pour itérer ; on fusionne dans `main` au besoin ; les corrections de `main` se reportent par **rebase** |
 
 **Pourquoi pas la première personne** (analyse du 02/10) : au niveau de l'œil, les 2 067 volumes extrudés sans textures ne tiennent pas ; il faudrait refaire ombres, ciel, effet maquette, collisions, commandes tactiles : 5 à 8 sessions, et le produit changerait de nature. Reprise possible plus tard sous forme d'un bouton « Voir d'ici » (caméra basse, sans marcher).
@@ -116,9 +117,9 @@ l'avatar apparaît à son point de départ, la caméra descend derrière lui
 
 | # | Point | Proposition |
 |---|-------|-------------|
-| P1 | **Liste d'exceptions de l'effacement** : j'ai compris « les bâtiments s'effacent, les monuments aussi (en transparence), avec une liste d'exceptions pour en exclure certains ». C'est bien ça ? | Oui ; liste dans `avatar.json` (aucune au départ) |
+| P1 | ✅ **Tranché (02/10)** : les bâtiments s'effacent, les monuments aussi (effacés, transparence à comparer), les arbres restent ; liste d'exceptions dans `avatar.json`, vide au départ | — |
 | P2 | **Silhouette de l'avatar à travers ce qui reste devant** (comme Diablo) ? | Oui, discrète |
-| P3 | **Point de départ de l'exploration** : où ? | La fontaine des Éléphants (emblème du lieu, et départ du mini-jeu) ; à choisir avec toi |
+| P3 | ✅ **Tranché (02/10)** : le point de départ est la **fontaine des Éléphants** | — |
 | P4 | **Interface du mode balade** : quelles commandes gardent leur place (Journal, heure, saisons, légende des lieux) ? | Garder le Journal, l'heure et les points ; masquer la boussole et la légende ; à voir au prototype |
 | P5 | **Fiches des lieux en balade** : quelle forme (surtout sur mobile) ? | Une maquette avant de coder (comme pour le lobby) |
 | P6 | **Geste sur téléphone** : toucher pour aller, ou croix directionnelle ? | Toucher pour aller d'abord ; à tester sur ton iPhone |
@@ -131,7 +132,7 @@ l'avatar apparaît à son point de départ, la caméra descend derrière lui
 - [ ] US001 à US011 livrées (US012 et US013 en option, plus tard)
 - [ ] `npm run build` passe
 - [ ] Scénario de test de l'US011 rejoué, résultats dans le CHANGELOG (réussi, échoué, non vérifié)
-- [ ] Mesuré : images/s au repos et en marche, appels de rendu par vue, triangles, chargement, dans le budget ; relevé sur l'iPhone 12 Pro (`?debug`)
+- [ ] Mesuré : images/s au repos et en marche, appels de rendu par vue, triangles, chargement, dans le budget ; relevé sur l'iPhone 12 Pro (`?debug`), **après avoir compris le plafond de ≈ 31 images/s en mouvement**
 - [ ] Revue PO validée par Dasco, sur le prototype puis sur le rendu final
 
 ---

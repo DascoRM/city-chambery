@@ -10,8 +10,9 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** l'**iPhone 12 Pro** de Dasco (référence), **When** mon avatar marche, **Then** les images/s relevées avec `?debug` sont ≥ 30 (seuil à confirmer ; 60 Hz), avec la densité de pixels qui peut descendre à 1
-- [ ] **Given** les retours d'utilisateurs (carte fluide même en 4G), **When** je charge la page en 4G, **Then** le temps de chargement reste ressenti comme bon avec le mode balade présent
+- [ ] **Given** l'**iPhone 12 Pro** de Dasco (référence), **When** je relève avec `?debug` en mouvement, **Then** on sait pourquoi les images/s plafonnent à ≈ 31 (première mesure du 02/10 : ≤ 31 même en poussant les gestes, 750 à 1 000 appels de rendu) : mode économie d'énergie de l'iPhone, limite du téléphone, ou autre ; la cause est notée dans le CHANGELOG
+- [ ] **Given** la balade (avatar, effacement), **When** je marche sur l'iPhone, **Then** les images/s ne passent pas sous le niveau relevé avant la balade (≈ 31 aujourd'hui : pas de marge, donc chaque ajout est mesuré)
+- [ ] **Given** les retours d'utilisateurs (carte fluide même en 4G ; Dasco ne voit pas de contrainte sur l'iPhone), **When** je charge la page en 4G, **Then** le temps de chargement reste ressenti comme bon avec le mode balade présent
 - [ ] **Given** la marche, **When** la fluidité baisse, **Then** une baisse temporaire d'un cran de densité pendant la marche, rétablie à l'arrêt, est essayée avec prudence (changer la densité redimensionne les cibles de rendu)
 - [ ] **Given** un doigt qui bouge de 6 à 10 px sans le vouloir, **When** je touche pour aller, **Then** ce n'est pas pris pour un glissement (seuil réglé sur appareil)
 - [ ] **Given** une fiche en mode balade, **When** elle s'ouvre, **Then** l'avatar reste visible (point regardé décalé vers le haut, bande nette sur l'avatar)
@@ -25,7 +26,7 @@
 
 | Règle | Description |
 |-------|-------------|
-| R1 | Aucune **mesure d'images/s sur téléphone** n'a été faite à ce jour (mesures faites sur un Mac avec la carte graphique) : `?debug` affiche le compteur sur le téléphone lui-même, il suffit d'ouvrir l'adresse avec `?debug` |
+| R1 | **Première mesure sur téléphone (Dasco, 02/10/2026, iPhone 12 Pro)** : ≤ 31 images/s même en poussant les gestes, 750 à 1 000 appels de rendu au plus ; `?debug` affiche le compteur sur le téléphone lui-même. Le code ne plafonne rien sur mobile : en mouvement il monte à ≈ 60 sur Mac, donc un plafond à ≈ 31 est à expliquer (mode économie d'énergie, ou téléphone au maximum de ses forces avec la densité déjà au minimum) |
 | R2 | Les retours d'utilisateurs sont qualitatifs (« très fluide, même en 4G ») : très bon signe, pas une mesure |
 | R3 | Autres modèles de téléphone : à définir plus tard (un modèle plus ancien) |
 | R4 | Geste mobile : voir US004 (P6) |

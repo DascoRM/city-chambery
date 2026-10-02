@@ -28,7 +28,7 @@ main ─────────────────────────
 
 | Jalon | Contenu | Sessions | Sortie |
 |---|---|---|---|
-| **J0 · Décisions** | Dasco valide la spec ; points P1 à P8 de l'epic (au moins P3 le point de départ, P4 l'interface) | — | Spec validée |
+| **J0 · Décisions** | Dasco valide la spec ; points restants de l'epic (P4 l'interface, P5 les fiches, P6 le geste mobile, P7 les escaliers, P8 autres téléphones) ; **comprendre le plafond de ≈ 31 images/s sur l'iPhone** (mode économie d'énergie ? téléphone au maximum ?) | — | Spec validée, cause du plafond connue |
 | **J1 · Prototype** | US001 (réseau, chemin) + US002 (avatar) + US003 (mode balade, caméra) + US004 (entrées), version minimale : formes simples, vitesse fixe, point de départ fixe, **sans** effacement ni sauvegarde ni fiches | 1 à 1,5 | **Go / no-go de Dasco** sur la sensation (taille de l'avatar, angle, vitesse) |
 | **J2 · Jouable** | US005 (effacement des bâtiments entiers : la plus incertaine, à mesurer d'abord) + US006 (marcher jusqu'à un lieu, avec une **maquette des fiches** avant le code) | 3 à 5 | Une vraie balade, lieux compris |
 | **J3 · Finition** | US007 (point de départ, sauvegarde), US008 (accessibilité), US009 (iPhone), US010 (lobby, aide, docs), US011 (scénario, contrôle automatique) | 3 à 4 | Epic livrable ; revue de Dasco |
@@ -71,7 +71,7 @@ Le compteur d'appels de rendu dépend de la vue (mesuré le 02/10/2026, voir `PE
 | Images/s en marche (Mac GPU) | ≥ 55 (59,8 mesurés en glissant la carte) |
 | Images/s au repos | 30 |
 | Chargement (Mac, dev) | +0,2 s au plus (≈ 4,8 s aujourd'hui) |
-| iPhone 12 Pro | ≥ 30 images/s en marche à confirmer ; **non mesuré** |
+| iPhone 12 Pro | **Mesuré par Dasco le 02/10 : ≤ 31 images/s même en poussant les gestes, 750 à 1 000 appels de rendu.** Aucune marge au-dessus de 30 : la balade ne doit pas faire baisser ce niveau ; cause du plafond à comprendre avant le prototype |
 
 **Pourquoi 55 et pas 30 ?** Les 30 images/s sont la cadence **au repos** (quand rien ne bouge, on économise). Dès que quelque chose bouge, la boucle passe à la pleine vitesse, ≈ 60 sur un écran de 60 Hz : or une caméra qui suit un avatar bouge en permanence, et à 30 images/s ce suivi paraîtrait saccadé. 55 n'est pas un objectif de beauté : c'est le **seuil de non-régression** (59,8 mesurés ; en dessous de 55, on a dégradé quelque chose). Au repos, 30 suffit parfaitement.
 
@@ -98,7 +98,7 @@ Mode explicite et unique (entrer, sortir) ; zoom et interface propres au mode ; 
 |---|---|---|
 | Relief et escaliers (pentes, caméra) | Élevée | Point d'attention dès US001 et US003 ; pas bloquant pour la démo |
 | Coût de l'effacement par bâtiment (GPU mobile non mesuré) | Élevée | Mesurer avant de s'engager ; repli : cône de vue en shader |
-| Fluidité sur téléphone, jamais mesurée | Moyenne (les retours utilisateurs sont bons) | Mesurer sur l'iPhone 12 Pro avec `?debug` ; monuments non fusionnés à surveiller |
+| Fluidité sur téléphone : ≤ 31 images/s en mouvement mesurées (02/10), donc **aucune marge** | **Élevée** | Comprendre la cause (mode économie d'énergie ? GPU ?) avant le prototype ; mesurer chaque ajout ; pistes : monuments fusionnés (750 à 1 000 appels vus sur l'iPhone), `samples: 2` de l'effet maquette, densité |
 | Conflits de caméra (`flyTo`, journal, lobby, plancher) | Élevée | Mode explicite et exclusif (US003) |
 | Une partie de la carte inaccessible | Haute | Diagnostic en tête (US001) |
 | Fiches de lieux encombrantes sur mobile | Moyenne | Maquette avant de coder (US006) |
@@ -106,7 +106,7 @@ Mode explicite et unique (entrer, sortir) ; zoom et interface propres au mode ; 
 
 ## Ce qui n'est PAS décidé
 
-Les points P1 à P8 de l'epic : liste d'exceptions exacte, silhouette, point de départ, commandes gardées dans l'interface de balade, forme des fiches, geste mobile, escaliers, autres téléphones.
+Les points restants de l'epic : silhouette (P2), commandes gardées dans l'interface de balade (P4), forme des fiches (P5), geste mobile (P6), escaliers (P7), autres téléphones (P8). Tranchés le 02/10 : bâtiments et monuments s'effacent (arbres non), exceptions en liste vide au départ, point de départ = fontaine des Éléphants.
 
 ## Annexes (analyses des agents chercheurs)
 

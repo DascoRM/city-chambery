@@ -12,7 +12,7 @@
 
 - [ ] **Given** un bâtiment entre la caméra et l'avatar, **When** je regarde, **Then** ce **bâtiment entier** disparaît (fondu en quelques dixièmes de seconde) et réapparaît quand il ne masque plus
 - [ ] **Given** deux bâtiments mitoyens, **When** l'un masque l'avatar, **Then** seul celui qui masque disparaît ; les murs et toits d'un même bâtiment disparaissent ensemble
-- [ ] **Given** un monument (château, cathédrale, Carré Curial, fontaine), **When** il masque l'avatar, **Then** il s'efface en transparence, façon Diablo ; **les arbres ne s'effacent pas** (décision de Dasco)
+- [ ] **Given** un monument (château, cathédrale, Carré Curial, fontaine), **When** il masque l'avatar, **Then** il **disparaît** comme un bâtiment (décision de Dasco) ; la transparence façon Diablo est une variante à comparer au prototype ; **les arbres ne s'effacent pas**
 - [ ] **Given** la liste d'exceptions de `avatar.json`, **When** un bâtiment ou monument y figure, **Then** il ne s'efface jamais (liste vide au départ : P1)
 - [ ] **Given** un bâtiment qui reste devant, **When** il masque quand même l'avatar, **Then** une silhouette discrète de l'avatar, de couleur unie, reste visible à travers (P2 ; +1 à 3 appels de rendu)
 - [ ] **Given** la nuit, **When** un bâtiment s'efface, **Then** les fenêtres allumées des autres sont correctes et l'avatar reste lisible
@@ -28,7 +28,7 @@
 |-------|-------------|
 | R1 | **Bâtiments entiers d'abord** (décision de Dasco) : il faut un **identifiant de bâtiment** par sommet (attribut `aId`, index 0 à N−1), une texture de facteurs de fondu (une valeur par bâtiment) mise à jour quand l'avatar ou la caméra bougent, et un test côté processeur « segment caméra → avatar contre les emprises » (grille `ringGrid` de `city.ts`), avec lissage dans le temps |
 | R2 | Aujourd'hui tous les bâtiments sont **un seul maillage fusionné, un seul matériau, sans identifiant** (`city.ts:311-315`) : le maillage reste unique (+0 appel de rendu), le fondu passe par un dither ou un test d'opacité selon le facteur du bâtiment |
-| R3 | Monuments : objets séparés avec leurs matériaux (`models/*.ts`) ; fondu d'opacité propre à chacun ; arbres exclus |
+| R3 | Monuments : objets séparés avec leurs matériaux (`models/*.ts`) ; fondu d'opacité propre à chacun (jusqu'à disparition, ou transparence à comparer) ; arbres exclus |
 | R4 | Réglages (durée du fondu, exceptions) dans `avatar.json` ; **uniformes seulement** dans les shaders (règle BUG-01) |
 | R5 | Repli si le coût sur mobile est trop élevé : cône de vue en shader (trou en pointillé), décrit dans l'analyse `tasks/ep005-effacement-batiments-plan.md` |
 | R6 | Le mode balade étant exclusif, la variante de shader n'est activée qu'en balade |
