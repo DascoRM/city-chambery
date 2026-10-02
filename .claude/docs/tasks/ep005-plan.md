@@ -71,7 +71,7 @@ Le compteur d'appels de rendu dépend de la vue (mesuré le 02/10/2026, voir `PE
 | Images/s en marche (Mac GPU) | ≥ 55 (59,8 mesurés en glissant la carte) |
 | Images/s au repos | 30 |
 | Chargement (Mac, dev) | +0,2 s au plus (≈ 4,8 s aujourd'hui) |
-| iPhone 12 Pro | **Mesuré par Dasco le 02/10 : ≤ 31 images/s même en poussant les gestes, 750 à 1 000 appels de rendu.** Aucune marge au-dessus de 30 : la balade ne doit pas faire baisser ce niveau ; cause du plafond à comprendre avant le prototype |
+| iPhone 12 Pro | **Mesuré par Dasco le 02/10 (mode économie d'énergie désactivé) : 30-31 images/s en mouvement, 105 appels, 1,48 M de triangles, pire image 87 ms ; au repos 44 appels, pire image 57 ms ; jusqu'à 750 à 1 000 appels selon la vue.** 30-31 est la moitié de 60 Hz : le téléphone dépasse 16,7 ms par image et se cale sur 30 ; sa marge réelle est inconnue (le cran suivant serait 20 images/s). La balade ne doit pas faire baisser ce niveau ; cause à départager avant le prototype |
 
 **Pourquoi 55 et pas 30 ?** Les 30 images/s sont la cadence **au repos** (quand rien ne bouge, on économise). Dès que quelque chose bouge, la boucle passe à la pleine vitesse, ≈ 60 sur un écran de 60 Hz : or une caméra qui suit un avatar bouge en permanence, et à 30 images/s ce suivi paraîtrait saccadé. 55 n'est pas un objectif de beauté : c'est le **seuil de non-régression** (59,8 mesurés ; en dessous de 55, on a dégradé quelque chose). Au repos, 30 suffit parfaitement.
 
