@@ -75,6 +75,12 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ Chargement lent : message qui rassure après quelques secondes (critère de l'US002 non fait)
 - ⬜ Lobby : vérifier `prefers-reduced-motion`, la visite hors ligne et JavaScript désactivé (implémentés, non essayés), puis un vrai téléphone
 
+## Epic à venir : EP005 « Balade avec un avatar » (spec et plan écrits le 02/10/2026, **pas commencée**)
+[Epic EP005](../../specs/epics/EP005-balade-avatar/epic.md) · [plan](../../tasks/ep005-plan.md) : un avatar qu'on dirige au clic ou au toucher, vue 3/4 façon Diablo, caméra qui suit, bâtiments qui s'effacent devant lui. 12 user stories, 44 points, 8 à 12 sessions ; prototype d'abord (US001 à US004 minimales) puis décision. **À valider par Dasco** : 11 questions dans l'epic (balade facultative, vitesse, effacement, doigt qui glisse sur téléphone, téléphone de référence…).
+- ⬜ Valider la spec EP005 et répondre aux questions Q1 à Q11 — *Dasco*
+- ⬜ Corriger PERF-AUDIT et FEATURES : ils disent « ≈ 2 400 appels de rendu », mesuré 63 depuis les itérations 61 à 63 (relevé par l'analyse EP005)
+- ⬜ Idée liée, hors EP005 : bouton « Voir d'ici » (caméra à hauteur d'homme sur un lieu, sans marcher) — environ une demi-session
+
 ## P2 — Fluidité mobile
 Détail dans [PERF-AUDIT.md](../../architecture/PERF-AUDIT.md).
 Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par image. Après (ombres à la demande, arbres simplifiés) : ≈ 2 400 appels et ≈ 1,5 M triangles par image la plupart du temps.
