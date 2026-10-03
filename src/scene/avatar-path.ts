@@ -1,5 +1,5 @@
 import type { CityData, Pt } from '../types';
-import { buildingTest, mainComponent, waterTest, type Walkways } from './walkways';
+import { buildingTest, mainComponent, wallDistance, waterTest, type Walkways } from './walkways';
 
 /**
  * Chemin de l'avatar (EP005-US001) : de sa position à un point désigné, en suivant le réseau de voies
@@ -10,10 +10,15 @@ import { buildingTest, mainComponent, waterTest, type Walkways } from './walkway
 export interface PathConfig {
   /** Au-delà de cette distance (m) à toute voie, l'ordre est refusé */
   maxSnap: number;
-  /** Jusqu'à cette distance (m), l'avatar quitte la voie en ligne droite pour atteindre le point désigné */
-  lastMeter: number;
   /** Rayon (m) d'arrondi des angles */
   corner: number;
+  /** Déplacement libre : en ligne droite jusqu'à cette distance (m) quand rien ne gêne (bâtiment, eau, fontaine) */
+  maxDirect: number;
+  /** Distance (m) à garder avec les façades en ligne droite */
+  clearance: number;
+  /** Pour rejoindre ou quitter une voie : rayon (m) de recherche et nombre de points d'accès essayés */
+  entryRadius: number;
+  entries: number;
 }
 
 /** Point du chemin : position (m), hauteur de la voie au-dessus du relief */
@@ -41,11 +46,16 @@ export interface Snap { x: number; y: number; a: number; b: number; ab: number; 
 
 const CELL = 25;
 
-export function buildPathfinder(g: Walkways, data: CityData, cfg: PathConfig): Pathfinder {
+export function buildPathfinder(g: Walkways, data: CityData, cfg: PathConfig, avoid: { anchor: string; radius: number }[] = []): Pathfinder {
   const n = g.x.length;
   const main = mainComponent(g);
   const inBuilding = buildingTest(data);
   const inWater = waterTest(data);
+  const wall = wallDistance(data);
+  const zones = avoid.flatMap((z) => {
+    const c = data.anchors[z.anchor]?.pos;
+    return c ? [{ c, r: z.radius }] : [];
+  });
   let maxW = 1;
   for (const list of g.adj) for (const e of list) maxW = Math.max(maxW, e.w);
 
@@ -89,43 +99,78 @@ export function buildPathfinder(g: Walkways, data: CityData, cfg: PathConfig): P
     return best;
   };
 
-  /** Le segment (a, b) ne traverse ni bâtiment (test tous les mètres) ni eau */
-  const clear = (a: Pt, b: Pt) => {
+  /** Points d'accès au réseau autour de (x, y) : le plus proche point de chaque arête à moins de `radius`, du plus près au plus loin */
+  const nearEdges = (x: number, y: number, radius: number): Snap[] => {
+    const out = new Map<number, Snap>();
+    const c = Math.ceil(radius / CELL);
+    const ci = Math.floor(x / CELL), cj = Math.floor(y / CELL);
+    for (let i = ci - c; i <= ci + c; i++)
+      for (let j = cj - c; j <= cj + c; j++)
+        for (const [a, b, k] of grid.get(`${i},${j}`) ?? []) {
+          const key = a * 1e6 + b;
+          const ax = g.x[a], ay = g.y[a], dx = g.x[b] - ax, dy = g.y[b] - ay;
+          const l2 = dx * dx + dy * dy;
+          const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / l2)) : 0;
+          const px = ax + dx * t, py = ay + dy * t, d = Math.hypot(x - px, y - py);
+          if (d <= radius && (!out.has(key) || d < out.get(key)!.d)) out.set(key, { x: px, y: py, a, b, ab: k, t, d, lift: g.adj[a][k].lift });
+        }
+    return [...out.values()].sort((u, v) => u.d - v.d);
+  };
+
+  /**
+   * Passage libre en ligne droite de a à b : ni bâtiment (façades à `clearance`), ni eau, ni zone interdite (fontaine).
+   * Les extrémités ne sont pas testées (un point d'une voie peut toucher une façade).
+   */
+  const freeLine = (a: Pt, b: Pt) => {
     if (inWater(a, b)) return false;
-    const m = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1])));
-    for (let i = 1; i <= m; i++) if (inBuilding(a[0] + ((b[0] - a[0]) * i) / m, a[1] + ((b[1] - a[1]) * i) / m)) return false;
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const m = Math.max(1, Math.ceil(len));
+    for (let i = 0; i <= m; i++) {
+      const x = a[0] + ((b[0] - a[0]) * i) / m, y = a[1] + ((b[1] - a[1]) * i) / m;
+      for (const z of zones) if (Math.hypot(x - z.c[0], y - z.c[1]) < z.r) return false;
+      if (i > 0 && i < m && wall([x, y], cfg.clearance) < cfg.clearance) return false;
+      if (inBuilding(x, y) && i > 0 && i < m) return false;
+    }
     return true;
   };
 
-  // A* : nœuds réels 0..n-1, départ virtuel n, arrivée virtuelle n+1
+  // A* : nœuds réels 0..n-1, départ virtuel n (relié à tous les points d'accès de départ), arrivée virtuelle n+1
+  // (reliée à tous ceux d'arrivée) : une seule recherche pour tous les couples
   const S = n, G = n + 1;
   const cost = new Float64Array(n + 2), prev = new Int32Array(n + 2), seen = new Uint32Array(n + 2);
+  const tagS = new Int32Array(n + 2), tagG = new Int32Array(n + 2);
   let stamp = 0;
+  const edgeLen = (a: number, b: number) => g.adj[a].find((f) => f.to === b)!.len;
 
-  const astar = (s: Snap, e: Snap): { nodes: number[]; length: number } | null => {
-    const edgeLen = (a: number, b: number) => g.adj[a].find((f) => f.to === b)!.len;
-    const sLen = edgeLen(s.a, s.b), eLen = edgeLen(e.a, e.b);
-    const virtual = (v: number) => (v === S ? s : e);
-    const neighbours = (u: number, out: [number, number, number][]) => {
+  const astar = (starts: Snap[], ends: Snap[], from: Pt, to: Pt): { nodes: number[]; si: number; ei: number } | null => {
+    // Nœuds d'arrivée : coût du dernier tronçon vers l'arrivée virtuelle
+    const into = new Map<number, [number, number][]>();
+    ends.forEach((e, j) => {
+      const L = edgeLen(e.a, e.b);
+      for (const [u, c] of [[e.a, e.d + e.t * L], [e.b, e.d + (1 - e.t) * L]] as const) {
+        const l = into.get(u);
+        if (l) l.push([j, c]); else into.set(u, [[j, c]]);
+      }
+    });
+    const neighbours = (u: number, out: [number, number, number, number][]) => {
       out.length = 0;
-      if (u === S || u === G) {
-        const v = virtual(u), L = u === S ? sLen : eLen;
-        out.push([v.a, v.t * L, 1], [v.b, (1 - v.t) * L, 1]);
+      if (u === S) {
+        starts.forEach((v, i) => {
+          const L = edgeLen(v.a, v.b);
+          out.push([v.a, v.d + v.t * L, 1, i], [v.b, v.d + (1 - v.t) * L, 1, i]);
+        });
         return;
       }
-      for (const f of g.adj[u]) out.push([f.to, f.len, f.w]);
-      for (const [v, id, L] of [[s, S, sLen], [e, G, eLen]] as const) {
-        if (u === v.a) out.push([id, v.t * L, 1]);
-        else if (u === v.b) out.push([id, (1 - v.t) * L, 1]);
-      }
+      for (const f of g.adj[u]) out.push([f.to, f.len, f.w, -1]);
+      for (const [j, c] of into.get(u) ?? []) out.push([G, c, 1, j]);
     };
-    const px = (u: number) => (u === S ? s.x : u === G ? e.x : g.x[u]);
-    const py = (u: number) => (u === S ? s.y : u === G ? e.y : g.y[u]);
+    const px = (u: number) => (u === S ? from[0] : u === G ? to[0] : g.x[u]);
+    const py = (u: number) => (u === S ? from[1] : u === G ? to[1] : g.y[u]);
     stamp++;
     const heap: [number, number][] = [[0, S]];
     cost[S] = 0; seen[S] = stamp; prev[S] = -1;
     const done = new Set<number>();
-    const out: [number, number, number][] = [];
+    const out: [number, number, number, number][] = [];
     while (heap.length) {
       // Tas binaire (min)
       const top = heap[0];
@@ -147,18 +192,18 @@ export function buildPathfinder(g: Walkways, data: CityData, cfg: PathConfig): P
       done.add(u);
       if (u === G) {
         const nodes: number[] = [];
-        let length = 0;
         for (let v = G; v >= 0; v = prev[v]) nodes.push(v);
         nodes.reverse();
-        for (let i = 1; i < nodes.length; i++) length += Math.hypot(px(nodes[i]) - px(nodes[i - 1]), py(nodes[i]) - py(nodes[i - 1]));
-        return { nodes, length };
+        return { nodes, si: tagS[nodes[1]], ei: tagG[G] };
       }
       neighbours(u, out);
-      for (const [v, len, w] of out) {
+      for (const [v, len, w, tag] of out) {
         const c = cost[u] + len / w;
         if (seen[v] !== stamp || c < cost[v]) {
           seen[v] = stamp; cost[v] = c; prev[v] = u;
-          const h = Math.hypot(px(v) - e.x, py(v) - e.y) / maxW;
+          if (u === S) tagS[v] = tag;
+          if (v === G) tagG[G] = tag;
+          const h = Math.hypot(px(v) - to[0], py(v) - to[1]) / maxW;
           heap.push([c + h, v]);
           for (let i = heap.length - 1; i > 0;) {
             const p = (i - 1) >> 1;
@@ -172,42 +217,80 @@ export function buildPathfinder(g: Walkways, data: CityData, cfg: PathConfig): P
     return null;
   };
 
-  const route = (from: Pt, to: Pt): Route | RouteFail => {
-    const e = snap(to[0], to[1], cfg.maxSnap);
-    if (!e) return 'far';
-    const s = snap(from[0], from[1], 1e4);
-    if (!s) return 'unreachable';
-    let pts: PathPoint[];
-    const sameEdge = (s.a === e.a && s.b === e.b);
-    if (sameEdge) {
-      pts = [{ x: s.x, y: s.y, lift: s.lift }, { x: e.x, y: e.y, lift: e.lift }];
-    } else {
-      const r = astar(s, e);
-      if (!r) return 'unreachable';
-      const liftBetween = (u: number, v: number) => {
-        const w = u === S ? s.a : u === G ? e.a : u;
-        const z = v === S ? s.a : v === G ? e.a : v;
-        return g.adj[w].find((f) => f.to === z)?.lift ?? s.lift;
-      };
-      pts = r.nodes.map((u, i) => {
-        const x = u === S ? s.x : u === G ? e.x : g.x[u], y = u === S ? s.y : u === G ? e.y : g.y[u];
-        // Hauteur : celle du tronçon qui suit (celle du précédent pour le dernier point)
-        const lift = i < r.nodes.length - 1 ? liftBetween(u, r.nodes[i + 1]) : liftBetween(r.nodes[i - 1], u);
-        return { x, y, lift };
-      });
+  /** Chemin sur le réseau entre un point d'accès de départ et un d'arrivée, d'après les nœuds trouvés (avant arrondi des angles) */
+  const onNetwork = (nodes: number[], s: Snap, e: Snap): PathPoint[] => {
+    const liftBetween = (u: number, v: number) => {
+      const w = u === S ? s.a : u === G ? e.a : u;
+      const z = v === S ? s.a : v === G ? e.a : v;
+      return g.adj[w].find((f) => f.to === z)?.lift ?? (u === S ? s.lift : e.lift);
+    };
+    return nodes.map((u, i) => {
+      const x = u === S ? s.x : u === G ? e.x : g.x[u], y = u === S ? s.y : u === G ? e.y : g.y[u];
+      // Hauteur : celle du tronçon qui suit (celle du précédent pour le dernier point)
+      const lift = i < nodes.length - 1 ? liftBetween(u, nodes[i + 1]) : liftBetween(nodes[i - 1], u);
+      return { x, y, lift };
+    });
+  };
+  const OFF_ROAD = 0.1; // hauteur au-dessus du relief hors des voies
+  const lengthOf = (pts: PathPoint[]) => {
+    let l = 0;
+    for (let i = 1; i < pts.length; i++) l += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    return l;
+  };
+  /** Points d'accès d'un point libre : ceux qu'on voit en ligne droite, sinon le plus proche (mais seulement sans obstacle, ou au plus près) */
+  const accessFor = (p: Pt, max: number): Snap[] => {
+    const seen: Snap[] = [];
+    let tried = 0;
+    for (const c of nearEdges(p[0], p[1], cfg.entryRadius)) {
+      if (seen.length >= cfg.entries || tried >= cfg.entries * 3) break;
+      tried++;
+      if (c.d < 0.5 || freeLine(p, [c.x, c.y])) seen.push(c);
     }
+    if (seen.length) return seen;
+    const near = snap(p[0], p[1], max);
+    return near ? [near] : [];
+  };
+
+  const route = (from: Pt, to: Pt): Route | RouteFail => {
+    const sameSpot = Math.hypot(to[0] - from[0], to[1] - from[1]) < 0.5;
+    if (sameSpot) return { points: [{ x: from[0], y: from[1], lift: OFF_ROAD }], length: 0, end: to };
+    // 1. Tout droit, à travers champs, places et cours, quand rien ne gêne
+    if (!inBuilding(to[0], to[1]) && Math.hypot(to[0] - from[0], to[1] - from[1]) <= cfg.maxDirect && freeLine(from, to)) {
+      return { points: [{ x: from[0], y: from[1], lift: OFF_ROAD }, { x: to[0], y: to[1], lift: OFF_ROAD }], length: Math.hypot(to[0] - from[0], to[1] - from[1]), end: to };
+    }
+    // 2. Par les voies : on essaie plusieurs points d'accès au départ et à l'arrivée (pas seulement le plus proche,
+    //    qui peut être de l'autre côté d'un mur) et on garde le trajet le plus court
+    const starts = accessFor(from, 1e4), ends = accessFor(to, cfg.maxSnap);
+    if (!ends.length) return 'far';
+    if (!starts.length) return 'unreachable';
+    let best: { pts: PathPoint[]; total: number; s: Snap; e: Snap } | null = null;
+    // Départ et arrivée sur la même arête : on la parcourt directement
+    for (const s of starts)
+      for (const e of ends) {
+        if (s.a !== e.a || s.b !== e.b) continue;
+        const total = s.d + Math.hypot(e.x - s.x, e.y - s.y) + e.d;
+        if (!best || total < best.total) best = { pts: [{ x: s.x, y: s.y, lift: s.lift }, { x: e.x, y: e.y, lift: e.lift }], total, s, e };
+      }
+    const r = astar(starts, ends, from, to);
+    if (r) {
+      const s = starts[r.si], e = ends[r.ei];
+      const pts = onNetwork(r.nodes, s, e);
+      const total = s.d + lengthOf(pts) + e.d;
+      if (!best || total < best.total) best = { pts, total, s, e };
+    }
+    if (!best) return 'unreachable';
+    let pts = best.pts;
     // Points confondus (départ ou arrivée posés sur un nœud) : retirés, sinon le cap se calcule sur une longueur nulle
     pts = pts.filter((p, i) => i === 0 || Math.hypot(p.x - pts[i - 1].x, p.y - pts[i - 1].y) > 0.05);
     pts = round(pts, cfg.corner);
-    // Dernier mètre : quitter la voie en ligne droite jusqu'au point désigné
-    let end: Pt = [e.x, e.y];
-    if (e.d > 0.5 && e.d <= cfg.lastMeter && clear([e.x, e.y], to)) {
-      pts.push({ x: to[0], y: to[1], lift: e.lift });
+    // Quitter ou rejoindre la voie en ligne droite (là où on voit le point de la voie)
+    if (best.s.d > 0.5 && freeLine(from, [best.s.x, best.s.y])) pts.unshift({ x: from[0], y: from[1], lift: OFF_ROAD });
+    let end: Pt = [best.e.x, best.e.y];
+    if (best.e.d > 0.5 && !inBuilding(to[0], to[1]) && freeLine([best.e.x, best.e.y], to)) {
+      pts.push({ x: to[0], y: to[1], lift: OFF_ROAD });
       end = [to[0], to[1]];
     }
-    let length = 0;
-    for (let i = 1; i < pts.length; i++) length += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
-    return { points: pts, length, end };
+    return { points: pts, length: lengthOf(pts), end };
   };
 
   return { has: (u) => main.has(u), snap, route };
