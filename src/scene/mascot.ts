@@ -55,10 +55,6 @@ export interface MascotConfig {
   game: {
     /** Nombre d'éléphants (un par place sur la fontaine) */
     count: number;
-    /** Nombre de fuites avant qu'il soit épuisé, tiré au hasard entre [min, max] pour chaque éléphant */
-    escapes: [number, number];
-    /** Distance (m) entre l'endroit où il disparaît et celui où il réapparaît : [min, max] */
-    respawnDistance: [number, number];
     /** Distance (m) de la fontaine où ils apparaissent en début de partie : [min, max] */
     startDistance: [number, number];
     /** Points par éléphant ramené, et bonus quand la fontaine est complète */
@@ -68,31 +64,27 @@ export interface MascotConfig {
     openSpace: number;
     /** Délai (s) après la fontaine complète avant qu'ils s'échappent de nouveau */
     restartSeconds: number;
-    /** Durée d'affichage (s) de la bulle quand il disparaît */
+    /** Durée d'affichage (s) de la bulle de provocation */
     bubbleSeconds: number;
+    /** Clic sur un éléphant : il sprinte `sprintSeconds` à `sprintSpeed` (m/s), puis s'arrête (pause de `pauseSeconds`) */
+    sprintSeconds: number;
+    sprintSpeed: number;
+    /** Un 2e clic pendant le sprint l'attrape avec cette probabilité (0 à 1) ; sinon il se moque (`missTaunts`) */
+    catchChance: number;
     /** Souris sur lui : il sursaute et trotte plus vite (m/s) pendant startleSeconds */
     startleSpeed: number;
     startleSeconds: number;
-    /** Phrases pour narguer (une au hasard à chaque fuite) */
+    /** Phrases pour narguer (une au hasard quand il part en sprint), et quand le 2e clic rate */
     taunts: string[];
+    missTaunts: string[];
   };
 }
 
 /**
- * walk : se promène · poof : disparaît dans un nuage · hidden : invisible, va réapparaître ·
- * tired : épuisé, attrapable · flying : vole vers la fontaine · home : sur la fontaine (plus dans les rues)
+ * walk : se promène (ou fait une pause) · sprint : court après un clic, attrapable · flying : vole vers la
+ * fontaine · home : sur la fontaine (plus dans les rues)
  */
-export type ElephantState = 'walk' | 'poof' | 'hidden' | 'tired' | 'flying' | 'home';
-
-export interface Escape {
-  /** Où il a disparu, et où il réapparaît (mètres) */
-  from: Pt;
-  to: Pt;
-  /** Nom de la voie où il réapparaît (OSM), s'il y en a un */
-  road?: string;
-  /** Il réapparaîtra épuisé */
-  tired: boolean;
-}
+export type ElephantState = 'walk' | 'sprint' | 'flying' | 'home';
 
 export interface Elephant {
   id: number;
@@ -103,17 +95,16 @@ export interface Elephant {
   position(): Pt;
   /** Altitude actuelle (Three.js y) */
   height(): number;
-  escapesLeft(): number;
-  /** Survolé ou touché : il s'échappe (sauf s'il est épuisé ou déjà en train de disparaître). */
-  escape(): Escape | null;
-  /** Attrapé (seulement s'il est épuisé) : il vole jusqu'à `target` puis appelle onLand. */
+  /** Temps de sprint restant (s) : 0 s'il ne sprinte pas */
+  sprintLeft(): number;
+  /** Cliqué ou touché : il part en sprint (ou le prolonge) ; renvoie false s'il est en vol ou sur la fontaine. */
+  sprint(): boolean;
+  /** Attrapé (seulement pendant son sprint) : il vole jusqu'à `target` puis appelle onLand. */
   catchTo(target: THREE.Vector3, onLand: () => void): boolean;
   /** Nouvelle partie : il réapparaît dans les rues, loin de la fontaine. */
   release(): void;
   /** Déjà ramené (partie sauvegardée) : il reste sur la fontaine. */
   setHome(): void;
-  /** Mode debug : plus aucune fuite, il disparaît et réapparaît épuisé. */
-  exhaust(): void;
   /** Souris sur lui : il sursaute et accélère un moment (il ne disparaît qu'au clic). */
   startle(): void;
 }
@@ -183,48 +174,9 @@ export function blobShadow(): THREE.Mesh {
 
 
 const rnd = (r: [number, number]) => r[0] + Math.random() * (r[1] - r[0]);
-const rndInt = (r: [number, number]) => Math.floor(r[0] + Math.random() * (r[1] - r[0] + 1));
 const ease = (k: number) => (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2);
 
-/** Texture d'étoile partagée (sprites : toujours face à la caméra, lisibles même vues du dessus) */
-let starTexture: THREE.CanvasTexture | null = null;
-function starMaterial(): THREE.SpriteMaterial {
-  if (!starTexture) {
-    const c = document.createElement('canvas');
-    c.width = c.height = 64;
-    const x = c.getContext('2d')!;
-    x.beginPath();
-    for (let i = 0; i < 10; i++) {
-      const r = i % 2 ? 12 : 30, a = (i / 10) * Math.PI * 2 - Math.PI / 2;
-      x.lineTo(32 + Math.cos(a) * r, 32 + Math.sin(a) * r);
-    }
-    x.closePath();
-    x.fillStyle = '#ffd23f';
-    x.strokeStyle = '#b8860b';
-    x.lineWidth = 3;
-    x.fill();
-    x.stroke();
-    starTexture = new THREE.CanvasTexture(c);
-    starTexture.colorSpace = THREE.SRGBColorSpace;
-  }
-  return new THREE.SpriteMaterial({ map: starTexture, depthWrite: false });
-}
-
 /** Petites étoiles qui tournent au-dessus de la tête d'un éléphant épuisé */
-function dizzyStars(): THREE.Group {
-  const g = new THREE.Group();
-  const mat = starMaterial();
-  for (let i = 0; i < 5; i++) {
-    const s = new THREE.Sprite(mat);
-    s.scale.setScalar(0.9);
-    const a = (i / 5) * Math.PI * 2;
-    s.position.set(Math.cos(a) * 1.1, 0, Math.sin(a) * 1.1);
-    g.add(s);
-  }
-  g.position.set(2.2, 5.1, 0);
-  g.visible = false;
-  return g;
-}
 
 export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: HeightFn): Promise<Herd | null> {
   const g = buildWalkways(data, cfg);
@@ -293,8 +245,6 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: Hei
     const shadow = blobShadow();
     shadow.scale.multiplyScalar(cfg.scale);
     root.add(shadow);
-    const stars = dizzyStars();
-    body.add(stars);
     // Zone de clic plus large que l'éléphant (plus facile à attraper), invisible
     const hit = new THREE.Mesh(new THREE.BoxGeometry(7, 5.5, 4.5), new THREE.MeshBasicMaterial({ visible: false }));
     hit.position.set(1, 2.4, 0);
@@ -314,8 +264,7 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: Hei
     let heading = Math.random() * Math.PI * 2;
     let y = NaN;
     let amp = 0;
-    let escapes = rndInt(G.escapes);
-    let next = -1; // nœud de réapparition
+    let sprintT = 0; // sprint : temps restant
     let appearT = 0; // animation d'apparition (0 → 1)
     let startleT = 0; // sursaut : temps restant au trot
     let speed = cfg.speed;
@@ -357,29 +306,27 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: Hei
       heading = Math.atan2(g.y[edge.to] - g.y[from], g.x[edge.to] - g.x[from]);
       appearT = 0;
     };
-    const roadName = (node: number) => g.adj[node].find((e) => e.name)?.name;
 
     const el: Elephant = {
       id, group: root, hit,
       state: () => state,
       position: () => [pos[0], pos[1]],
       height: () => y,
-      escapesLeft: () => escapes,
-      escape() {
-        if (state !== 'walk') return null;
-        escapes = Math.max(0, escapes - 1);
-        next = randomNode(pos, G.respawnDistance);
-        setState('poof');
-        return { from: [pos[0], pos[1]], to: [g.x[next], g.y[next]], road: roadName(next), tired: escapes === 0 };
+      sprintLeft: () => (state === 'sprint' ? sprintT : 0),
+      sprint() {
+        if (state !== 'walk' && state !== 'sprint') return false;
+        if (state === 'walk') setState('sprint');
+        sprintT = G.sprintSeconds;
+        walking = true;
+        return true;
       },
       catchTo(target, onLand) {
-        if (state !== 'tired') return false;
+        if (state !== 'sprint') return false;
         fly = { a: root.position.clone(), b: target.clone(), top: Math.max(root.position.y, target.y) + 24, onLand };
         setState('flying');
         return true;
       },
       release() {
-        escapes = rndInt(G.escapes);
         placeAt(randomNode(home, G.startDistance));
         walking = true;
         timer = rnd(cfg.walkSeconds);
@@ -396,31 +343,16 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: Hei
         walking = true;
         timer = Math.max(timer, G.startleSeconds);
       },
-      exhaust() {
-        if (state !== 'walk') return;
-        escapes = 1;
-        el.escape();
-      },
     };
     elephants.push(el);
 
     updaters.push((dt, t) => {
       uniforms.uTime.value = t + id * 1.7;
       stateT += dt;
-      root.visible = state !== 'hidden' && state !== 'home';
-      if (!root.visible) {
-        // Réapparition, plus loin (épuisé s'il n'a plus de fuite)
-        if (state === 'hidden' && stateT > 0.8) {
-          placeAt(next);
-          setState(escapes === 0 ? 'tired' : 'walk');
-          walking = true;
-          timer = rnd(cfg.walkSeconds);
-        }
-        return;
-      }
+      root.visible = state !== 'home';
+      if (!root.visible) return;
       body.position.set(0, 0, 0);
       body.rotation.set(0, 0, 0);
-      stars.visible = state === 'tired';
       appearT = Math.min(1, appearT + dt / 0.45);
       // Apparition : il sort de terre avec un petit rebond
       const pop = appearT < 1 ? Math.sin(appearT * Math.PI * 0.5) * (1 + 0.25 * Math.sin(appearT * Math.PI)) : 1;
@@ -441,19 +373,17 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: Hei
           if (stateT < 0.35) body.position.y = Math.sin((stateT / 0.35) * Math.PI) * 0.9;
         }
         speed += ((startleT > 0 ? G.startleSpeed : cfg.speed) - speed) * Math.min(1, dt * 5);
-      } else if (state === 'poof') {
-        // Il tourne sur lui-même et rétrécit, puis disparaît dans le nuage
-        const k = Math.min(1, stateT / 0.35);
-        sc *= 1 - k;
-        body.rotation.y = k * Math.PI * 1.5;
-        body.position.y = Math.sin(k * Math.PI) * 1.2;
-        if (k >= 1) setState('hidden');
-      } else if (state === 'tired') {
-        // Assis, la tête en l'air, il souffle ; les étoiles tournent
-        body.rotation.z = 0.28;
-        body.position.set(-0.6, 0.35 + Math.sin(t * 2.4) * 0.06, 0);
-        stars.rotation.y = t * 2.2;
-        stars.position.y = 5.1 + Math.sin(t * 3) * 0.15;
+      } else if (state === 'sprint') {
+        // Il détale pendant `sprintSeconds`, puis s'arrête et souffle un moment avant de reprendre sa promenade
+        sprintT -= dt;
+        targetAmp = 1;
+        if (stateT < 0.3) body.position.y = Math.sin((stateT / 0.3) * Math.PI) * 1.1; // petit bond au départ
+        speed += (G.sprintSpeed - speed) * Math.min(1, dt * 6);
+        if (sprintT <= 0) {
+          setState('walk');
+          walking = false;
+          timer = rnd(cfg.pauseSeconds);
+        }
       } else if (state === 'flying' && fly) {
         const k = Math.min(1, stateT / 2.4);
         const e = ease(k);
@@ -472,7 +402,8 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: Hei
       }
       body.scale.setScalar(Math.max(0.01, sc));
 
-      amp = state === 'walk' ? amp + (targetAmp - amp) * Math.min(1, dt * 3) : 0;
+      // Le sprint démarre vite (sinon l'éléphant met une seconde à décoller) ; la marche, doucement
+      amp = state === 'walk' || state === 'sprint' ? amp + (targetAmp - amp) * Math.min(1, dt * (state === 'sprint' ? 9 : 3)) : 0;
       const step = speed * amp * dt;
       s += step;
       while (s >= edge.len) {
@@ -492,7 +423,7 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: Hei
       const target = Math.atan2(g.y[edge.to] - g.y[from], g.x[edge.to] - g.x[from]);
       let d = target - heading;
       d = Math.atan2(Math.sin(d), Math.cos(d));
-      if (state === 'walk') heading += d * Math.min(1, dt * 4);
+      if (state === 'walk' || state === 'sprint') heading += d * Math.min(1, dt * 4);
       // Altitude lissée : pas de saut à l'entrée d'un pont
       const ty = heightAt(pos[0], pos[1]) + edge.lift;
       y = Number.isNaN(y) ? ty : y + (ty - y) * Math.min(1, dt * 6);

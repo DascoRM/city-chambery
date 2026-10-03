@@ -103,7 +103,7 @@ export function installInteraction(o: InteractionOptions): Ticker {
       const el = hunt?.pointerMove(e.clientX, e.clientY);
       if (el) {
         canvas.style.cursor = 'pointer';
-        o.tooltip(el.state() === 'tired' ? '🐘 Épuisé ! Clique pour le ramener à la fontaine' : null, e.clientX, e.clientY);
+        o.tooltip(el.state() === 'sprint' ? '🐘 Il court ! Reclique vite pour l\'attraper' : null, e.clientX, e.clientY);
         return;
       }
       const h = pick(e.clientX, e.clientY);

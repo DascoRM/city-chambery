@@ -1,5 +1,19 @@
 # Journal des itérations
 
+## Itération 65 — 03/10/2026 (branche `feat/minijeu-elephants-simplifie`)
+
+**Retour de Dasco (utilisateurs) :** le jeu des éléphants est compliqué : plusieurs clics par éléphant et de nouvelles recherches derrière. Demande : un clic = l'éléphant sprinte puis s'arrête au bout de quelques secondes ; un reclic pendant le sprint = il apparaît sur la fontaine, « pas forcément sur tous les éléphants ». Réponses : le 2e clic ne marche pas toujours ; on retire seulement le nombre de fuites ; la bulle de provocation reste, sans l'indice de direction.
+
+**Changements :**
+- `src/scene/mascot.ts` : états `walk` / `sprint` / `flying` / `home` ; plus de disparition, d'épuisement, d'étoiles ni de nombre de fuites ; le sprint dure `sprintSeconds`, puis retour à la marche avec une pause ;
+- `src/game/hunt.ts` : 1er clic = sprint + poussière + bulle qui suit l'éléphant ; 2e clic pendant le sprint = attrapé avec la probabilité `catchChance`, sinon bulle `missTaunts` et il continue ; indices de direction supprimés ;
+- `src/content/mascot.json` (`game`) : `escapes` et `respawnDistance` retirés ; `sprintSeconds` 3,5, `sprintSpeed` 9, `catchChance` 0,6, `bubbleSeconds` 4, `missTaunts` ajoutés ;
+- bulle d'aide au survol, message de départ, panneau `?debug` (bouton « Sprint ») et README mis à jour ; l'ancien score (points, n/4) est inchangé.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : les quatre éléphants marchent au départ ; clic → `sprint` avec bulle ; à la fin du sprint → `walk` et il s'arrête ; 2e clic forcé raté → toujours en sprint avec la bulle « Presque ! Enfin… non. » ; 2e clic forcé réussi → `flying` puis `home`, compteur « ⛲ 1 / 4 », partie enregistrée ; clic sur un éléphant rentré : sans effet ; aucune erreur console.
+
+**Non vérifié :** le ressenti sur iPhone ; la vitesse réelle du sprint (mesure à ≈ 2,5 m/s sur la 1re seconde avant d'avoir accéléré la mise en mouvement : démarrage rendu plus vif dans cette itération, non remesuré) et donc la fenêtre réelle pour recliquer ; le taux de 60 % (à régler avec les retours).
+
 ## Itération 63 — 01/10/2026 (branche `feat/EP004-US002-US003-lobby`)
 
 **Demande de Dasco :** une epic avant « Reprise vie dans la ville » : à l'arrivée sur le site, une page de chargement puis un lobby qui explique le projet (jeux, fonctionnalités), épuré et beau, **avec un design validé avant de coder**. Retours sur les maquettes : écran initial « très stylé » ; piste A écartée (beaucoup de texte, le chapitre « voir la ville vivre » avec les bars et restaurants « pas ouf ») ; **piste B retenue** (« ça fait plus jeu, gamification »), à condition que la ville vive en arrière-plan ; piste C « peut-être pas dans la DA ». Dasco a modifié le texte de la maquette « en chargement », puis : « tu peux y aller ».

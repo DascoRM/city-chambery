@@ -1,19 +1,18 @@
 import * as THREE from 'three';
-import type { Escape, Herd, Elephant, MascotConfig } from '../scene/mascot';
+import type { Herd, Elephant, MascotConfig } from '../scene/mascot';
 import type { Particles } from '../scene/particles';
-import type { Pt } from '../types';
 import { screenRay } from '../scene/geo';
 
 /**
  * Mini-jeu « Ramène les éléphants à la fontaine » (itération 35).
  *
  * Les quatre éléphants de la fontaine se sont échappés et se promènent dans les rues.
- * - La souris sur un éléphant le fait sursauter et trotter plus vite (itération 37) ; cliquer dessus (ou le
- *   toucher) le fait disparaître dans un nuage : il nargue le joueur dans une bulle, avec un indice (la rue
- *   où il réapparaît, sinon la direction), puis réapparaît plus loin.
- * - Après 1 à 5 fuites (au hasard), il réapparaît épuisé : assis, des étoiles au-dessus de la tête.
- *   Un clic l'attrape : il s'envole vers sa place sur la fontaine, se change en bronze dans une gerbe
- *   d'étincelles, et un feu d'artifice part. Points à chaque éléphant, bonus quand la fontaine est complète.
+ * - La souris sur un éléphant le fait sursauter et trotter plus vite (itération 37).
+ * - Un clic (ou un toucher) le fait **sprinter** quelques secondes, en se moquant de vous dans une bulle, puis
+ *   il s'arrête (itération 65 : plus de disparition ni de nombre de fuites).
+ * - Un 2e clic **pendant le sprint** l'attrape (avec la probabilité `catchChance`, sinon il se moque) : il s'envole
+ *   vers sa place sur la fontaine, se change en bronze dans une gerbe d'étincelles, et un feu d'artifice part.
+ *   Points à chaque éléphant, bonus quand la fontaine est complète.
  * - Fontaine complète : grand feu d'artifice ; après `restartSeconds`, ils s'échappent de nouveau.
  * La partie en cours est gardée dans le navigateur (src/state/herd.ts).
  */
@@ -40,28 +39,13 @@ export interface HuntOptions {
   returned: Set<number>;
   points: number;
   /** Réglages du jeu (src/content/mascot.json, bloc game) */
-  game: Pick<MascotConfig['game'], 'points' | 'bonus' | 'restartSeconds' | 'bubbleSeconds' | 'taunts'>;
+  game: Pick<MascotConfig['game'], 'points' | 'bonus' | 'restartSeconds' | 'bubbleSeconds' | 'taunts' | 'missTaunts' | 'catchChance'>;
   /** Bulle de texte ancrée sur un point de la scène */
   bubble(text: string | null, x?: number, y?: number): void;
   onReturned(returned: Set<number>): void;
   onScore(total: number, gained: number, text: string): void;
   onRestart(): void;
   flyTo(x: number, z: number): void;
-}
-
-const ARTICLE_F = /^(rue|place|avenue|allée|impasse|montée|promenade|route|ruelle|traverse|cour)\b/i;
-const ARTICLE_M = /^(boulevard|quai|faubourg|chemin|passage|square|cours|pont|parvis|jardin|clos|carré)\b/i;
-/** « Rue de Boigne » → « la rue de Boigne » ; nom sans type reconnu → entre guillemets */
-function withArticle(name: string): string {
-  const lower = name.charAt(0).toLowerCase() + name.slice(1);
-  if (ARTICLE_F.test(name)) return `la ${lower}`;
-  if (ARTICLE_M.test(name)) return `le ${lower}`;
-  return `« ${name} »`;
-}
-const DIRS = ["l'est", 'le nord-est', 'le nord', 'le nord-ouest', "l'ouest", 'le sud-ouest', 'le sud', 'le sud-est'];
-function direction(a: Pt, b: Pt): string {
-  const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
-  return DIRS[((Math.round(ang / (Math.PI / 4)) % 8) + 8) % 8];
 }
 
 export function createHunt(o: HuntOptions): Hunt {
@@ -72,6 +56,8 @@ export function createHunt(o: HuntOptions): Hunt {
   let restartIn = -1;
   let bubbleAt: THREE.Vector3 | null = null;
   let bubbleLeft = 0;
+  /** L'éléphant qui parle : la bulle le suit pendant son sprint */
+  let bubbleOf: Elephant | null = null;
   /** Places qui apparaissent (transformation en bronze) : temps écoulé depuis l'arrivée */
   const pops = new Map<number, number>();
 
@@ -88,21 +74,42 @@ export function createHunt(o: HuntOptions): Hunt {
     return id === undefined ? null : herd.elephants[id];
   };
 
-  const showBubble = (text: string, at: THREE.Vector3) => {
-    bubbleAt = at;
+  const showBubble = (text: string, e: Elephant) => {
+    bubbleOf = e;
+    bubbleAt = new THREE.Vector3(e.position()[0], e.height() + 6, -e.position()[1]);
     bubbleLeft = o.game.bubbleSeconds;
     o.bubble(text);
   };
 
-  const escape = (e: Elephant) => {
-    const esc: Escape | null = e.escape();
-    if (!esc) return;
-    const at = new THREE.Vector3(esc.from[0], e.height(), -esc.from[1]);
-    o.smoke.emit(at.clone().setY(at.y + 2), { count: 40, speed: [1, 3.5], up: 1.5, life: [0.8, 1.4], size: 2.2, grow: 1.6, colors: ['#f3efe6', '#e2dccf', '#cfc7b8'], drag: 2.5, spread: 1.5 });
-    const taunt = o.game.taunts[Math.floor(Math.random() * o.game.taunts.length)] ?? 'Raté !';
-    const where = esc.road ? `vers ${withArticle(esc.road)}` : `vers ${direction(esc.from, esc.to)}`;
-    const tail = esc.tired ? `Je file ${where}… mais je suis épuisé 😮‍💨` : `Je file ${where} 🐘`;
-    showBubble(`${taunt}\n${tail}`, at.clone().setY(at.y + 6));
+  const pick = (list: string[], fallback: string) => list[Math.floor(Math.random() * list.length)] ?? fallback;
+
+  /** Premier clic : il détale (un peu de poussière) et se moque de vous */
+  const chase = (e: Elephant) => {
+    if (!e.sprint()) return;
+    const at = new THREE.Vector3(e.position()[0], e.height(), -e.position()[1]);
+    o.smoke.emit(at.clone().setY(at.y + 1), { count: 18, speed: [1, 3], up: 1, life: [0.6, 1.1], size: 1.8, grow: 1.4, colors: ['#f3efe6', '#e2dccf', '#cfc7b8'], drag: 2.5, spread: 1.2 });
+    showBubble(pick(o.game.taunts, 'Trop lent !'), e);
+  };
+
+  /** Deuxième clic pendant le sprint : il s'envole vers sa place sur la fontaine (ou il se moque) */
+  const grab = (e: Elephant) => {
+    if (Math.random() >= o.game.catchChance) {
+      showBubble(pick(o.game.missTaunts, 'Raté !'), e);
+      return;
+    }
+    const slot = o.slots[e.id];
+    const target = slot ? new THREE.Box3().setFromObject(slot, true).getCenter(new THREE.Vector3()) : e.group.position.clone();
+    if (slot) {
+      // La place n'est pas encore visible : on vise le centre de sa forme
+      slot.visible = true;
+      new THREE.Box3().setFromObject(slot, true).getCenter(target);
+      slot.visible = false;
+    }
+    e.catchTo(target, () => land(e));
+    o.bubble(null);
+    bubbleAt = null;
+    bubbleOf = null;
+    o.flyTo(target.x, target.z);
   };
 
   const land = (e: Elephant) => {
@@ -140,29 +147,17 @@ export function createHunt(o: HuntOptions): Hunt {
     click(x, y) {
       const e = pickElephant(x, y);
       if (!e) return false;
-      if (e.state() === 'walk') escape(e);
-      else if (e.state() === 'tired') {
-        const slot = o.slots[e.id];
-        const target = slot ? new THREE.Box3().setFromObject(slot, true).getCenter(new THREE.Vector3()) : e.group.position.clone();
-        if (slot) {
-          // La place n'est pas encore visible : on vise le centre de sa forme
-          slot.visible = true;
-          new THREE.Box3().setFromObject(slot, true).getCenter(target);
-          slot.visible = false;
-        }
-        e.catchTo(target, () => land(e));
-        o.bubble(null);
-        bubbleAt = null;
-        o.flyTo(target.x, target.z);
-      }
+      if (e.state() === 'walk') chase(e);
+      else if (e.state() === 'sprint') grab(e);
       return true;
     },
-    moving: () => bubbleAt !== null || pops.size > 0 || herd.elephants.some((e) => e.state() === 'poof' || e.state() === 'flying'),
+    moving: () => bubbleAt !== null || pops.size > 0 || herd.elephants.some((e) => e.state() === 'sprint' || e.state() === 'flying'),
     update(dt) {
       // Bulle : suit son point d'ancrage à l'écran, puis s'efface
       if (bubbleAt) {
         bubbleLeft -= dt;
-        if (bubbleLeft <= 0) { bubbleAt = null; o.bubble(null); }
+        if (bubbleOf && bubbleOf.state() === 'sprint') bubbleAt.set(bubbleOf.position()[0], bubbleOf.height() + 6, -bubbleOf.position()[1]);
+        if (bubbleLeft <= 0) { bubbleAt = null; bubbleOf = null; o.bubble(null); }
         else {
           tmp.copy(bubbleAt).project(camera);
           const r = o.canvasRect();
