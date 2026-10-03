@@ -116,6 +116,7 @@ source et dénivelé du relief, types de toits, et quels lieux d'histoire ont é
 | Remettre le nord en haut | clic sur la boussole (en bas à droite) | toucher la boussole (en haut à droite) |
 | Découvrir un lieu | clic sur une gemme ✦ | toucher une gemme |
 | Voir un bar / café / restaurant | survoler son épingle (la fiche s'affiche à côté) ; clic = la fiche reste ouverte | toucher l'épingle |
+| Se promener avec un avatar (prototype EP005) | bouton **🚶 Balade** : un personnage rose apparaît à la fontaine, la caméra le suit ; **clic gauche** sur le sol = il y marche (clic sur un ✦ = il marche jusqu'au lieu, la fiche s'ouvre à l'arrivée) ; clic droit glissé = déplacer la carte (suivi arrêté, bouton « Retrouver mon avatar ») ; boussole et légende masquées ; **🗺 Vue libre** pour sortir | toucher le sol pour marcher ; un doigt glissé = déplacer la carte ; deux doigts = zoomer, pivoter, incliner |
 | Fermer une fiche | Échap, ✕ ou clic dans le vide | ✕ ou toucher dans le vide |
 | Ramener un éléphant à la fontaine | le survoler le fait trotter plus vite ; clic = il sprinte quelques secondes ; **reclic pendant le sprint** = il file sur la fontaine (ça rate parfois) | le toucher le fait sprinter ; le retoucher pendant le sprint pour l'attraper |
 
@@ -426,6 +427,7 @@ src/
   state/progress.ts        Progression et préférences (localStorage)
   state/points.ts          Points du mini-jeu (localStorage)
   state/herd.ts            Éléphants ramenés sur la fontaine (localStorage)
+  game/balade.ts           Mode balade (EP005) : entrée / sortie, caméra qui suit, limites de zoom, ordres de marche
   game/hunt.ts             Mini-jeu « Ramène les éléphants » : cache-cache, bulle, retour, score
   game/setup.ts            Mise en place du mini-jeu : sauvegarde, places sur la fontaine, particules
   scene/particles.ts       Fumée, étincelles, feux d'artifice

@@ -1,5 +1,5 @@
 {
-  "note": "Réglages de la balade avec un avatar (EP005). path : maxSnap = distance maximale (m) à une voie pour qu'un ordre soit accepté ; lastMeter = jusqu'à cette distance (m) l'avatar quitte la voie en ligne droite pour atteindre le point désigné ; corner = rayon (m) d'arrondi des angles. avatar : scale = échelle de la silhouette des passants (1,7 m à 1) ; speed (m/s) ; stride = distance d'un cycle des jambes (m) ; swing = amplitude des jambes (rad) ; bounce = rebond ; slowDistance = distance de ralentissement à l'arrivée ; colors ; haloRadius / ringRadius = tache au sol et anneau d'arrivée (m).",
+  "note": "Réglages de la balade avec un avatar (EP005). path : maxSnap = distance maximale (m) à une voie pour qu'un ordre soit accepté ; lastMeter = jusqu'à cette distance (m) l'avatar quitte la voie en ligne droite pour atteindre le point désigné ; corner = rayon (m) d'arrondi des angles. avatar : scale = échelle de la silhouette des passants (1,7 m à 1) ; speed (m/s) ; stride = distance d'un cycle des jambes (m) ; swing = amplitude des jambes (rad) ; bounce = rebond ; slowDistance = distance de ralentissement à l'arrivée ; colors ; haloRadius / ringRadius = tache au sol et anneau d'arrivée (m). camera : distance (m) et inclinaison (degrés depuis la verticale) à l'entrée dans le mode balade, limites de zoom du mode, follow = vitesse de rattrapage de la caméra (1/s). avatar.silhouette : opacité de la silhouette vue à travers les bâtiments (0 = aucune).",
   "path": {
     "maxSnap": 40,
     "lastMeter": 15,
@@ -20,6 +20,14 @@
       "ring": "#ff2e93"
     },
     "haloRadius": 2.2,
-    "ringRadius": 2.6
+    "ringRadius": 2.6,
+    "silhouette": 0.55
+  },
+  "camera": {
+    "distance": 85,
+    "polar": 40,
+    "minDistance": 45,
+    "maxDistance": 300,
+    "follow": 8
   }
 }
