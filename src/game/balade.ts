@@ -26,6 +26,8 @@ export interface BaladeUi {
   /** Bouton « Retrouver mon avatar » */
   setRecenter(visible: boolean): void;
   flash(text: string): void;
+  /** Effacement des bâtiments (actif seulement en balade) */
+  setCutaway?(active: boolean): void;
 }
 
 export interface Balade extends Ticker {
@@ -73,6 +75,7 @@ export function createBalade(cfg: BaladeConfig, stage: Stage, avatar: Avatar, ca
     stage.flyToView(x, -y, cfg.camera.distance, cfg.camera.polar);
     ui.setBalade(true);
     ui.setRecenter(false);
+    ui.setCutaway?.(true);
   };
 
   const leave = () => {
@@ -84,6 +87,7 @@ export function createBalade(cfg: BaladeConfig, stage: Stage, avatar: Avatar, ca
     stage.zoomTo(stage.controls.target, 1);
     ui.setBalade(false);
     ui.setRecenter(false);
+    ui.setCutaway?.(false);
   };
 
   const recenter = () => { following = true; ui.setRecenter(false); };

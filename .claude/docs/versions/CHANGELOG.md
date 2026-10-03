@@ -1,5 +1,25 @@
 # Journal des itérations
 
+## Itération 69 — 03/10/2026 (branche `feat/EP005-US005-effacement-des-batiments`, epic EP005)
+
+**Retour de Dasco sur le prototype :** « vraiment bien sur Mac » ; suivi de la caméra sans lag, clic précis, silhouette utile même derrière les arbres, réglages centralisés dans `avatar.json` appréciés ; « l'effacement des bâtiments serait un plus ». Test sur mobile plus tard via Vercel.
+
+**Changements (US005) :**
+- `src/scene/city.ts` : chaque sommet de bâtiment (murs et toits) porte son identifiant (`aId`, indice dans `data.buildings`) ; le shader lit un facteur de visibilité dans une petite texture (un octet par bâtiment) et **efface par tramage** (dither, pas de transparence) : le maillage reste **un seul** (0 appel de rendu de plus), les ombres (carte statique) ne changent pas, les fenêtres allumées partent avec le bâtiment ;
+- `src/scene/cutaway.ts` (nouveau) : en balade seulement, test du segment avatar → caméra contre les emprises (grille de 25 m, pas de 1,5 m, sous la hauteur du toit + marge) ; seuls les bâtiments qui coupent le segment s'effacent ; fondu de 0,3 s ; les bâtiments reviennent dès qu'ils ne masquent plus ; sortie du mode : tout revient ;
+- **monuments** (château, cathédrale, Carré Curial) : même test (emprise des bâtiments OSM remplacés, hauteur de la boîte englobante), fondu par un uniforme propre ajouté aux matériaux existants (`fadeMaterial`, clé de programme conservée) ; arbres exclus ;
+- `src/content/avatar.json` → `cutaway` : `fadeSeconds`, `aimHeight`, `roofAllowance`, `step`, `exceptions` (liste vide), `monuments` ;
+- `src/scene/models.ts` : liste des monuments qui remplacent des bâtiments, lue par `cutaway.ts` ; `src/scene/avatar.ts` : `aim()`.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : rue de Boigne, place Saint-Léger, château : les bâtiments entre la caméra et l'avatar disparaissent, l'avatar est visible sans silhouette, les bâtiments voisins restent ; « repos (30 max) » à l'arrêt ; ≈ 56 à 60 images/s en mouvement ; 65 à 67 appels de rendu dans la rue (inchangé : 65 avant) ; aucune erreur ni avertissement console.
+
+**Non vérifié / limites :**
+- **mobile** : le coût du `discard` sur les GPU à tuiles n'est pas mesuré (le test se fera via Vercel) ; le shader des bâtiments contient désormais ce test en permanence (il ne s'exécute que pour les fragments d'un bâtiment en fondu) ;
+- **nuit et hiver** : non regardés avec l'effacement ; ombres au sol des bâtiments effacés restent (carte statique, voulu) ;
+- **cheminées, auvents, drapeaux, épingles** posés sur un bâtiment effacé restent en l'air (cas par cas, non traité) ;
+- le fondu monument n'a pas été vérifié en cours de transition (image fixe après 2 s seulement) ; matériaux de monuments partagés entre deux monuments : non vérifié (un seul uniforme par matériau) ;
+- `roofAllowance` (3 m) est une marge, pas la vraie hauteur de toit : un bâtiment très bas peut s'effacer un peu trop ou trop peu ; fontaine des Éléphants non concernée (pas d'emprise OSM).
+
 ## Itération 68 — 03/10/2026 (branches `feat/EP005-US003-camera-qui-suit`, epic EP005)
 
 **Demande de Dasco :** continuer sans attendre (« je ne peux pas répondre à tes questions si je ne peux pas tester ») : le prototype doit donc être **jouable**. Cette itération regroupe l'US003 (mode balade, caméra) et le cœur de l'US004 (entrées) ; commandes décidées : clic gauche = marcher, clic droit = déplacer la carte, un doigt = marcher, deux doigts = caméra.
