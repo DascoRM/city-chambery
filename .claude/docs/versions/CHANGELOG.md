@@ -1,5 +1,23 @@
 # Journal des itérations
 
+## Itération 67 — 03/10/2026 (branche `feat/EP005-US002-avatar-visible`, epic EP005)
+
+**Demande de Dasco :** passer à l'US002, l'avatar visible (silhouette standard, le modèle OBJ viendra plus tard).
+
+**Changements :**
+- `src/scene/avatar.ts` (nouveau) : la silhouette des passants (exportée de `people.ts`) agrandie ×2 (3,4 m), en un seul maillage (corps et tête, couleurs dans les sommets : haut rose franc, jambes sombres, peau) ; jambes animées par un uniforme (règle BUG-01), foulée liée à la vitesse, léger rebond, cap lissé, ralentissement sur les 4 derniers mètres ; tache au sol cerclée de blanc (ombre en tache, repère de loin) ; anneau rose qui pulse sur le point d'arrivée et disparaît à l'arrivée ; `place(x, y)`, `goTo(x, y)` (replanifie depuis la position courante, sans téléportation), `hide()`, `moving()` ;
+- `src/content/avatar.json` : `avatar` (échelle 2, vitesse 14 m/s, foulée, rebond, couleurs, rayons de la tache et de l'anneau) ;
+- `src/main.ts` : avatar créé, **caché** (le mode balade est l'US003) ; en `?debug` : `diorama.avatar.place(x, y)` puis `.goTo(x, y)` ;
+- `src/scene/people.ts` : `HIP`, `bodyGeometry`, `headGeometry` exportés.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : avatar posé près de la fontaine, visible et lisible aux distances 70 et 150 m (la caméra ne descend pas sous 70 m), il marche 14 m/s le long d'un chemin, jambes et rebond animés, anneau d'arrivée affiché pendant la marche, tache au sol non enterrée par la pente (relevée de 30 cm après un premier essai où la moitié était cachée), de nuit (23 h) rose sombre lisible grâce à la tache blanche ; aucune erreur console. Trois appels de rendu au plus (deux à l'arrêt, aucun s'il est caché).
+
+**Non vérifié / limites :**
+- **Hauteur à l'écran** : le critère de la spec (≈ 38 px à 150 m) était un calcul ; à l'œil l'avatar mesure environ la moitié (≈ 15 à 20 px à 150 m), la tache blanche compense : à régler avec Dasco (`scale`, `haloRadius`) ;
+- les **appels de rendu** ne sont pas comparés avec le compteur avant/après (compté par construction) ;
+- **bâtiments** : l'avatar est caché derrière un bâtiment quand la caméra est basse (c'est l'US005) ;
+- vitesse 14 m/s : valeur de la spec, à juger à la main ; téléphone non mesuré ; modèle OBJ plus tard.
+
 ## Itération 66 — 03/10/2026 (branche `feat/EP005-US001-reseau-et-chemin`, epic EP005)
 
 **Demande de Dasco :** commencer l'epic « balade avec un avatar » (feu vert donné, commandes : clic gauche = avatar, clic droit = carte ; un doigt = avatar, deux doigts = caméra). Cette itération : US001, le réseau et le chemin, **sans rien d'affiché** (l'avatar vient avec l'US002).

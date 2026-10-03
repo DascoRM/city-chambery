@@ -1,4 +1,25 @@
 {
-  "note": "Réglages de la balade avec un avatar (EP005). Chemin : maxSnap = distance maximale (m) à une voie pour qu'un ordre soit accepté ; lastMeter = jusqu'à cette distance (m) l'avatar quitte la voie en ligne droite pour atteindre le point désigné ; corner = rayon (m) d'arrondi des angles.",
-  "path": { "maxSnap": 40, "lastMeter": 15, "corner": 1.5 }
+  "note": "Réglages de la balade avec un avatar (EP005). path : maxSnap = distance maximale (m) à une voie pour qu'un ordre soit accepté ; lastMeter = jusqu'à cette distance (m) l'avatar quitte la voie en ligne droite pour atteindre le point désigné ; corner = rayon (m) d'arrondi des angles. avatar : scale = échelle de la silhouette des passants (1,7 m à 1) ; speed (m/s) ; stride = distance d'un cycle des jambes (m) ; swing = amplitude des jambes (rad) ; bounce = rebond ; slowDistance = distance de ralentissement à l'arrivée ; colors ; haloRadius / ringRadius = tache au sol et anneau d'arrivée (m).",
+  "path": {
+    "maxSnap": 40,
+    "lastMeter": 15,
+    "corner": 1.5
+  },
+  "avatar": {
+    "scale": 2,
+    "speed": 14,
+    "stride": 3.2,
+    "swing": 0.45,
+    "bounce": 0.05,
+    "slowDistance": 4,
+    "colors": {
+      "top": "#ff2e93",
+      "legs": "#2b2d42",
+      "skin": "#f1c9a5",
+      "halo": "#ffffff",
+      "ring": "#ff2e93"
+    },
+    "haloRadius": 2.2,
+    "ringRadius": 2.6
+  }
 }
