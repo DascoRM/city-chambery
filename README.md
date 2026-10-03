@@ -386,6 +386,7 @@ src/
   content/models.json      Monuments modélisés
   content/nature.json      Arbres modélisés : mélanges et zones
   content/mascot.json      Mascotte : modèle, vitesse, voies autorisées, zones interdites
+  content/avatar.json      Balade avec un avatar (EP005) : réglages du chemin (distance d'accrochage, dernier mètre, arrondi des angles)
   content/life.json        La ville vit : passants (nombre, rayon, taille, vitesse, pauses, voies, courbe horaire, groupes) et fenêtres allumées selon l'heure
   content/buildings.json   Auvents : pièces du pack, échelle, décalages, réglages de pose
   content/place-hours.json Horaires PROVISOIRES (fictifs) des bars, pubs et boîtes de nuit, pour l'éclairage de nuit
@@ -395,7 +396,8 @@ src/
   scene/city.ts            Rues, eau, bâtiments, arbres (posés sur le relief)
   scene/geo.ts             Géométrie 2D commune + rayon depuis un point de l'écran (screenRay)
   scene/roads.ts           Voies piétonnes et hauteur des rubans de voies (partagées)
-  scene/walkways.ts        Réseau des voies où l'on marche (éléphants, futurs passants)
+  scene/walkways.ts        Réseau des voies où l'on marche (éléphants, passants, avatar)
+  scene/avatar-path.ts     Chemin de l'avatar (EP005) : accrochage au réseau, A*, angles arrondis, dernier mètre
   scene/roofs.ts           Dessin des toits
   scene/markers.ts         Gemmes des lieux + épingles 3D et halos des bars, cafés, restaurants
   scene/labels.ts          Noms des parcs et cours d'eau

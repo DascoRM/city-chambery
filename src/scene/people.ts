@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { CityData, HeightFn, Place, Ticker } from '../types';
-import { buildWalkways, largeComponents, type Edge, type WalkwayOptions } from './walkways';
+import { buildWalkways, largeComponents, type Edge, type Walkways, type WalkwayOptions } from './walkways';
 import { blobShadow } from './mascot';
 import { placeCategory } from './palette';
 import { curveAt } from './curve';
@@ -131,8 +131,9 @@ export interface PeopleView {
 /** Hasard stable par indice (même lieu, même tirage à chaque chargement) */
 const stable = (i: number) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
-export function buildPeople(cfg: PeopleConfig, data: CityData, heightAt: HeightFn, view: PeopleView): People | null {
-  const g = buildWalkways(data, cfg.network);
+/** `shared` : réseau déjà construit avec `cfg.network` (partagé avec l'avatar, EP005), sinon construit ici */
+export function buildPeople(cfg: PeopleConfig, data: CityData, heightAt: HeightFn, view: PeopleView, shared?: Walkways): People | null {
+  const g = shared ?? buildWalkways(data, cfg.network);
   const mainSet = largeComponents(g, cfg.minComponent);
   const main = [...mainSet];
   if (!main.length) return null;

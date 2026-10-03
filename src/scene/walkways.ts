@@ -63,15 +63,16 @@ export function buildWalkways(data: CityData, opts: WalkwayOptions): Walkways {
 
 /**
  * Test « ce tronçon entre-t-il dans l'eau ? » : points testés tous les 1,5 m, dans un plan d'eau (polygone) ou
- * à moins de la demi-largeur du ruban d'une rivière (la largeur dessinée, city.ts). Un chemin qui longe la berge
+ * à moins de la demi-largeur du ruban d'une rivière à ciel ouvert (la largeur dessinée, city.ts ; une rivière couverte ne compte pas). Un chemin qui longe la berge
  * (dans la bande de pierre) reste permis : seule l'eau elle-même est interdite.
  */
-function waterTest(data: CityData): (a: Pt, b: Pt) => boolean {
+export function waterTest(data: CityData): (a: Pt, b: Pt) => boolean {
   const CELL_W = 25;
   const areas = data.water.filter((w): w is Extract<typeof w, { kind: 'area' }> => w.kind === 'area');
   const grid = new Map<string, number[][]>();
   for (const w of data.water) {
-    if (w.kind !== 'line') continue;
+    // Une rivière couverte (la Leysse sous l'avenue des Ducs de Savoie…) passe sous la rue : on peut y marcher
+    if (w.kind !== 'line' || w.covered) continue;
     const half = w.w / 2;
     for (let k = 1; k < w.pts.length; k++) {
       const [ax, ay] = w.pts[k - 1], [bx, by] = w.pts[k];
@@ -163,6 +164,12 @@ export function wallDistance(data: CityData): (p: Pt, max: number) => number {
         }
     return Math.sqrt(best);
   };
+}
+
+/** Test « ce point est-il dans un bâtiment ? » (grille de 25 m) */
+export function buildingTest(data: CityData): (x: number, y: number) => boolean {
+  const grid = buildingGrid(data);
+  return (x, y) => (grid.get(`${Math.floor(x / CELL)},${Math.floor(y / CELL)}`) ?? []).some((ring) => pointInRing(x, y, ring));
 }
 
 /** Nœuds de la plus grande partie connexe du réseau (évite de démarrer sur un bout de chemin isolé). */
