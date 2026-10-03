@@ -23,6 +23,7 @@ import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildPeople, type PeopleConfig } from './scene/people';
 import { buildWalkways } from './scene/walkways';
 import { buildPathfinder, type PathConfig, type Pathfinder } from './scene/avatar-path';
+import { buildAvatar, type Avatar, type AvatarConfig } from './scene/avatar';
 import avatarContent from './content/avatar.json';
 import { buildBirds, type BirdsConfig } from './scene/birds';
 import { buildChimneys, type SmokeConfig } from './scene/chimneys';
@@ -136,11 +137,15 @@ async function main() {
   await loading.set(72, 'passants');
   let people: ReturnType<typeof buildPeople> = null;
   let pathfinder: Pathfinder | null = null;
+  let avatar: Avatar | null = null;
   try {
     // Un seul réseau de voies, partagé par les passants et le chemin de l'avatar (EP005-US001)
     const peopleCfg = lifeContent.people as unknown as PeopleConfig;
     const walkways = buildWalkways(data, peopleCfg.network);
     pathfinder = buildPathfinder(walkways, data, avatarContent.path as PathConfig);
+    // L'avatar reste caché tant que le mode balade (US003) n'existe pas ; en debug : diorama.avatar.place(x, y) puis .goTo(x, y)
+    avatar = buildAvatar(avatarContent.avatar as AvatarConfig, terrain.heightAt, pathfinder);
+    scene.add(avatar.group);
     people = buildPeople(peopleCfg, data, terrain.heightAt, { camera, focus: () => controls.target, hour: () => clock.state().hour }, walkways);
     if (people) {
       scene.add(people.group);
@@ -383,6 +388,7 @@ async function main() {
     { update: (_, t) => city.update(t) },
     ...(herd ? [herd] : []),
     ...(people ? [people] : []),
+    ...(avatar ? [avatar] : []),
     ...(birds ? [birds] : []),
     ...(chimneys ? [chimneys] : []),
     ...(flags ? [flags] : []),
@@ -462,7 +468,7 @@ async function main() {
   if (!lobbyAtStart) loading.hideBoot();
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, birds, chimneys, flags, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, birds, chimneys, flags, clock, herd, hunt, slots } });
 }
 
 main();

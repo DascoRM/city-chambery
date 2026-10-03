@@ -52,13 +52,13 @@
 
 ## Checklist dev
 
-- [ ] `avatar.ts`, `avatar.json`
-- [ ] Exports de `people.ts`
-- [ ] Captures à 30, 70, 150 m, de jour et de nuit
+- [x] `avatar.ts`, `avatar.json`
+- [x] Exports de `people.ts`
+- [x] Captures à 30, 70, 150 m, de jour et de nuit
 - [ ] Appels de rendu comparés avec `?debug`
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Fait (itération 67), à valider par Dasco

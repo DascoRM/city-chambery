@@ -71,7 +71,7 @@ Retour d'un utilisateur : se promener dans la ville avec un avatar, en vue à la
 | ID | User Story | Priorité | Points | Dépend de | Status |
 |----|------------|----------|--------|-----------|--------|
 | [US001](US001-reseau-et-chemin.md) | Un réseau de déplacement partagé et un chemin jusqu'au point cliqué | High | 5 | — | 🟡 Fait, à valider |
-| [US002](US002-avatar-visible.md) | Un avatar visible, lisible à toutes les distances | High | 5 | US001 | 🔲 Todo |
+| [US002](US002-avatar-visible.md) | Un avatar visible, lisible à toutes les distances | High | 5 | US001 | 🟡 Fait, à valider |
 | [US003](US003-camera-qui-suit.md) | Un mode balade : caméra qui suit, limites et interface propres | High | 5 | US002 | 🔲 Todo |
 | [US004](US004-entrees.md) | Cliquer ou toucher pour aller, sans casser les gestes actuels | High | 5 | US001, US003 | 🔲 Todo |
 | [US005](US005-effacement-des-batiments.md) | Les bâtiments entiers et les monuments qui masquent l'avatar s'effacent | High | 13 | US002, US003 | 🔲 Todo |
