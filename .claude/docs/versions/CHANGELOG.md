@@ -1,5 +1,29 @@
 # Journal des itérations
 
+## Itération 68 — 03/10/2026 (branches `feat/EP005-US003-camera-qui-suit`, epic EP005)
+
+**Demande de Dasco :** continuer sans attendre (« je ne peux pas répondre à tes questions si je ne peux pas tester ») : le prototype doit donc être **jouable**. Cette itération regroupe l'US003 (mode balade, caméra) et le cœur de l'US004 (entrées) ; commandes décidées : clic gauche = marcher, clic droit = déplacer la carte, un doigt = marcher, deux doigts = caméra.
+
+**Changements :**
+- `src/game/balade.ts` (nouveau) : mode explicite et exclusif ; entrée (l'avatar est posé à la fontaine des Éléphants la 1re fois, la caméra vole à 85 m, 40° ; limites de zoom 45 à 300 m), sortie (limites de la carte libre rétablies, la caméra recule par un vol si elle est trop près, l'avatar s'arrête sur place et reste affiché) ; un glissé de la carte (clic droit, un doigt) arrête le suivi et affiche « Retrouver mon avatar » ; un nouvel ordre de marche le rétablit ;
+- `src/scene/stage.ts` : `follow` (cible et caméra translatées du même vecteur, y compris le dénivelé, seuil d'arrêt à 5 cm), `flyToView`, `setLimits`, `isFlying` ; le suivi est suspendu pendant un vol ;
+- `src/interaction.ts` : clic gauche sur le sol = ordre de marche (priorité : outil de placement, éléphant, gemme ou épingle, sol) ; un geste à deux doigts ne donne jamais d'ordre ; pas de double toucher de zoom en balade ; curseur « viseur » ;
+- `src/ui/ui.ts`, `src/style.css` : boutons « 🚶 Balade » / « 🗺 Vue libre » et « 📍 Retrouver mon avatar », boussole et légende masquées, aide du mode ;
+- clic sur un ✦ en balade : l'avatar marche jusqu'au lieu, la fiche s'ouvre à l'arrivée (début de l'US006) ; en balade, ni la fiche ni la capture d'un éléphant ne volent la caméra ;
+- `src/scene/avatar.ts` : silhouette vue à travers les bâtiments (aplat translucide `GreaterDepth`, `avatar.silhouette` : 0,55), un appel de rendu de plus (4 au plus) ; `onArrive`, `stop()`.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique (souris) : bouton, entrée (distance 85 m, inclinaison 40°), boussole et légende masquées, clic gauche : l'avatar marche et la caméra le suit (écart ≈ 1,5 m à 14 m/s, distance et angle constants), clic droit glissé : « Retrouver » apparaît puis recentre, molette : zoom limité à 45 m, sortie : distance 70 m (limite de la carte libre), boussole et légende revenues, « repos (30 max) » au repos dans les deux modes, ≈ 60 images/s en marche, aucune erreur console ; émulation tactile : un toucher donne l'ordre, le double toucher ne zoome pas, « Pas par là » hors de la carte.
+
+**Non vérifié / limites :**
+- **Aucun essai sur un vrai téléphone** : geste à deux doigts (la protection du dernier doigt levé est écrite, pas essayée avec deux vrais doigts), seuil de 6 px, fluidité ;
+- **les gemmes ✦ et épingles ont de grandes zones de clic** (gemme : cylindre de 14 m de rayon, 42 m de haut) : près d'un ✦, un clic sur le sol marche vers le ✦ au lieu du point visé ; à revoir (US006) ;
+- **bâtiments** : l'avatar est caché derrière les bâtiments (silhouette à travers, mais pas d'effacement : US005) ;
+- relief : testé sur le centre, pas sur les pentes fortes ; caméra près d'un grand bâtiment (cathédrale) non regardée ;
+- pas d'anneau de prévisualisation au survol, pas de position sauvegardée (US007), pas de bouton « Recommencer » ni de bouton dans le lobby (US010) ; bar / café : clic = fiche, comme avant (pas de marche) ;
+- 4 appels de rendu pour l'avatar (la spec en prévoyait 3) à cause de la silhouette.
+
+**À régler à la main (Dasco) :** `src/content/avatar.json` : `camera` (distance 85, inclinaison 40°, zoom, vitesse de rattrapage), `avatar` (taille ×2, vitesse 14 m/s, couleurs, silhouette).
+
 ## Itération 67 — 03/10/2026 (branche `feat/EP005-US002-avatar-visible`, epic EP005)
 
 **Demande de Dasco :** passer à l'US002, l'avatar visible (silhouette standard, le modèle OBJ viendra plus tard).

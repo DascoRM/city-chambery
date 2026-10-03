@@ -67,4 +67,4 @@
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Fait (itération 68), à valider par Dasco

@@ -65,4 +65,4 @@
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Fait en partie (itération 68) : pas d'anneau de prévisualisation au survol, geste mobile à l'usage ; à valider par Dasco
