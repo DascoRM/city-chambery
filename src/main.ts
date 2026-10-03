@@ -21,6 +21,9 @@ import { createTiltShift } from './scene/tiltshift';
 import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildPeople, type PeopleConfig } from './scene/people';
+import { buildWalkways } from './scene/walkways';
+import { buildPathfinder, type PathConfig, type Pathfinder } from './scene/avatar-path';
+import avatarContent from './content/avatar.json';
 import { buildBirds, type BirdsConfig } from './scene/birds';
 import { buildChimneys, type SmokeConfig } from './scene/chimneys';
 import { buildFlags, type FlagSpec } from './scene/flags';
@@ -132,8 +135,13 @@ async function main() {
   // Passants (EP001-US001) : décor, sur leur propre réseau de voies
   await loading.set(72, 'passants');
   let people: ReturnType<typeof buildPeople> = null;
+  let pathfinder: Pathfinder | null = null;
   try {
-    people = buildPeople(lifeContent.people as unknown as PeopleConfig, data, terrain.heightAt, { camera, focus: () => controls.target, hour: () => clock.state().hour });
+    // Un seul réseau de voies, partagé par les passants et le chemin de l'avatar (EP005-US001)
+    const peopleCfg = lifeContent.people as unknown as PeopleConfig;
+    const walkways = buildWalkways(data, peopleCfg.network);
+    pathfinder = buildPathfinder(walkways, data, avatarContent.path as PathConfig);
+    people = buildPeople(peopleCfg, data, terrain.heightAt, { camera, focus: () => controls.target, hour: () => clock.state().hour }, walkways);
     if (people) {
       scene.add(people.group);
       if (DEBUG) console.info(`[passants] ${people.count} sur un réseau de ${people.nodes} nœuds`);
@@ -454,7 +462,7 @@ async function main() {
   if (!lobbyAtStart) loading.hideBoot();
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, birds, chimneys, flags, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, birds, chimneys, flags, clock, herd, hunt, slots } });
 }
 
 main();

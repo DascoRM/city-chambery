@@ -57,13 +57,13 @@
 
 ## Checklist dev
 
-- [ ] Diagnostic du réseau (script jetable) et décision
-- [ ] Réseau partagé exporté, index d'accrochage en grille de 25 m, `pointInBuilding`
-- [ ] `src/scene/avatar-path.ts` : accrochage, A*, polyligne, replanification
-- [ ] Vérifié en console sur 20 destinations dont les 8 ✦
+- [x] Diagnostic du réseau (script jetable) et décision
+- [x] Réseau partagé exporté, index d'accrochage en grille de 25 m, `pointInBuilding`
+- [x] `src/scene/avatar-path.ts` : accrochage, A*, polyligne, replanification
+- [x] Vérifié en console sur 20 destinations dont les 8 ✦
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Fait (itération 66), à valider par Dasco

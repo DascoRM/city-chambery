@@ -1,5 +1,22 @@
 # Journal des itérations
 
+## Itération 66 — 03/10/2026 (branche `feat/EP005-US001-reseau-et-chemin`, epic EP005)
+
+**Demande de Dasco :** commencer l'epic « balade avec un avatar » (feu vert donné, commandes : clic gauche = avatar, clic droit = carte ; un doigt = avatar, deux doigts = caméra). Cette itération : US001, le réseau et le chemin, **sans rien d'affiché** (l'avatar vient avec l'US002).
+
+**Diagnostic du réseau :** la rive nord-est (982 nœuds) était coupée à cause de la **Leysse couverte** : 4 tronçons de rues et de chemins (dont l'avenue des Ducs de Savoie) passent sur la rivière couverte, que `waterTest` traitait comme de l'eau. Corrigé en ignorant les rivières `covered` : **une seule partie connexe de 5 010 nœuds** (au lieu de 3 976 + 982). Touche aussi les passants (ils peuvent désormais traverser là, à juste titre ; leurs rives ne sont plus séparées).
+
+**Changements :**
+- `src/scene/walkways.ts` : rivières couvertes ignorées ; `buildingTest` et `waterTest` exportés ;
+- `src/scene/avatar-path.ts` (nouveau) : accrochage au point le plus proche d'une voie de la grande composante (grille de 25 m), refus au-delà de 40 m, A* avec départ et arrivée virtuels sur une arête (replanification depuis n'importe quelle position), angles arrondis (1,5 m), « dernier mètre » en ligne droite jusqu'à 15 m si aucun bâtiment ni eau n'est traversé ;
+- `src/content/avatar.json` (nouveau) : `maxSnap` 40, `lastMeter` 15, `corner` 1,5 ;
+- `src/main.ts` : **un seul réseau** construit et partagé entre passants et chemin (`buildPeople` accepte le réseau) ; `window.diorama.pathfinder` (debug) ;
+- `src/content/life.json` : zone interdite des passants autour de la fontaine 15 → 9 m (pensée pour un éléphant).
+
+**Vérifié :** `npm run build` ; sous Node (graphe réel de `city.json`) : les 169 bars, cafés et restaurants sont tous atteignables depuis la fontaine ; temps de calcul 0,2 à 0,3 ms en moyenne, 2,1 ms au pire ; 300 destinations aléatoires : 287 acceptées, 13 refusées (« loin », plus de 40 m d'une voie), 0 point à plus de 10 cm à l'intérieur d'un bâtiment ; dans Chrome avec carte graphique : `window.diorama.pathfinder.route()` répond (0,4 à 2,5 ms), « loin » pour un point hors carte, aucune erreur console.
+
+**Non vérifié / limites :** le **chargement** (+0,2 s max) n'est pas remesuré, mais il n'y a pas de 3e construction du réseau ; **cathédrale** : le réseau principal s'arrête à 35,8 m (l'accrochage la prend car < 40 m) : à traiter avec les lieux (US006) ; **musée savoisien** 17 m, **théâtre** 13 m, fontaine 9,9 m ; nœuds de bout de chemin qui touchent une façade (profondeur 0) : l'avatar y frôle le mur ; un segment sur 300 trajets touche l'eau près d'un pont (arrondi des angles), non analysé ; demi-tours : 10 sur 169 trajets (probablement en bout de trajet), non analysés ; escaliers non inclus (décision de Dasco : pas pour la démo) ; téléphone non mesuré.
+
 ## Itération 65 — 03/10/2026 (branche `feat/minijeu-elephants-simplifie`)
 
 **Retour de Dasco (utilisateurs) :** le jeu des éléphants est compliqué : plusieurs clics par éléphant et de nouvelles recherches derrière. Demande : un clic = l'éléphant sprinte puis s'arrête au bout de quelques secondes ; un reclic pendant le sprint = il apparaît sur la fontaine, « pas forcément sur tous les éléphants ». Réponses : le 2e clic ne marche pas toujours ; on retire seulement le nombre de fuites ; la bulle de provocation reste, sans l'indice de direction.

@@ -1,0 +1,4 @@
+{
+  "note": "Réglages de la balade avec un avatar (EP005). Chemin : maxSnap = distance maximale (m) à une voie pour qu'un ordre soit accepté ; lastMeter = jusqu'à cette distance (m) l'avatar quitte la voie en ligne droite pour atteindre le point désigné ; corner = rayon (m) d'arrondi des angles.",
+  "path": { "maxSnap": 40, "lastMeter": 15, "corner": 1.5 }
+}

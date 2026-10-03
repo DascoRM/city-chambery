@@ -29,7 +29,7 @@
       "avoid": [
         {
           "anchor": "elephants",
-          "radius": 15
+          "radius": 9
         }
       ]
     },
