@@ -74,7 +74,7 @@ Retour d'un utilisateur : se promener dans la ville avec un avatar, en vue à la
 | [US002](US002-avatar-visible.md) | Un avatar visible, lisible à toutes les distances | High | 5 | US001 | 🟡 Fait, à valider |
 | [US003](US003-camera-qui-suit.md) | Un mode balade : caméra qui suit, limites et interface propres | High | 5 | US002 | 🟡 Fait, à valider |
 | [US004](US004-entrees.md) | Cliquer ou toucher pour aller, sans casser les gestes actuels | High | 5 | US001, US003 | 🟡 Fait en partie, à valider |
-| [US005](US005-effacement-des-batiments.md) | Les bâtiments entiers et les monuments qui masquent l'avatar s'effacent | High | 13 | US002, US003 | 🔲 Todo |
+| [US005](US005-effacement-des-batiments.md) | Les bâtiments entiers et les monuments qui masquent l'avatar s'effacent | High | 13 | US002, US003 | 🟡 Fait, à valider |
 | [US006](US006-decouverte-des-lieux.md) | Marcher jusqu'à un lieu d'histoire, avec des fiches adaptées au mode | Medium | 5 | US004 | 🔲 Todo |
 | [US007](US007-sauvegarde-de-la-position.md) | Un point de départ, et retrouver son avatar là où on l'a laissé | Medium | 2 | US001 | 🔲 Todo |
 | [US008](US008-accessibilite.md) | Une balade accessible : animations réduites, silhouette contrastée | Medium | 2 | US002 | 🔲 Todo |

@@ -55,6 +55,8 @@ export function hiddenBuildings(entries: ModelEntry[]): Set<number> {
 export async function buildModels(entries: ModelEntry[], pois: PlacedPoi[], ctx: ModelContext): Promise<THREE.Group> {
   const root = new THREE.Group();
   root.name = 'models';
+  // Monuments qui remplacent des bâtiments OSM : l'effacement de la balade (cutaway.ts) s'en sert
+  root.userData.entries = entries.map((e) => ({ id: e.id, ids: e.hideOsm ?? [] }));
   const loader = new GLTFLoader();
 
   await Promise.all(

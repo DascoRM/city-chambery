@@ -37,6 +37,8 @@ export interface Avatar extends Ticker {
   /** Pose l'avatar sur le réseau, au plus près de (x, y) : le rend visible */
   place(x: number, y: number): boolean;
   hide(): void;
+  /** Point visé par le test d'effacement des bâtiments (poitrine), dans le repère de la scène ; null si l'avatar n'est pas posé */
+  aim(out: THREE.Vector3): THREE.Vector3 | null;
   /** S'arrête sur place (sortie du mode balade) */
   stop(): void;
   /** Ordre de marche ; `false` si refusé ('far' : à plus de maxSnap d'une voie) */
@@ -201,6 +203,7 @@ export function buildAvatar(cfg: AvatarConfig, heightAt: HeightFn, pf: Pathfinde
     stop() { arrive = undefined; path = []; dest = null; ring.visible = false; speed = 0; },
     hide() { arrive = undefined; group.visible = false; placed = false; path = []; dest = null; ring.visible = false; speed = 0; },
     position: () => (placed ? [x, y] : null),
+    aim: (out) => (placed ? out.set(x, heightAt(x, y) + lift + 1.4 * cfg.scale, -y) : null),
     walking: () => path.length > 1,
     moving: () => placed && path.length > 1,
   };

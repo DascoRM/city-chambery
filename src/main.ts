@@ -24,6 +24,7 @@ import { buildPeople, type PeopleConfig } from './scene/people';
 import { buildWalkways } from './scene/walkways';
 import { buildPathfinder, type PathConfig, type Pathfinder } from './scene/avatar-path';
 import { createBalade, type Balade, type BaladeConfig } from './game/balade';
+import { createCutaway, type Cutaway, type CutawayConfig } from './scene/cutaway';
 import { buildAvatar, type Avatar, type AvatarConfig } from './scene/avatar';
 import avatarContent from './content/avatar.json';
 import { buildBirds, type BirdsConfig } from './scene/birds';
@@ -140,6 +141,7 @@ async function main() {
   let pathfinder: Pathfinder | null = null;
   let avatar: Avatar | null = null;
   let balade: Balade | null = null;
+  let cutaway: Cutaway | null = null;
   try {
     // Un seul réseau de voies, partagé par les passants et le chemin de l'avatar (EP005-US001)
     const peopleCfg = lifeContent.people as unknown as PeopleConfig;
@@ -252,7 +254,8 @@ async function main() {
   });
   // Mode balade (EP005) : un avatar qu'on dirige, la caméra le suit ; départ à la fontaine des Éléphants
   if (avatar) {
-    balade = createBalade({ camera: avatarContent.camera } as BaladeConfig, stage, avatar, renderer.domElement, data.anchors.elephants?.pos ?? [0, 0], ui);
+    cutaway = createCutaway(avatarContent.cutaway as CutawayConfig, data, city.fade, terrain.minUnder, modelsRoot, hidden, camera, (out) => avatar!.aim(out));
+    balade = createBalade({ camera: avatarContent.camera } as BaladeConfig, stage, avatar, renderer.domElement, data.anchors.elephants?.pos ?? [0, 0], { ...ui, setCutaway: (on) => cutaway?.setActive(on) });
   }
   // Mode hors-ligne (service worker, production uniquement)
   setupPwa(ui.flash);
@@ -410,6 +413,7 @@ async function main() {
     ...(herd ? [herd] : []),
     ...(people ? [people] : []),
     ...(balade ? [balade] : []),
+    ...(cutaway ? [cutaway] : []),
     ...(avatar ? [avatar] : []),
     ...(birds ? [birds] : []),
     ...(chimneys ? [chimneys] : []),
@@ -490,7 +494,7 @@ async function main() {
   if (!lobbyAtStart) loading.hideBoot();
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, birds, chimneys, flags, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, birds, chimneys, flags, clock, herd, hunt, slots } });
 }
 
 main();

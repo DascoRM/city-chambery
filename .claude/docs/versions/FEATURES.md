@@ -1,12 +1,12 @@
 # Fonctionnalités
 
-État au 03/10/2026 — itération 68.
+État au 03/10/2026 — itération 69.
 
 ## Carte / diorama
 
 | Fonctionnalité | État | Détail |
 |---|---|---|
-| Mode balade avec un avatar (EP005, **prototype**) | 🟡 À valider | Bouton « 🚶 Balade » : un petit personnage (silhouette des passants ×2, rose, tache blanche au sol, silhouette vue à travers les bâtiments) apparaît à la fontaine des Éléphants ; la caméra le suit (85 m, 40°, zoom 45 à 300 m) ; clic gauche = il marche en suivant les rues (chemin calculé sur le réseau partagé avec les passants, 14 m/s) ; clic sur un ✦ = il y marche, la fiche s'ouvre à l'arrivée ; clic droit glissé / un doigt glissé = déplacer la carte, bouton « Retrouver mon avatar » ; boussole et légende masquées ; « Vue libre » pour sortir (l'avatar reste). Pas encore : bâtiments qui s'effacent (US005), position sauvegardée (US007), fiches adaptées (US006). Réglages : `avatar.json` |
+| Mode balade avec un avatar (EP005, **prototype**) | 🟡 À valider | Bouton « 🚶 Balade » : un petit personnage (silhouette des passants ×2, rose, tache blanche au sol, silhouette vue à travers les bâtiments) apparaît à la fontaine des Éléphants ; la caméra le suit (85 m, 40°, zoom 45 à 300 m) ; clic gauche = il marche en suivant les rues (chemin calculé sur le réseau partagé avec les passants, 14 m/s) ; clic sur un ✦ = il y marche, la fiche s'ouvre à l'arrivée ; clic droit glissé / un doigt glissé = déplacer la carte, bouton « Retrouver mon avatar » ; boussole et légende masquées ; « Vue libre » pour sortir (l'avatar reste). **Les bâtiments entiers et les monuments (château, cathédrale, Carré Curial) qui masquent l'avatar s'effacent en fondu** (les arbres restent ; liste d'exceptions et durée dans `avatar.json` → `cutaway`). Pas encore : position sauvegardée (US007), fiches adaptées (US006). Réglages : `avatar.json` |
 | Relief du terrain | ✅ | Grille 10 m ; source RGE ALTI (IGN), repli par interpolation des sols BD TOPO ; ≈ 92 m de dénivelé ; rues, rivière, bâtiments, arbres, repères, étiquettes et monuments posés sur le sol |
 | Socle diorama (plateau, strates de terre, plinthe bois) | ✅ | Emprise ≈ 1,3 km × 1,2 km, configurable dans `diorama.config.json` |
 | Bâtiments extrudés depuis OpenStreetMap | ✅ | 2 067 bâtiments ; 1 959 avec hauteurs IGN BD TOPO (gouttière + toit quand disponible), 105 encore estimées (surtout de petites annexes) |
