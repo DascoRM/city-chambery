@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { CityData, HeightFn, Place, Ticker } from '../types';
-import { buildWalkways, largeComponents, type Edge, type WalkwayOptions } from './walkways';
+import { buildWalkways, largeComponents, type Edge, type Walkways, type WalkwayOptions } from './walkways';
 import { blobShadow } from './mascot';
 import { placeCategory } from './palette';
 import { curveAt } from './curve';
@@ -56,13 +56,13 @@ export interface PeopleConfig {
 }
 
 /** Hauteur de la hanche (m), pivot des jambes ; la silhouette mesure 1,7 m à l'échelle 1 */
-const HIP = 0.82;
+export const HIP = 0.82;
 /** Couleurs de vêtements, dans les tons du diorama ; peaux */
 const CLOTHES = ['#c8553d', '#2f6690', '#f2a541', '#5b8e7d', '#8e5bd6', '#e07a5f', '#3d405b', '#81b29a', '#d4a373', '#6d597a', '#457b9d', '#e9c46a'];
 const SKIN = ['#f1c9a5', '#e0ac85', '#c68863', '#8d5a3b', '#f6dcc5'];
 
 /** Silhouette : deux jambes et un torse (une seule géométrie, jambes marquées par l'attribut aLeg) ; +X = avant */
-function bodyGeometry(): THREE.BufferGeometry {
+export function bodyGeometry(): THREE.BufferGeometry {
   const part = (g: THREE.BufferGeometry, leg: number) => {
     const n = g.getAttribute('position').count;
     g.setAttribute('aLeg', new THREE.BufferAttribute(new Float32Array(n).fill(leg), 1));
@@ -77,7 +77,7 @@ function bodyGeometry(): THREE.BufferGeometry {
   return mergeGeometries([legL, legR, torso])!;
 }
 
-function headGeometry(): THREE.BufferGeometry {
+export function headGeometry(): THREE.BufferGeometry {
   return new THREE.IcosahedronGeometry(0.13, 0).translate(0.02, HIP + 0.62 + 0.15, 0);
 }
 
@@ -131,8 +131,9 @@ export interface PeopleView {
 /** Hasard stable par indice (même lieu, même tirage à chaque chargement) */
 const stable = (i: number) => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
-export function buildPeople(cfg: PeopleConfig, data: CityData, heightAt: HeightFn, view: PeopleView): People | null {
-  const g = buildWalkways(data, cfg.network);
+/** `shared` : réseau déjà construit avec `cfg.network` (partagé avec l'avatar, EP005), sinon construit ici */
+export function buildPeople(cfg: PeopleConfig, data: CityData, heightAt: HeightFn, view: PeopleView, shared?: Walkways): People | null {
+  const g = shared ?? buildWalkways(data, cfg.network);
   const mainSet = largeComponents(g, cfg.minComponent);
   const main = [...mainSet];
   if (!main.length) return null;

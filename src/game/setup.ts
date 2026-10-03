@@ -24,6 +24,7 @@ export interface GameSetupOptions {
   game: MascotConfig['game'];
   ui: GameUi;
   flyTo(x: number, z: number): void;
+  release?(): void;
 }
 
 /**
@@ -62,6 +63,7 @@ export function setupGame(o: GameSetupOptions): { hunt: Hunt | null; slots: THRE
         },
         onRestart: () => ui.flash('🐘 Oh non ! Les éléphants se sont encore échappés…'),
         flyTo: o.flyTo,
+        release: o.release,
       })
     : null;
   if (hunt && returned.size < herdTotal) {

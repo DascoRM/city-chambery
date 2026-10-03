@@ -5,6 +5,7 @@ import { PALETTE, rand } from './palette';
 import { planRoof, planSkeletonRoof, roofGeometry, skeletonRoofGeometry } from './roofs';
 import { buildGround, type Terrain } from './terrain';
 import { pointInRing } from './geo';
+import { DITHER_GLSL, createFade, type FadeUniforms } from './cutaway';
 import { FOOT_KINDS, LIFT, roadDistanceIndex } from './roads';
 import type { Foliage } from '../time/seasons';
 
@@ -22,7 +23,7 @@ export interface CityTrees {
   setFoliage(f: Foliage): void;
 }
 
-export function buildCity(data: CityData, terrain: Terrain, opts: { hidden?: Set<number> } = {}): { group: THREE.Group; update(t: number): void; night: NightUniforms; trees: CityTrees } {
+export function buildCity(data: CityData, terrain: Terrain, opts: { hidden?: Set<number> } = {}): { group: THREE.Group; update(t: number): void; night: NightUniforms; trees: CityTrees; fade: ReturnType<typeof createFade> } {
   const night: NightUniforms = { uNight: { value: 0 }, uLit: { value: 0.45 } };
   const city = new THREE.Group();
   city.name = 'city';
@@ -30,10 +31,11 @@ export function buildCity(data: CityData, terrain: Terrain, opts: { hidden?: Set
   city.add(buildGround(data, terrain));
   const water = createWaterMaterial();
   city.add(buildFlat(data, water.material, terrain));
-  city.add(buildBuildings(data, night, opts.hidden ?? new Set(), terrain));
+  const fade = createFade(data.buildings.length);
+  city.add(buildBuildings(data, night, fade.uniforms, opts.hidden ?? new Set(), terrain));
   const trees = buildTrees(data, terrain);
   if (trees.group) city.add(trees.group);
-  return { group: city, update: water.update, night, trees };
+  return { group: city, update: water.update, night, trees, fade };
 }
 
 // ---------------------------------------------------------------------------
@@ -228,7 +230,7 @@ function buildFlat(data: CityData, waterMat: THREE.Material, terrain: Terrain): 
 // ---------------------------------------------------------------------------
 // Bâtiments : extrusion des emprises, couleurs par sommet, une seule draw call
 // ---------------------------------------------------------------------------
-function buildBuildings(data: CityData, night: NightUniforms, hidden: Set<number>, terrain: Terrain): THREE.Mesh {
+function buildBuildings(data: CityData, night: NightUniforms, fade: FadeUniforms, hidden: Set<number>, terrain: Terrain): THREE.Mesh {
   const wall = new THREE.Color(), roof = new THREE.Color(), tmp = new THREE.Color();
   const geos: THREE.BufferGeometry[] = [];
   let pitched = 0;
@@ -239,7 +241,7 @@ function buildBuildings(data: CityData, night: NightUniforms, hidden: Set<number
   const rings = ringGrid(data);
   const insideOther = (x: number, y: number, self: Pt[]) =>
     (rings.get(`${Math.floor(x / RING_CELL)},${Math.floor(y / RING_CELL)}`) ?? []).some((r) => r !== self && pointInRing(x, y, r));
-  const faceAttrs = (g: THREE.BufferGeometry, b: { outer: Pt[]; minH: number } | null, base: number) => {
+  const faceAttrs = (g: THREE.BufferGeometry, b: { outer: Pt[]; minH: number } | null, base: number, id: number) => {
     const n = g.getAttribute('position').count;
     const street = new Float32Array(n), baseY = new Float32Array(n).fill(base);
     if (b && b.minH === 0) {
@@ -254,10 +256,12 @@ function buildBuildings(data: CityData, night: NightUniforms, hidden: Set<number
     }
     g.setAttribute('aStreet', new THREE.BufferAttribute(street, 1));
     g.setAttribute('aBase', new THREE.BufferAttribute(baseY, 1));
+    // Identifiant du bâtiment (indice dans data.buildings) : l'effacement de la balade (cutaway.ts) lit son facteur de visibilité
+    g.setAttribute('aId', new THREE.BufferAttribute(new Float32Array(n).fill(id), 1));
     return g;
   };
 
-  for (const b of data.buildings) {
+  for (const [bi, b] of data.buildings.entries()) {
     if (hidden.has(b.id)) continue; // remplacé par un monument modélisé
     // Petit décalage aléatoire : évite le scintillement entre toits qui se chevauchent à la même hauteur
     // Toit : rectangle (deux pans, quatre pans, pyramide) sinon squelette droit, sinon plat
@@ -295,21 +299,21 @@ function buildBuildings(data: CityData, night: NightUniforms, hidden: Set<number
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geo.translate(0, ground, 0);
-    geos.push(faceAttrs(geo.index ? geo.toNonIndexed() : geo, b, ground));
+    geos.push(faceAttrs(geo.index ? geo.toNonIndexed() : geo, b, ground, bi));
     if (plan) {
       pitched++;
-      geos.push(faceAttrs(nonIndexed(roofGeometry({ ...plan, eave: b.minH + depth }, roof, wall).translate(0, ground, 0)), null, ground));
+      geos.push(faceAttrs(nonIndexed(roofGeometry({ ...plan, eave: b.minH + depth }, roof, wall).translate(0, ground, 0)), null, ground, bi));
     } else if (skel) {
       const g = skeletonRoofGeometry(b, { ...skel, eave: b.minH + depth }, roof);
       if (g) {
-        geos.push(faceAttrs(nonIndexed(g.translate(0, ground, 0)), null, ground));
+        geos.push(faceAttrs(nonIndexed(g.translate(0, ground, 0)), null, ground, bi));
         skeletonRoofs++;
       }
     }
   }
 
   const merged = geos.length ? mergeGeometries(geos) : new THREE.BufferGeometry();
-  const mesh = new THREE.Mesh(merged, windowsMaterial(night));
+  const mesh = new THREE.Mesh(merged, windowsMaterial(night, fade));
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.name = 'buildings';
@@ -343,29 +347,34 @@ function ringGrid(data: CityData): Map<string, Pt[][]> {
 }
 const nonIndexed = (g: THREE.BufferGeometry) => (g.index ? g.toNonIndexed() : g);
 
-function windowsMaterial(night: NightUniforms): THREE.MeshStandardMaterial {
+function windowsMaterial(night: NightUniforms, fade: FadeUniforms): THREE.MeshStandardMaterial {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, flatShading: true });
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = night.uNight;
     shader.uniforms.uLit = night.uLit;
+    shader.uniforms.uFade = fade.uFade;
+    shader.uniforms.uFadeW = fade.uFadeW;
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute float aStreet;\nattribute float aBase;\nvarying vec3 vWPos;\nvarying vec3 vWNormal;\nvarying float vStreet;\nvarying float vBase;')
+      .replace('#include <common>', '#include <common>\nattribute float aStreet;\nattribute float aBase;\nattribute float aId;\nuniform sampler2D uFade;\nuniform float uFadeW;\nvarying float vFade;\nvarying vec3 vWPos;\nvarying vec3 vWNormal;\nvarying float vStreet;\nvarying float vBase;')
       .replace(
         '#include <worldpos_vertex>',
-        '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWNormal = normalize(mat3(modelMatrix) * objectNormal);\nvStreet = aStreet;\nvBase = aBase;',
+        '#include <worldpos_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;\nvWNormal = normalize(mat3(modelMatrix) * objectNormal);\nvStreet = aStreet;\nvBase = aBase;\nint fid = int(aId + 0.5); int fw = int(uFadeW);\nvFade = texelFetch(uFade, ivec2(fid % fw, fid / fw), 0).r;',
       );
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
         `#include <common>
+        varying float vFade;
         varying vec3 vWPos;
         varying vec3 vWNormal;
         varying float vStreet;
         varying float vBase;
         uniform float uNight;
         uniform float uLit;
-        float hash21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }`,
+        float hash21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }${DITHER_GLSL}`,
       )
+      // Bâtiment effacé (mode balade) : fondu par tramage, avant tout calcul de couleur
+      .replace('#include <clipping_planes_fragment>', '#include <clipping_planes_fragment>\nif (vFade < 0.999 && vFade <= ditherNoise(gl_FragCoord.xy)) discard;')
       // Fenêtres (grille de 3 m × 3,2 m sur les murs) : verre sombre de jour (EP001-US009), allumées la nuit
       // selon uLit ; portes au rez-de-chaussée des murs côté rue (vStreet), une case sur trois environ
       .replace(

@@ -21,6 +21,12 @@ import { createTiltShift } from './scene/tiltshift';
 import { createDayNight } from './scene/daynight';
 import { buildModels, hiddenBuildings, type ModelEntry } from './scene/models';
 import { buildPeople, type PeopleConfig } from './scene/people';
+import { buildWalkways } from './scene/walkways';
+import { buildPathfinder, type PathConfig, type Pathfinder } from './scene/avatar-path';
+import { createBalade, type Balade, type BaladeConfig } from './game/balade';
+import { createCutaway, type Cutaway, type CutawayConfig } from './scene/cutaway';
+import { buildAvatar, type Avatar, type AvatarConfig } from './scene/avatar';
+import avatarContent from './content/avatar.json';
 import { buildBirds, type BirdsConfig } from './scene/birds';
 import { buildChimneys, type SmokeConfig } from './scene/chimneys';
 import { buildFlags, type FlagSpec } from './scene/flags';
@@ -132,8 +138,19 @@ async function main() {
   // Passants (EP001-US001) : décor, sur leur propre réseau de voies
   await loading.set(72, 'passants');
   let people: ReturnType<typeof buildPeople> = null;
+  let pathfinder: Pathfinder | null = null;
+  let avatar: Avatar | null = null;
+  let balade: Balade | null = null;
+  let cutaway: Cutaway | null = null;
   try {
-    people = buildPeople(lifeContent.people as unknown as PeopleConfig, data, terrain.heightAt, { camera, focus: () => controls.target, hour: () => clock.state().hour });
+    // Un seul réseau de voies, partagé par les passants et le chemin de l'avatar (EP005-US001)
+    const peopleCfg = lifeContent.people as unknown as PeopleConfig;
+    const walkways = buildWalkways(data, peopleCfg.network);
+    pathfinder = buildPathfinder(walkways, data, avatarContent.path as PathConfig, peopleCfg.network.avoid);
+    // L'avatar reste caché tant que le mode balade (US003) n'existe pas ; en debug : diorama.avatar.place(x, y) puis .goTo(x, y)
+    avatar = buildAvatar(avatarContent.avatar as AvatarConfig, terrain.heightAt, pathfinder);
+    scene.add(avatar.group);
+    people = buildPeople(peopleCfg, data, terrain.heightAt, { camera, focus: () => controls.target, hour: () => clock.state().hour }, walkways);
     if (people) {
       scene.add(people.group);
       if (DEBUG) console.info(`[passants] ${people.count} sur un réseau de ${people.nodes} nœuds`);
@@ -221,6 +238,8 @@ async function main() {
     onPlaceClosed: () => placeLayer.setActive(null),
     onCompass: () => stage.resetNorth(),
     onLobby: () => lobby.open(),
+    onBalade: () => balade?.toggle(),
+    onRecenter: () => balade?.recenter(),
     onHour: (h) => clock.setHour(h),
     onPlay: (p) => clock.setPlaying(p),
     onLive: () => clock.live(),
@@ -233,6 +252,11 @@ async function main() {
       ui.flash('Exploration remise à zéro');
     },
   });
+  // Mode balade (EP005) : un avatar qu'on dirige, la caméra le suit ; départ à la fontaine des Éléphants
+  if (avatar) {
+    cutaway = createCutaway(avatarContent.cutaway as CutawayConfig, data, city.fade, terrain.minUnder, modelsRoot, hidden, camera, (out) => avatar!.aim(out));
+    balade = createBalade({ camera: avatarContent.camera } as BaladeConfig, stage, avatar, renderer.domElement, data.anchors.elephants?.pos ?? [0, 0], { ...ui, setCutaway: (on) => cutaway?.setActive(on) });
+  }
   // Mode hors-ligne (service worker, production uniquement)
   setupPwa(ui.flash);
   // Cycle jour/nuit : vraie course du soleil pour la date et l'heure de l'horloge
@@ -278,7 +302,9 @@ async function main() {
     fountain: modelsRoot.getObjectByName('fontaine-des-elephants'),
     game: mascot.game,
     ui,
-    flyTo: (x, z) => stage.flyTo(x, z, 160),
+    // En balade, la caméra quitte l'avatar pour suivre l'éléphant jusqu'à la fontaine, puis revient (release)
+    flyTo: (x, z) => { if (balade?.active()) balade.detour(x, z); else stage.flyTo(x, z, 160); },
+    release: () => balade?.release(),
   });
   const { hunt, slots } = game;
   // Mode debug (?debug) : faisceaux au-dessus des éléphants et panneau pour les retrouver ;
@@ -305,7 +331,7 @@ async function main() {
       syncFound();
       ui.flash(discovered.size === pois.length ? '🏆 Tous les lieux sont découverts !' : `✦ Nouveau lieu découvert : ${poi.title}`);
     }
-    stage.flyTo(poi.position[0], -poi.position[1]);
+    if (!balade?.active()) stage.flyTo(poi.position[0], -poi.position[1]); // en balade, la caméra reste sur l'avatar
     ui.showPoi(poi, isNew);
   }
 
@@ -347,9 +373,22 @@ async function main() {
     ground: city.group,
     zoomTo: (p) => stage.zoomTo(p),
     hunt, placement,
+    walking: () => !!balade?.active(),
+    onGround: (x, y) => {
+      // Une fiche ouverte se ferme d'abord : un toucher = une seule action
+      if (ui.placeCardState().place) return false;
+      if (ui.panelOpen()) { ui.hidePanel(); return true; }
+      return balade ? balade.goTo(x, y) || true : false;
+    },
     tooltip: ui.showTooltip,
     onSelect: (h) => {
-      if (h && 'poi' in h) { closePlace(); openPoi(h.poi.id); }
+      if (h && 'poi' in h) {
+        closePlace();
+        // En balade, l'avatar marche jusqu'au lieu : la fiche s'ouvre à l'arrivée (hors de portée : tout de suite)
+        const id = h.poi.id;
+        if (balade?.active() && balade.goTo(h.poi.position[0], h.poi.position[1], () => openPoi(id))) return;
+        openPoi(id);
+      }
       else if (h && 'place' in h) openPlace(h.index, true); // clic ou toucher : la fiche reste ouverte
       else if (ui.placeCardState().place) closePlace(); // clic dans le vide : on ferme
     },
@@ -375,6 +414,9 @@ async function main() {
     { update: (_, t) => city.update(t) },
     ...(herd ? [herd] : []),
     ...(people ? [people] : []),
+    ...(balade ? [balade] : []),
+    ...(cutaway ? [cutaway] : []),
+    ...(avatar ? [avatar] : []),
     ...(birds ? [birds] : []),
     ...(chimneys ? [chimneys] : []),
     ...(flags ? [flags] : []),
@@ -454,7 +496,7 @@ async function main() {
   if (!lobbyAtStart) loading.hideBoot();
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, birds, chimneys, flags, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, birds, chimneys, flags, clock, herd, hunt, slots } });
 }
 
 main();

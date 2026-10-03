@@ -105,3 +105,19 @@ Estimation par image, la plupart du temps (hors changement d'heure) : ≈ 2 400 
 - La géométrie de la ville est construite une seule fois au chargement ; la décision des toits est
   faite dans le script de données.
 - Code de l'application raisonnable (199 Ko en gzip), sans la librairie du squelette droit.
+
+---
+
+## Mesure par vue (02/10/2026, itération 63)
+
+Le compteur `?debug` affiche les appels de rendu **de la vue courante** : le chiffre dépend beaucoup de ce qu'on regarde, car les monuments modélisés ne sont toujours pas fusionnés (voir le constat sur les monuments plus haut). Mesures (Chrome avec carte graphique, 1280 × 800, modèle de test du dépôt) :
+
+| Vue | Appels de rendu | Triangles |
+|---|---|---|
+| Vue d'ensemble (ouverture de la carte) | **2 406** | 1,58 M |
+| Carré Curial, à 300 m | 732 | 1,54 M |
+| Château, à 300 m | 630 | 1,55 M |
+| Rue de Boigne, à 130 m | **63** | 1,53 M |
+
+Le « ≈ 2 400 appels » de ce document **reste donc vrai en vue d'ensemble** ; le chiffre de 63, mesuré dans les rues, ne le contredit pas. Tout budget de performance doit être donné **par vue** (par exemple « au plus +6 appels par rapport à la même vue » pour l'epic EP005). Les images/s, elles, restent à 30 au repos et ≈ 60 en mouvement : le coût processeur de ces appels n'a pas empêché la fluidité sur le Mac ; sur téléphone, **non mesuré**.
+

@@ -97,6 +97,35 @@ export function createStage(container: HTMLElement, bounds: CityData['bounds'], 
     const len = THREE.MathUtils.clamp(offset.length() * factor, controls.minDistance, controls.maxDistance);
     flight = { target: point.clone(), pos: point.clone().addScaledVector(offset.normalize(), len) };
   };
+  /** Vol vers un point avec une distance et une inclinaison données (mode balade) ; garde le cap de la vue */
+  const flyToView = (x: number, z: number, distance: number, polarDeg: number) => {
+    const target = new THREE.Vector3(x, heightAt(x, -z), z);
+    const dir = camera.position.clone().sub(controls.target).setY(0).normalize();
+    const polar = THREE.MathUtils.degToRad(polarDeg);
+    const pos = target.clone().addScaledVector(dir, distance * Math.sin(polar));
+    pos.y = target.y + distance * Math.cos(polar);
+    flight = { target, pos };
+  };
+  /**
+   * Suivi d'un point (mode balade) : la cible et la caméra se translatent du même vecteur, donc cap, zoom et
+   * inclinaison ne changent pas ; la caméra suit aussi le dénivelé. `k` : part de l'écart rattrapée à cette image (0 à 1).
+   */
+  const follow = (x: number, z: number, k: number) => {
+    const t = controls.target;
+    const gap = Math.hypot(x - t.x, z - t.z);
+    if (gap < 0.05) { if (gap === 0) return; k = 1; } // seuil d'arrêt : la caméra s'arrête franchement
+    const dx = (x - t.x) * k, dz = (z - t.z) * k;
+    const ny = heightAt(t.x + dx, -(t.z + dz));
+    const dy = ny - t.y;
+    t.set(t.x + dx, ny, t.z + dz);
+    camera.position.set(camera.position.x + dx, camera.position.y + dy, camera.position.z + dz);
+  };
+  /** Distance (m) de la cible au point suivi, pour savoir si la caméra a fini de le rattraper */
+  const followGap = (x: number, z: number) => Math.hypot(x - controls.target.x, z - controls.target.z);
+  /** Limites de zoom (le mode balade s'approche plus que la carte libre) */
+  const setLimits = (min: number, max: number) => { controls.minDistance = min; controls.maxDistance = max; };
+  const limits = () => ({ min: controls.minDistance, max: controls.maxDistance });
+  const isFlying = () => flight !== null;
   /** Cap de la vue en degrés : 0 = nord en haut, 90 = est en haut… (sens horaire). */
   const heading = () => { // appelé à chaque image : pas de vecteur créé
     return THREE.MathUtils.radToDeg(Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z));
@@ -123,5 +152,5 @@ export function createStage(container: HTMLElement, bounds: CityData['bounds'], 
     if (camera.position.distanceTo(flight.pos) < 0.5) flight = null;
   };
 
-  return { renderer, scene, camera, controls, clampTarget, flyTo, zoomTo, heading, resetNorth, updateFlight, size, lights: { sun, hemi, fill } };
+  return { renderer, scene, camera, controls, clampTarget, flyTo, flyToView, follow, followGap, setLimits, limits, isFlying, zoomTo, heading, resetNorth, updateFlight, size, lights: { sun, hemi, fill } };
 }

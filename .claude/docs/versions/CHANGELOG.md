@@ -1,5 +1,115 @@
 # Journal des itérations
 
+## Itération 71 — 03/10/2026 (branche `fix/EP005-deplacement-libre`, epic EP005)
+
+**Retour de Dasco :** la direction est sensible au niveau des rues : on ne peut pas couper à travers champs, et à cause des petits recoins l'avatar « se perd » avec le point and click (il va se poser à côté du point visé, parfois de l'autre côté d'un mur). Demande : regarder ce genre de soucis.
+
+**Diagnostic (1 500 trajets aléatoires, réseau et bâtiments réels) :** l'avatar n'arrivait sur le point cliqué que dans **73 %** des cas ; sinon il s'arrêtait au point de voie le plus proche (jusqu'à 23 m pour 10 % des trajets, 38 m au pire), possiblement derrière un mur ; le « dernier mètre » ne se faisait qu'à moins de 15 m. Il ne pouvait jamais couper à travers une place ou un parc.
+
+**Changements :** `src/scene/avatar-path.ts` :
+- **tout droit** quand rien ne gêne (à moins de 200 m) : places, parcs, cours, avec 0,6 m de marge avec les façades, sans entrer dans l'eau ni dans la zone de la fontaine ;
+- sinon par les voies, mais avec **plusieurs points d'accès** au départ et à l'arrivée (4 chacun, visibles en ligne droite à moins de 45 m) au lieu du seul plus proche : le meilleur trajet est gardé (une seule recherche A* pour tous les couples) ; l'avatar quitte et rejoint la voie en ligne droite là où il voit le point ;
+- le départ hors voie (après un clic dans un champ) ne téléporte plus l'avatar sur la voie ;
+- `src/content/avatar.json` → `path` : `maxDirect`, `clearance`, `entryRadius`, `entries` (`lastMeter` supprimé).
+
+**Mesuré (Node, mêmes 1 500 trajets) :** arrivée sur le point cliqué **73 % → 88 %** (les 12 % restants : 79 points à plus de 40 m d'une voie et inaccessibles, ex. cours fermées, et quelques points isolés) ; écart médian et p90 : 0 m (avant, p90 : 23 m) ; calcul 2,3 ms en moyenne, 9 ms au pire (0,7 et 7,5 avant) ; aucun point à plus de 10 cm dans un bâtiment ni segment dans l'eau hors pont.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : un clic à côté de l'avatar le mène tout droit au point, la caméra suit, aucune erreur console.
+
+**Non vérifié / limites :** ressenti sur le terrain (cours fermées, ruelles étroites, coins) ; téléphone (calcul 2 à 9 ms sous Node, ×3 à ×5 possible sur mobile) ; la montée de pentes fortes en ligne droite et le passage sous les arbres ne sont pas limités ; les trajets en ligne droite très longs (200 m) coupent parfois des rues : voulu, réglable (`maxDirect`) ; les cours entièrement fermées par des bâtiments restent inaccessibles (aucune donnée de passage).
+
+## Itération 70 — 03/10/2026 (branche `fix/EP005-balade-camera-elephant`, epic EP005)
+
+**Retour de Dasco :** en balade, quand un éléphant est attrapé et file vers la fontaine, la caméra ne le suit pas (l'animation du mode libre) ; il voudrait cette animation, puis le retour sur l'avatar. Il a aussi remarqué que **les épingles de bars et restaurants gênent un peu la vue en balade** : à noter pour la fin (ajouté au BACKLOG).
+
+**Changements :**
+- `src/game/balade.ts` : `detour(x, z)` (la caméra quitte l'avatar et vole vers la fontaine) et `release()` (vol de retour sur l'avatar, distance et inclinaison du mode) ;
+- `src/game/hunt.ts`, `src/game/setup.ts` : option `release`, appelée 2,5 s après l'arrivée de l'éléphant (le temps du feu d'artifice) ;
+- `src/main.ts` : en balade, `flyTo` du jeu passe par `detour` ; hors balade, comportement inchangé.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique, en balade : éléphant attrapé (tirage forcé) → la caméra part de l'avatar, rejoint la fontaine avec lui (distance 164 m), reste pendant le feu d'artifice, puis revient sur l'avatar (distance 92 m, en train de rejoindre 85 m) ; aucune erreur console.
+
+**Non vérifié :** plusieurs éléphants ramenés coup sur coup ; un glissé de la carte pendant l'excursion ; téléphone.
+
+## Itération 69 — 03/10/2026 (branche `feat/EP005-US005-effacement-des-batiments`, epic EP005)
+
+**Retour de Dasco sur le prototype :** « vraiment bien sur Mac » ; suivi de la caméra sans lag, clic précis, silhouette utile même derrière les arbres, réglages centralisés dans `avatar.json` appréciés ; « l'effacement des bâtiments serait un plus ». Test sur mobile plus tard via Vercel.
+
+**Changements (US005) :**
+- `src/scene/city.ts` : chaque sommet de bâtiment (murs et toits) porte son identifiant (`aId`, indice dans `data.buildings`) ; le shader lit un facteur de visibilité dans une petite texture (un octet par bâtiment) et **efface par tramage** (dither, pas de transparence) : le maillage reste **un seul** (0 appel de rendu de plus), les ombres (carte statique) ne changent pas, les fenêtres allumées partent avec le bâtiment ;
+- `src/scene/cutaway.ts` (nouveau) : en balade seulement, test du segment avatar → caméra contre les emprises (grille de 25 m, pas de 1,5 m, sous la hauteur du toit + marge) ; seuls les bâtiments qui coupent le segment s'effacent ; fondu de 0,3 s ; les bâtiments reviennent dès qu'ils ne masquent plus ; sortie du mode : tout revient ;
+- **monuments** (château, cathédrale, Carré Curial) : même test (emprise des bâtiments OSM remplacés, hauteur de la boîte englobante), fondu par un uniforme propre ajouté aux matériaux existants (`fadeMaterial`, clé de programme conservée) ; arbres exclus ;
+- `src/content/avatar.json` → `cutaway` : `fadeSeconds`, `aimHeight`, `roofAllowance`, `step`, `exceptions` (liste vide), `monuments` ;
+- `src/scene/models.ts` : liste des monuments qui remplacent des bâtiments, lue par `cutaway.ts` ; `src/scene/avatar.ts` : `aim()`.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : rue de Boigne, place Saint-Léger, château : les bâtiments entre la caméra et l'avatar disparaissent, l'avatar est visible sans silhouette, les bâtiments voisins restent ; « repos (30 max) » à l'arrêt ; ≈ 56 à 60 images/s en mouvement ; 65 à 67 appels de rendu dans la rue (inchangé : 65 avant) ; aucune erreur ni avertissement console.
+
+**Non vérifié / limites :**
+- **mobile** : le coût du `discard` sur les GPU à tuiles n'est pas mesuré (le test se fera via Vercel) ; le shader des bâtiments contient désormais ce test en permanence (il ne s'exécute que pour les fragments d'un bâtiment en fondu) ;
+- **nuit et hiver** : non regardés avec l'effacement ; ombres au sol des bâtiments effacés restent (carte statique, voulu) ;
+- **cheminées, auvents, drapeaux, épingles** posés sur un bâtiment effacé restent en l'air (cas par cas, non traité) ;
+- le fondu monument n'a pas été vérifié en cours de transition (image fixe après 2 s seulement) ; matériaux de monuments partagés entre deux monuments : non vérifié (un seul uniforme par matériau) ;
+- `roofAllowance` (3 m) est une marge, pas la vraie hauteur de toit : un bâtiment très bas peut s'effacer un peu trop ou trop peu ; fontaine des Éléphants non concernée (pas d'emprise OSM).
+
+## Itération 68 — 03/10/2026 (branches `feat/EP005-US003-camera-qui-suit`, epic EP005)
+
+**Demande de Dasco :** continuer sans attendre (« je ne peux pas répondre à tes questions si je ne peux pas tester ») : le prototype doit donc être **jouable**. Cette itération regroupe l'US003 (mode balade, caméra) et le cœur de l'US004 (entrées) ; commandes décidées : clic gauche = marcher, clic droit = déplacer la carte, un doigt = marcher, deux doigts = caméra.
+
+**Changements :**
+- `src/game/balade.ts` (nouveau) : mode explicite et exclusif ; entrée (l'avatar est posé à la fontaine des Éléphants la 1re fois, la caméra vole à 85 m, 40° ; limites de zoom 45 à 300 m), sortie (limites de la carte libre rétablies, la caméra recule par un vol si elle est trop près, l'avatar s'arrête sur place et reste affiché) ; un glissé de la carte (clic droit, un doigt) arrête le suivi et affiche « Retrouver mon avatar » ; un nouvel ordre de marche le rétablit ;
+- `src/scene/stage.ts` : `follow` (cible et caméra translatées du même vecteur, y compris le dénivelé, seuil d'arrêt à 5 cm), `flyToView`, `setLimits`, `isFlying` ; le suivi est suspendu pendant un vol ;
+- `src/interaction.ts` : clic gauche sur le sol = ordre de marche (priorité : outil de placement, éléphant, gemme ou épingle, sol) ; un geste à deux doigts ne donne jamais d'ordre ; pas de double toucher de zoom en balade ; curseur « viseur » ;
+- `src/ui/ui.ts`, `src/style.css` : boutons « 🚶 Balade » / « 🗺 Vue libre » et « 📍 Retrouver mon avatar », boussole et légende masquées, aide du mode ;
+- clic sur un ✦ en balade : l'avatar marche jusqu'au lieu, la fiche s'ouvre à l'arrivée (début de l'US006) ; en balade, ni la fiche ni la capture d'un éléphant ne volent la caméra ;
+- `src/scene/avatar.ts` : silhouette vue à travers les bâtiments (aplat translucide `GreaterDepth`, `avatar.silhouette` : 0,55), un appel de rendu de plus (4 au plus) ; `onArrive`, `stop()`.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique (souris) : bouton, entrée (distance 85 m, inclinaison 40°), boussole et légende masquées, clic gauche : l'avatar marche et la caméra le suit (écart ≈ 1,5 m à 14 m/s, distance et angle constants), clic droit glissé : « Retrouver » apparaît puis recentre, molette : zoom limité à 45 m, sortie : distance 70 m (limite de la carte libre), boussole et légende revenues, « repos (30 max) » au repos dans les deux modes, ≈ 60 images/s en marche, aucune erreur console ; émulation tactile : un toucher donne l'ordre, le double toucher ne zoome pas, « Pas par là » hors de la carte.
+
+**Non vérifié / limites :**
+- **Aucun essai sur un vrai téléphone** : geste à deux doigts (la protection du dernier doigt levé est écrite, pas essayée avec deux vrais doigts), seuil de 6 px, fluidité ;
+- **les gemmes ✦ et épingles ont de grandes zones de clic** (gemme : cylindre de 14 m de rayon, 42 m de haut) : près d'un ✦, un clic sur le sol marche vers le ✦ au lieu du point visé ; à revoir (US006) ;
+- **bâtiments** : l'avatar est caché derrière les bâtiments (silhouette à travers, mais pas d'effacement : US005) ;
+- relief : testé sur le centre, pas sur les pentes fortes ; caméra près d'un grand bâtiment (cathédrale) non regardée ;
+- pas d'anneau de prévisualisation au survol, pas de position sauvegardée (US007), pas de bouton « Recommencer » ni de bouton dans le lobby (US010) ; bar / café : clic = fiche, comme avant (pas de marche) ;
+- 4 appels de rendu pour l'avatar (la spec en prévoyait 3) à cause de la silhouette.
+
+**À régler à la main (Dasco) :** `src/content/avatar.json` : `camera` (distance 85, inclinaison 40°, zoom, vitesse de rattrapage), `avatar` (taille ×2, vitesse 14 m/s, couleurs, silhouette).
+
+## Itération 67 — 03/10/2026 (branche `feat/EP005-US002-avatar-visible`, epic EP005)
+
+**Demande de Dasco :** passer à l'US002, l'avatar visible (silhouette standard, le modèle OBJ viendra plus tard).
+
+**Changements :**
+- `src/scene/avatar.ts` (nouveau) : la silhouette des passants (exportée de `people.ts`) agrandie ×2 (3,4 m), en un seul maillage (corps et tête, couleurs dans les sommets : haut rose franc, jambes sombres, peau) ; jambes animées par un uniforme (règle BUG-01), foulée liée à la vitesse, léger rebond, cap lissé, ralentissement sur les 4 derniers mètres ; tache au sol cerclée de blanc (ombre en tache, repère de loin) ; anneau rose qui pulse sur le point d'arrivée et disparaît à l'arrivée ; `place(x, y)`, `goTo(x, y)` (replanifie depuis la position courante, sans téléportation), `hide()`, `moving()` ;
+- `src/content/avatar.json` : `avatar` (échelle 2, vitesse 14 m/s, foulée, rebond, couleurs, rayons de la tache et de l'anneau) ;
+- `src/main.ts` : avatar créé, **caché** (le mode balade est l'US003) ; en `?debug` : `diorama.avatar.place(x, y)` puis `.goTo(x, y)` ;
+- `src/scene/people.ts` : `HIP`, `bodyGeometry`, `headGeometry` exportés.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : avatar posé près de la fontaine, visible et lisible aux distances 70 et 150 m (la caméra ne descend pas sous 70 m), il marche 14 m/s le long d'un chemin, jambes et rebond animés, anneau d'arrivée affiché pendant la marche, tache au sol non enterrée par la pente (relevée de 30 cm après un premier essai où la moitié était cachée), de nuit (23 h) rose sombre lisible grâce à la tache blanche ; aucune erreur console. Trois appels de rendu au plus (deux à l'arrêt, aucun s'il est caché).
+
+**Non vérifié / limites :**
+- **Hauteur à l'écran** : le critère de la spec (≈ 38 px à 150 m) était un calcul ; à l'œil l'avatar mesure environ la moitié (≈ 15 à 20 px à 150 m), la tache blanche compense : à régler avec Dasco (`scale`, `haloRadius`) ;
+- les **appels de rendu** ne sont pas comparés avec le compteur avant/après (compté par construction) ;
+- **bâtiments** : l'avatar est caché derrière un bâtiment quand la caméra est basse (c'est l'US005) ;
+- vitesse 14 m/s : valeur de la spec, à juger à la main ; téléphone non mesuré ; modèle OBJ plus tard.
+
+## Itération 66 — 03/10/2026 (branche `feat/EP005-US001-reseau-et-chemin`, epic EP005)
+
+**Demande de Dasco :** commencer l'epic « balade avec un avatar » (feu vert donné, commandes : clic gauche = avatar, clic droit = carte ; un doigt = avatar, deux doigts = caméra). Cette itération : US001, le réseau et le chemin, **sans rien d'affiché** (l'avatar vient avec l'US002).
+
+**Diagnostic du réseau :** la rive nord-est (982 nœuds) était coupée à cause de la **Leysse couverte** : 4 tronçons de rues et de chemins (dont l'avenue des Ducs de Savoie) passent sur la rivière couverte, que `waterTest` traitait comme de l'eau. Corrigé en ignorant les rivières `covered` : **une seule partie connexe de 5 010 nœuds** (au lieu de 3 976 + 982). Touche aussi les passants (ils peuvent désormais traverser là, à juste titre ; leurs rives ne sont plus séparées).
+
+**Changements :**
+- `src/scene/walkways.ts` : rivières couvertes ignorées ; `buildingTest` et `waterTest` exportés ;
+- `src/scene/avatar-path.ts` (nouveau) : accrochage au point le plus proche d'une voie de la grande composante (grille de 25 m), refus au-delà de 40 m, A* avec départ et arrivée virtuels sur une arête (replanification depuis n'importe quelle position), angles arrondis (1,5 m), « dernier mètre » en ligne droite jusqu'à 15 m si aucun bâtiment ni eau n'est traversé ;
+- `src/content/avatar.json` (nouveau) : `maxSnap` 40, `lastMeter` 15, `corner` 1,5 ;
+- `src/main.ts` : **un seul réseau** construit et partagé entre passants et chemin (`buildPeople` accepte le réseau) ; `window.diorama.pathfinder` (debug) ;
+- `src/content/life.json` : zone interdite des passants autour de la fontaine 15 → 9 m (pensée pour un éléphant).
+
+**Vérifié :** `npm run build` ; sous Node (graphe réel de `city.json`) : les 169 bars, cafés et restaurants sont tous atteignables depuis la fontaine ; temps de calcul 0,2 à 0,3 ms en moyenne, 2,1 ms au pire ; 300 destinations aléatoires : 287 acceptées, 13 refusées (« loin », plus de 40 m d'une voie), 0 point à plus de 10 cm à l'intérieur d'un bâtiment ; dans Chrome avec carte graphique : `window.diorama.pathfinder.route()` répond (0,4 à 2,5 ms), « loin » pour un point hors carte, aucune erreur console.
+
+**Non vérifié / limites :** le **chargement** (+0,2 s max) n'est pas remesuré, mais il n'y a pas de 3e construction du réseau ; **cathédrale** : le réseau principal s'arrête à 35,8 m (l'accrochage la prend car < 40 m) : à traiter avec les lieux (US006) ; **musée savoisien** 17 m, **théâtre** 13 m, fontaine 9,9 m ; nœuds de bout de chemin qui touchent une façade (profondeur 0) : l'avatar y frôle le mur ; un segment sur 300 trajets touche l'eau près d'un pont (arrondi des angles), non analysé ; demi-tours : 10 sur 169 trajets (probablement en bout de trajet), non analysés ; escaliers non inclus (décision de Dasco : pas pour la démo) ; téléphone non mesuré.
+
 ## Itération 65 — 03/10/2026 (branche `feat/minijeu-elephants-simplifie`)
 
 **Retour de Dasco (utilisateurs) :** le jeu des éléphants est compliqué : plusieurs clics par éléphant et de nouvelles recherches derrière. Demande : un clic = l'éléphant sprinte puis s'arrête au bout de quelques secondes ; un reclic pendant le sprint = il apparaît sur la fontaine, « pas forcément sur tous les éléphants ». Réponses : le 2e clic ne marche pas toujours ; on retire seulement le nombre de fuites ; la bulle de provocation reste, sans l'indice de direction.
