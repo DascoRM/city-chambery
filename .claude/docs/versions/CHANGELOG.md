@@ -1,5 +1,18 @@
 # Journal des itérations
 
+## Itération 70 — 03/10/2026 (branche `fix/EP005-balade-camera-elephant`, epic EP005)
+
+**Retour de Dasco :** en balade, quand un éléphant est attrapé et file vers la fontaine, la caméra ne le suit pas (l'animation du mode libre) ; il voudrait cette animation, puis le retour sur l'avatar. Il a aussi remarqué que **les épingles de bars et restaurants gênent un peu la vue en balade** : à noter pour la fin (ajouté au BACKLOG).
+
+**Changements :**
+- `src/game/balade.ts` : `detour(x, z)` (la caméra quitte l'avatar et vole vers la fontaine) et `release()` (vol de retour sur l'avatar, distance et inclinaison du mode) ;
+- `src/game/hunt.ts`, `src/game/setup.ts` : option `release`, appelée 2,5 s après l'arrivée de l'éléphant (le temps du feu d'artifice) ;
+- `src/main.ts` : en balade, `flyTo` du jeu passe par `detour` ; hors balade, comportement inchangé.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique, en balade : éléphant attrapé (tirage forcé) → la caméra part de l'avatar, rejoint la fontaine avec lui (distance 164 m), reste pendant le feu d'artifice, puis revient sur l'avatar (distance 92 m, en train de rejoindre 85 m) ; aucune erreur console.
+
+**Non vérifié :** plusieurs éléphants ramenés coup sur coup ; un glissé de la carte pendant l'excursion ; téléphone.
+
 ## Itération 69 — 03/10/2026 (branche `feat/EP005-US005-effacement-des-batiments`, epic EP005)
 
 **Retour de Dasco sur le prototype :** « vraiment bien sur Mac » ; suivi de la caméra sans lag, clic précis, silhouette utile même derrière les arbres, réglages centralisés dans `avatar.json` appréciés ; « l'effacement des bâtiments serait un plus ». Test sur mobile plus tard via Vercel.

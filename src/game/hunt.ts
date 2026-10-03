@@ -46,6 +46,8 @@ export interface HuntOptions {
   onScore(total: number, gained: number, text: string): void;
   onRestart(): void;
   flyTo(x: number, z: number): void;
+  /** Quelques secondes après l'arrivée sur la fontaine : la caméra peut revenir (mode balade) */
+  release?(): void;
 }
 
 export function createHunt(o: HuntOptions): Hunt {
@@ -132,6 +134,7 @@ export function createHunt(o: HuntOptions): Hunt {
       ? `🎉 La fontaine est complète ! Les Quatre sans cul sont de retour · +${gained} points`
       : `🐘 De retour sur la fontaine ! ${o.returned.size} / ${herd.elephants.length} · +${gained} points`);
     for (let i = 0; i < (complete ? 3 : 2); i++) o.fireworks.launch(base, i * 0.35);
+    window.setTimeout(() => o.release?.(), 2500); // le temps du feu d'artifice
     if (complete) {
       for (let i = 0; i < 12; i++) o.fireworks.launch(base, 1 + i * 0.4, true);
       restartIn = o.game.restartSeconds;
