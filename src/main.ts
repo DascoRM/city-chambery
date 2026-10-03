@@ -146,7 +146,7 @@ async function main() {
     // Un seul réseau de voies, partagé par les passants et le chemin de l'avatar (EP005-US001)
     const peopleCfg = lifeContent.people as unknown as PeopleConfig;
     const walkways = buildWalkways(data, peopleCfg.network);
-    pathfinder = buildPathfinder(walkways, data, avatarContent.path as PathConfig);
+    pathfinder = buildPathfinder(walkways, data, avatarContent.path as PathConfig, peopleCfg.network.avoid);
     // L'avatar reste caché tant que le mode balade (US003) n'existe pas ; en debug : diorama.avatar.place(x, y) puis .goTo(x, y)
     avatar = buildAvatar(avatarContent.avatar as AvatarConfig, terrain.heightAt, pathfinder);
     scene.add(avatar.group);

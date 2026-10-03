@@ -1,5 +1,23 @@
 # Journal des itérations
 
+## Itération 71 — 03/10/2026 (branche `fix/EP005-deplacement-libre`, epic EP005)
+
+**Retour de Dasco :** la direction est sensible au niveau des rues : on ne peut pas couper à travers champs, et à cause des petits recoins l'avatar « se perd » avec le point and click (il va se poser à côté du point visé, parfois de l'autre côté d'un mur). Demande : regarder ce genre de soucis.
+
+**Diagnostic (1 500 trajets aléatoires, réseau et bâtiments réels) :** l'avatar n'arrivait sur le point cliqué que dans **73 %** des cas ; sinon il s'arrêtait au point de voie le plus proche (jusqu'à 23 m pour 10 % des trajets, 38 m au pire), possiblement derrière un mur ; le « dernier mètre » ne se faisait qu'à moins de 15 m. Il ne pouvait jamais couper à travers une place ou un parc.
+
+**Changements :** `src/scene/avatar-path.ts` :
+- **tout droit** quand rien ne gêne (à moins de 200 m) : places, parcs, cours, avec 0,6 m de marge avec les façades, sans entrer dans l'eau ni dans la zone de la fontaine ;
+- sinon par les voies, mais avec **plusieurs points d'accès** au départ et à l'arrivée (4 chacun, visibles en ligne droite à moins de 45 m) au lieu du seul plus proche : le meilleur trajet est gardé (une seule recherche A* pour tous les couples) ; l'avatar quitte et rejoint la voie en ligne droite là où il voit le point ;
+- le départ hors voie (après un clic dans un champ) ne téléporte plus l'avatar sur la voie ;
+- `src/content/avatar.json` → `path` : `maxDirect`, `clearance`, `entryRadius`, `entries` (`lastMeter` supprimé).
+
+**Mesuré (Node, mêmes 1 500 trajets) :** arrivée sur le point cliqué **73 % → 88 %** (les 12 % restants : 79 points à plus de 40 m d'une voie et inaccessibles, ex. cours fermées, et quelques points isolés) ; écart médian et p90 : 0 m (avant, p90 : 23 m) ; calcul 2,3 ms en moyenne, 9 ms au pire (0,7 et 7,5 avant) ; aucun point à plus de 10 cm dans un bâtiment ni segment dans l'eau hors pont.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : un clic à côté de l'avatar le mène tout droit au point, la caméra suit, aucune erreur console.
+
+**Non vérifié / limites :** ressenti sur le terrain (cours fermées, ruelles étroites, coins) ; téléphone (calcul 2 à 9 ms sous Node, ×3 à ×5 possible sur mobile) ; la montée de pentes fortes en ligne droite et le passage sous les arbres ne sont pas limités ; les trajets en ligne droite très longs (200 m) coupent parfois des rues : voulu, réglable (`maxDirect`) ; les cours entièrement fermées par des bâtiments restent inaccessibles (aucune donnée de passage).
+
 ## Itération 70 — 03/10/2026 (branche `fix/EP005-balade-camera-elephant`, epic EP005)
 
 **Retour de Dasco :** en balade, quand un éléphant est attrapé et file vers la fontaine, la caméra ne le suit pas (l'animation du mode libre) ; il voudrait cette animation, puis le retour sur l'avatar. Il a aussi remarqué que **les épingles de bars et restaurants gênent un peu la vue en balade** : à noter pour la fin (ajouté au BACKLOG).
