@@ -29,6 +29,10 @@ export interface InteractionOptions {
   hunt: Hunt | null;
   placement: PlacementTool | null;
   tooltip(text: string | null, x?: number, y?: number): void;
+  /** Mode balade actif : le clic sur le sol donne un ordre de marche (pas de double toucher de zoom) */
+  walking?(): boolean;
+  /** Clic ou toucher sur le sol en mode balade (point du plan, m) ; true si l'ordre a été donné (sinon le clic ferme les fiches comme avant) */
+  onGround?(x: number, y: number): boolean;
   /** Clic ou toucher (hors éléphant et outil de placement) */
   onSelect(hit: Hit): void;
   /** Souris qui survole (hors éléphant) */
@@ -65,10 +69,26 @@ export function installInteraction(o: InteractionOptions): Ticker {
   };
 
   let down: { x: number; y: number } | null = null;
-  canvas.addEventListener('pointerdown', (e) => (down = { x: e.clientX, y: e.clientY }));
+  // Doigts posés : un geste à deux doigts ne donne jamais d'ordre (le dernier doigt levé ne compte pas comme un toucher)
+  const fingers = new Set<number>();
+  let multi = false;
+  canvas.addEventListener('pointerdown', (e) => {
+    down = { x: e.clientX, y: e.clientY };
+    if (e.pointerType !== 'touch') return;
+    fingers.add(e.pointerId);
+    if (fingers.size > 1) multi = true;
+  });
+  const lift = (e: PointerEvent) => {
+    if (!fingers.delete(e.pointerId)) return false;
+    const was = multi;
+    if (!fingers.size) multi = false;
+    return was;
+  };
+  window.addEventListener('pointercancel', lift);
   canvas.addEventListener('pointerup', (e) => {
+    if (e.pointerType === 'touch' && lift(e)) return;
     if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
-    if (e.pointerType === 'touch') {
+    if (e.pointerType === 'touch' && !o.walking?.()) {
       const now = performance.now();
       if (lastTap && now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
         lastTap = null;
@@ -79,7 +99,12 @@ export function installInteraction(o: InteractionOptions): Ticker {
     }
     if (placement?.handleClick(e.clientX, e.clientY)) return;
     if (hunt?.click(e.clientX, e.clientY)) { o.tooltip(null); return; }
-    o.onSelect(pick(e.clientX, e.clientY));
+    const hit = pick(e.clientX, e.clientY);
+    if (!hit && e.button === 0 && o.walking?.() && o.onGround) {
+      const ground = screenRay(raycaster, camera, o.canvasRect(), e.clientX, e.clientY).intersectObject(o.ground, true)[0];
+      if (ground && o.onGround(ground.point.x, -ground.point.z)) return;
+    }
+    o.onSelect(hit);
   });
   let hoverQueued: PointerEvent | null = null;
   let lastMove = -Infinity;
@@ -107,7 +132,7 @@ export function installInteraction(o: InteractionOptions): Ticker {
         return;
       }
       const h = pick(e.clientX, e.clientY);
-      canvas.style.cursor = h ? 'pointer' : 'grab';
+      canvas.style.cursor = h ? 'pointer' : o.walking?.() ? 'crosshair' : 'grab';
       o.onHover(h, e.clientX, e.clientY);
     },
   };

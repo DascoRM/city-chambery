@@ -47,6 +47,10 @@ export interface UiHandlers {
   onCompass(): void;
   /** Bouton « ? » : rouvrir le lobby (accueil). */
   onLobby?(): void;
+  /** Bouton « Balade » / « Vue libre » (EP005) */
+  onBalade?(): void;
+  /** Bouton « Retrouver mon avatar » */
+  onRecenter?(): void;
 }
 
 export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: string, h: UiHandlers) {
@@ -66,6 +70,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
 
     <nav class="tools">
       <button class="btn" data-action="journal" aria-expanded="false">📜 Journal</button>
+      <button class="btn balade-btn" data-action="balade" title="Se promener dans la ville avec un petit personnage">🚶 Balade</button>
       <div class="btn legend-box" role="group" aria-label="Lieux affichés">${PLACE_CATEGORIES.map((c) => `<label class="legend" style="--cat:${c.color}" title="Afficher / masquer : ${c.label}s"><input type="checkbox" data-category="${c.id}" checked /><i></i>${c.label}s</label>`).join('')}</div>
       <div class="btn time" title="Heure de Chambéry">
         <button class="play" data-action="play" aria-label="Faire défiler la journée">▶</button>
@@ -101,6 +106,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     <button class="compass card" data-action="compass" aria-label="Boussole : remettre le nord en haut" title="Remettre le nord en haut">
       <svg viewBox="0 0 40 40" aria-hidden="true"><g class="needle"><path d="M20 5 L25 20 L15 20 Z" fill="#d1492e"/><path d="M20 35 L25 20 L15 20 Z" fill="#b9ab98"/><text x="20" y="4.6" text-anchor="middle" font-size="6.5" font-weight="700" fill="#2d2622">N</text></g></svg>
     </button>
+    <button class="recenter card" data-action="recenter" hidden>📍 Retrouver mon avatar</button>
     <button class="help card" data-action="lobby" aria-label="À propos : revoir l'accueil" title="Revoir l'accueil">?</button>
     <div class="toast" role="status"></div>
     <div class="tooltip" hidden></div>
@@ -261,6 +267,9 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   root.appendChild(bubbleEl);
   let lastBubblePos = '';
 
+  const hintDefault = hint.innerHTML;
+  const baladeBtn = $<HTMLButtonElement>('[data-action="balade"]');
+  const recenterBtn = $<HTMLButtonElement>('[data-action="recenter"]');
   const hideHint = () => hint.classList.add('gone');
   /** Réaffiche l'aide quelques secondes (à l'entrée sur la carte : le lobby n'explique pas les gestes). */
   const showHint = () => {
@@ -281,6 +290,8 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     if (action === 'reset') h.onReset();
     if (action === 'compass') h.onCompass();
     if (action === 'lobby') h.onLobby?.();
+    if (action === 'balade') h.onBalade?.();
+    if (action === 'recenter') h.onRecenter?.();
   });
   const hourIn = root.querySelector<HTMLInputElement>('[data-action="hour"]')!;
   const playBtn = root.querySelector<HTMLButtonElement>('[data-action="play"]')!;
@@ -323,6 +334,21 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { panel.hidden = true; journal.hidden = true; if (shownPlace) { hidePlaceCard(); h.onPlaceClosed(); } } });
 
   return {
+    /** Mode balade : interface restreinte (boussole et légende masquées), bouton « Vue libre », aide du mode */
+    setBalade: (active: boolean) => {
+      document.body.classList.toggle('is-balade', active);
+      baladeBtn.textContent = active ? '🗺 Vue libre' : '🚶 Balade';
+      baladeBtn.title = active ? 'Revenir à la carte libre' : 'Se promener dans la ville avec un petit personnage';
+      hint.innerHTML = active
+        ? matchMedia('(pointer: coarse)').matches
+          ? 'Touche le sol pour marcher · 1 doigt glissé : déplacer la carte · 2 doigts : zoomer, pivoter'
+          : 'Clic gauche : marcher · clic droit glissé : déplacer la carte · glisse : tourner · molette : zoomer'
+        : hintDefault;
+      hint.classList.remove('gone');
+      window.setTimeout(hideHint, 9000);
+    },
+    setRecenter: (visible: boolean) => { recenterBtn.hidden = !visible; },
+    panelOpen: () => !panel.hidden,
     setFound, showPoi, flash, flushFlash, showTooltip, hideHint, showHint, setClock, hidePanel: () => (panel.hidden = true),
     showPlaceCard, hidePlaceCard, movePlaceCard, setPlaceStatus,
     placeCardState: () => ({ place: shownPlace, pinned }),

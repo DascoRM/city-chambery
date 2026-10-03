@@ -22,6 +22,8 @@ export interface AvatarConfig {
   bounce: number;
   /** Distance (m) avant l'arrivée où il ralentit */
   slowDistance: number;
+  /** Opacité (0 à 1) de la silhouette vue à travers les bâtiments ; 0 = pas de silhouette */
+  silhouette: number;
   colors: { top: string; legs: string; skin: string; halo: string; ring: string };
   /** Rayon (m) de la tache au sol et de l'anneau d'arrivée */
   haloRadius: number;
@@ -35,8 +37,10 @@ export interface Avatar extends Ticker {
   /** Pose l'avatar sur le réseau, au plus près de (x, y) : le rend visible */
   place(x: number, y: number): boolean;
   hide(): void;
+  /** S'arrête sur place (sortie du mode balade) */
+  stop(): void;
   /** Ordre de marche ; `false` si refusé ('far' : à plus de maxSnap d'une voie) */
-  goTo(x: number, y: number): true | RouteFail;
+  goTo(x: number, y: number, onArrive?: () => void): true | RouteFail;
   walking(): boolean;
 }
 
@@ -81,6 +85,18 @@ export function buildAvatar(cfg: AvatarConfig, heightAt: HeightFn, pf: Pathfinde
   body.scale.setScalar(cfg.scale);
   group.add(body);
 
+  // Silhouette à travers ce qui passe devant (comme Diablo) : le même maillage, dessiné seulement là où quelque
+  // chose le cache (profondeur plus lointaine que le décor), en aplat translucide
+  const seen = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+    color: cfg.colors.ring, transparent: true, opacity: cfg.silhouette, depthFunc: THREE.GreaterDepth, depthWrite: false,
+  }));
+  seen.name = 'avatar-silhouette';
+  seen.frustumCulled = false;
+  seen.scale.setScalar(cfg.scale);
+  seen.renderOrder = 3;
+  seen.visible = cfg.silhouette > 0;
+  group.add(seen);
+
   // Tache au sol : ombre douce au centre, cercle franc au bord (repère de loin)
   const halo = disc(cfg.colors.halo, true);
   halo.scale.set(cfg.haloRadius * 2, 1, cfg.haloRadius * 2);
@@ -107,6 +123,8 @@ export function buildAvatar(cfg: AvatarConfig, heightAt: HeightFn, pf: Pathfinde
     const ground = heightAt(x, y) + lift;
     body.position.y = ground + Math.abs(Math.sin(phase * Math.PI)) * cfg.bounce * cfg.scale * Math.min(1, speed / cfg.speed);
     body.quaternion.setFromAxisAngle(up, heading);
+    seen.position.y = body.position.y;
+    seen.quaternion.copy(body.quaternion);
     halo.position.y = ground + 0.3; // au-dessus du relief : une pente enterrerait la moitié d'un disque posé à plat
     if (dest) ring.position.set(dest[0] - x, heightAt(dest[0], dest[1]) + 0.3, -(dest[1] - y));
   };
@@ -123,7 +141,8 @@ export function buildAvatar(cfg: AvatarConfig, heightAt: HeightFn, pf: Pathfinde
     return true;
   };
 
-  const goTo = (tx: number, ty: number): true | RouteFail => {
+  let arrive: (() => void) | undefined;
+  const goTo = (tx: number, ty: number, onArrive?: () => void): true | RouteFail => {
     if (!placed) return 'unreachable';
     const r = pf.route([x, y], [tx, ty]);
     if (typeof r === 'string') return r;
@@ -133,7 +152,9 @@ export function buildAvatar(cfg: AvatarConfig, heightAt: HeightFn, pf: Pathfinde
     remaining = 0;
     for (let i = 1; i < path.length; i++) remaining += Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y);
     dest = r.end;
+    arrive = onArrive;
     ring.visible = remaining > 0;
+    if (remaining <= 0) { const f = arrive; arrive = undefined; f?.(); }
     return true;
   };
 
@@ -158,6 +179,9 @@ export function buildAvatar(cfg: AvatarConfig, heightAt: HeightFn, pf: Pathfinde
         x = e.x; y = e.y; lift = e.lift;
         path = []; dest = null; speed = 0; remaining = 0;
         ring.visible = false;
+        const f = arrive;
+        arrive = undefined;
+        f?.();
       } else {
         const a = path[seg], b = path[seg + 1];
         const len = Math.hypot(b.x - a.x, b.y - a.y), k = len > 0 ? along / len : 0;
@@ -174,7 +198,8 @@ export function buildAvatar(cfg: AvatarConfig, heightAt: HeightFn, pf: Pathfinde
 
   return {
     group, update, place, goTo,
-    hide() { group.visible = false; placed = false; path = []; dest = null; ring.visible = false; speed = 0; },
+    stop() { arrive = undefined; path = []; dest = null; ring.visible = false; speed = 0; },
+    hide() { arrive = undefined; group.visible = false; placed = false; path = []; dest = null; ring.visible = false; speed = 0; },
     position: () => (placed ? [x, y] : null),
     walking: () => path.length > 1,
     moving: () => placed && path.length > 1,
