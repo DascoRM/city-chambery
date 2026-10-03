@@ -13,16 +13,17 @@
   "walkSeconds": [20, 45],
   "pauseSeconds": [4, 8],
   "game": {
-    "note": "Mini-jeu « Ramène les éléphants à la fontaine » (itération 35) : la souris sur un éléphant le fait trotter plus vite, un clic (ou un toucher) le fait disparaître et réapparaître plus loin ; après 1 à 5 fuites il est épuisé et un clic le ramène sur la fontaine",
+    "note": "Mini-jeu « Ramène les éléphants à la fontaine » (itération 35, simplifié à l'itération 65) : la souris sur un éléphant le fait trotter plus vite ; un clic (ou un toucher) le fait sprinter sprintSeconds à sprintSpeed (m/s), puis il s'arrête ; un 2e clic pendant le sprint l'attrape avec la probabilité catchChance et il file se transformer en bronze sur la fontaine ; sinon il se moque (missTaunts). Plus de fuites ni de réapparition.",
     "count": 4,
-    "escapes": [1, 5],
-    "respawnDistance": [100, 250],
     "startDistance": [80, 300],
     "points": 10,
     "bonus": 20,
     "openSpace": 4.5,
     "restartSeconds": 45,
-    "bubbleSeconds": 6,
+    "bubbleSeconds": 4,
+    "sprintSeconds": 3.5,
+    "sprintSpeed": 9,
+    "catchChance": 0.6,
     "startleSpeed": 3.5,
     "startleSeconds": 3,
     "taunts": [
@@ -36,6 +37,12 @@
       "Presque ! Enfin… non.",
       "On ne m'appelle pas « sans cul » pour rien, tu ne me verras pas de dos !",
       "La fontaine attendra encore un peu !"
+    ],
+    "missTaunts": [
+      "Raté !",
+      "Trop lent !",
+      "Pas cette fois !",
+      "Presque ! Enfin… non."
     ]
   }
 }

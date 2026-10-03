@@ -68,7 +68,7 @@ export function setupGame(o: GameSetupOptions): { hunt: Hunt | null; slots: THRE
     const left = herdTotal - returned.size;
     window.setTimeout(() => ui.flash(returned.size
       ? `🐘 Encore ${left} éléphant${left > 1 ? 's' : ''} à ramener à la fontaine`
-      : '🐘 Les quatre éléphants de la fontaine se sont échappés ! Retrouve-les dans les rues'), 2500);
+      : '🐘 Les quatre éléphants se sont échappés ! Clique sur l\'un d\'eux : il court. Reclique vite pour l\'attraper'), 2500);
   }
   return {
     hunt,

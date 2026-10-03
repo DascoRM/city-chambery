@@ -143,7 +143,7 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ✅ Mascotte (éléphant) qui se promène dans le diorama — itération 33
 - ⬜ Partage de progression entre amis
 - ⬜ Étendre à d'autres quartiers (plusieurs dioramas reliés)
-- ✅ Jeu « trouve l'éléphant » — itération 34 (coincer l'éléphant : abandonné, pas amusant), remplacé à l'itération 35 par « Ramène les quatre éléphants à la fontaine » (cache-cache, 1 à 5 fuites, épuisé, retour en vol, feu d'artifice)
+- ✅ Jeu « trouve l'éléphant » — itération 34 (coincer l'éléphant : abandonné, pas amusant), remplacé à l'itération 35 par « Ramène les quatre éléphants à la fontaine » (cache-cache, 1 à 5 fuites, épuisé, retour en vol, feu d'artifice) ; **simplifié à l'itération 65** : un clic = sprint, un reclic pendant le sprint = attrapé (60 %), sans fuites ni cache-cache (retour utilisateurs ; à régler : `catchChance`, `sprintSpeed`)
 - ⬜ Mini-jeu : régler après de vrais essais : nombre de fuites (1 à 5), points (10, bonus 20) et distance de réapparition (aujourd'hui 100 à 250 m, promenade jusqu'à 380 m de la fontaine : `mascot.json`) — Dasco aimait aussi quand ils partaient loin, à revoir
 - ⬜ Points : à quoi les dépenser (bâtiments débloqués, décorations…) — *Dasco*
 - Mode histoire qui fait visiter la ville

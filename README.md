@@ -117,7 +117,7 @@ source et dénivelé du relief, types de toits, et quels lieux d'histoire ont é
 | Découvrir un lieu | clic sur une gemme ✦ | toucher une gemme |
 | Voir un bar / café / restaurant | survoler son épingle (la fiche s'affiche à côté) ; clic = la fiche reste ouverte | toucher l'épingle |
 | Fermer une fiche | Échap, ✕ ou clic dans le vide | ✕ ou toucher dans le vide |
-| Ramener un éléphant à la fontaine | le survoler le fait trotter plus vite ; clic = il disparaît et réapparaît plus loin ; épuisé (étoiles), clic pour le ramener | le toucher le fait disparaître ; épuisé, le toucher pour le ramener |
+| Ramener un éléphant à la fontaine | le survoler le fait trotter plus vite ; clic = il sprinte quelques secondes ; **reclic pendant le sprint** = il file sur la fontaine (ça rate parfois) | le toucher le fait sprinter ; le retoucher pendant le sprint pour l'attraper |
 
 Zoom maximum : 70 m du point visé (120 m avant). De près, la caméra reste à au moins 30 m au-dessus du sol pour ne pas entrer dans les toits ni dans les collines. Gestes à deux doigts : `src/scene/touch.ts` ; réglages de la caméra : `src/scene/stage.ts`.
 
@@ -307,14 +307,12 @@ et quatre éléphants se promènent dans les rues (entre 80 et 300 m de la fonta
 
 - **Sursaut** : la souris sur un éléphant le fait sursauter et trotter plus vite (`startleSpeed`, 3,5 m/s,
   pendant `startleSeconds`) : il faut le rattraper pour cliquer.
-- **Cache-cache** : cliquer sur un éléphant (ou le toucher) le fait disparaître dans un nuage.
-  Une bulle le fait narguer (`game.taunts`, affichée `bubbleSeconds`, 6 s) et donne un indice : la rue OSM où il réapparaît
-  (« Je file vers la rue de Boigne »), ou la direction si la voie n'a pas de nom. Il réapparaît de 100
-  à 250 m plus loin (`respawnDistance`), toujours à moins de `roamRadius` (380 m) de la fontaine et sur un
-  endroit dégagé : façade à plus de `openSpace` (4,5 m), pour qu'il ne rentre pas dans un mur en s'asseyant.
-- **Épuisé** : chaque éléphant tire au hasard son nombre de fuites (1 à 5, `escapes`). Après la dernière,
-  il réapparaît assis, des étoiles au-dessus de la tête, et ne bouge plus.
-- **Ramené** : un clic sur l'éléphant épuisé l'envoie en vol jusqu'à sa place ; la caméra suit, il se
+- **Sprint** : cliquer sur un éléphant (ou le toucher) le fait détaler `sprintSeconds` (3,5 s) à `sprintSpeed` (9 m/s, contre
+  1,4 m/s à la promenade), en se moquant de vous dans une bulle (`game.taunts`, `bubbleSeconds`) qui le suit. Puis il
+  s'arrête et souffle quelques secondes (`pauseSeconds`) avant de reprendre sa promenade : un nouveau clic le relance.
+  (Itération 65 : plus de disparition, d'indice de direction, d'épuisement ni de nombre de fuites : le jeu demandait
+  trop de clics et de recherches.)
+- **Ramené** : un **2e clic pendant le sprint** l'attrape avec la probabilité `catchChance` (0,6) ; sinon il se moque (`missTaunts`) et continue de courir. Attrapé, il s'envole jusqu'à sa place ; la caméra suit, il se
   change en bronze en sortant du socle, gerbe d'étincelles et petit feu d'artifice. `points` (10) par
   éléphant, plus `bonus` (20) quand la fontaine est complète, avec un grand feu d'artifice.
 - **Nouvelle partie** : `restartSeconds` (45 s) après la fontaine complète, les éléphants s'échappent de
