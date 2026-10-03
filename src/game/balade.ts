@@ -38,6 +38,9 @@ export interface Balade extends Ticker {
   /** Ordre de marche vers un point du plan (m) ; false si refusé */
   goTo(x: number, y: number, onArrive?: () => void): boolean;
   recenter(): void;
+  /** Excursion de la caméra (un éléphant rejoint la fontaine) : elle quitte l'avatar, puis `release` la ramène par un vol */
+  detour(x: number, z: number): void;
+  release(): void;
 }
 
 type Stage = ReturnType<typeof createStage>;
@@ -91,16 +94,33 @@ export function createBalade(cfg: BaladeConfig, stage: Stage, avatar: Avatar, ca
   };
 
   const recenter = () => { following = true; ui.setRecenter(false); };
+  let away = false;
 
   return {
     active: () => on,
     enter, leave,
     toggle: () => (on ? leave() : enter()),
     recenter,
+    detour(x, z) {
+      if (!on) return;
+      away = true;
+      following = false;
+      ui.setRecenter(false);
+      stage.flyTo(x, z, 160);
+    },
+    release() {
+      if (!on || !away) return;
+      away = false;
+      const p = avatar.position();
+      if (!p) return;
+      following = true;
+      stage.flyToView(p[0], -p[1], cfg.camera.distance, cfg.camera.polar);
+    },
     goTo(x, y, onArrive) {
       if (!on) return false;
       const r: true | RouteFail = avatar.goTo(x, y, onArrive);
       if (r !== true) { ui.flash(r === 'far' ? 'Pas par là' : 'Impossible d\'aller là'); return false; }
+      away = false;
       recenter(); // un nouvel ordre ramène la caméra sur l'avatar
       return true;
     },

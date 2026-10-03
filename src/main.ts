@@ -302,7 +302,9 @@ async function main() {
     fountain: modelsRoot.getObjectByName('fontaine-des-elephants'),
     game: mascot.game,
     ui,
-    flyTo: (x, z) => { if (!balade?.active()) stage.flyTo(x, z, 160); }, // en balade, la caméra reste sur l'avatar
+    // En balade, la caméra quitte l'avatar pour suivre l'éléphant jusqu'à la fontaine, puis revient (release)
+    flyTo: (x, z) => { if (balade?.active()) balade.detour(x, z); else stage.flyTo(x, z, 160); },
+    release: () => balade?.release(),
   });
   const { hunt, slots } = game;
   // Mode debug (?debug) : faisceaux au-dessus des éléphants et panneau pour les retrouver ;
