@@ -397,6 +397,10 @@ async function main() {
       root: app, scene, camera, controls, canvas: renderer.domElement, pickTargets: city.group, data, pois,
       movePoiMarker: (id, pos) => poiLayer.markers.find((m) => m.poi.id === id)?.group.position.set(pos[0], terrain.heightAt(pos[0], pos[1]), -pos[1]),
     });
+  } else if (DEBUG) {
+    // Production en mode ?debug : outil de position en lecture seule (clic = position copiée), à coller dans la conversation
+    const { installPositionPicker } = await import('./dev/position-picker');
+    placement = installPositionPicker({ root: app, scene, camera, canvas: renderer.domElement, pickTargets: city.group, data, heightAt: terrain.heightAt, flash: ui.flash });
   }
 
   // --- Sélection à la souris / au doigt (src/interaction.ts) ---------------

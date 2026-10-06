@@ -14,6 +14,15 @@
 **Vérifié :** `npm run build` ; Chrome avec carte graphique, de jour (14 h) : pavé lisible dans la rue de Boigne, voie pour voitures grise avec ses tirets ; de nuit : les tirets restent visibles, la lueur des rues est conservée ; 63 à 72 appels de rendu selon la vue (+1 à +2) ; aucune erreur console.
 
 **Non vérifié :** iPhone (le motif est calculé par pixel : à mesurer avec `?debug`, « pire image ») ; hiver et neige ; l'avis esthétique de Dasco (couleurs réglables en une ligne dans `palette.ts` : `street`, `footway`, `streetMark`) ; les rues à sens unique et les zones 30 ne sont pas distinguées (aucune donnée de sens unique dans `city.json`) ; pas de bordures ni de passages piétons.
+## Itération 78 — 06/10/2026 (branche `feat/outil-position-debug`)
+
+**Constat de Dasco :** il ne peut pas donner une position par la conversation (Notre-Dame du Rosaire, Cœur Flambant) ; l'ancien mode de placement n'existe qu'avec `npm run dev`.
+
+**Changement :** `src/dev/position-picker.ts` (nouveau, téléchargé seulement avec `?debug`) : bouton **📍 Position** (ou touche P, Échap pour fermer) : un clic sur la carte affiche la position en mètres, le bâtiment OSM (nom, identifiant, hauteur), le parking et la rue les plus proches, pose un anneau rose, et **copie** `{ "pos": [x, y] } // rue : …` dans le presse-papiers ; les six derniers points restent listés (bouton « copier ») ; le clic est consommé : il n'ouvre pas de fiche et ne fait pas marcher l'avatar ; branché sur la place de l'outil de placement de la production (`main.ts`), le mode `npm run dev` garde l'outil complet.
+
+**Vérifié :** `npm run build` puis `vite preview` (comportement de production) avec `?debug` : bouton présent, clic → panneau « [-53.1, -79.6], rue : Rue de Boigne (à 3 m) », presse-papiers correct, Échap referme, aucune erreur console.
+
+**Non vérifié :** téléphone (le toucher passe par le même chemin, non essayé) ; la copie du presse-papiers sur iPhone (Safari peut la refuser : le message dit alors de recopier à la main).
 
 ## Itération 76 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
 
