@@ -1,5 +1,91 @@
 # Journal des itérations
 
+## Itération 76 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
+
+**Retours de Dasco :** le panneau de La Falaise et celui du Parking Palais de Justice flottent dans le vide (pas posés sur le toit) ; deux « parking sans nom » (rue du Corbelet, montée du Covet) posent le même genre de problème ; chercher ce type de soucis, sans doute liés au nivellement.
+
+**Diagnostic (audit de tous les panneaux : un rayon vertical lancé sur la scène, écart entre le pied du panneau et la surface dessous) :** 10 panneaux sur 59 à plus de 0,6 m de la surface. Causes trouvées :
+- **marge de toit à l'aveugle** : le panneau était posé à « hauteur OSM du bâtiment + 4 m » : 4 m dans le vide sur un toit plat (Palais de Justice : une toiture de 3,5 m ; Falaise, Hôtel de ville : 1,4 à 1,7 m d'écart) ;
+- **toit en pente** : posé au faîtage, le panneau flottait de 8,4 m au-dessus du pan sous lui (parking de surface `way/1490571672`) ;
+- **parking de surface sous un abri** : le point choisi tombait sur le toit d'un petit bâtiment (rue du Corbelet : 4,9 m de haut, + 4 m de marge) ;
+- **cour intérieure** : le panneau du silo Ravet était posé sur le toit d'un bâtiment à un endroit où il n'y a pas de toit (entrée en bord de façade) : 31 m au-dessus du sol visible ;
+- les 5 autres écarts négatifs sont des arbres au-dessus du panneau (pas des défauts).
+
+**Corrections** (`src/scene/city.ts`, `src/scene/parkings.ts`) :
+- l'altitude du toit est **mesurée sur le maillage affiché** (`roofAt` : le point le plus haut des triangles du bâtiment à la verticale du panneau), plus de marge au jugé ; pour un bâtiment remplacé par un monument (absent du maillage), estimation hauteur + 2 m ;
+- **le poteau s'enfonce de 4 m** sous le point : il ne flotte plus sur un toit en pente ni sur un sol incliné ;
+- les bâtiments sont testés **cour intérieure exclue**, et tous ceux qui se superposent comptent (le plus haut gagne) ;
+- un parking de surface se pose **hors des bâtiments**, sinon sur un toit ; un silo : sur le centre de son toit (pas sur une entrée) ; un souterrain : entrée, centre, puis tout point de son contour qui a un toit.
+
+**Vérifié :** `npm run build` ; audit dans Chrome avec GPU : 59 panneaux, **plus aucun écart de plus de 0,6 m** hors les 4 cas d'arbres au-dessus du panneau (avant : 10 dont 6 réels) ; captures de La Falaise, du Palais de Justice, du Corbelet et du Covet : panneau posé ; aucune erreur console.
+
+**Non vérifié :** le temps ajouté au chargement par les mesures de toit (≈ 15 panneaux, estimé à moins de 0,1 s) ; le « nivellement » du sol lui-même (les aplats peints suivent le relief de 10 m de pas ; les parkings très en pente, comme montée du Covet, peuvent paraître déformés) ; les panneaux d'un parking sans nom restent nombreux (40 sur 58).
+
+## Itération 75 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
+
+**Demande de Dasco :** corriger les sept retours des revues de code et QA (rapports : `tasks/ep006-review-code.md` et `ep006-review-qa.md`).
+
+**Corrections :**
+1. **Silos enterrés** (`src/scene/parkings.ts`) : un panneau dont le point est sous un bâtiment (silos Ravet, La Falaise, souterrains, bâtiments du cadastre) se pose **sur son toit** ; la zone de clic est réduite au cube-panneau (rayon 3 m, du haut du poteau) : un clic sur la façade n'ouvre plus de fiche ; une position imposée à la main (`posFixed`) est respectée telle quelle ;
+2. **Le site ne plante plus** (`src/scene/parking-edits.ts`) : une retouche invalide (ajout sans identifiant, type ou position ; type inconnu ; position invalide ; identifiant inconnu ou déjà pris) est ignorée avec un avertissement dans la console ; la fiche garde des textes par défaut si `parkings.json` est vide ou incomplet ;
+3. **Entrées au bon parking** (`scripts/lib/parkings.mjs`) : une entrée ne se rattache plus qu'à un parking du même nom ou de **type compatible** (une entrée souterraine ne va plus à un parking de surface voisin) ; un parking que seules ses entrées font connaître devient un parking : **Parking Curial** (244 places, souterrain, payant, 2 entrées) apparaît ; un bâtiment du cadastre marqué parking prend le type de son entrée, et **n'a plus de capacité estimée** (fini le « ≈ 77 places, parking de surface » d'un bâtiment) ;
+4. **Tarif** : seules les valeurs OSM `yes` et `no` donnent payant / gratuit ; `interval`, `unknown`… restent « Tarif inconnu » ;
+5. **Retouches** : la fiche dit « Source : OpenStreetMap, relevé du …, et retouche manuelle (places, type, position) » ou « Parking ajouté à la main » ; la `note` est du texte (échappé : plus d'injection HTML) ; une retouche de capacité remplace l'estimation, un `kind` non-surface la supprime ;
+6. **Accès** : « Réservé aux abonnés » / « Réservé aux clients » affiché dans la fiche ;
+7. **Lisibilité** : « payant » devient framboise (`#ef4f78`, ne ressemble plus à l'orange des restaurants), « tarif inconnu » gris-ardoise (`#9aa0b4`), voirie lavande pâle ; texte sombre sur les pastilles (contrastes 4,9 payant, 8,2 gratuit, 6,6 inconnu, contre 2,0 à 2,4 avant) ; légende de la version mobile remontée (ne chevauche plus « Journal »).
+Documentation : README (fichiers parkings à leur place), en-tête de l'epic et BACKLOG remis à jour.
+
+**Vérifié :** `npm run data -- --offline`, `npm run build` ; test Node des retouches invalides (5 avertissements, aucun plantage, ajout valide pris en compte, note non interprétée) ; Chrome avec carte graphique : panneau de Ravet sur son toit, Curial et La Falaise présents, clic sous le panneau sans fiche, clic sur le panneau → fiche « Parking Ravet », 61 appels de rendu, 390 px : légende au-dessus des boutons, aucune erreur console.
+
+**Non fait / non vérifié :** les points « mineurs » restants du rapport (gemmes ✦ qui volent les clics des panneaux proches ; en balade, clic au sol à moins de 4 m d'un panneau ; identifiant dupliqué `relation/21157100` sur de la voirie ; 7 positions hors de leur polygone ; recouvrement de Cassine Gare et du silo `way/943464704` à contrôler sur OSM) ; mesure iPhone (à-coup du premier affichage, mémoire) ; nuit en balade ; Parking du Château : panneau au sol, pas sur un toit (aucun bâtiment sous ses entrées dans les données).
+
+## Itération 74 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
+
+**Bugs signalés par Dasco :** (1) bars, cafés, restaurants et lieux d'histoire ne réagissaient plus au survol ni au clic ; (2) deux parkings à La Falaise alors qu'il n'y en a qu'un (payant) ; (3) pour un parking souterrain, ne pas ajouter de bâtiment sur un bâtiment : juste le panneau, posé au-dessus du bâtiment ; (4) peut-on gérer et ajuster les parkings dans le temps (où sont-ils, qu'est-ce que `parkings.json` ?).
+
+**Corrections :**
+- **(1) Régression que j'avais introduite à l'itération 73** : la liste des zones de clic de `interaction.ts` avait été remplacée par une liste vide (celle des panneaux) : les gemmes et les épingles n'en faisaient plus partie. Elles sont de retour (`src/main.ts`) ; vérifié : survol d'un bar → fiche, clic sur la gemme de la fontaine → fiche d'histoire ;
+- **(2) La Falaise** : OSM contenait un polygone nu (aucun nom, capacité ni type, 2 241 m²) posé sur le silo « La Falaise » : le même parking dessiné deux fois. Règle générale dans `scripts/lib/parkings.mjs` : un polygone nu dont le centre est dans un parking renseigné (ou l'inverse) est écarté (un seul cas aujourd'hui : celui de La Falaise) ; 151 parkings exportés ;
+- **(3) Souterrains** : l'entrée cartoon est supprimée ; ils ont le **même panneau cube P, posé sur le toit du bâtiment** qui les recouvre (gouttière + 4 m) ; un seul maillage, 1 appel de rendu pour tous les panneaux ;
+- **(4) Retouches dans le temps** : `src/content/parkings.json` → `overrides` (par identifiant OSM : `hide`, `name`, `fee`, `capacity`, `kind`, `pos`, `note`) et `added` (parkings absents d'OSM) ; appliquées au chargement par `src/scene/parking-edits.ts` : **recharger la page suffit, sans relancer `npm run data`** ; en `?debug`, la fiche affiche l'identifiant à utiliser ; `note` s'affiche dans la fiche (à utiliser pour citer une source).
+
+**Où sont les parkings ?** `public/data/city.json` (clé `parkings`) est **fabriqué par `npm run data` à partir d'OpenStreetMap** (pas à la main, règle projet 3) ; `src/content/parkings.json` est la couche éditoriale à la main : textes de la fiche et retouches. Au chargement, l'appli applique les retouches sur les données du build.
+
+**Vérifié :** `npm run data -- --offline`, `npm run build` ; test Node de `applyParkingEdits` (masquer, capacité fixée qui remplace l'estimation, couleur de tarif, ajout) ; Chrome avec carte graphique : survol d'un bar (« Chez Italo »), clic sur la gemme de la fontaine, panneau de l'Hôtel de ville posé sur son toit, aucune erreur console.
+
+**Non vérifié :** La Falaise après correction (un seul panneau attendu : vérifié dans les données, pas visuellement) ; toit des souterrains du Château et du Palais de Justice (vérifié seulement sur l'Hôtel de ville) ; les retouches ne sont pas encore proposées dans une interface (fichier JSON).
+
+## Itération 73 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
+
+**Retour de Dasco sur le prototype :** on ne voit pas trop la différence entre les parkings ; les parkings privés sont-ils utiles à montrer ? ; de nuit on ne voit pas ; « de surface / en silo » ne se comprend pas : il faut **payant ou gratuit**, puis les souterrains. Puis : continuer avec les panneaux.
+
+**Changements :**
+- **Couleurs par tarif** (`src/scene/terrain.ts`, `palette.ts`) : orange = payant, menthe = gratuit, gris-lavande = tarif inconnu ; la voirie reste un décor pâle ; légende « Payant / Gratuit / Tarif inconnu / Le long de la rue » ; plus de hachures ni de types de parking dans les couleurs ;
+- **parkings privés retirés** de l'export (`scripts/lib/parkings.mjs`) : 152 parkings exportés (59 hors voirie : 49 de surface, 5 souterrains, 5 silos ; 93 de voirie ; 45 privés écartés) ;
+- **de nuit** : une lueur douce (texture émissive des seuls parkings, intensité liée à la nuit) les fait ressortir ; ne s'active qu'avec la couche ;
+- **panneaux « P »** (`src/scene/parkings.ts`, nouveau) : cube-panneau à quatre « P » blocky sur un poteau pour les parkings de surface et en silo (nommés, à capacité, ou de plus de 300 m²) ; **entrée de parking cartoon low poly** (dalle, rampe, murs, linteau, trou noir, cube P) pour les souterrains, posée sur leur entrée OSM ; teinte payant / gratuit / inconnu, lueur de nuit ; 2 `InstancedMesh` (2 appels de rendu), visibles seulement couche allumée ; `avatar.json` → `parkingSigns` (taille, surface minimale) ;
+- **fiche** (`src/ui/parking-card.ts`, `src/content/parkings.json`, `ui.ts`) : même carte que les bars ; type, payant / gratuit / inconnu, **places « OSM » ou « ≈ estimées d'après la surface » ou « inconnu : celui-là garde son secret »**, PMR et hauteur maximale si OSM les donne, mention de la source et de la date du relevé OSM (`city.json` → `osmDate`) ; survol : nom du parking ; clic : après les ✦ et les épingles, avant le sol ;
+- `src/interaction.ts` : cible `parking`.
+
+**Vérifié :** `npm run data -- --offline`, `npm run build` ; Chrome avec carte graphique : aplats payant / gratuit lisibles (Parking de l'Europe entièrement orange), panneau cube P posé dans le parking, entrée cartoon du Château (partiellement cachée par les toits en vue libre), survol « 🅿️ Parking de l'Europe », clic → fiche (« 154 places », « dont 3 pour les personnes à mobilité réduite », source datée du relevé), 59 panneaux, 71 appels de rendu avec la couche (contre 68 sans : +3), aucune erreur ni avertissement console.
+
+**Non vérifié / limites :** les **tarifs** ne sont pas affichés (aucune valeur sourcée copiée de la BNLS ou de la Ville : à faire, avec date du relevé) ; fiches officielles (15), licences BNLS / Ville : pas encore ; la nuit avec les panneaux n'a pas été regardée en détail (lueur écrite) ; entrée cartoon : orientation par défaut (sud-est), pas d'après la rue ; taille des panneaux (`scale` 1,6) à juger à l'œil ; iPhone ; l'effacement des bâtiments en balade ne touche pas les panneaux ; Parking des Ducs (privé dans OSM, 112 places abonnés selon la BNLS) n'est plus affiché.
+
+## Itération 72 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
+
+**Demande de Dasco :** commencer l'epic parkings (périmètre d'affichage validé : tous les aplats ; panneaux et voitures pour les grands et les nommés ; privés plus pâles ; petites poches hors export), dans une branche à part pour pouvoir tester. Cette itération : US001 (données) et US002 (vue stationnement).
+
+**Changements :**
+- `scripts/lib/parkings.mjs` (nouveau), `scripts/fetch-osm.mjs` : extraction des parkings OSM dans `city.json` (`parkings`) : type (souterrain, silo, surface, voirie ; un `level` ou `layer` négatif = souterrain), accès, tarif, nom, capacité, niveaux, hauteur maximale, contour (mesuré avant rognage), entrées rattachées à moins de 30 m ; **doublons fusionnés** (nœud + polygone du Château et du Palais de Justice : le polygone du Château, sans type dans OSM, prend « souterrain » de son nœud) ; capacité **estimée** (`est` = surface / 28 m²) seulement pour les parkings de surface sans capacité de plus de 300 m², jamais mêlée à `capacity` ; poches de moins de 300 m² écartées sauf nommées ou à capacité ; parkings privés gardés mais **sans nom** ; `src/types.ts` : `Parking` ;
+- `src/scene/terrain.ts`, `src/scene/palette.ts` : couche « Parkings » **peinte dans la texture du sol** (lavande : surface, silo, voirie plus pâle, privé gris-lavande ; souterrains non peints ; hachures quand le nombre de places est inconnu) ; la texture n'est peinte qu'au premier affichage, puis on bascule : **0 appel de rendu de plus** ;
+- `src/ui/ui.ts`, `src/style.css`, `src/main.ts` : bouton « 🅿️ Parkings » (visible si les données y sont), légende, message au premier affichage (« 101 parkings repérés, dont 17 qui avouent leur nombre de places ») ; message adapté à la largeur du téléphone.
+
+**Mesuré (`npm run data -- --offline`) :** 197 parkings exportés sur 412 dans OSM : 101 hors voirie (88 de surface, 7 souterrains, 6 silos) et 96 de voirie ; 2 nœuds fusionnés, 213 petites poches écartées ; hors voirie : 18 nommés, 17 avec capacité, 82 capacités estimées, 31 avec tarif, 42 privés ; `city.json` : 1 442 Ko → 1 452 Ko (+10 Ko) ; les autres clés de `city.json` sont inchangées.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : le bouton colore les aplats en vue d'ensemble et de près (bandes de voirie le long de la Leysse), la légende s'affiche, les appels de rendu sont identiques avec et sans la couche (60 et 60 en vue rapprochée), aucune erreur ni avertissement console ; 390 px : bouton et légende visibles.
+
+**Non vérifié / limites :** ressenti des couleurs (lavande à valider) ; hachures vues de loin ; la bascule peint 2 048 px au premier clic (≈ 0,1 s sur Mac, non mesuré sur iPhone) ; nuit et hiver ; le panneau « P » et la fiche (US003), cartoon des souterrains, voitures-jouets (US005) pas encore faits ; les valeurs BNLS / Ville ne sont pas encore recopiées (US003) donc pas de licence à ajouter pour l'instant ; Parking des Ducs (64 places, privé dans OSM) et hôpital (260, privé) sont affichés sans nom, à trancher par fiche.
+
 ## Itération 71 — 03/10/2026 (branche `fix/EP005-deplacement-libre`, epic EP005)
 
 **Retour de Dasco :** la direction est sensible au niveau des rues : on ne peut pas couper à travers champs, et à cause des petits recoins l'avatar « se perd » avec le point and click (il va se poser à côté du point visé, parfois de l'autre côté d'un mur). Demande : regarder ce genre de soucis.

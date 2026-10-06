@@ -21,6 +21,7 @@ import { loadBdTopo, applyBdTopo } from './bdtopo.mjs';
 import { loadTerrain } from './terrain.mjs';
 import { distToSegment, pointInRing } from './geo.mjs';
 import { buildStreetLabels } from './street-names.mjs';
+import { buildParkings } from './lib/parkings.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CONFIG = JSON.parse(await readFile(resolve(ROOT, 'diorama.config.json'), 'utf8'));
@@ -515,12 +516,21 @@ for (const [name, { w, len }] of waterByName) {
 // ---------------------------------------------------------------------------
 const streets = buildStreetLabels(roads, CONFIG.streetNames);
 
+// ---------------------------------------------------------------------------
+// 5 quater. Parkings (EP006-US001)
+// ---------------------------------------------------------------------------
+const parkingData = buildParkings(raw.elements, {
+  polygonsOf, clipPoly, area, project, rp, centroid, norm,
+  inside: (p) => p[0] >= minX && p[0] <= maxX && p[1] >= minY && p[1] <= maxY,
+});
+
 const city = {
   generatedAt: new Date().toISOString(),
+  osmDate: raw.osm3s?.timestamp_osm_base,
   attribution: ['© contributeurs OpenStreetMap (ODbL)', bd.matched && 'Hauteurs BD TOPO © IGN', terrain?.source === 'rgealti' && 'Relief RGE ALTI © IGN'].filter(Boolean).join(' · '),
   origin: { lat: lat0, lon: lon0 },
   bounds: { minX: r1(minX), minY: r1(minY), maxX: r1(maxX), maxY: r1(maxY) },
-  buildings, roads, areas, water, trees, places, anchors, labels, streetLabels: streets.labels, terrain,
+  buildings, roads, areas, water, trees, places, anchors, labels, streetLabels: streets.labels, parkings: parkingData.parkings, terrain,
   stats: { estimatedHeights: stillEstimated, bdtopoMatched: bd.matched, rectRoofs, skeletons },
 };
 await mkdir(dirname(OUT_PATH), { recursive: true });
@@ -534,6 +544,13 @@ console.log(terrain ? `  relief : ${terrain.nx}×${terrain.ny} points (pas de ${
 console.log(`  toits : ${rectRoofs} rectangulaires, ${skeletons} par squelette droit${skeletonFailures ? ` (${skeletonFailures} échecs → toit plat)` : ''}, ${buildings.length - rectRoofs - skeletons} plats`);
 console.log(`  ${roads.length} tronçons de rue, ${areas.length} zones, ${water.length} éléments d'eau, ${trees.length} arbres`);
 console.log(`  ${streets.labels.length} noms de rues sur ${streets.names} noms de voies${streets.dropped.length ? ` ; ${streets.dropped.length} sans emplacement (${[...new Set(streets.dropped.map((d) => d.why))].join(' / ')})` : ''}`);
+{
+  const pk = parkingData.parkings, st = parkingData.stats;
+  const off = pk.filter((x) => x.kind !== 'street');
+  const by = (k) => off.filter((x) => x.kind === k).length;
+  console.log(`  ${pk.length} parkings exportés sur ${st.osm} dans OSM : ${off.length} hors voirie (${by('surface')} de surface, ${by('underground')} souterrains, ${by('multi-storey')} silos), ${st.street} de voirie ; ${st.merged} nœuds fusionnés, ${st.tinyDropped} petites poches écartées`);
+  console.log(`    hors voirie : ${off.filter((x) => x.name).length} nommés, ${off.filter((x) => x.capacity).length} avec capacité, ${off.filter((x) => x.est).length} capacités estimées (≈ aire / 28), ${off.filter((x) => x.fee !== undefined).length} avec tarif, ${st.privateDropped} privés écartés, ${st.overlapDropped} doublons nus écartés, ${st.fromEntrances} parking(s) connu(s) par leurs seules entrées`);
+}
 console.log(`  ${places.length} bars / cafés / restaurants, ${labels.length} étiquettes (${labels.map((l) => l.text).join(', ')})`);
 for (const [id, a] of Object.entries(anchors)) console.log(`  POI ${id.padEnd(16)} → ${a.osm} « ${a.osmName} »`);
 if (missing.length) {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { CityData, Poly, Pt } from '../types';
+import type { CityData, Parking, Poly, Pt } from '../types';
 import { PALETTE } from './palette';
 
 /**
@@ -45,12 +45,35 @@ export function createTerrain(data: CityData): Terrain {
   return { heightAt, minUnder, hasRelief: true, grid: { x0, y0, step } };
 }
 
+/** Couleur d'un parking : payant (orange), gratuit (menthe), tarif inconnu (gris-lavande) ; la voirie est un décor plus pâle */
+export function parkingColor(p: Parking): string {
+  if (p.kind === 'street') return PALETTE.parking.street;
+  return p.fee === true ? PALETTE.parking.paid : p.fee === false ? PALETTE.parking.free : PALETTE.parking.unknown;
+}
+
+/**
+ * Couche « Parkings » (EP006-US002) : aplats payant / gratuit / inconnu ; les souterrains ne sont pas peints (leur emprise
+ * est sous les bâtiments ou les places : ils ont leur panneau).
+ */
+function paintParkings(ctx: CanvasRenderingContext2D, parkings: Parking[], X: (x: number) => number, Y: (y: number) => number) {
+  for (const p of parkings) {
+    if (!p.outer || p.kind === 'underground') continue;
+    ctx.fillStyle = parkingColor(p);
+    ctx.beginPath();
+    for (const ring of [p.outer, ...(p.holes ?? [])]) {
+      ring.forEach(([x, y], k) => (k ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))));
+      ctx.closePath();
+    }
+    ctx.fill('evenodd');
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Maillage du sol (relief) + texture peinte + bords du socle
 // ---------------------------------------------------------------------------
 const SOIL_BOTTOM = -14;
 
-function paintGround(data: CityData): THREE.CanvasTexture {
+function paintGround(data: CityData, mode: 'base' | 'parkings' | 'glow' = 'base'): THREE.CanvasTexture {
   const b = data.bounds;
   const W = b.maxX - b.minX, D = b.maxY - b.minY;
   const px = 2048;
@@ -60,8 +83,15 @@ function paintGround(data: CityData): THREE.CanvasTexture {
   const ctx = cv.getContext('2d')!;
   const sx = cv.width / W, sy = cv.height / D;
   const X = (x: number) => (x - b.minX) * sx, Y = (y: number) => (b.maxY - y) * sy;
-  ctx.fillStyle = PALETTE.ground;
+  ctx.fillStyle = mode === 'glow' ? '#000' : PALETTE.ground;
   ctx.fillRect(0, 0, cv.width, cv.height);
+  if (mode === 'glow') {
+    // Lueur de nuit : seulement les parkings, sur fond noir
+    paintParkings(ctx, data.parkings ?? [], X, Y);
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
   const fillPolys = (polys: Poly[], color: string) => {
     ctx.fillStyle = color;
     for (const p of polys) {
@@ -76,6 +106,7 @@ function paintGround(data: CityData): THREE.CanvasTexture {
   fillPolys(data.areas.filter((a) => a.kind === 'green'), PALETTE.green);
   fillPolys(data.areas.filter((a) => a.kind === 'plaza'), PALETTE.plaza);
   fillPolys(data.water.filter((w): w is Extract<typeof w, { kind: 'area' }> => w.kind === 'area'), PALETTE.water);
+  if (mode === 'parkings') paintParkings(ctx, data.parkings ?? [], X, Y);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
@@ -117,9 +148,23 @@ export function buildGround(data: CityData, terrain: Terrain): THREE.Group {
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   geo.setIndex(idx);
   geo.computeVertexNormals();
-  const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: paintGround(data), roughness: 1 }));
+  const base = paintGround(data);
+  const groundMat = new THREE.MeshStandardMaterial({ map: base, roughness: 1 });
+  const ground = new THREE.Mesh(geo, groundMat);
   ground.receiveShadow = true;
   ground.name = 'terrain';
+  // Couche « Parkings » : la texture avec les aplats n'est peinte qu'au premier affichage, puis on bascule (0 appel de rendu de plus)
+  let withParkings: THREE.CanvasTexture | null = null, glow: THREE.CanvasTexture | null = null;
+  ground.userData.setParkings = (on: boolean) => {
+    if (on && !withParkings) { withParkings = paintGround(data, 'parkings'); glow = paintGround(data, 'glow'); }
+    groundMat.map = on ? withParkings : base;
+    groundMat.emissiveMap = on ? glow : null;
+    groundMat.emissive.set(on ? '#ffffff' : '#000000');
+    groundMat.emissiveIntensity = 0;
+    groundMat.needsUpdate = true; // l'émissif change le programme (une fois)
+  };
+  /** Les parkings ressortent la nuit : intensité de la lueur (0 le jour) */
+  ground.userData.setParkingGlow = (k: number) => { groundMat.emissiveIntensity = k; };
   g.add(ground);
 
   // Bords du socle : strates de terre qui suivent le profil du relief

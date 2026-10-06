@@ -75,6 +75,12 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ Chargement lent : message qui rassure après quelques secondes (critère de l'US002 non fait)
 - ⬜ Lobby : vérifier `prefers-reduced-motion`, la visite hors ligne et JavaScript désactivé (implémentés, non essayés), puis un vrai téléphone
 
+## Epic à venir : EP006 « Les parkings, en maquette » (prototype sur `feat/EP006-parkings` : US001, US002, US003 en partie ; revues de code et QA faites le 06/10)
+[Epic EP006](../../specs/epics/EP006-parkings/epic.md) · analyses : [données](../../tasks/ep006-parkings-donnees-plan.md), [idées](../../tasks/ep006-parkings-concepts-plan.md), [intégration](../../tasks/ep006-parkings-integration-plan.md). Couche « 🅿️ Parkings » (aplats, panneaux P, fiches sourcées), voitures-jouets, chiffres et quiz, « où me garer » avec l'avatar. 9 user stories, 35 points, 4 à 5,5 sessions pour le cœur ; **chaque chiffre étiqueté** (OSM / estimé / inconnu), pas de temps réel.
+- ✅ *06/10* Relue par Dasco : véhicules, temps réel, estimations, souterrains, licences tranchés (voir l'epic)
+- ⬜ Préciser quels parkings reçoivent panneau et voitures, et le rendu des parkings privés ; puis la maquette (design avant le code) — *Dasco*
+- ⬜ Plus tard : souterrains en radiographie, éléphant qui cherche une place, chasse aux parkings avec anecdotes sourcées, maquette ouverte du Parking du Château
+
 ## Epic à venir : EP005 « Balade avec un avatar » (spec et plan écrits le 02/10/2026, **pas commencée**)
 [Epic EP005](../../specs/epics/EP005-balade-avatar/epic.md) · [plan](../../tasks/ep005-plan.md) : un **mode balade** (on y entre, on en sort) : avatar dirigé au clic ou au toucher, vue 3/4 façon Diablo, caméra qui suit, bâtiments entiers qui s'effacent devant lui, interface restreinte. 13 user stories, 50 points hors options, 9 à 13 sessions ; **prototype d'abord** (US001 à US004 minimales) puis décision. Branche d'epic `feat/EP005-balade-avatar` (une branche par US fusionnée dedans ; `main` au besoin ; correctifs par rebase). Décisions de Dasco du 02/10 intégrées ; restent 6 points à préciser (P2, P4 à P8) dans l'epic.
 - ⬜ Valider la spec EP005 et préciser les points restants (silhouette, interface du mode, fiches, geste mobile, escaliers, autres téléphones) — *Dasco*

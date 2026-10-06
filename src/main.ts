@@ -25,6 +25,10 @@ import { buildWalkways } from './scene/walkways';
 import { buildPathfinder, type PathConfig, type Pathfinder } from './scene/avatar-path';
 import { createBalade, type Balade, type BaladeConfig } from './game/balade';
 import { createCutaway, type Cutaway, type CutawayConfig } from './scene/cutaway';
+import { buildParkingSigns, type ParkingSigns, type ParkingSignsConfig } from './scene/parkings';
+import { parkingCard } from './ui/parking-card';
+import { applyParkingEdits, type ParkingEdits } from './scene/parking-edits';
+import parkingsContent from './content/parkings.json';
 import { buildAvatar, type Avatar, type AvatarConfig } from './scene/avatar';
 import avatarContent from './content/avatar.json';
 import { buildBirds, type BirdsConfig } from './scene/birds';
@@ -80,6 +84,7 @@ async function main() {
   }
   await loading.set(3, 'données');
   const data = await loadCity();
+  if (data) applyParkingEdits(data, parkingsContent as unknown as ParkingEdits);
   if (!data) {
     lobby.destroy();
     loading.hideBoot();
@@ -223,6 +228,13 @@ async function main() {
     console.warn('[auvents] non chargés', e);
   }
   await loading.set(97, 'interface');
+  let parkingsOn = false;
+  let parkingSel: string | null = null; // fiche de parking ouverte
+  const hitTargets: THREE.Object3D[] = []; // zones de clic (le tableau est partagé avec interaction.ts)
+  const parkingSigns: ParkingSigns | null = buildParkingSigns(avatarContent.parkingSigns as ParkingSignsConfig, data, terrain.heightAt, terrain.minUnder, city.night.uNight, hidden, city.group.getObjectByName('buildings')?.userData as { tops?: Float32Array; roofAt?: (bi: number, x: number, z: number) => number } | undefined);
+  if (parkingSigns) scene.add(parkingSigns.group);
+  let lastGlow = -1;
+  const groundNode = () => city.group.getObjectByName('terrain');
   let discovered = loadDiscovered();
   let placeIdx: number | null = null; // fiche de lieu ouverte
   // Modèle de la mascotte sous licence CC BY 3.0 : crédit obligatoire, affiché avec les autres
@@ -235,10 +247,27 @@ async function main() {
       // La fiche ouverte disparaît si sa catégorie est masquée
       if (!v && placeIdx !== null && placeCategory(placeLayer.places[placeIdx].kind).id === cat) closePlace();
     },
-    onPlaceClosed: () => placeLayer.setActive(null),
+    onPlaceClosed: () => { placeLayer.setActive(null); parkingSel = null; },
     onCompass: () => stage.resetNorth(),
     onLobby: () => lobby.open(),
     onBalade: () => balade?.toggle(),
+    onParkings: () => {
+      parkingsOn = !parkingsOn;
+      (city.group.getObjectByName('terrain')?.userData.setParkings as ((on: boolean) => void) | undefined)?.(parkingsOn);
+      ui.setParkings(parkingsOn);
+      if (parkingSigns) {
+        parkingSigns.group.visible = parkingsOn;
+        // Les zones de clic des panneaux ne comptent que couche allumée
+        for (const h of parkingSigns.hits) { const k = hitTargets.indexOf(h); if (parkingsOn && k < 0) hitTargets.push(h); else if (!parkingsOn && k >= 0) hitTargets.splice(k, 1); }
+        if (!parkingsOn && parkingSel) closePlace();
+      }
+      if (parkingsOn) {
+        const off = (data.parkings ?? []).filter((p) => p.kind !== 'street');
+        const known = off.filter((p) => p.capacity).length;
+        ui.flash(`🅿️ ${off.length} parkings repérés, dont ${known} qui avouent leur nombre de places`);
+      }
+      lastGlow = -1;
+    },
     onRecenter: () => balade?.recenter(),
     onHour: (h) => clock.setHour(h),
     onPlay: (p) => clock.setPlaying(p),
@@ -257,6 +286,7 @@ async function main() {
     cutaway = createCutaway(avatarContent.cutaway as CutawayConfig, data, city.fade, terrain.minUnder, modelsRoot, hidden, camera, (out) => avatar!.aim(out));
     balade = createBalade({ camera: avatarContent.camera } as BaladeConfig, stage, avatar, renderer.domElement, data.anchors.elephants?.pos ?? [0, 0], { ...ui, setCutaway: (on) => cutaway?.setActive(on) });
   }
+  if (data.parkings?.length) ui.showParkingsButton();
   // Mode hors-ligne (service worker, production uniquement)
   setupPwa(ui.flash);
   // Cycle jour/nuit : vraie course du soleil pour la date et l'heure de l'horloge
@@ -343,14 +373,17 @@ async function main() {
   };
   const closePlace = () => {
     placeIdx = null;
+    parkingSel = null;
     placeLayer.setActive(null);
     ui.hidePlaceCard();
   };
   const anchorV = new THREE.Vector3();
   /** La fiche suit son épingle quand la caméra bouge. */
   const followPlace = () => {
-    if (placeIdx === null) return;
-    placeLayer.anchor(placeIdx, anchorV).project(camera);
+    if (placeIdx === null && !parkingSel) return;
+    if (placeIdx !== null) placeLayer.anchor(placeIdx, anchorV).project(camera);
+    else if (!parkingSigns?.anchor(parkingSel!, anchorV)) return;
+    else anchorV.project(camera);
     const r = canvasRect;
     const onScreen = anchorV.z < 1 && Math.abs(anchorV.x) <= 1.05 && Math.abs(anchorV.y) <= 1.05;
     ui.movePlaceCard(r.left + ((anchorV.x + 1) / 2) * r.width, r.top + ((1 - anchorV.y) / 2) * r.height, onScreen);
@@ -367,9 +400,11 @@ async function main() {
   }
 
   // --- Sélection à la souris / au doigt (src/interaction.ts) ---------------
+  // Zones de clic : lieux d'histoire, bars / cafés / restaurants ; les panneaux de parking s'y ajoutent couche allumée
+  hitTargets.unshift(...poiLayer.markers.map((m) => m.hit), ...placeLayer.root.children.filter((c) => c.userData.places));
   const interaction = installInteraction({
     canvas: renderer.domElement, camera, controls, canvasRect: () => canvasRect, pois,
-    targets: [...poiLayer.markers.map((m) => m.hit), ...placeLayer.root.children.filter((c) => c.userData.places)],
+    targets: hitTargets,
     ground: city.group,
     zoomTo: (p) => stage.zoomTo(p),
     hunt, placement,
@@ -389,11 +424,21 @@ async function main() {
         if (balade?.active() && balade.goTo(h.poi.position[0], h.poi.position[1], () => openPoi(id))) return;
         openPoi(id);
       }
-      else if (h && 'place' in h) openPlace(h.index, true); // clic ou toucher : la fiche reste ouverte
+      else if (h && 'place' in h) { parkingSel = null; openPlace(h.index, true); } // clic ou toucher : la fiche reste ouverte
+      else if (h && 'parking' in h) {
+        const p = parkingSigns?.parkings.find((x) => x.id === h.parking);
+        if (!p) return;
+        closePlace();
+        parkingSel = p.id;
+        const card = parkingCard(p, data.osmDate ?? data.generatedAt);
+        if (DEBUG) card.source += ` · ${p.id}`; // l'identifiant sert aux retouches (src/content/parkings.json)
+        ui.showParkingCard(card);
+      }
       else if (ui.placeCardState().place) closePlace(); // clic dans le vide : on ferme
     },
     onHover: (h, x, y) => {
       if (h && 'poi' in h) ui.showTooltip(discovered.has(h.poi.id) ? h.poi.title : '✦ Lieu mystère', x, y);
+      else if (h && 'parking' in h) ui.showTooltip(`🅿️ ${parkingSigns?.parkings.find((p) => p.id === h.parking)?.name ?? 'Parking'}`, x, y);
       else ui.showTooltip(null);
       // Bars, cafés, restaurants : la fiche apparaît au survol (sauf si une fiche est déjà épinglée par un clic)
       if (!ui.placeCardState().pinned) {
@@ -416,6 +461,14 @@ async function main() {
     ...(people ? [people] : []),
     ...(balade ? [balade] : []),
     ...(cutaway ? [cutaway] : []),
+    {
+      // La nuit, les parkings s'allument doucement (sinon la couleur disparaît avec la lumière)
+      update: () => {
+        if (!parkingsOn) return;
+        const k = Math.round(city.night.uNight.value * 20) / 20;
+        if (k !== lastGlow) { lastGlow = k; (groundNode()?.userData.setParkingGlow as ((k: number) => void) | undefined)?.(k * 0.7); }
+      },
+    },
     ...(avatar ? [avatar] : []),
     ...(birds ? [birds] : []),
     ...(chimneys ? [chimneys] : []),
@@ -496,7 +549,7 @@ async function main() {
   if (!lobbyAtStart) loading.hideBoot();
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, birds, chimneys, flags, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, parkingSigns, birds, chimneys, flags, clock, herd, hunt, slots } });
 }
 
 main();

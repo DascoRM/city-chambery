@@ -6,7 +6,7 @@ import { screenRay } from './scene/geo';
 import { installTwoFingerGestures } from './scene/touch';
 
 /** Ce qui est sous la souris ou le doigt : un lieu d'histoire, un bar / café / restaurant, ou rien */
-export type Hit = { poi: PlacedPoi } | { place: Place; index: number } | null;
+export type Hit = { poi: PlacedPoi } | { place: Place; index: number } | { parking: string } | null;
 
 /** Outil de placement (dev uniquement, src/dev/placement.ts) : il passe avant tout le reste */
 export interface PlacementTool {
@@ -54,6 +54,7 @@ export function installInteraction(o: InteractionOptions): Ticker {
     const hit = screenRay(raycaster, camera, o.canvasRect(), clientX, clientY).intersectObjects(o.targets, false)[0];
     if (!hit) return null;
     if (hit.object.userData.poiId) return { poi: o.pois.find((p) => p.id === hit.object.userData.poiId)! };
+    if (hit.object.userData.parkingId) return { parking: hit.object.userData.parkingId as string };
     const places = hit.object.userData.places as Place[] | undefined;
     if (places && hit.instanceId !== undefined) return { place: places[hit.instanceId], index: hit.instanceId };
     return null;

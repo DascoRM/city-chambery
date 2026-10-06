@@ -49,8 +49,39 @@ export interface Label { text: string; kind: 'park' | 'water'; pos: Pt; size: nu
 export interface StreetLabel { text: string; pos: Pt; angle: number; size: number; len: number; w: number; kind: string; bridge?: boolean }
 export interface Place { id: string; kind: string; name: string; pos: Pt; cuisine?: string; hours?: string }
 
+/** Parking d'OpenStreetMap (EP006) : rien d'éditorial ; `est` = places estimées d'après la surface (jamais mêlées à `capacity`) */
+export type ParkingKind = 'underground' | 'multi-storey' | 'surface' | 'street';
+export interface Parking {
+  id: string;
+  kind: ParkingKind;
+  access: 'public' | 'private' | 'customers' | 'subscribers' | 'unknown';
+  fee?: boolean;
+  name?: string;
+  capacity?: number;
+  levels?: number;
+  disabled?: number;
+  maxHeight?: string;
+  outer?: Pt[];
+  holes?: Pt[][];
+  pos: Pt;
+  areaM2?: number;
+  est?: number;
+  entrances?: Pt[];
+  dupOf?: string[];
+  /** Phrase de la fiche (retouche manuelle, source à citer) */
+  note?: string;
+  /** Champs retouchés à la main (src/content/parkings.json) : la fiche ne les attribue plus à OpenStreetMap */
+  edited?: string[];
+  /** Parking ajouté à la main, absent d'OpenStreetMap */
+  added?: boolean;
+  /** Position imposée à la main : le panneau s'y pose, sans être ramené dans le contour */
+  posFixed?: boolean;
+}
+
 export interface CityData {
   generatedAt: string;
+  /** Date des données OpenStreetMap (et non de leur traitement) */
+  osmDate?: string;
   attribution: string;
   origin: { lat: number; lon: number };
   bounds: { minX: number; minY: number; maxX: number; maxY: number };
@@ -63,6 +94,7 @@ export interface CityData {
   anchors: Record<string, { pos: Pt; osm: string; osmName: string }>;
   labels?: Label[];
   streetLabels?: StreetLabel[];
+  parkings?: Parking[];
   /** Relief : grille d'altitudes (décimètres au-dessus de base), pas de step mètres */
   terrain?: { x0: number; y0: number; step: number; nx: number; ny: number; base: number; exaggeration: number; source: string; z: number[] } | null;
   stats: { estimatedHeights: number };

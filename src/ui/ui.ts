@@ -1,5 +1,6 @@
 import type { Place, PlacedPoi } from '../types';
-import { PLACE_CATEGORIES, PLACE_KIND_LABEL, placeCategory } from '../scene/palette';
+import { feeLabel, type ParkingCardData } from './parking-card';
+import { PALETTE, PLACE_CATEGORIES, PLACE_KIND_LABEL, placeCategory } from '../scene/palette';
 import type { ClockState } from '../time/clock';
 import type { OpenState } from '../time/openinghours';
 import { SEASON_LABEL } from '../time/seasons';
@@ -51,6 +52,8 @@ export interface UiHandlers {
   onBalade?(): void;
   /** Bouton « Retrouver mon avatar » */
   onRecenter?(): void;
+  /** Bouton « 🅿️ Parkings » (EP006) */
+  onParkings?(): void;
 }
 
 export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: string, h: UiHandlers) {
@@ -70,6 +73,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
 
     <nav class="tools">
       <button class="btn" data-action="journal" aria-expanded="false">📜 Journal</button>
+      <button class="btn parkings-btn" data-action="parkings" aria-pressed="false" title="Colorer les parkings de la ville" hidden>🅿️ Parkings</button>
       <button class="btn balade-btn" data-action="balade" title="Se promener dans la ville avec un petit personnage">🚶 Balade</button>
       <div class="btn legend-box" role="group" aria-label="Lieux affichés">${PLACE_CATEGORIES.map((c) => `<label class="legend" style="--cat:${c.color}" title="Afficher / masquer : ${c.label}s"><input type="checkbox" data-category="${c.id}" checked /><i></i>${c.label}s</label>`).join('')}</div>
       <div class="btn time" title="Heure de Chambéry">
@@ -106,6 +110,12 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     <button class="compass card" data-action="compass" aria-label="Boussole : remettre le nord en haut" title="Remettre le nord en haut">
       <svg viewBox="0 0 40 40" aria-hidden="true"><g class="needle"><path d="M20 5 L25 20 L15 20 Z" fill="#d1492e"/><path d="M20 35 L25 20 L15 20 Z" fill="#b9ab98"/><text x="20" y="4.6" text-anchor="middle" font-size="6.5" font-weight="700" fill="#2d2622">N</text></g></svg>
     </button>
+    <div class="parking-legend card" hidden aria-label="Légende des parkings">
+      <span><i style="--c:${PALETTE.parking.paid}"></i>Payant</span>
+      <span><i style="--c:${PALETTE.parking.free}"></i>Gratuit</span>
+      <span><i style="--c:${PALETTE.parking.unknown}"></i>Tarif inconnu</span>
+      <span><i style="--c:${PALETTE.parking.street}"></i>Le long de la rue</span>
+    </div>
     <button class="recenter card" data-action="recenter" hidden>📍 Retrouver mon avatar</button>
     <button class="help card" data-action="lobby" aria-label="À propos : revoir l'accueil" title="Revoir l'accueil">?</button>
     <div class="toast" role="status"></div>
@@ -185,6 +195,25 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     lastStatus = status + p.id;
     placeCard.hidden = false;
     // Rejoue l'animation (rebond du titre) à chaque nouveau lieu
+    placeCard.classList.remove('pop');
+    void placeCard.offsetWidth;
+    placeCard.classList.add('pop');
+    cardSize = null;
+  };
+  /** Fiche d'un parking (EP006) : même carte que les bars, contenu différent */
+  const showParkingCard = (c: ParkingCardData) => {
+    hideHint();
+    pinned = true;
+    shownPlace = { id: c.id } as Place; // la fermeture (✕, Échap, clic dans le vide) est celle des fiches de lieux
+    placeCard.style.setProperty('--cat', c.color);
+    placeBody.innerHTML = `
+      <p class="pc-cat"><i></i>${esc(c.kind)}</p>
+      <h3 class="pc-title">${esc(c.title)}</h3>
+      <p class="pc-fee fee-${c.fee}"><b>${esc(feeLabel(c.fee))}</b></p>
+      ${c.lines.map((l) => `<p class="pc-line">${esc(l.text)}${l.small ? ` <small>${esc(l.small)}</small>` : ''}</p>`).join('')}
+      <p class="pc-src">${esc(c.source)}</p>`;
+    lastStatus = '';
+    placeCard.hidden = false;
     placeCard.classList.remove('pop');
     void placeCard.offsetWidth;
     placeCard.classList.add('pop');
@@ -270,6 +299,8 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   const hintDefault = hint.innerHTML;
   const baladeBtn = $<HTMLButtonElement>('[data-action="balade"]');
   const recenterBtn = $<HTMLButtonElement>('[data-action="recenter"]');
+  const parkingsBtn = $<HTMLButtonElement>('[data-action="parkings"]');
+  const parkingLegend = $<HTMLElement>('.parking-legend');
   const hideHint = () => hint.classList.add('gone');
   /** Réaffiche l'aide quelques secondes (à l'entrée sur la carte : le lobby n'explique pas les gestes). */
   const showHint = () => {
@@ -292,6 +323,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     if (action === 'lobby') h.onLobby?.();
     if (action === 'balade') h.onBalade?.();
     if (action === 'recenter') h.onRecenter?.();
+    if (action === 'parkings') h.onParkings?.();
   });
   const hourIn = root.querySelector<HTMLInputElement>('[data-action="hour"]')!;
   const playBtn = root.querySelector<HTMLButtonElement>('[data-action="play"]')!;
@@ -348,9 +380,16 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
       window.setTimeout(hideHint, 9000);
     },
     setRecenter: (visible: boolean) => { recenterBtn.hidden = !visible; },
+    /** Couche « Parkings » : bouton enfoncé et légende ; `available` = les données sont là */
+    setParkings: (on: boolean) => {
+      parkingsBtn.setAttribute('aria-pressed', String(on));
+      parkingsBtn.classList.toggle('on', on);
+      parkingLegend.hidden = !on;
+    },
+    showParkingsButton: () => { parkingsBtn.hidden = false; },
     panelOpen: () => !panel.hidden,
     setFound, showPoi, flash, flushFlash, showTooltip, hideHint, showHint, setClock, hidePanel: () => (panel.hidden = true),
-    showPlaceCard, hidePlaceCard, movePlaceCard, setPlaceStatus,
+    showPlaceCard, showParkingCard, hidePlaceCard, movePlaceCard, setPlaceStatus,
     placeCardState: () => ({ place: shownPlace, pinned }),
     /** Éléphants ramenés sur la fontaine */
     setHerd: (n: number, total: number) => {
