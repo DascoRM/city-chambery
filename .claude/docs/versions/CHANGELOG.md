@@ -23,6 +23,17 @@
 **Vérifié :** `npm run build` puis `vite preview` (comportement de production) avec `?debug` : bouton présent, clic → panneau « [-53.1, -79.6], rue : Rue de Boigne (à 3 m) », presse-papiers correct, Échap referme, aucune erreur console.
 
 **Non vérifié :** téléphone (le toucher passe par le même chemin, non essayé) ; la copie du presse-papiers sur iPhone (Safari peut la refuser : le message dit alors de recopier à la main).
+## Itération 77 — 06/10/2026 (branche `fix/batiments-building-part`)
+
+**Demande de Dasco :** liste de dix monuments à modéliser ; en les cherchant dans les données, trois bâtiments se sont révélés absents du diorama.
+
+**Cause :** `scripts/fetch-osm.mjs` ignorait tout bâtiment portant l'étiquette `building:part`, même `building:part=no` (= bâtiment ordinaire), et le Palais de justice n'existe dans OSM que comme « partie de bâtiment ».
+
+**Changements :** `building:part=no` est un bâtiment ; une partie de bâtiment (`yes`) est dessinée seulement si aucun bâtiment ordinaire ne la recouvre et si elle dépasse 2 m (les socles et marches sont ignorés). `npm run data -- --offline` : **2 067 → 2 072 bâtiments** : Musée des Beaux-Arts (21,4 m), Hôtel des douanes de Chambéry (17,7 m, monument historique), Palais de justice (27 m, toit à quatre pans, monument historique) et deux petites ailes (8,7 m et 5 m) ; hauteurs IGN appliquées. Analyse des dix monuments et des routes : `tasks/analyse-monuments-et-routes.md`.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : le Palais de justice apparaît avec sa cour intérieure (de nuit, fenêtres allumées) ; l'avatar trouve toujours un chemin (434 m) ; aucune erreur console.
+
+**Non vérifié :** le Musée des Beaux-Arts à l'écran (donnée seulement) ; l'effet sur le réseau de marche des passants (les nouveaux bâtiments bloquent quelques tronçons) ; l'effacement des bâtiments avec ces trois volumes ; le panneau du Parking du Palais de Justice (posé maintenant sur le toit du Palais, 27 m) ; téléphone.
 
 ## Itération 76 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
 
