@@ -85,6 +85,7 @@ const compositeMaterial = () =>
         // Le flou « prend le dessus » vite hors de la bande (comme l'ancien flou à rayon variable)
         float w = clamp(blurWeight(vUv.y) * 4.0, 0.0, 1.0) * uMix;
         gl_FragColor = mix(texture2D(tSharp, vUv), texture2D(tBlur, vUv), w);
+        ${(new URLSearchParams(location.search).get('xp') ?? '').includes('grade') ? 'vec2 q = vUv - 0.5; gl_FragColor.rgb *= 1.0 - dot(q, q) * 0.6; gl_FragColor.rgb = pow(gl_FragColor.rgb, vec3(0.95)) + (fract(sin(dot(vUv * 1000.0, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * 0.02;' : ''}
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`,
@@ -158,6 +159,10 @@ export function createTiltShift(
       pass(blurH, halfA);
       blurV.uniforms.tDiffuse.value = halfA.texture;
       pass(blurV, halfB);
+    }
+    if ((new URLSearchParams(location.search).get('xp') ?? '').includes('bloom')) {
+      blurH.uniforms.tDiffuse.value = halfB.texture; pass(blurH, halfA);
+      blurV.uniforms.tDiffuse.value = halfA.texture; pass(blurV, halfB);
     }
     // 3. Mélange net / flou + sortie écran
     composite.uniforms.tSharp.value = sceneRT.texture;

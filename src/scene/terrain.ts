@@ -76,7 +76,7 @@ const SOIL_BOTTOM = -14;
 function paintGround(data: CityData, mode: 'base' | 'parkings' | 'glow' = 'base'): THREE.CanvasTexture {
   const b = data.bounds;
   const W = b.maxX - b.minX, D = b.maxY - b.minY;
-  const px = 2048;
+  const px = (new URLSearchParams(location.search).get('xp') ?? '').includes('tex4k') ? 4096 : 2048;
   const cv = document.createElement('canvas');
   cv.width = px;
   cv.height = Math.round((px * D) / W);

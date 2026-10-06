@@ -400,6 +400,7 @@ function windowsMaterial(night: NightUniforms, fade: FadeUniforms): THREE.MeshSt
         varying float vBase;
         uniform float uNight;
         uniform float uLit;
+        float vn(vec2 p){ vec2 i=floor(p),f=fract(p); f=f*f*(3.0-2.0*f); return mix(mix(fract(sin(dot(i,vec2(127.1,311.7)))*43758.5453),fract(sin(dot(i+vec2(1,0),vec2(127.1,311.7)))*43758.5453),f.x),mix(fract(sin(dot(i+vec2(0,1),vec2(127.1,311.7)))*43758.5453),fract(sin(dot(i+vec2(1,1),vec2(127.1,311.7)))*43758.5453),f.x),f.y); }
         float hash21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }${DITHER_GLSL}`,
       )
       // Bâtiment effacé (mode balade) : fondu par tramage, avant tout calcul de couleur
@@ -409,6 +410,7 @@ function windowsMaterial(night: NightUniforms, fade: FadeUniforms): THREE.MeshSt
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
+        ${(new URLSearchParams(location.search).get('xp') ?? '').includes('fbm') ? 'float xn = vn(vWPos.xz*0.7+vWPos.y*0.5)*0.5+vn(vWPos.xz*2.1+vWPos.y*1.7)*0.3+vn(vWPos.xz*6.0+vWPos.y*5.0)*0.2; diffuseColor.rgb *= 0.85+0.3*xn;' : ''}
         float win = 0.0, door = 0.0;
         vec2 cell = vec2(0.0);
         if (abs(vWNormal.y) < 0.3) {

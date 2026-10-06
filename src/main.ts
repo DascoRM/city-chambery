@@ -549,7 +549,7 @@ async function main() {
   if (!lobbyAtStart) loading.hideBoot();
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, parkingSigns, birds, chimneys, flags, clock, herd, hunt, slots } });
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, renderer, people, pathfinder, avatar, balade, cutaway, parkingSigns, birds, chimneys, flags, clock, herd, hunt, slots } });
 }
 
 main();
