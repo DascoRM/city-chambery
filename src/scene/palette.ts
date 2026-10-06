@@ -1,8 +1,10 @@
 /** Palette du diorama : tons chauds des façades sardes/savoyardes, socle façon maquette. */
 export const PALETTE = {
   ground: '#cdd6ae',
-  street: '#f1e9da',
-  footway: '#e6dcc8',
+  /** Rues pour voitures : gris chaud clair (asphalte de maquette) ; voies piétonnes : pavé beige chaud */
+  street: '#d6d2cb',
+  streetMark: '#f7f3ea',
+  footway: '#ead8b8',
   plaza: '#ece2cf',
   green: '#a6c886',
   water: '#6fb1d6',
