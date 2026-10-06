@@ -68,6 +68,8 @@ export interface Parking {
   est?: number;
   entrances?: Pt[];
   dupOf?: string[];
+  /** Phrase de la fiche (retouche manuelle, source à citer) */
+  note?: string;
 }
 
 export interface CityData {

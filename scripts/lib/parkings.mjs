@@ -34,7 +34,7 @@ const int = (v) => { const n = parseInt(String(v ?? ''), 10); return Number.isFi
  * @param h { polygonsOf, clipPoly, area, project, rp, centroid, norm, inside(p) }
  */
 export function buildParkings(elements, h) {
-  const stats = { osm: 0, kept: 0, street: 0, merged: 0, privateDropped: 0, tinyDropped: 0 };
+  const stats = { osm: 0, kept: 0, street: 0, merged: 0, privateDropped: 0, tinyDropped: 0, overlapDropped: 0 };
   const polys = []; // { el, t, kind, access, rings, areaM2 }
   const nodes = []; // nœuds amenity=parking
   const entrances = [];
@@ -82,8 +82,28 @@ export function buildParkings(elements, h) {
     } else if (h.inside(n.pos)) lonely.push(n);
   }
 
+  // Polygone nu (aucun nom, capacité ni type) posé sur un parking renseigné : c'est le même parking, dessiné deux fois
+  // (La Falaise : un polygone du silo et un polygone nu de 2 241 m² juste dessus)
+  const inRing = (pt, ring) => {
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i], [xj, yj] = ring[j];
+      if (yi > pt[1] !== yj > pt[1] && pt[0] < ((xj - xi) * (pt[1] - yi)) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  };
+  const bare = (p) => !p.t.name && !p.t.capacity && !p.t.parking && p.kind !== 'street';
+  const informed = (p) => p.kind !== 'street' && (p.t.name || p.t.capacity || p.t.parking);
+  const dropped = new Set();
+  for (const p of polys) {
+    if (!bare(p)) continue;
+    const c = h.centroid(p.c.outer);
+    const host = polys.find((q) => q !== p && informed(q) && (inRing(c, q.c.outer) || inRing(h.centroid(q.c.outer), p.c.outer)));
+    if (host) { dropped.add(p); stats.overlapDropped++; }
+  }
   const out = [];
   for (const p of polys) {
+    if (dropped.has(p)) continue;
     const nodesOf = absorbed.get(p) ?? [];
     const tags = { ...Object.assign({}, ...nodesOf.map((n) => n.t)), ...p.t }; // le polygone prime, le nœud complète
     // Les tags du nœud complètent seulement ce qui manque, y compris le type (« souterrain »)

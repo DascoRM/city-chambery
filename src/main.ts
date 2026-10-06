@@ -27,6 +27,8 @@ import { createBalade, type Balade, type BaladeConfig } from './game/balade';
 import { createCutaway, type Cutaway, type CutawayConfig } from './scene/cutaway';
 import { buildParkingSigns, type ParkingSigns, type ParkingSignsConfig } from './scene/parkings';
 import { parkingCard } from './ui/parking-card';
+import { applyParkingEdits, type ParkingEdits } from './scene/parking-edits';
+import parkingsContent from './content/parkings.json';
 import { buildAvatar, type Avatar, type AvatarConfig } from './scene/avatar';
 import avatarContent from './content/avatar.json';
 import { buildBirds, type BirdsConfig } from './scene/birds';
@@ -82,6 +84,7 @@ async function main() {
   }
   await loading.set(3, 'données');
   const data = await loadCity();
+  if (data) applyParkingEdits(data, parkingsContent as unknown as ParkingEdits);
   if (!data) {
     lobby.destroy();
     loading.hideBoot();
@@ -228,7 +231,7 @@ async function main() {
   let parkingsOn = false;
   let parkingSel: string | null = null; // fiche de parking ouverte
   const hitTargets: THREE.Object3D[] = []; // zones de clic (le tableau est partagé avec interaction.ts)
-  const parkingSigns: ParkingSigns | null = buildParkingSigns(avatarContent.parkingSigns as ParkingSignsConfig, data, terrain.heightAt, city.night.uNight);
+  const parkingSigns: ParkingSigns | null = buildParkingSigns(avatarContent.parkingSigns as ParkingSignsConfig, data, terrain.heightAt, terrain.minUnder, city.night.uNight);
   if (parkingSigns) scene.add(parkingSigns.group);
   let lastGlow = -1;
   const groundNode = () => city.group.getObjectByName('terrain');
@@ -397,6 +400,8 @@ async function main() {
   }
 
   // --- Sélection à la souris / au doigt (src/interaction.ts) ---------------
+  // Zones de clic : lieux d'histoire, bars / cafés / restaurants ; les panneaux de parking s'y ajoutent couche allumée
+  hitTargets.unshift(...poiLayer.markers.map((m) => m.hit), ...placeLayer.root.children.filter((c) => c.userData.places));
   const interaction = installInteraction({
     canvas: renderer.domElement, camera, controls, canvasRect: () => canvasRect, pois,
     targets: hitTargets,
@@ -425,7 +430,9 @@ async function main() {
         if (!p) return;
         closePlace();
         parkingSel = p.id;
-        ui.showParkingCard(parkingCard(p, data.osmDate ?? data.generatedAt));
+        const card = parkingCard(p, data.osmDate ?? data.generatedAt);
+        if (DEBUG) card.source += ` · ${p.id}`; // l'identifiant sert aux retouches (src/content/parkings.json)
+        ui.showParkingCard(card);
       }
       else if (ui.placeCardState().place) closePlace(); // clic dans le vide : on ferme
     },

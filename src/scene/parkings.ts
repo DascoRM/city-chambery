@@ -6,8 +6,8 @@ import { parkingColor } from './terrain';
 
 /**
  * Panneaux « P » de la couche Parkings (EP006-US003) : un cube-panneau sur un poteau (un « P » blocky sur ses
- * quatre faces, lisible de partout) pour les parkings de surface et en silo ; une petite entrée de parking cartoon
- * (rampe, murs, linteau, cube P) pour les souterrains. Deux maillages instanciés (2 appels de rendu), couleur
+ * quatre faces, lisible de partout). Les parkings souterrains ont le même panneau, posé **sur le toit** du bâtiment
+ * sous lequel ils se trouvent (on n'ajoute aucun bâtiment). Un seul maillage instancié (1 appel de rendu), couleur
  * payant / gratuit / inconnu par instance, lueur de nuit. Formes simples en code : aucun asset tiers.
  */
 export interface ParkingSigns {
@@ -72,30 +72,6 @@ function signGeometry() {
   return boxes([...parts, ...faces]);
 }
 
-/** Entrée de parking cartoon : dalle, rampe sombre, deux murs teintés, linteau, trou noir, petit cube P dessus */
-function entranceGeometry() {
-  const dark = '#3d4049', void_ = '#15161b', slab = '#c9c4bd';
-  const parts: Parameters<typeof boxes>[0] = [
-    { w: 13, h: 0.6, d: 15, x: 0, y: 0.3, z: 0, color: slab },
-    { w: 7.2, h: 0.5, d: 8.5, x: 0, y: 0.7, z: 4.2, color: dark, rx: -0.14 }, // rampe qui descend vers l'entrée
-    { w: 2, h: 5.5, d: 6, x: -4.6, y: 3.3, z: -1.5, color: '#ffffff', tint: true },
-    { w: 2, h: 5.5, d: 6, x: 4.6, y: 3.3, z: -1.5, color: '#ffffff', tint: true },
-    { w: 11.2, h: 1.6, d: 6, x: 0, y: 6.1, z: -1.5, color: '#ffffff', tint: true },
-    { w: 7.2, h: 4.2, d: 0.4, x: 0, y: 2.8, z: -4.3, color: void_ }, // l'ouverture noire
-    { w: 7.2, h: 0.3, d: 5.5, x: 0, y: 0.75, z: -1.2, color: dark }, // sol de l'entrée
-  ];
-  const cube: Parameters<typeof boxes>[0] = [{ w: 3.2, h: 3.2, d: 3.2, x: 0, y: 8.5, z: -1.5, color: '#ffffff', tint: true }];
-  const faces = [0, 1, 2, 3].flatMap((k) => {
-    const a = (k * Math.PI) / 2;
-    return letterP(3.2, 1.62).map((b) => {
-      const x = b.x * Math.cos(a) + b.z * Math.sin(a), z = -b.x * Math.sin(a) + b.z * Math.cos(a);
-      const swap = k % 2 === 1;
-      return { ...b, x, z: z - 1.5, w: swap ? b.d : b.w, d: swap ? b.w : b.d, y: b.y + 8.5 };
-    });
-  });
-  return boxes([...parts, ...cube, ...faces]);
-}
-
 /** Matériau : couleur de sommet, sauf là où le masque vaut 1 (teinte de l'instance) ; la teinte s'allume la nuit */
 function signMaterial(night: { value: number }) {
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.75 });
@@ -126,30 +102,46 @@ function insidePoint(p: Parking): Pt {
   return best;
 }
 
-export function buildParkingSigns(cfg: ParkingSignsConfig, data: CityData, heightAt: HeightFn, night: { value: number }): ParkingSigns | null {
+export function buildParkingSigns(cfg: ParkingSignsConfig, data: CityData, heightAt: HeightFn, minUnder: (r: Pt[]) => number, night: { value: number }): ParkingSigns | null {
   const shown = (data.parkings ?? []).filter((p) => p.kind !== 'street' && (p.name || p.capacity || (p.areaM2 ?? 0) >= cfg.minArea || p.kind === 'underground'));
   if (!shown.length) return null;
   const group = new THREE.Group();
   group.name = 'parking-signs';
   group.visible = false;
   const material = signMaterial(night);
-  const under = shown.filter((p) => p.kind === 'underground'), above = shown.filter((p) => p.kind !== 'underground');
   const hits: THREE.Object3D[] = [];
   const anchors = new Map<string, THREE.Vector3>();
   const hitGeo = new THREE.CylinderGeometry(5, 5, 14, 6);
   hitGeo.translate(0, 7, 0);
 
-  const make = (list: Parking[], geo: THREE.BufferGeometry, entrance: boolean) => {
+  // Bâtiment qui recouvre un point (un parking souterrain est sous un bâtiment : le panneau se pose sur son toit)
+  const buildingAt = (pt: Pt) => data.buildings.find((b) => {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const [x, y] of b.outer) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    return pt[0] >= x0 && pt[0] <= x1 && pt[1] >= y0 && pt[1] <= y1 && pointInRing(pt[0], pt[1], b.outer);
+  });
+  /** Où poser le panneau : au sol dans le parking, ou sur le toit du bâtiment au-dessus d'un souterrain */
+  const place = (p: Parking): { at: Pt; y: number } => {
+    if (p.kind === 'underground') {
+      for (const at of [...(p.entrances ?? []), p.pos]) {
+        const b = buildingAt(at);
+        if (b) return { at, y: minUnder(b.outer) + b.h + 4 }; // toit : gouttière + marge pour le faîtage
+      }
+      const at = p.entrances?.[0] ?? p.pos;
+      return { at, y: heightAt(at[0], at[1]) };
+    }
+    const at = insidePoint(p);
+    return { at, y: heightAt(at[0], at[1]) };
+  };
+
+  const make = (list: Parking[], geo: THREE.BufferGeometry) => {
     if (!list.length) return;
     const tint = new Float32Array(list.length * 3);
     const mesh = new THREE.InstancedMesh(geo, material, list.length);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), c = new THREE.Color();
-    // Les entrées font face au sud-est, vers la caméra de départ
-    const face = Math.atan2(-0.42, 0.56);
     list.forEach((p, i) => {
-      const at: Pt = entrance ? (p.entrances?.[0] ?? p.pos) : insidePoint(p);
-      const y = heightAt(at[0], at[1]);
-      q.setFromAxisAngle(up, entrance ? face : (i * 0.7) % (Math.PI / 2));
+      const { at, y } = place(p);
+      q.setFromAxisAngle(up, (i * 0.7) % (Math.PI / 2));
       m.compose(new THREE.Vector3(at[0], y, -at[1]), q, new THREE.Vector3().setScalar(cfg.scale));
       mesh.setMatrixAt(i, m);
       c.set(parkingColor(p));
@@ -160,7 +152,7 @@ export function buildParkingSigns(cfg: ParkingSignsConfig, data: CityData, heigh
       hit.userData.parkingId = p.id;
       group.add(hit);
       hits.push(hit);
-      anchors.set(p.id, new THREE.Vector3(at[0], y + (entrance ? 10 : 9) * cfg.scale, -at[1]));
+      anchors.set(p.id, new THREE.Vector3(at[0], y + 9 * cfg.scale, -at[1]));
     });
     geo.setAttribute('aTint', new THREE.InstancedBufferAttribute(tint, 3));
     mesh.frustumCulled = false;
@@ -168,8 +160,7 @@ export function buildParkingSigns(cfg: ParkingSignsConfig, data: CityData, heigh
     mesh.receiveShadow = false;
     group.add(mesh);
   };
-  make(above, signGeometry(), false);
-  make(under, entranceGeometry(), true);
+  make(shown, signGeometry());
 
   return {
     group, hits, parkings: shown,

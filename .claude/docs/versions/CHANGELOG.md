@@ -1,5 +1,21 @@
 # Journal des itérations
 
+## Itération 74 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
+
+**Bugs signalés par Dasco :** (1) bars, cafés, restaurants et lieux d'histoire ne réagissaient plus au survol ni au clic ; (2) deux parkings à La Falaise alors qu'il n'y en a qu'un (payant) ; (3) pour un parking souterrain, ne pas ajouter de bâtiment sur un bâtiment : juste le panneau, posé au-dessus du bâtiment ; (4) peut-on gérer et ajuster les parkings dans le temps (où sont-ils, qu'est-ce que `parkings.json` ?).
+
+**Corrections :**
+- **(1) Régression que j'avais introduite à l'itération 73** : la liste des zones de clic de `interaction.ts` avait été remplacée par une liste vide (celle des panneaux) : les gemmes et les épingles n'en faisaient plus partie. Elles sont de retour (`src/main.ts`) ; vérifié : survol d'un bar → fiche, clic sur la gemme de la fontaine → fiche d'histoire ;
+- **(2) La Falaise** : OSM contenait un polygone nu (aucun nom, capacité ni type, 2 241 m²) posé sur le silo « La Falaise » : le même parking dessiné deux fois. Règle générale dans `scripts/lib/parkings.mjs` : un polygone nu dont le centre est dans un parking renseigné (ou l'inverse) est écarté (un seul cas aujourd'hui : celui de La Falaise) ; 151 parkings exportés ;
+- **(3) Souterrains** : l'entrée cartoon est supprimée ; ils ont le **même panneau cube P, posé sur le toit du bâtiment** qui les recouvre (gouttière + 4 m) ; un seul maillage, 1 appel de rendu pour tous les panneaux ;
+- **(4) Retouches dans le temps** : `src/content/parkings.json` → `overrides` (par identifiant OSM : `hide`, `name`, `fee`, `capacity`, `kind`, `pos`, `note`) et `added` (parkings absents d'OSM) ; appliquées au chargement par `src/scene/parking-edits.ts` : **recharger la page suffit, sans relancer `npm run data`** ; en `?debug`, la fiche affiche l'identifiant à utiliser ; `note` s'affiche dans la fiche (à utiliser pour citer une source).
+
+**Où sont les parkings ?** `public/data/city.json` (clé `parkings`) est **fabriqué par `npm run data` à partir d'OpenStreetMap** (pas à la main, règle projet 3) ; `src/content/parkings.json` est la couche éditoriale à la main : textes de la fiche et retouches. Au chargement, l'appli applique les retouches sur les données du build.
+
+**Vérifié :** `npm run data -- --offline`, `npm run build` ; test Node de `applyParkingEdits` (masquer, capacité fixée qui remplace l'estimation, couleur de tarif, ajout) ; Chrome avec carte graphique : survol d'un bar (« Chez Italo »), clic sur la gemme de la fontaine, panneau de l'Hôtel de ville posé sur son toit, aucune erreur console.
+
+**Non vérifié :** La Falaise après correction (un seul panneau attendu : vérifié dans les données, pas visuellement) ; toit des souterrains du Château et du Palais de Justice (vérifié seulement sur l'Hôtel de ville) ; les retouches ne sont pas encore proposées dans une interface (fichier JSON).
+
 ## Itération 73 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
 
 **Retour de Dasco sur le prototype :** on ne voit pas trop la différence entre les parkings ; les parkings privés sont-ils utiles à montrer ? ; de nuit on ne voit pas ; « de surface / en silo » ne se comprend pas : il faut **payant ou gratuit**, puis les souterrains. Puis : continuer avec les panneaux.

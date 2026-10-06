@@ -549,7 +549,7 @@ console.log(`  ${streets.labels.length} noms de rues sur ${streets.names} noms d
   const off = pk.filter((x) => x.kind !== 'street');
   const by = (k) => off.filter((x) => x.kind === k).length;
   console.log(`  ${pk.length} parkings exportés sur ${st.osm} dans OSM : ${off.length} hors voirie (${by('surface')} de surface, ${by('underground')} souterrains, ${by('multi-storey')} silos), ${st.street} de voirie ; ${st.merged} nœuds fusionnés, ${st.tinyDropped} petites poches écartées`);
-  console.log(`    hors voirie : ${off.filter((x) => x.name).length} nommés, ${off.filter((x) => x.capacity).length} avec capacité, ${off.filter((x) => x.est).length} capacités estimées (≈ aire / 28), ${off.filter((x) => x.fee !== undefined).length} avec tarif, ${st.privateDropped} privés écartés`);
+  console.log(`    hors voirie : ${off.filter((x) => x.name).length} nommés, ${off.filter((x) => x.capacity).length} avec capacité, ${off.filter((x) => x.est).length} capacités estimées (≈ aire / 28), ${off.filter((x) => x.fee !== undefined).length} avec tarif, ${st.privateDropped} privés écartés, ${st.overlapDropped} doublons nus écartés`);
 }
 console.log(`  ${places.length} bars / cafés / restaurants, ${labels.length} étiquettes (${labels.map((l) => l.text).join(', ')})`);
 for (const [id, a] of Object.entries(anchors)) console.log(`  POI ${id.padEnd(16)} → ${a.osm} « ${a.osmName} »`);

@@ -1,5 +1,8 @@
 {
   "note": "Textes de la couche Parkings (EP006). Les chiffres viennent d'OpenStreetMap ; rien n'est inventé : quand une valeur manque, la fiche le dit. sourceNote : mention de source de la fiche. Aucune valeur de tarif n'est affichée tant qu'elle n'est pas sourcée et datée (fiches officielles : à venir).",
+  "retouches": "POUR AJUSTER LES PARKINGS DANS LE TEMPS : `overrides` corrige un parking d'OpenStreetMap par son identifiant (on le trouve dans la fiche en mode ?debug, ou dans public/data/city.json, clé parkings) : { \"hide\": true } le retire ; name, fee (true = payant, false = gratuit), capacity, kind (underground, multi-storey, surface), pos ([x, y] en mètres), note (phrase affichée dans la fiche, avec sa source). `added` ajoute un parking absent d'OSM : { id, kind, pos, name?, fee?, capacity?, note? }. Exemple : \"overrides\": { \"way/123\": { \"hide\": true }, \"way/456\": { \"capacity\": 120, \"note\": \"Source : Ville de Chambéry, 2025\" } }. Les retouches sont appliquées au chargement : recharger la page suffit, sans relancer `npm run data`.",
+  "overrides": {},
+  "added": [],
   "kinds": {
     "underground": "Parking souterrain",
     "multi-storey": "Parking en silo",

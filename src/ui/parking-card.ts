@@ -25,6 +25,7 @@ export function parkingCard(p: Parking, generatedAt: string): ParkingCardData {
   else lines.push(`❓ ${texts.capacity.unknown}`);
   const h = p.maxHeight ? parseFloat(p.maxHeight.replace(',', '.')) : NaN;
   if (Number.isFinite(h)) lines.push(`↕ Hauteur maximale : ${h.toLocaleString('fr-FR')} m`);
+  if (p.note) lines.push(`📝 ${p.note}`);
   return {
     id: p.id,
     title: p.name ?? texts.unnamed,
