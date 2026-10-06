@@ -72,6 +72,8 @@ export interface Parking {
 
 export interface CityData {
   generatedAt: string;
+  /** Date des données OpenStreetMap (et non de leur traitement) */
+  osmDate?: string;
   attribution: string;
   origin: { lat: number; lon: number };
   bounds: { minX: number; minY: number; maxX: number; maxY: number };

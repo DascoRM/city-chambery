@@ -1,0 +1,23 @@
+{
+  "note": "Textes de la couche Parkings (EP006). Les chiffres viennent d'OpenStreetMap ; rien n'est inventé : quand une valeur manque, la fiche le dit. sourceNote : mention de source de la fiche. Aucune valeur de tarif n'est affichée tant qu'elle n'est pas sourcée et datée (fiches officielles : à venir).",
+  "kinds": {
+    "underground": "Parking souterrain",
+    "multi-storey": "Parking en silo",
+    "surface": "Parking de surface",
+    "street": "Stationnement le long de la rue"
+  },
+  "fee": {
+    "paid": "Payant",
+    "free": "Gratuit",
+    "unknown": "Tarif inconnu"
+  },
+  "capacity": {
+    "known": "{n} places",
+    "estimated": "≈ {n} places",
+    "estimatedNote": "estimé d'après la surface",
+    "unknown": "Nombre de places inconnu : celui-là garde son secret"
+  },
+  "unnamed": "Parking sans nom",
+  "sourceNote": "Source : OpenStreetMap, relevé du {date}. À vérifier sur place.",
+  "tooltipHint": "touche pour la fiche"
+}

@@ -48,7 +48,7 @@ Montrer les places de stationnement de Chambéry dans le diorama **comme une maq
 |----|------------|----------|------------|-----------|--------|
 | [US001](US001-les-parkings-dans-les-donnees.md) | Les parkings dans les données (extraction, doublons, rapport chiffré) | High | 5 | — | 🟡 Fait, à valider |
 | [US002](US002-vue-stationnement.md) | Vue stationnement : couche « 🅿️ Parkings » et aplats colorés | High | 3 | US001 | 🟡 Fait, à valider |
-| [US003](US003-panneaux-et-fiche.md) | Panneaux « P » et fiche parking sourcée, au ton du jeu | High | 5 | US001, US002 | 🔲 Todo |
+| [US003](US003-panneaux-et-fiche.md) | Panneaux « P » et fiche parking sourcée, au ton du jeu | High | 5 | US001, US002 | 🟡 Fait en partie (sans tarifs ni fiches officielles), à valider |
 | [US004](US004-marquages-de-places.md) | Marquages de places (décor) | Medium | 3 | US002 | 🔲 Todo |
 | [US005](US005-voitures-jouets.md) | Voitures-jouets garées (décor, d'après la capacité) | Medium | 5 | US002, US004 | 🔲 Todo |
 | [US006](US006-parkings-en-chiffres.md) | Parkings en chiffres et quiz | Medium | 3 | US001, US003 | 🔲 Todo |

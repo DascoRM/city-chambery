@@ -34,7 +34,7 @@ const int = (v) => { const n = parseInt(String(v ?? ''), 10); return Number.isFi
  * @param h { polygonsOf, clipPoly, area, project, rp, centroid, norm, inside(p) }
  */
 export function buildParkings(elements, h) {
-  const stats = { osm: 0, kept: 0, street: 0, merged: 0, privatePockets: 0, tinyDropped: 0 };
+  const stats = { osm: 0, kept: 0, street: 0, merged: 0, privateDropped: 0, tinyDropped: 0 };
   const polys = []; // { el, t, kind, access, rings, areaM2 }
   const nodes = []; // nœuds amenity=parking
   const entrances = [];
@@ -96,14 +96,14 @@ export function buildParkings(elements, h) {
     const isStreet = kind === 'street';
     // Filtre : la voirie est un décor ; hors voirie, on garde les nommés, ceux à capacité et les polygones > 300 m²
     if (!isStreet && !named && !capacity && p.areaM2 <= MIN_ESTIMATE_AREA) { stats.tinyDropped++; continue; }
-    const priv = access === 'private';
+    // Les parkings privés n'intéressent personne (décision de Dasco, 06/10) : hors export
+    if (access === 'private') { stats.privateDropped++; continue; }
     const item = {
       id: `${p.el.type}/${p.el.id}`,
       kind,
       access,
       ...(tags.fee ? { fee: tags.fee === 'yes' } : {}),
-      // Parkings privés : pas de nom (aucun intérêt, et on ne personnalise pas un lieu privé)
-      ...(named && !priv && !isStreet ? { name: tags.name } : {}),
+      ...(named && !isStreet ? { name: tags.name } : {}),
       ...(capacity && !isStreet ? { capacity } : {}),
       ...(int(tags['building:levels']) && kind === 'multi-storey' ? { levels: int(tags['building:levels']) } : {}),
       ...(int(tags['capacity:disabled']) ? { disabled: int(tags['capacity:disabled']) } : {}),
@@ -115,7 +115,6 @@ export function buildParkings(elements, h) {
     };
     if (!capacity && kind === 'surface' && p.areaM2 > MIN_ESTIMATE_AREA) item.est = Math.round(p.areaM2 / SQM_PER_SPACE);
     if (nodesOf.length) item.dupOf = nodesOf.map((n) => `node/${n.el.id}`);
-    if (priv) stats.privatePockets++;
     if (isStreet) stats.street++;
     out.push(item);
   }
@@ -125,10 +124,11 @@ export function buildParkings(elements, h) {
     if (!n.t.name && !capacity) continue;
     const kind = kindOf(n.t);
     const access = accessOf(n.t);
+    if (access === 'private') { stats.privateDropped++; continue; }
     out.push({
       id: `node/${n.el.id}`, kind, access,
       ...(n.t.fee ? { fee: n.t.fee === 'yes' } : {}),
-      ...(n.t.name && access !== 'private' ? { name: n.t.name } : {}),
+      ...(n.t.name ? { name: n.t.name } : {}),
       ...(capacity ? { capacity } : {}),
       pos: h.rp(n.pos),
     });

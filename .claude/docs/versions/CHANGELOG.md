@@ -1,5 +1,21 @@
 # Journal des itérations
 
+## Itération 73 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
+
+**Retour de Dasco sur le prototype :** on ne voit pas trop la différence entre les parkings ; les parkings privés sont-ils utiles à montrer ? ; de nuit on ne voit pas ; « de surface / en silo » ne se comprend pas : il faut **payant ou gratuit**, puis les souterrains. Puis : continuer avec les panneaux.
+
+**Changements :**
+- **Couleurs par tarif** (`src/scene/terrain.ts`, `palette.ts`) : orange = payant, menthe = gratuit, gris-lavande = tarif inconnu ; la voirie reste un décor pâle ; légende « Payant / Gratuit / Tarif inconnu / Le long de la rue » ; plus de hachures ni de types de parking dans les couleurs ;
+- **parkings privés retirés** de l'export (`scripts/lib/parkings.mjs`) : 152 parkings exportés (59 hors voirie : 49 de surface, 5 souterrains, 5 silos ; 93 de voirie ; 45 privés écartés) ;
+- **de nuit** : une lueur douce (texture émissive des seuls parkings, intensité liée à la nuit) les fait ressortir ; ne s'active qu'avec la couche ;
+- **panneaux « P »** (`src/scene/parkings.ts`, nouveau) : cube-panneau à quatre « P » blocky sur un poteau pour les parkings de surface et en silo (nommés, à capacité, ou de plus de 300 m²) ; **entrée de parking cartoon low poly** (dalle, rampe, murs, linteau, trou noir, cube P) pour les souterrains, posée sur leur entrée OSM ; teinte payant / gratuit / inconnu, lueur de nuit ; 2 `InstancedMesh` (2 appels de rendu), visibles seulement couche allumée ; `avatar.json` → `parkingSigns` (taille, surface minimale) ;
+- **fiche** (`src/ui/parking-card.ts`, `src/content/parkings.json`, `ui.ts`) : même carte que les bars ; type, payant / gratuit / inconnu, **places « OSM » ou « ≈ estimées d'après la surface » ou « inconnu : celui-là garde son secret »**, PMR et hauteur maximale si OSM les donne, mention de la source et de la date du relevé OSM (`city.json` → `osmDate`) ; survol : nom du parking ; clic : après les ✦ et les épingles, avant le sol ;
+- `src/interaction.ts` : cible `parking`.
+
+**Vérifié :** `npm run data -- --offline`, `npm run build` ; Chrome avec carte graphique : aplats payant / gratuit lisibles (Parking de l'Europe entièrement orange), panneau cube P posé dans le parking, entrée cartoon du Château (partiellement cachée par les toits en vue libre), survol « 🅿️ Parking de l'Europe », clic → fiche (« 154 places », « dont 3 pour les personnes à mobilité réduite », source datée du relevé), 59 panneaux, 71 appels de rendu avec la couche (contre 68 sans : +3), aucune erreur ni avertissement console.
+
+**Non vérifié / limites :** les **tarifs** ne sont pas affichés (aucune valeur sourcée copiée de la BNLS ou de la Ville : à faire, avec date du relevé) ; fiches officielles (15), licences BNLS / Ville : pas encore ; la nuit avec les panneaux n'a pas été regardée en détail (lueur écrite) ; entrée cartoon : orientation par défaut (sud-est), pas d'après la rue ; taille des panneaux (`scale` 1,6) à juger à l'œil ; iPhone ; l'effacement des bâtiments en balade ne touche pas les panneaux ; Parking des Ducs (privé dans OSM, 112 places abonnés selon la BNLS) n'est plus affiché.
+
 ## Itération 72 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
 
 **Demande de Dasco :** commencer l'epic parkings (périmètre d'affichage validé : tous les aplats ; panneaux et voitures pour les grands et les nommés ; privés plus pâles ; petites poches hors export), dans une branche à part pour pouvoir tester. Cette itération : US001 (données) et US002 (vue stationnement).

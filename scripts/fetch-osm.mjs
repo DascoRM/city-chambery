@@ -526,6 +526,7 @@ const parkingData = buildParkings(raw.elements, {
 
 const city = {
   generatedAt: new Date().toISOString(),
+  osmDate: raw.osm3s?.timestamp_osm_base,
   attribution: ['© contributeurs OpenStreetMap (ODbL)', bd.matched && 'Hauteurs BD TOPO © IGN', terrain?.source === 'rgealti' && 'Relief RGE ALTI © IGN'].filter(Boolean).join(' · '),
   origin: { lat: lat0, lon: lon0 },
   bounds: { minX: r1(minX), minY: r1(minY), maxX: r1(maxX), maxY: r1(maxY) },
@@ -548,7 +549,7 @@ console.log(`  ${streets.labels.length} noms de rues sur ${streets.names} noms d
   const off = pk.filter((x) => x.kind !== 'street');
   const by = (k) => off.filter((x) => x.kind === k).length;
   console.log(`  ${pk.length} parkings exportés sur ${st.osm} dans OSM : ${off.length} hors voirie (${by('surface')} de surface, ${by('underground')} souterrains, ${by('multi-storey')} silos), ${st.street} de voirie ; ${st.merged} nœuds fusionnés, ${st.tinyDropped} petites poches écartées`);
-  console.log(`    hors voirie : ${off.filter((x) => x.name).length} nommés, ${off.filter((x) => x.capacity).length} avec capacité, ${off.filter((x) => x.est).length} capacités estimées (≈ aire / 28), ${off.filter((x) => x.fee !== undefined).length} avec tarif, ${off.filter((x) => x.access === 'private').length} privés (sans nom)`);
+  console.log(`    hors voirie : ${off.filter((x) => x.name).length} nommés, ${off.filter((x) => x.capacity).length} avec capacité, ${off.filter((x) => x.est).length} capacités estimées (≈ aire / 28), ${off.filter((x) => x.fee !== undefined).length} avec tarif, ${st.privateDropped} privés écartés`);
 }
 console.log(`  ${places.length} bars / cafés / restaurants, ${labels.length} étiquettes (${labels.map((l) => l.text).join(', ')})`);
 for (const [id, a] of Object.entries(anchors)) console.log(`  POI ${id.padEnd(16)} → ${a.osm} « ${a.osmName} »`);

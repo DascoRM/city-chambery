@@ -45,44 +45,27 @@ export function createTerrain(data: CityData): Terrain {
   return { heightAt, minUnder, hasRelief: true, grid: { x0, y0, step } };
 }
 
+/** Couleur d'un parking : payant (orange), gratuit (menthe), tarif inconnu (gris-lavande) ; la voirie est un décor plus pâle */
+export function parkingColor(p: Parking): string {
+  if (p.kind === 'street') return PALETTE.parking.street;
+  return p.fee === true ? PALETTE.parking.paid : p.fee === false ? PALETTE.parking.free : PALETTE.parking.unknown;
+}
+
 /**
- * Couche « Parkings » (EP006-US002) : aplats par type ; les souterrains ne sont pas peints (leur emprise est sous les
- * bâtiments ou les places) ; un parking dont on ne connaît pas le nombre de places est hachuré : l'inconnu se voit.
+ * Couche « Parkings » (EP006-US002) : aplats payant / gratuit / inconnu ; les souterrains ne sont pas peints (leur emprise
+ * est sous les bâtiments ou les places : ils ont leur panneau).
  */
-function paintParkings(ctx: CanvasRenderingContext2D, parkings: Parking[], X: (x: number) => number, Y: (y: number) => number, sx: number) {
-  const path = (p: Parking) => {
+function paintParkings(ctx: CanvasRenderingContext2D, parkings: Parking[], X: (x: number) => number, Y: (y: number) => number) {
+  for (const p of parkings) {
+    if (!p.outer || p.kind === 'underground') continue;
+    ctx.fillStyle = parkingColor(p);
     ctx.beginPath();
-    for (const ring of [p.outer!, ...(p.holes ?? [])]) {
+    for (const ring of [p.outer, ...(p.holes ?? [])]) {
       ring.forEach(([x, y], k) => (k ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))));
       ctx.closePath();
     }
-  };
-  const colorOf = (p: Parking) => (p.access === 'private' ? PALETTE.parking.private : PALETTE.parking[p.kind as 'surface' | 'multi-storey' | 'street']);
-  for (const p of parkings) {
-    if (!p.outer || p.kind === 'underground') continue;
-    ctx.fillStyle = colorOf(p);
-    path(p);
     ctx.fill('evenodd');
   }
-  // Hachures : parkings hors voirie sans capacité connue ni estimée
-  ctx.save();
-  ctx.strokeStyle = PALETTE.parking.hatch;
-  ctx.lineWidth = Math.max(1, sx * 0.35);
-  ctx.globalAlpha = 0.55;
-  for (const p of parkings) {
-    if (!p.outer || p.kind === 'underground' || p.kind === 'street' || p.capacity || p.est) continue;
-    ctx.save();
-    path(p);
-    ctx.clip('evenodd');
-    const xs = p.outer.map(([x]) => X(x)), ys = p.outer.map(([, y]) => Y(y));
-    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    const step = Math.max(3, sx * 1.6);
-    ctx.beginPath();
-    for (let o = x0 - (y1 - y0); o < x1; o += step) { ctx.moveTo(o, y1); ctx.lineTo(o + (y1 - y0), y0); }
-    ctx.stroke();
-    ctx.restore();
-  }
-  ctx.restore();
 }
 
 // ---------------------------------------------------------------------------
@@ -90,7 +73,7 @@ function paintParkings(ctx: CanvasRenderingContext2D, parkings: Parking[], X: (x
 // ---------------------------------------------------------------------------
 const SOIL_BOTTOM = -14;
 
-function paintGround(data: CityData, withParkings = false): THREE.CanvasTexture {
+function paintGround(data: CityData, mode: 'base' | 'parkings' | 'glow' = 'base'): THREE.CanvasTexture {
   const b = data.bounds;
   const W = b.maxX - b.minX, D = b.maxY - b.minY;
   const px = 2048;
@@ -100,8 +83,15 @@ function paintGround(data: CityData, withParkings = false): THREE.CanvasTexture 
   const ctx = cv.getContext('2d')!;
   const sx = cv.width / W, sy = cv.height / D;
   const X = (x: number) => (x - b.minX) * sx, Y = (y: number) => (b.maxY - y) * sy;
-  ctx.fillStyle = PALETTE.ground;
+  ctx.fillStyle = mode === 'glow' ? '#000' : PALETTE.ground;
   ctx.fillRect(0, 0, cv.width, cv.height);
+  if (mode === 'glow') {
+    // Lueur de nuit : seulement les parkings, sur fond noir
+    paintParkings(ctx, data.parkings ?? [], X, Y);
+    const t = new THREE.CanvasTexture(cv);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
   const fillPolys = (polys: Poly[], color: string) => {
     ctx.fillStyle = color;
     for (const p of polys) {
@@ -116,7 +106,7 @@ function paintGround(data: CityData, withParkings = false): THREE.CanvasTexture 
   fillPolys(data.areas.filter((a) => a.kind === 'green'), PALETTE.green);
   fillPolys(data.areas.filter((a) => a.kind === 'plaza'), PALETTE.plaza);
   fillPolys(data.water.filter((w): w is Extract<typeof w, { kind: 'area' }> => w.kind === 'area'), PALETTE.water);
-  if (withParkings) paintParkings(ctx, data.parkings ?? [], X, Y, sx);
+  if (mode === 'parkings') paintParkings(ctx, data.parkings ?? [], X, Y);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
@@ -164,11 +154,17 @@ export function buildGround(data: CityData, terrain: Terrain): THREE.Group {
   ground.receiveShadow = true;
   ground.name = 'terrain';
   // Couche « Parkings » : la texture avec les aplats n'est peinte qu'au premier affichage, puis on bascule (0 appel de rendu de plus)
-  let withParkings: THREE.CanvasTexture | null = null;
+  let withParkings: THREE.CanvasTexture | null = null, glow: THREE.CanvasTexture | null = null;
   ground.userData.setParkings = (on: boolean) => {
-    if (on && !withParkings) withParkings = paintGround(data, true);
+    if (on && !withParkings) { withParkings = paintGround(data, 'parkings'); glow = paintGround(data, 'glow'); }
     groundMat.map = on ? withParkings : base;
+    groundMat.emissiveMap = on ? glow : null;
+    groundMat.emissive.set(on ? '#ffffff' : '#000000');
+    groundMat.emissiveIntensity = 0;
+    groundMat.needsUpdate = true; // l'émissif change le programme (une fois)
   };
+  /** Les parkings ressortent la nuit : intensité de la lueur (0 le jour) */
+  ground.userData.setParkingGlow = (k: number) => { groundMat.emissiveIntensity = k; };
   g.add(ground);
 
   // Bords du socle : strates de terre qui suivent le profil du relief

@@ -44,4 +44,4 @@ Voir l'[epic](epic.md) : règles 1 à 12 (honnêteté des chiffres, priorité fi
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Fait en partie (itération 73) : panneaux, entrée cartoon, fiche OSM ; restent les tarifs et fiches officielles sourcés, licences BNLS / Ville
