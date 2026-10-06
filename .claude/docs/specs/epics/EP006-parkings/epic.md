@@ -1,6 +1,6 @@
 # Epic EP006 - Les parkings, en maquette
 
-**Statut : spec écrite le 03/10/2026, à valider par Dasco. Rien n'est codé.** Analyses des chercheurs : [données](../../../tasks/ep006-parkings-donnees-plan.md) · [idées](../../../tasks/ep006-parkings-concepts-plan.md) · [intégration et performance](../../../tasks/ep006-parkings-integration-plan.md).
+**Statut : spec écrite le 03/10/2026, relue par Dasco le 06/10 (réponses ci-dessous) ; maquette à faire, rien n'est codé.** Analyses des chercheurs : [données](../../../tasks/ep006-parkings-donnees-plan.md) · [idées](../../../tasks/ep006-parkings-concepts-plan.md) · [intégration et performance](../../../tasks/ep006-parkings-integration-plan.md).
 
 ## Résumé
 Montrer les places de stationnement de Chambéry dans le diorama **comme une maquette qui sourit, pas comme un annuaire** : une couche « 🅿️ Parkings » qui colore la ville, des petites voitures-jouets garées dans les parkings, des fiches sourcées au ton du jeu, des chiffres rigolos, et « où me garer pour aller à… » avec l'avatar de la balade.
@@ -50,7 +50,7 @@ Montrer les places de stationnement de Chambéry dans le diorama **comme une maq
 | [US002](US002-vue-stationnement.md) | Vue stationnement : couche « 🅿️ Parkings » et aplats colorés | High | 3 | US001 | 🔲 Todo |
 | [US003](US003-panneaux-et-fiche.md) | Panneaux « P » et fiche parking sourcée, au ton du jeu | High | 5 | US001, US002 | 🔲 Todo |
 | [US004](US004-marquages-de-places.md) | Marquages de places (décor) | Medium | 3 | US002 | 🔲 Todo |
-| [US005](US005-voitures-jouets.md) | Voitures-jouets garées, occupation simulée et étiquetée | Medium | 5 | US002, US004 | 🔲 Todo |
+| [US005](US005-voitures-jouets.md) | Voitures-jouets garées (décor, d'après la capacité) | Medium | 5 | US002, US004 | 🔲 Todo |
 | [US006](US006-parkings-en-chiffres.md) | Parkings en chiffres et quiz | Medium | 3 | US001, US003 | 🔲 Todo |
 | [US007](US007-ou-me-garer.md) | « Où me garer pour aller à… ? » avec l'avatar | Medium | 5 | US003, EP005 | 🔲 Todo |
 | [US008](US008-velos.md) | Vélos : supports et stations, couche à part | Low | 3 | US002 | 🔲 Todo |
@@ -73,16 +73,17 @@ Carte libre → bouton « 🅿️ Parkings » → la ville se colore : parkings 
 ## Règles métier de l'epic
 1. **Ne jamais inventer** (règle projet 1) : géométrie et noms d'OSM ; capacité et tarif viennent d'OSM, d'une fiche sourcée datée, ou d'une estimation **étiquetée « ≈ »** ; sinon « inconnu »
 2. **Priorité des valeurs : fiche > OSM > estimation** ; contradictions entre sources tranchées par fiche et notées
-3. **Estimation de capacité** : surface / 28 m² par place (±30 %, validée sur Roissard 138 contre 149), seulement pour les parkings de surface de plus de 300 m² ; **jamais** pour les souterrains ; multi-étages seulement avec les niveaux
-4. **Pas de temps réel.** Une occupation « vivante » est **simulée par l'heure et libellée « simulée »**
-5. **Tarifs** : seulement la gratuité des 30 premières minutes et le tarif d'une heure, avec la date du relevé et le lien vers l'exploitant ; pas de 24 h ni d'abonnement
-6. **Voirie** : décor (bandes de stationnement), sans nombre de places ni tarif
-7. **Piège du Château** : le polygone « Parking du Château » (10 104 m², 604 places) est le **souterrain** du même nom : à classer souterrain, jamais peint comme un parking de surface sur l'esplanade
-8. **Données** : script `scripts/` + `diorama.config.json` puis `npm run data -- --offline` (règle projet 2) ; jamais `city.json` à la main
-9. **Attributions** : ligne de licence « BNLS / Ville de Chambéry (ODbL) » dans le README et l'`attribution` si leurs valeurs sont copiées (règle projet 5)
-10. **Budget de rendu, mesuré par vue** : couche éteinte +0 ; allumée +1 en vue d'ensemble, +3 à +4 près des parkings, ≤ +5, ≤ +0,05 M de triangles, +0,15 s de chargement, pas plus de −3 images/s sur iPhone par rapport à la même vue sans la couche ; aucune ombre portée (taches)
-11. **Rien ne casse la balade** : les voitures ne sont pas des obstacles (elles s'effacent à l'approche de l'avatar) ; le déplacement libre de l'avatar traverse les parkings
-12. **Honnêteté** : « disposition illustrative » écrite là où les places sont tracées d'après la forme et non d'après un relevé
+3. **Estimation de capacité** : surface / 28 m² par place (±30 %, validée sur Roissard 138 contre 149), seulement pour les parkings de surface de plus de 300 m² ; **jamais** pour les souterrains ; multi-étages seulement avec les niveaux. **La surface en m² n'est jamais affichée** (Dasco : sans intérêt) : seul « ≈ N places » apparaît
+4. **Pas de temps réel, et pas d'occupation simulée** (décision de Dasco, 06/10) : les voitures-jouets sont un décor proportionnel à la capacité, jamais un taux de remplissage
+5. **Souterrains** : un **panneau cartoon low poly** à leur image (idée de Dasco, 06/10), à dessiner dans la maquette ; pas de radiographie dans cette epic
+6. **Tarifs** : seulement la gratuité des 30 premières minutes et le tarif d'une heure, avec la date du relevé et le lien vers l'exploitant ; pas de 24 h ni d'abonnement
+7. **Voirie** : décor (bandes de stationnement), sans nombre de places ni tarif
+8. **Piège du Château** : le polygone « Parking du Château » (10 104 m², 604 places) est le **souterrain** du même nom : à classer souterrain, jamais peint comme un parking de surface sur l'esplanade
+9. **Données** : script `scripts/` + `diorama.config.json` puis `npm run data -- --offline` (règle projet 2) ; jamais `city.json` à la main
+10. **Attributions** : ligne de licence « BNLS / Ville de Chambéry (ODbL) » dans le README et l'`attribution` si leurs valeurs sont copiées (règle projet 5)
+11. **Budget de rendu, mesuré par vue** : couche éteinte +0 ; allumée +1 en vue d'ensemble, +3 à +4 près des parkings, ≤ +5, ≤ +0,05 M de triangles, +0,15 s de chargement, pas plus de −3 images/s sur iPhone par rapport à la même vue sans la couche ; aucune ombre portée (taches)
+12. **Rien ne casse la balade** : les voitures ne sont pas des obstacles (elles s'effacent à l'approche de l'avatar) ; le déplacement libre de l'avatar traverse les parkings
+13. **Honnêteté** : « disposition illustrative » écrite là où les places sont tracées d'après la forme et non d'après un relevé
 
 ---
 
@@ -91,22 +92,16 @@ La couleur par type, la forme du panneau P, le ton des fiches, la voiture-jouet 
 
 ---
 
-## Questions ouvertes pour Dasco (proposition par défaut pour chacune)
-1. **Ressenti visé** : sourire d'abord, s'informer en passant. *Défaut : oui.*
-2. **Couche par défaut** : éteinte (aucun coût) ou allumée ? *Défaut : éteinte ; seuls les aplats au sol restent légers.*
-3. **Périmètre des véhicules** : voitures d'abord ; vélos ensuite ; motos, autopartage Citiz et bornes de recharge hors périmètre. *Défaut : oui.*
-4. **Fiches** : les 15 parkings documentés (12 de la BNLS + Ravet, Cassine Gare, le relais). *Défaut : oui.*
-5. **Capacités estimées « ≈ »** acceptables pour les parkings de surface > 300 m². *Défaut : oui.*
-6. **Tarifs** : seulement 30 min gratuites et 1 h, avec la date. *Défaut : oui.*
-7. **Voirie** en décor sans chiffres. *Défaut : oui.*
-8. **Temps réel** : aucun ; occupation simulée et étiquetée. *Défaut : oui ; quelles heures de pointe (centre-ville, gare, hôpital) ?*
-9. **Périmètre d'affichage** : tous les aplats (gratuit) ; panneaux et voitures pour les parkings ≥ 150 m² (≈ 165) et les nommés ; parkings privés (66) : plus pâles ou masqués ? *Défaut : plus pâles ; poches < 300 m² hors export.*
-10. **Voitures** : échelle 1,2, s'effacent à moins de 4 m de l'avatar. *Défaut : oui.*
-11. **Éléphants** : pas dans cette epic (le jeu vient d'être simplifié). *Défaut : oui.*
-12. **Souterrains** : panneaux P seulement dans cette epic ; la radiographie reste une option. *Défaut : oui.*
-13. **Licences** BNLS et Ville de Chambéry (ODbL) à ajouter, valeurs copiées dans les fiches (pas de téléchargement par le build). *Défaut : oui.*
+## Réponses de Dasco (06/10/2026) et points restants
+**Tranché :**
+- Véhicules : **voitures d'abord, vélos ensuite** ; motos, autopartage Citiz et bornes de recharge **hors périmètre**
+- **Temps réel : oublié** (pas possible pour l'instant) ; **pas d'occupation simulée ni d'heures de pointe**
+- Capacités estimées « ≈ » : oui, mais **on n'affiche jamais la taille (m²)**
+- **Souterrains : un panneau cartoon low poly** à leur image (pas de radiographie)
+- **Licences BNLS et Ville de Chambéry (ODbL)** ajoutées, valeurs copiées dans les fiches
+- Défauts validés par la relecture : ressenti « sourire d'abord », couche éteinte au départ, 15 fiches documentées, tarifs minimaux datés (30 min gratuites, 1 h), voirie en décor sans chiffres, éléphants hors epic
 
----
+**À préciser (question posée à Dasco) :** quels parkings reçoivent un panneau P et des voitures (les nommés et les grands ; les petits restent juste colorés au sol), et comment montrer les parkings privés (plus pâles ou masqués)
 
 ## Critères d'acceptation de l'epic
 - [ ] US001 à US009 livrées ; `npm run build` passe

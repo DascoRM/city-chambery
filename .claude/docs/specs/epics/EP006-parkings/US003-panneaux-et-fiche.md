@@ -10,7 +10,7 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** la couche allumée, **When** je regarde un parking nommé ou ≥ 150 m², **Then** un panneau « P » instancié (+1 appel) se lit de loin
+- [ ] **Given** la couche allumée, **When** je regarde un parking nommé ou ≥ 150 m², **Then** un panneau « P » instancié (+1 appel) se lit de loin ; les **souterrains ont un panneau cartoon low poly** à leur image (idée de Dasco)
 - [ ] **Given** un panneau, **When** je le touche, **Then** la fiche s'ouvre (carte des lieux) : type, places, tarif d'appel daté, source ; chaque chiffre porte « OSM », « ≈ estimé » (formule visible) ou « inconnu » assumé avec humour
 - [ ] **Given** les 15 parkings documentés, **When** j'ouvre leur fiche, **Then** les valeurs viennent de `src/content/parkings.json` (fiche > OSM > estimation), avec date du relevé et lien exploitant ; contradictions (Ravet 400 / 474, Ducs 64 / 112) tranchées et notées
 - [ ] **Given** les priorités de clic, **When** je touche un panneau, **Then** il passe après les ✦ et les épingles, avant le sol

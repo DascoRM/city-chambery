@@ -77,7 +77,8 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 
 ## Epic à venir : EP006 « Les parkings, en maquette » (spec écrite le 03/10/2026, **à valider par Dasco, pas commencée**)
 [Epic EP006](../../specs/epics/EP006-parkings/epic.md) · analyses : [données](../../tasks/ep006-parkings-donnees-plan.md), [idées](../../tasks/ep006-parkings-concepts-plan.md), [intégration](../../tasks/ep006-parkings-integration-plan.md). Couche « 🅿️ Parkings » (aplats, panneaux P, fiches sourcées), voitures-jouets, chiffres et quiz, « où me garer » avec l'avatar. 9 user stories, 35 points, 4 à 5,5 sessions pour le cœur ; **chaque chiffre étiqueté** (OSM / estimé / inconnu), pas de temps réel.
-- ⬜ Valider l'epic et ses 13 questions ouvertes, puis la maquette (design avant le code) — *Dasco*
+- ✅ *06/10* Relue par Dasco : véhicules, temps réel, estimations, souterrains, licences tranchés (voir l'epic)
+- ⬜ Préciser quels parkings reçoivent panneau et voitures, et le rendu des parkings privés ; puis la maquette (design avant le code) — *Dasco*
 - ⬜ Plus tard : souterrains en radiographie, éléphant qui cherche une place, chasse aux parkings avec anecdotes sourcées, maquette ouverte du Parking du Château
 
 ## Epic à venir : EP005 « Balade avec un avatar » (spec et plan écrits le 02/10/2026, **pas commencée**)

@@ -1,4 +1,4 @@
-# EP006 - US005 - Voitures-jouets garées
+# EP006 - US005 - Voitures-jouets garées (décor)
 
 ## User Story
 
@@ -12,7 +12,7 @@
 
 - [ ] **Given** la couche allumée, **When** je m'approche, **Then** un seul `InstancedMesh` de voitures-jouets (échelle 1,2) peuple les parkings dans un rayon de 150 m autour de la vue (110 m sur téléphone), ≈ 150 en moyenne, 450 au plus
 - [ ] **Given** la capacité connue ou estimée, **When** les voitures sont posées, **Then** leur nombre ne dépasse pas la capacité ; sans capacité, un damier vide
-- [ ] **Given** l'occupation, **When** l'heure change, **Then** elle varie (courbe par type) et est **libellée « simulée »**
+- [ ] **Given** une voiture-jouet, **When** je la regarde, **Then** elle est un décor proportionnel à la capacité (jamais un taux de remplissage) : pas d'occupation simulée, pas de variation selon l'heure
 - [ ] **Given** l'avatar, **When** il approche à moins de 4 m, **Then** les voitures proches s'effacent (grandissent / rétrécissent sur place) : jamais d'obstacle
 - [ ] **Given** la nuit, **When** je regarde, **Then** les voitures sont éclairées comme les passants, sans briller
 - [ ] **Given** l'iPhone 12 Pro, **When** la couche est allumée, **Then** pas plus de −3 images/s par rapport à la même vue
