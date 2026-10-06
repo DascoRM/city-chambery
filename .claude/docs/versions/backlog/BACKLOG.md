@@ -75,7 +75,7 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ Chargement lent : message qui rassure après quelques secondes (critère de l'US002 non fait)
 - ⬜ Lobby : vérifier `prefers-reduced-motion`, la visite hors ligne et JavaScript désactivé (implémentés, non essayés), puis un vrai téléphone
 
-## Epic à venir : EP006 « Les parkings, en maquette » (spec écrite le 03/10/2026, **à valider par Dasco, pas commencée**)
+## Epic à venir : EP006 « Les parkings, en maquette » (prototype sur `feat/EP006-parkings` : US001, US002, US003 en partie ; revues de code et QA faites le 06/10)
 [Epic EP006](../../specs/epics/EP006-parkings/epic.md) · analyses : [données](../../tasks/ep006-parkings-donnees-plan.md), [idées](../../tasks/ep006-parkings-concepts-plan.md), [intégration](../../tasks/ep006-parkings-integration-plan.md). Couche « 🅿️ Parkings » (aplats, panneaux P, fiches sourcées), voitures-jouets, chiffres et quiz, « où me garer » avec l'avatar. 9 user stories, 35 points, 4 à 5,5 sessions pour le cœur ; **chaque chiffre étiqueté** (OSM / estimé / inconnu), pas de temps réel.
 - ✅ *06/10* Relue par Dasco : véhicules, temps réel, estimations, souterrains, licences tranchés (voir l'epic)
 - ⬜ Préciser quels parkings reçoivent panneau et voitures, et le rendu des parkings privés ; puis la maquette (design avant le code) — *Dasco*

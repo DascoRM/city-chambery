@@ -388,6 +388,7 @@ src/
   content/nature.json      Arbres modélisés : mélanges et zones
   content/mascot.json      Mascotte : modèle, vitesse, voies autorisées, zones interdites
   content/avatar.json      Balade avec un avatar (EP005) : réglages du chemin (distance d'accrochage, dernier mètre, arrondi des angles)
+  content/parkings.json    Parkings (EP006) : textes des fiches et retouches manuelles (overrides, added), appliquées au chargement
   content/life.json        La ville vit : passants (nombre, rayon, taille, vitesse, pauses, voies, courbe horaire, groupes) et fenêtres allumées selon l'heure
   content/buildings.json   Auvents : pièces du pack, échelle, décalages, réglages de pose
   content/place-hours.json Horaires PROVISOIRES (fictifs) des bars, pubs et boîtes de nuit, pour l'éclairage de nuit
@@ -398,10 +399,9 @@ src/
   scene/geo.ts             Géométrie 2D commune + rayon depuis un point de l'écran (screenRay)
   scene/roads.ts           Voies piétonnes et hauteur des rubans de voies (partagées)
   scene/walkways.ts        Réseau des voies où l'on marche (éléphants, passants, avatar)
+  scene/parkings.ts        Panneaux « P » de la couche Parkings (EP006), posés au sol ou sur le toit (souterrains, silos)
+  scene/parking-edits.ts   Retouches manuelles des parkings (parkings.json), validées et appliquées au chargement
   scene/avatar.ts          Avatar de la balade (EP005) : silhouette des passants ×2, tache au sol, anneau d'arrivée, marche le long du chemin
-  scripts/lib/parkings.mjs Extraction des parkings OSM (EP006) : type, fusion des doublons, estimation « ≈ » de capacité
-  scene/parkings.ts        Panneaux « P » de la couche Parkings (EP006), posés au sol ou sur le toit pour les souterrains
-  scene/parking-edits.ts   Retouches manuelles des parkings (src/content/parkings.json : overrides, added), appliquées au chargement
   scene/cutaway.ts         Effacement des bâtiments et monuments qui masquent l'avatar (balade) : test caméra → avatar, texture de facteurs, tramage
   scene/avatar-path.ts     Chemin de l'avatar (EP005) : accrochage au réseau, A*, angles arrondis, dernier mètre
   scene/roofs.ts           Dessin des toits
@@ -409,6 +409,7 @@ src/
   scene/labels.ts          Noms des parcs et cours d'eau
   scene/street-names.ts    Noms de rues peints au sol (un maillage, une texture), visibles seulement en zoomant
   ui/lobby.ts              Lobby de démarrage : accueil posé sur la ville vivante (textes dans content/lobby.json)
+  ui/parking-card.ts       Contenu de la fiche d'un parking : chaque chiffre dit d'où il vient (OSM, estimé, inconnu)
   ui/loading.ts            Progression du chargement : écran initial de index.html, puis barre du lobby
   state/lobby.ts           Case « Ne plus afficher cet écran » (localStorage)
   scene/daynight.ts        Cycle jour/nuit

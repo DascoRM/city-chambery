@@ -70,6 +70,12 @@ export interface Parking {
   dupOf?: string[];
   /** Phrase de la fiche (retouche manuelle, source à citer) */
   note?: string;
+  /** Champs retouchés à la main (src/content/parkings.json) : la fiche ne les attribue plus à OpenStreetMap */
+  edited?: string[];
+  /** Parking ajouté à la main, absent d'OpenStreetMap */
+  added?: boolean;
+  /** Position imposée à la main : le panneau s'y pose, sans être ramené dans le contour */
+  posFixed?: boolean;
 }
 
 export interface CityData {

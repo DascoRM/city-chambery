@@ -210,7 +210,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
       <p class="pc-cat"><i></i>${esc(c.kind)}</p>
       <h3 class="pc-title">${esc(c.title)}</h3>
       <p class="pc-fee fee-${c.fee}"><b>${esc(feeLabel(c.fee))}</b></p>
-      ${c.lines.map((l) => `<p class="pc-line">${l}</p>`).join('')}
+      ${c.lines.map((l) => `<p class="pc-line">${esc(l.text)}${l.small ? ` <small>${esc(l.small)}</small>` : ''}</p>`).join('')}
       <p class="pc-src">${esc(c.source)}</p>`;
     lastStatus = '';
     placeCard.hidden = false;

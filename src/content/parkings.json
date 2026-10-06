@@ -20,6 +20,7 @@
     "estimatedNote": "estimé d'après la surface",
     "unknown": "Nombre de places inconnu : celui-là garde son secret"
   },
+  "access": { "subscribers": "Réservé aux abonnés", "customers": "Réservé aux clients" },
   "unnamed": "Parking sans nom",
   "sourceNote": "Source : OpenStreetMap, relevé du {date}. À vérifier sur place.",
   "tooltipHint": "touche pour la fiche"

@@ -125,8 +125,8 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
 .pc-cat i { width: 10px; height: 10px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--cat); display: inline-block; }
 .pc-title { font-family: Fraunces, Georgia, serif; font-size: 19px; line-height: 1.15; margin: 2px 22px 6px 0; }
 .pc-fee { margin: 2px 0 6px; font-size: 13px; }
-.pc-fee b { padding: 2px 9px; border-radius: 99px; color: #fff; background: var(--cat); text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25); }
-.pc-fee.fee-unknown b { color: var(--ink); text-shadow: none; }
+/* Texte sombre sur toutes les pastilles : contraste ≥ 4,9 (payant), 8,2 (gratuit), 6,6 (inconnu) */
+.pc-fee b { padding: 2px 9px; border-radius: 99px; color: #241821; background: var(--cat); }
 .pc-line small { color: var(--muted); }
 .pc-line { margin: 3px 0; font-size: 13px; line-height: 1.4; }
 .pc-src { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
@@ -157,7 +157,7 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
 .parking-legend[hidden] { display: none; }
 .parking-legend span { display: flex; align-items: center; gap: 8px; }
 .parking-legend i { width: 18px; height: 12px; border-radius: 3px; background: var(--c); border: 1px solid rgba(0, 0, 0, 0.15); }
-@media (max-width: 700px) { .parking-legend { bottom: 150px; } }
+@media (max-width: 700px) { .parking-legend { bottom: 168px; } }
 .recenter { position: absolute; z-index: 1; left: 50%; bottom: 96px; transform: translateX(-50%); padding: 10px 18px; font-size: 14px; cursor: pointer; border: 0; }
 .recenter[hidden] { display: none; }
 .recenter:hover { background: #fff; }

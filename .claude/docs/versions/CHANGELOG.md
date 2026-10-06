@@ -1,5 +1,23 @@
 # Journal des itérations
 
+## Itération 75 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
+
+**Demande de Dasco :** corriger les sept retours des revues de code et QA (rapports : `tasks/ep006-review-code.md` et `ep006-review-qa.md`).
+
+**Corrections :**
+1. **Silos enterrés** (`src/scene/parkings.ts`) : un panneau dont le point est sous un bâtiment (silos Ravet, La Falaise, souterrains, bâtiments du cadastre) se pose **sur son toit** ; la zone de clic est réduite au cube-panneau (rayon 3 m, du haut du poteau) : un clic sur la façade n'ouvre plus de fiche ; une position imposée à la main (`posFixed`) est respectée telle quelle ;
+2. **Le site ne plante plus** (`src/scene/parking-edits.ts`) : une retouche invalide (ajout sans identifiant, type ou position ; type inconnu ; position invalide ; identifiant inconnu ou déjà pris) est ignorée avec un avertissement dans la console ; la fiche garde des textes par défaut si `parkings.json` est vide ou incomplet ;
+3. **Entrées au bon parking** (`scripts/lib/parkings.mjs`) : une entrée ne se rattache plus qu'à un parking du même nom ou de **type compatible** (une entrée souterraine ne va plus à un parking de surface voisin) ; un parking que seules ses entrées font connaître devient un parking : **Parking Curial** (244 places, souterrain, payant, 2 entrées) apparaît ; un bâtiment du cadastre marqué parking prend le type de son entrée, et **n'a plus de capacité estimée** (fini le « ≈ 77 places, parking de surface » d'un bâtiment) ;
+4. **Tarif** : seules les valeurs OSM `yes` et `no` donnent payant / gratuit ; `interval`, `unknown`… restent « Tarif inconnu » ;
+5. **Retouches** : la fiche dit « Source : OpenStreetMap, relevé du …, et retouche manuelle (places, type, position) » ou « Parking ajouté à la main » ; la `note` est du texte (échappé : plus d'injection HTML) ; une retouche de capacité remplace l'estimation, un `kind` non-surface la supprime ;
+6. **Accès** : « Réservé aux abonnés » / « Réservé aux clients » affiché dans la fiche ;
+7. **Lisibilité** : « payant » devient framboise (`#ef4f78`, ne ressemble plus à l'orange des restaurants), « tarif inconnu » gris-ardoise (`#9aa0b4`), voirie lavande pâle ; texte sombre sur les pastilles (contrastes 4,9 payant, 8,2 gratuit, 6,6 inconnu, contre 2,0 à 2,4 avant) ; légende de la version mobile remontée (ne chevauche plus « Journal »).
+Documentation : README (fichiers parkings à leur place), en-tête de l'epic et BACKLOG remis à jour.
+
+**Vérifié :** `npm run data -- --offline`, `npm run build` ; test Node des retouches invalides (5 avertissements, aucun plantage, ajout valide pris en compte, note non interprétée) ; Chrome avec carte graphique : panneau de Ravet sur son toit, Curial et La Falaise présents, clic sous le panneau sans fiche, clic sur le panneau → fiche « Parking Ravet », 61 appels de rendu, 390 px : légende au-dessus des boutons, aucune erreur console.
+
+**Non fait / non vérifié :** les points « mineurs » restants du rapport (gemmes ✦ qui volent les clics des panneaux proches ; en balade, clic au sol à moins de 4 m d'un panneau ; identifiant dupliqué `relation/21157100` sur de la voirie ; 7 positions hors de leur polygone ; recouvrement de Cassine Gare et du silo `way/943464704` à contrôler sur OSM) ; mesure iPhone (à-coup du premier affichage, mémoire) ; nuit en balade ; Parking du Château : panneau au sol, pas sur un toit (aucun bâtiment sous ses entrées dans les données).
+
 ## Itération 74 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
 
 **Bugs signalés par Dasco :** (1) bars, cafés, restaurants et lieux d'histoire ne réagissaient plus au survol ni au clic ; (2) deux parkings à La Falaise alors qu'il n'y en a qu'un (payant) ; (3) pour un parking souterrain, ne pas ajouter de bâtiment sur un bâtiment : juste le panneau, posé au-dessus du bâtiment ; (4) peut-on gérer et ajuster les parkings dans le temps (où sont-ils, qu'est-ce que `parkings.json` ?).

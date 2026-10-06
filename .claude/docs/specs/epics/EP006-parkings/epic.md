@@ -1,6 +1,6 @@
 # Epic EP006 - Les parkings, en maquette
 
-**Statut : spec écrite le 03/10/2026, relue par Dasco le 06/10 (réponses ci-dessous) ; maquette à faire, rien n'est codé.** Analyses des chercheurs : [données](../../../tasks/ep006-parkings-donnees-plan.md) · [idées](../../../tasks/ep006-parkings-concepts-plan.md) · [intégration et performance](../../../tasks/ep006-parkings-integration-plan.md).
+**Statut (06/10/2026) : prototype en cours sur `feat/EP006-parkings` (US001, US002 faites ; US003 en partie). Spec relue par Dasco le 06/10 ; revues de code et QA faites ([code](../../../tasks/ep006-review-code.md), [QA](../../../tasks/ep006-review-qa.md)).** Analyses des chercheurs : [données](../../../tasks/ep006-parkings-donnees-plan.md) · [idées](../../../tasks/ep006-parkings-concepts-plan.md) · [intégration et performance](../../../tasks/ep006-parkings-integration-plan.md).
 
 ## Résumé
 Montrer les places de stationnement de Chambéry dans le diorama **comme une maquette qui sourit, pas comme un annuaire** : une couche « 🅿️ Parkings » qui colore la ville, des petites voitures-jouets garées dans les parkings, des fiches sourcées au ton du jeu, des chiffres rigolos, et « où me garer pour aller à… » avec l'avatar de la balade.

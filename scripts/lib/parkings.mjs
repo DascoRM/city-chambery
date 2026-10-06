@@ -27,6 +27,11 @@ function accessOf(t) {
   return 'unknown';
 }
 
+/** Tarif : seulement `yes` et `no` ; toute autre valeur (`interval`, `unknown`…) reste inconnue */
+const feeOf = (t) => (t.fee === 'yes' ? { fee: true } : t.fee === 'no' ? { fee: false } : {});
+/** Nom de base : sans le suffixe « - Entrée », « - Accès piétons » */
+const baseName = (h, s) => h.norm(String(s ?? '').split(' - ')[0]);
+
 const int = (v) => { const n = parseInt(String(v ?? ''), 10); return Number.isFinite(n) && n > 0 ? n : undefined; };
 
 /**
@@ -34,14 +39,14 @@ const int = (v) => { const n = parseInt(String(v ?? ''), 10); return Number.isFi
  * @param h { polygonsOf, clipPoly, area, project, rp, centroid, norm, inside(p) }
  */
 export function buildParkings(elements, h) {
-  const stats = { osm: 0, kept: 0, street: 0, merged: 0, privateDropped: 0, tinyDropped: 0, overlapDropped: 0 };
+  const stats = { osm: 0, kept: 0, street: 0, merged: 0, privateDropped: 0, tinyDropped: 0, overlapDropped: 0, fromEntrances: 0 };
   const polys = []; // { el, t, kind, access, rings, areaM2 }
   const nodes = []; // nœuds amenity=parking
   const entrances = [];
 
   for (const el of elements) {
     const t = el.tags ?? {};
-    if (t.amenity === 'parking_entrance' && el.type === 'node') { entrances.push(h.project(el.lat, el.lon)); continue; }
+    if (t.amenity === 'parking_entrance' && el.type === 'node') { entrances.push({ pos: h.project(el.lat, el.lon), t, id: el.id }); continue; }
     if (t.amenity !== 'parking') continue;
     stats.osm++;
     if (el.type === 'node') { nodes.push({ el, t, pos: h.project(el.lat, el.lon) }); continue; }
@@ -122,7 +127,7 @@ export function buildParkings(elements, h) {
       id: `${p.el.type}/${p.el.id}`,
       kind,
       access,
-      ...(tags.fee ? { fee: tags.fee === 'yes' } : {}),
+      ...feeOf(tags),
       ...(named && !isStreet ? { name: tags.name } : {}),
       ...(capacity && !isStreet ? { capacity } : {}),
       ...(int(tags['building:levels']) && kind === 'multi-storey' ? { levels: int(tags['building:levels']) } : {}),
@@ -133,7 +138,9 @@ export function buildParkings(elements, h) {
       pos: h.rp(h.centroid(p.c.outer)),
       areaM2: Math.round(p.areaM2),
     };
-    if (!capacity && kind === 'surface' && p.areaM2 > MIN_ESTIMATE_AREA) item.est = Math.round(p.areaM2 / SQM_PER_SPACE);
+    // Pas d'estimation pour un polygone qui est un bâtiment (cadastre) : sa surface n'est pas celle des places
+    if (p.t.building) item._building = true;
+    if (!capacity && kind === 'surface' && p.areaM2 > MIN_ESTIMATE_AREA && !p.t.building) item.est = Math.round(p.areaM2 / SQM_PER_SPACE);
     if (nodesOf.length) item.dupOf = nodesOf.map((n) => `node/${n.el.id}`);
     if (isStreet) stats.street++;
     out.push(item);
@@ -147,23 +154,57 @@ export function buildParkings(elements, h) {
     if (access === 'private') { stats.privateDropped++; continue; }
     out.push({
       id: `node/${n.el.id}`, kind, access,
-      ...(n.t.fee ? { fee: n.t.fee === 'yes' } : {}),
+      ...feeOf(n.t),
       ...(n.t.name ? { name: n.t.name } : {}),
       ...(capacity ? { capacity } : {}),
       pos: h.rp(n.pos),
     });
   }
-  // Entrées : rattachées au parking le plus proche à moins de 30 m
+  // Entrées : rattachées au parking du même nom, sinon au plus proche à moins de 30 m **de type compatible**
+  // (une entrée souterraine ne va pas à un parking de surface voisin) ; une entrée nommée qu'aucun parking ne
+  // réclame (Parking Curial : OSM ne le connaît que par ses entrées) devient un parking
+  const compatible = (it, e) => {
+    const k = e.t.parking;
+    if (!k) return it.kind === 'underground' || it.kind === 'multi-storey' || it._building;
+    return it.kind === k || it._building;
+  };
+  const lone = new Map(); // nom → entrées d'un parking connu seulement par elles
   for (const e of entrances) {
-    if (!h.inside(e)) continue;
+    if (!h.inside(e.pos)) continue;
+    const base = e.t.name ? baseName(h, e.t.name) : null;
     let best = null, bd = 30;
     for (const it of out) {
       if (it.kind === 'street') continue;
-      const d = it.outer ? near(e, it.outer) : Math.hypot(e[0] - it.pos[0], e[1] - it.pos[1]);
+      if (base && it.name && (baseName(h, it.name).includes(base) || base.includes(baseName(h, it.name)))) { best = it; bd = -1; break; }
+      if (!compatible(it, e)) continue;
+      const d = it.outer ? near(e.pos, it.outer) : Math.hypot(e.pos[0] - it.pos[0], e.pos[1] - it.pos[1]);
       if (d < bd) { bd = d; best = it; }
     }
-    if (best) (best.entrances ??= []).push(h.rp(e));
+    if (best) {
+      (best.entrances ??= []).push(h.rp(e.pos));
+      // Un bâtiment du cadastre marqué parking prend le type de son entrée (souterrain…)
+      if (best._building && e.t.parking && best.kind === 'surface') { best.kind = e.t.parking; delete best.est; }
+    } else if (base) (lone.get(base) ?? lone.set(base, []).get(base)).push(e);
   }
+  for (const [, es] of lone) {
+    const tags = Object.assign({}, ...es.map((e) => e.t));
+    if (!tags.capacity && !tags.fee) continue; // un nom seul ne fait pas un parking
+    const access = accessOf(tags);
+    if (access === 'private') { stats.privateDropped++; continue; }
+    const cx = es.reduce((a, e) => a + e.pos[0], 0) / es.length, cy = es.reduce((a, e) => a + e.pos[1], 0) / es.length;
+    const capacity = int(tags.capacity);
+    out.push({
+      id: `node/${es[0].id}`, kind: tags.parking === 'multi-storey' ? 'multi-storey' : 'underground', access,
+      ...feeOf(tags),
+      name: String(tags.name).split(' - ')[0],
+      ...(capacity ? { capacity } : {}),
+      ...(tags.maxheight && Number.isFinite(parseFloat(tags.maxheight)) ? { maxHeight: tags.maxheight } : {}),
+      pos: h.rp([cx, cy]),
+      entrances: es.map((e) => h.rp(e.pos)),
+    });
+    stats.fromEntrances++;
+  }
+  for (const it of out) delete it._building;
   stats.kept = out.length;
   return { parkings: out, stats };
 }

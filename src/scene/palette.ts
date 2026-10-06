@@ -10,7 +10,7 @@ export const PALETTE = {
   bank: '#b9ad95',
   bridge: '#e4d8c3',
   /** Couche « Parkings » (EP006) : payant / gratuit / tarif inconnu ; la voirie, plus pâle, est un décor */
-  parking: { paid: '#ff8a3d', free: '#3ec9a7', unknown: '#b9aed6', street: '#cdc2e8' },
+  parking: { paid: '#ef4f78', free: '#3ec9a7', unknown: '#9aa0b4', street: '#d8cdf0' },
   soilTop: '#8b6a4f',
   soilBottom: '#6c513f',
   plinth: '#3b2f29',

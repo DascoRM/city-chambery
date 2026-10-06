@@ -111,8 +111,9 @@ export function buildParkingSigns(cfg: ParkingSignsConfig, data: CityData, heigh
   const material = signMaterial(night);
   const hits: THREE.Object3D[] = [];
   const anchors = new Map<string, THREE.Vector3>();
-  const hitGeo = new THREE.CylinderGeometry(5, 5, 14, 6);
-  hitGeo.translate(0, 7, 0);
+  // Zone de clic ajustée au cube-panneau (pas le poteau) : elle ne déborde pas sur la façade ni sur ce qui l'entoure
+  const hitGeo = new THREE.CylinderGeometry(3, 3, 7, 6);
+  hitGeo.translate(0, 6.5, 0);
 
   // Bâtiment qui recouvre un point (un parking souterrain est sous un bâtiment : le panneau se pose sur son toit)
   const buildingAt = (pt: Pt) => data.buildings.find((b) => {
@@ -120,17 +121,21 @@ export function buildParkingSigns(cfg: ParkingSignsConfig, data: CityData, heigh
     for (const [x, y] of b.outer) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
     return pt[0] >= x0 && pt[0] <= x1 && pt[1] >= y0 && pt[1] <= y1 && pointInRing(pt[0], pt[1], b.outer);
   });
-  /** Où poser le panneau : au sol dans le parking, ou sur le toit du bâtiment au-dessus d'un souterrain */
+  /**
+   * Où poser le panneau : sur le toit du bâtiment qui recouvre le point (souterrains, silos, bâtiments du cadastre),
+   * sinon au sol dans le parking. Une position imposée à la main (`posFixed`) est respectée telle quelle.
+   */
+  const roofOf = (at: Pt): number | null => {
+    const b = buildingAt(at);
+    return b ? minUnder(b.outer) + b.h + 4 : null; // gouttière + marge pour le faîtage
+  };
   const place = (p: Parking): { at: Pt; y: number } => {
-    if (p.kind === 'underground') {
-      for (const at of [...(p.entrances ?? []), p.pos]) {
-        const b = buildingAt(at);
-        if (b) return { at, y: minUnder(b.outer) + b.h + 4 }; // toit : gouttière + marge pour le faîtage
-      }
-      const at = p.entrances?.[0] ?? p.pos;
-      return { at, y: heightAt(at[0], at[1]) };
+    const spots: Pt[] = p.posFixed ? [p.pos] : p.kind === 'underground' ? [...(p.entrances ?? []), p.pos] : [insidePoint(p)];
+    for (const at of spots) {
+      const y = roofOf(at);
+      if (y !== null) return { at, y };
     }
-    const at = insidePoint(p);
+    const at = spots[0];
     return { at, y: heightAt(at[0], at[1]) };
   };
 
