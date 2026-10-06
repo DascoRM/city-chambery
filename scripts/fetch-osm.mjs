@@ -255,23 +255,32 @@ const trees = [];
 const places = [];
 let estimatedHeights = 0;
 
+const deferredParts = [];
+function addBuilding(el, t) {
+  for (const poly of polygonsOf(el)) {
+    const c = clipPoly(poly);
+    if (!c) continue;
+    const { h, estimated } = buildingHeight(t, el.id, Math.abs(area(c.outer)));
+    if (estimated) { estimatedHeights++; estimatedIds.add(el.id); }
+    const minH = num(t.min_height) ?? 0;
+    const roofH = num(t['roof:height']);
+    buildings.push({
+      id: el.id, kind: t.building, h: r1(h), minH: r1(minH), name: t.name, ...c,
+      ...(t['roof:shape'] ? { roof: t['roof:shape'] } : {}),
+      ...(roofH ? { roofH } : {}),
+    });
+  }
+}
+
 for (const el of raw.elements) {
   const t = el.tags ?? {};
 
-  if (t.building && t.building !== 'no' && !t['building:part'] && t.layer !== '-1' && t.location !== 'underground') {
-    for (const poly of polygonsOf(el)) {
-      const c = clipPoly(poly);
-      if (!c) continue;
-      const { h, estimated } = buildingHeight(t, el.id, Math.abs(area(c.outer)));
-      if (estimated) { estimatedHeights++; estimatedIds.add(el.id); }
-      const minH = num(t.min_height) ?? 0;
-      const roofH = num(t['roof:height']);
-      buildings.push({
-        id: el.id, kind: t.building, h: r1(h), minH: r1(minH), name: t.name, ...c,
-        ...(t['roof:shape'] ? { roof: t['roof:shape'] } : {}),
-        ...(roofH ? { roofH } : {}),
-      });
-    }
+  if (t.building && t.building !== 'no' && t.layer !== '-1' && t.location !== 'underground') {
+    // `building:part=no` est un bâtiment ordinaire (le Musée des Beaux-Arts, l'Hôtel des douanes) ; `building:part=yes` est
+    // une partie de bâtiment : on la garde de côté, et on ne la dessine que si aucun bâtiment ordinaire ne la recouvre
+    // (le Palais de justice n'existe dans OSM que comme « partie »)
+    if (t['building:part'] && t['building:part'] !== 'no') deferredParts.push(el);
+    else addBuilding(el, t);
     continue;
   }
 
@@ -333,6 +342,25 @@ for (const el of raw.elements) {
     }
   }
 }
+
+// Parties de bâtiment (`building:part=yes`) : dessinées seulement quand aucun bâtiment ordinaire ne les recouvre
+// (le Palais de justice n'existe dans OSM que sous cette forme) ; les socles et marches (moins de 2 m) sont ignorés
+let drawnParts = 0;
+for (const el of deferredParts) {
+  const t = el.tags;
+  if ((num(t.height) ?? 99) < 2) continue;
+  for (const poly of polygonsOf(el)) {
+    const c = clipPoly(poly);
+    if (!c) continue;
+    const mid = centroid(c.outer);
+    if (buildings.some((b) => pointInRing(mid[0], mid[1], b.outer))) continue;
+    const before = buildings.length;
+    addBuilding({ ...el, geometry: el.geometry, members: el.members }, t);
+    drawnParts += buildings.length - before;
+    break;
+  }
+}
+if (drawnParts) console.log(`  ${drawnParts} parties de bâtiment dessinées (aucun bâtiment ordinaire dessus)`);
 
 // ---------------------------------------------------------------------------
 // 4 ter. Hauteurs réelles IGN BD TOPO (remplacent les hauteurs OSM ou estimées)
