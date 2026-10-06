@@ -9,6 +9,8 @@ export const PALETTE = {
   waterDeep: '#3f86b5',
   bank: '#b9ad95',
   bridge: '#e4d8c3',
+  /** Couche « Parkings » (EP006) : lavande, pour ne se confondre ni avec l'eau, ni avec les espaces verts */
+  parking: { surface: '#b3a3df', 'multi-storey': '#8f7bc7', street: '#d3c8ea', private: '#dedae8', hatch: '#6f5fa8' },
   soilTop: '#8b6a4f',
   soilBottom: '#6c513f',
   plinth: '#3b2f29',

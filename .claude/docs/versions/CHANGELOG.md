@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 72 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
+
+**Demande de Dasco :** commencer l'epic parkings (périmètre d'affichage validé : tous les aplats ; panneaux et voitures pour les grands et les nommés ; privés plus pâles ; petites poches hors export), dans une branche à part pour pouvoir tester. Cette itération : US001 (données) et US002 (vue stationnement).
+
+**Changements :**
+- `scripts/lib/parkings.mjs` (nouveau), `scripts/fetch-osm.mjs` : extraction des parkings OSM dans `city.json` (`parkings`) : type (souterrain, silo, surface, voirie ; un `level` ou `layer` négatif = souterrain), accès, tarif, nom, capacité, niveaux, hauteur maximale, contour (mesuré avant rognage), entrées rattachées à moins de 30 m ; **doublons fusionnés** (nœud + polygone du Château et du Palais de Justice : le polygone du Château, sans type dans OSM, prend « souterrain » de son nœud) ; capacité **estimée** (`est` = surface / 28 m²) seulement pour les parkings de surface sans capacité de plus de 300 m², jamais mêlée à `capacity` ; poches de moins de 300 m² écartées sauf nommées ou à capacité ; parkings privés gardés mais **sans nom** ; `src/types.ts` : `Parking` ;
+- `src/scene/terrain.ts`, `src/scene/palette.ts` : couche « Parkings » **peinte dans la texture du sol** (lavande : surface, silo, voirie plus pâle, privé gris-lavande ; souterrains non peints ; hachures quand le nombre de places est inconnu) ; la texture n'est peinte qu'au premier affichage, puis on bascule : **0 appel de rendu de plus** ;
+- `src/ui/ui.ts`, `src/style.css`, `src/main.ts` : bouton « 🅿️ Parkings » (visible si les données y sont), légende, message au premier affichage (« 101 parkings repérés, dont 17 qui avouent leur nombre de places ») ; message adapté à la largeur du téléphone.
+
+**Mesuré (`npm run data -- --offline`) :** 197 parkings exportés sur 412 dans OSM : 101 hors voirie (88 de surface, 7 souterrains, 6 silos) et 96 de voirie ; 2 nœuds fusionnés, 213 petites poches écartées ; hors voirie : 18 nommés, 17 avec capacité, 82 capacités estimées, 31 avec tarif, 42 privés ; `city.json` : 1 442 Ko → 1 452 Ko (+10 Ko) ; les autres clés de `city.json` sont inchangées.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique : le bouton colore les aplats en vue d'ensemble et de près (bandes de voirie le long de la Leysse), la légende s'affiche, les appels de rendu sont identiques avec et sans la couche (60 et 60 en vue rapprochée), aucune erreur ni avertissement console ; 390 px : bouton et légende visibles.
+
+**Non vérifié / limites :** ressenti des couleurs (lavande à valider) ; hachures vues de loin ; la bascule peint 2 048 px au premier clic (≈ 0,1 s sur Mac, non mesuré sur iPhone) ; nuit et hiver ; le panneau « P » et la fiche (US003), cartoon des souterrains, voitures-jouets (US005) pas encore faits ; les valeurs BNLS / Ville ne sont pas encore recopiées (US003) donc pas de licence à ajouter pour l'instant ; Parking des Ducs (64 places, privé dans OSM) et hôpital (260, privé) sont affichés sans nom, à trancher par fiche.
+
 ## Itération 71 — 03/10/2026 (branche `fix/EP005-deplacement-libre`, epic EP005)
 
 **Retour de Dasco :** la direction est sensible au niveau des rues : on ne peut pas couper à travers champs, et à cause des petits recoins l'avatar « se perd » avec le point and click (il va se poser à côté du point visé, parfois de l'autre côté d'un mur). Demande : regarder ce genre de soucis.

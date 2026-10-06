@@ -223,6 +223,7 @@ async function main() {
     console.warn('[auvents] non chargés', e);
   }
   await loading.set(97, 'interface');
+  let parkingsOn = false;
   let discovered = loadDiscovered();
   let placeIdx: number | null = null; // fiche de lieu ouverte
   // Modèle de la mascotte sous licence CC BY 3.0 : crédit obligatoire, affiché avec les autres
@@ -239,6 +240,16 @@ async function main() {
     onCompass: () => stage.resetNorth(),
     onLobby: () => lobby.open(),
     onBalade: () => balade?.toggle(),
+    onParkings: () => {
+      parkingsOn = !parkingsOn;
+      (city.group.getObjectByName('terrain')?.userData.setParkings as ((on: boolean) => void) | undefined)?.(parkingsOn);
+      ui.setParkings(parkingsOn);
+      if (parkingsOn) {
+        const off = (data.parkings ?? []).filter((p) => p.kind !== 'street');
+        const known = off.filter((p) => p.capacity).length;
+        ui.flash(`🅿️ ${off.length} parkings repérés, dont ${known} qui avouent leur nombre de places`);
+      }
+    },
     onRecenter: () => balade?.recenter(),
     onHour: (h) => clock.setHour(h),
     onPlay: (p) => clock.setPlaying(p),
@@ -257,6 +268,7 @@ async function main() {
     cutaway = createCutaway(avatarContent.cutaway as CutawayConfig, data, city.fade, terrain.minUnder, modelsRoot, hidden, camera, (out) => avatar!.aim(out));
     balade = createBalade({ camera: avatarContent.camera } as BaladeConfig, stage, avatar, renderer.domElement, data.anchors.elephants?.pos ?? [0, 0], { ...ui, setCutaway: (on) => cutaway?.setActive(on) });
   }
+  if (data.parkings?.length) ui.showParkingsButton();
   // Mode hors-ligne (service worker, production uniquement)
   setupPwa(ui.flash);
   // Cycle jour/nuit : vraie course du soleil pour la date et l'heure de l'horloge

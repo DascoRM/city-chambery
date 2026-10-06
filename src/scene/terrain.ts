@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { CityData, Poly, Pt } from '../types';
+import type { CityData, Parking, Poly, Pt } from '../types';
 import { PALETTE } from './palette';
 
 /**
@@ -45,12 +45,52 @@ export function createTerrain(data: CityData): Terrain {
   return { heightAt, minUnder, hasRelief: true, grid: { x0, y0, step } };
 }
 
+/**
+ * Couche « Parkings » (EP006-US002) : aplats par type ; les souterrains ne sont pas peints (leur emprise est sous les
+ * bâtiments ou les places) ; un parking dont on ne connaît pas le nombre de places est hachuré : l'inconnu se voit.
+ */
+function paintParkings(ctx: CanvasRenderingContext2D, parkings: Parking[], X: (x: number) => number, Y: (y: number) => number, sx: number) {
+  const path = (p: Parking) => {
+    ctx.beginPath();
+    for (const ring of [p.outer!, ...(p.holes ?? [])]) {
+      ring.forEach(([x, y], k) => (k ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y))));
+      ctx.closePath();
+    }
+  };
+  const colorOf = (p: Parking) => (p.access === 'private' ? PALETTE.parking.private : PALETTE.parking[p.kind as 'surface' | 'multi-storey' | 'street']);
+  for (const p of parkings) {
+    if (!p.outer || p.kind === 'underground') continue;
+    ctx.fillStyle = colorOf(p);
+    path(p);
+    ctx.fill('evenodd');
+  }
+  // Hachures : parkings hors voirie sans capacité connue ni estimée
+  ctx.save();
+  ctx.strokeStyle = PALETTE.parking.hatch;
+  ctx.lineWidth = Math.max(1, sx * 0.35);
+  ctx.globalAlpha = 0.55;
+  for (const p of parkings) {
+    if (!p.outer || p.kind === 'underground' || p.kind === 'street' || p.capacity || p.est) continue;
+    ctx.save();
+    path(p);
+    ctx.clip('evenodd');
+    const xs = p.outer.map(([x]) => X(x)), ys = p.outer.map(([, y]) => Y(y));
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const step = Math.max(3, sx * 1.6);
+    ctx.beginPath();
+    for (let o = x0 - (y1 - y0); o < x1; o += step) { ctx.moveTo(o, y1); ctx.lineTo(o + (y1 - y0), y0); }
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 // ---------------------------------------------------------------------------
 // Maillage du sol (relief) + texture peinte + bords du socle
 // ---------------------------------------------------------------------------
 const SOIL_BOTTOM = -14;
 
-function paintGround(data: CityData): THREE.CanvasTexture {
+function paintGround(data: CityData, withParkings = false): THREE.CanvasTexture {
   const b = data.bounds;
   const W = b.maxX - b.minX, D = b.maxY - b.minY;
   const px = 2048;
@@ -76,6 +116,7 @@ function paintGround(data: CityData): THREE.CanvasTexture {
   fillPolys(data.areas.filter((a) => a.kind === 'green'), PALETTE.green);
   fillPolys(data.areas.filter((a) => a.kind === 'plaza'), PALETTE.plaza);
   fillPolys(data.water.filter((w): w is Extract<typeof w, { kind: 'area' }> => w.kind === 'area'), PALETTE.water);
+  if (withParkings) paintParkings(ctx, data.parkings ?? [], X, Y, sx);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 8;
@@ -117,9 +158,17 @@ export function buildGround(data: CityData, terrain: Terrain): THREE.Group {
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   geo.setIndex(idx);
   geo.computeVertexNormals();
-  const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: paintGround(data), roughness: 1 }));
+  const base = paintGround(data);
+  const groundMat = new THREE.MeshStandardMaterial({ map: base, roughness: 1 });
+  const ground = new THREE.Mesh(geo, groundMat);
   ground.receiveShadow = true;
   ground.name = 'terrain';
+  // Couche « Parkings » : la texture avec les aplats n'est peinte qu'au premier affichage, puis on bascule (0 appel de rendu de plus)
+  let withParkings: THREE.CanvasTexture | null = null;
+  ground.userData.setParkings = (on: boolean) => {
+    if (on && !withParkings) withParkings = paintGround(data, true);
+    groundMat.map = on ? withParkings : base;
+  };
   g.add(ground);
 
   // Bords du socle : strates de terre qui suivent le profil du relief

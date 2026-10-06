@@ -44,4 +44,4 @@ Voir l'[epic](epic.md) : règles 1 à 12 (honnêteté des chiffres, priorité fi
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Fait (itération 72), à valider par Dasco

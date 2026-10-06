@@ -399,6 +399,7 @@ src/
   scene/roads.ts           Voies piétonnes et hauteur des rubans de voies (partagées)
   scene/walkways.ts        Réseau des voies où l'on marche (éléphants, passants, avatar)
   scene/avatar.ts          Avatar de la balade (EP005) : silhouette des passants ×2, tache au sol, anneau d'arrivée, marche le long du chemin
+  scripts/lib/parkings.mjs Extraction des parkings OSM (EP006) : type, fusion des doublons, estimation « ≈ » de capacité
   scene/cutaway.ts         Effacement des bâtiments et monuments qui masquent l'avatar (balade) : test caméra → avatar, texture de facteurs, tramage
   scene/avatar-path.ts     Chemin de l'avatar (EP005) : accrochage au réseau, A*, angles arrondis, dernier mètre
   scene/roofs.ts           Dessin des toits
