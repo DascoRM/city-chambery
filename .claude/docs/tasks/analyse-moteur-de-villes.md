@@ -62,6 +62,23 @@ Deux modèles, à choisir (question 1 de la section 7) :
 - **Un site par ville** (une variable `CITY=<slug>` au build, un déploiement Vercel par ville) : le plus simple, aucun surcoût de poids, la marque et les textes sont propres à chaque site. C'est ce que fait déjà le projet pour Chambéry.
 - **Un seul site, plusieurs villes** (`/chambery`, `/annecy`… ou `?city=`) avec une page d'accueil de choix : `city.json` chargé à la demande (1,4 Mo par ville), service worker et cache par ville, un « hub » (déjà cité dans l'epic du lobby).
 
+### 3.4 Générateur de projet et export (précisé le 06/10 avec Dasco)
+Question posée : plutôt que d'écrire des commits dans des JSON, **un script préalable qui lance toutes les manipulations et génère un nouveau projet** ? C'est la bonne forme pour créer une ville ; les deux outils ne servent pas au même moment :
+- **Le générateur (script)** crée une ville : questions → données → un projet qui s'ouvre. Il écrit des fichiers (JSON, `city.json`) puis s'arrête. **À faire d'abord.**
+- **L'administration (CMS ou page)** sert ensuite à **corriger** une ville existante (analyse 3). Elle édite les mêmes fichiers, en Git.
+Pour que le générateur produise un projet **autonome** (front et, si besoin, back-end) sans copier le moteur à chaque ville (les copies divergeraient à chaque correction) :
+```
+packages/engine/    le moteur : rendu, scène, balade, jeux, interface (version unique)
+cities/<slug>/      config, contenu, données, retouches de la ville
+apps/<slug>/        (généré) point d'entrée de la ville : index.html + main court qui charge le moteur + sa config
+server/             (généré, si activé) modèle de back-end : schéma de base de données, règles d'accès, variables d'environnement
+scripts/create-city   le générateur ; scripts/export-city <slug> : produit le dossier à déployer
+```
+- **Export front** : `vite build` avec `CITY=<slug>` → un dossier statique (`dist/`) à déployer (Vercel, Pi/Coolify…), avec ses données, son manifest, son service worker.
+- **Export back-end** (seulement si la ville active les comptes et la progression) : fichiers modèles pour le service retenu (migrations de base de données, règles d'accès, fichier d'exemple des variables) ; le moteur reste le même, la ville choisit « avec ou sans comptes » dans sa config.
+- **Deux sorties possibles** pour le générateur : (a) une **nouvelle ville dans le même dépôt** (le plus simple) ; (b) un **dépôt séparé** qui dépend du moteur publié comme paquet (chaque ville évolue seule, mais il faut publier et mettre à jour le moteur). *Recommandation : (a) d'abord, (b) quand une ville appartient à quelqu'un d'autre.*
+Coût ajouté à l'estimation : passage en dossiers `packages/engine` + `cities/*` : +1 à 1,5 session dans J0 ; générateur d'export front : +1 ; modèle de back-end : +1 à 1,5 (après l'analyse 3).
+
 ## 4. Les vrais obstacles
 
 ### 4.1 Qualité d'OpenStreetMap, variable d'une ville à l'autre
@@ -103,7 +120,8 @@ Le jeu des éléphants pourrait devenir un **jeu de mascotte paramétrable** (an
 | J4 · Retouches | `overrides.json` généralisé (bâtiments, rues, lieux, parkings), outil de placement en production protégée | 1,5 |
 | J5 · Contenu | Candidats de lieux depuis Wikidata/OSM, fiches à compléter, mode « sans fiches », lobby générique | 1,5 |
 | J6 · Plusieurs villes | Un déploiement par ville (simple) ou un hub (plus long), cache par ville | 1 à 2 |
-Total : **10 à 14 sessions**. **Une deuxième ville française de bout en bout : environ 5 à 7 sessions** (J0 à J2).
+| J7 · Export | `export-city` : dossier statique par ville ; modèle de back-end optionnel (voir 3.4) | 2 à 2,5 |
+Total : **12 à 17 sessions** avec l'export (10 à 14 sans). **Une deuxième ville française de bout en bout : environ 5 à 7 sessions** (J0 à J2).
 
 ## 7. Questions pour Dasco (proposition par défaut)
 

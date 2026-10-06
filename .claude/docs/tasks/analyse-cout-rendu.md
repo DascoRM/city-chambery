@@ -61,6 +61,9 @@ La branche **`exp/cout-rendu`** (poussée, **ne pas fusionner**) ajoute un inter
 4. **Le meilleur gain de performance n'est pas un shader** : fusionner les monuments (2 406 → environ 700 appels en vue d'ensemble) libère plus de marge que n'importe quel réglage de pixels.
 5. **Ne pas faire** : SSAO, ombres dynamiques, réflexions temps réel, sol 4 096 px sur mobile.
 
+## 6 bis. Retour de Dasco sur l'iPhone (06/10/2026)
+« Je ne dépasse pas les 60 images par seconde » : c'est **la fréquence de l'écran** (60 Hz), pas une limite du rendu : on ne peut pas lire une marge au-delà. Pour juger le coût d'une variante, regarder plutôt la **« pire image » en millisecondes** du compteur `?debug` (au-dessus de 16,7 ms, on perd des images). Il a senti que « quelque chose change à l'écran » : il **voyait les toits mais pas la texture**. Cohérent avec les mesures : le **bruit de surface (`fbm`)** est visible sur les toits et les murs ; la **texture de sol ×4 (`tex4k`) ne se voit pas** sur un téléphone (à ce zoom, 2 048 px dépassent déjà ce que l'écran affiche) : elle ne vaut donc pas ses +48 Mo de mémoire. Conclusion : **abandonner `tex4k` sur mobile** ; garder `fbm` comme piste de « grain des matériaux » (à doser, il est visible).
+
 ## 7. Limites de cette analyse
 Mesures sur un seul Mac (GPU rapide), une seule exécution par variante, pas d'iPhone ; coûts du tableau 4 estimés ; la mémoire des textures (16 Mo pour le sol actuel, 21 Mo avec les niveaux de détail) est calculée, pas mesurée sur un téléphone.
 
