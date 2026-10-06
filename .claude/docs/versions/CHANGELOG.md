@@ -1,5 +1,26 @@
 # Journal des itérations
 
+## Itération 76 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
+
+**Retours de Dasco :** le panneau de La Falaise et celui du Parking Palais de Justice flottent dans le vide (pas posés sur le toit) ; deux « parking sans nom » (rue du Corbelet, montée du Covet) posent le même genre de problème ; chercher ce type de soucis, sans doute liés au nivellement.
+
+**Diagnostic (audit de tous les panneaux : un rayon vertical lancé sur la scène, écart entre le pied du panneau et la surface dessous) :** 10 panneaux sur 59 à plus de 0,6 m de la surface. Causes trouvées :
+- **marge de toit à l'aveugle** : le panneau était posé à « hauteur OSM du bâtiment + 4 m » : 4 m dans le vide sur un toit plat (Palais de Justice : une toiture de 3,5 m ; Falaise, Hôtel de ville : 1,4 à 1,7 m d'écart) ;
+- **toit en pente** : posé au faîtage, le panneau flottait de 8,4 m au-dessus du pan sous lui (parking de surface `way/1490571672`) ;
+- **parking de surface sous un abri** : le point choisi tombait sur le toit d'un petit bâtiment (rue du Corbelet : 4,9 m de haut, + 4 m de marge) ;
+- **cour intérieure** : le panneau du silo Ravet était posé sur le toit d'un bâtiment à un endroit où il n'y a pas de toit (entrée en bord de façade) : 31 m au-dessus du sol visible ;
+- les 5 autres écarts négatifs sont des arbres au-dessus du panneau (pas des défauts).
+
+**Corrections** (`src/scene/city.ts`, `src/scene/parkings.ts`) :
+- l'altitude du toit est **mesurée sur le maillage affiché** (`roofAt` : le point le plus haut des triangles du bâtiment à la verticale du panneau), plus de marge au jugé ; pour un bâtiment remplacé par un monument (absent du maillage), estimation hauteur + 2 m ;
+- **le poteau s'enfonce de 4 m** sous le point : il ne flotte plus sur un toit en pente ni sur un sol incliné ;
+- les bâtiments sont testés **cour intérieure exclue**, et tous ceux qui se superposent comptent (le plus haut gagne) ;
+- un parking de surface se pose **hors des bâtiments**, sinon sur un toit ; un silo : sur le centre de son toit (pas sur une entrée) ; un souterrain : entrée, centre, puis tout point de son contour qui a un toit.
+
+**Vérifié :** `npm run build` ; audit dans Chrome avec GPU : 59 panneaux, **plus aucun écart de plus de 0,6 m** hors les 4 cas d'arbres au-dessus du panneau (avant : 10 dont 6 réels) ; captures de La Falaise, du Palais de Justice, du Corbelet et du Covet : panneau posé ; aucune erreur console.
+
+**Non vérifié :** le temps ajouté au chargement par les mesures de toit (≈ 15 panneaux, estimé à moins de 0,1 s) ; le « nivellement » du sol lui-même (les aplats peints suivent le relief de 10 m de pas ; les parkings très en pente, comme montée du Covet, peuvent paraître déformés) ; les panneaux d'un parking sans nom restent nombreux (40 sur 58).
+
 ## Itération 75 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
 
 **Demande de Dasco :** corriger les sept retours des revues de code et QA (rapports : `tasks/ep006-review-code.md` et `ep006-review-qa.md`).

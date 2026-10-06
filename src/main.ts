@@ -231,7 +231,7 @@ async function main() {
   let parkingsOn = false;
   let parkingSel: string | null = null; // fiche de parking ouverte
   const hitTargets: THREE.Object3D[] = []; // zones de clic (le tableau est partagé avec interaction.ts)
-  const parkingSigns: ParkingSigns | null = buildParkingSigns(avatarContent.parkingSigns as ParkingSignsConfig, data, terrain.heightAt, terrain.minUnder, city.night.uNight);
+  const parkingSigns: ParkingSigns | null = buildParkingSigns(avatarContent.parkingSigns as ParkingSignsConfig, data, terrain.heightAt, terrain.minUnder, city.night.uNight, hidden, city.group.getObjectByName('buildings')?.userData as { tops?: Float32Array; roofAt?: (bi: number, x: number, z: number) => number } | undefined);
   if (parkingSigns) scene.add(parkingSigns.group);
   let lastGlow = -1;
   const groundNode = () => city.group.getObjectByName('terrain');

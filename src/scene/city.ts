@@ -235,6 +235,14 @@ function buildBuildings(data: CityData, night: NightUniforms, fade: FadeUniforms
   const geos: THREE.BufferGeometry[] = [];
   let pitched = 0;
   let skeletonRoofs = 0;
+  // Altitude exacte du point le plus haut de chaque bâtiment (toit compris), par indice de data.buildings : les panneaux de parkings s'y posent
+  const tops = new Float32Array(data.buildings.length).fill(NaN);
+  const topOf = (g: THREE.BufferGeometry, bi: number) => {
+    const pos = g.getAttribute('position');
+    let m = tops[bi];
+    for (let i = 0; i < pos.count; i++) { const y = pos.getY(i); if (!(y <= m)) m = y; }
+    tops[bi] = m;
+  };
   // Façades côté rue (portes de jour, EP001-US009) : un mur dont l'extérieur est à moins de STREET_DISTANCE m
   // d'une voie et ne touche pas un bâtiment voisin (mur mitoyen)
   const roadDistance = roadDistanceIndex(data.roads);
@@ -299,14 +307,18 @@ function buildBuildings(data: CityData, night: NightUniforms, fade: FadeUniforms
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geo.translate(0, ground, 0);
+    topOf(geo, bi);
     geos.push(faceAttrs(geo.index ? geo.toNonIndexed() : geo, b, ground, bi));
     if (plan) {
       pitched++;
-      geos.push(faceAttrs(nonIndexed(roofGeometry({ ...plan, eave: b.minH + depth }, roof, wall).translate(0, ground, 0)), null, ground, bi));
+      const rg = nonIndexed(roofGeometry({ ...plan, eave: b.minH + depth }, roof, wall).translate(0, ground, 0));
+      topOf(rg, bi);
+      geos.push(faceAttrs(rg, null, ground, bi));
     } else if (skel) {
       const g = skeletonRoofGeometry(b, { ...skel, eave: b.minH + depth }, roof);
       if (g) {
-        geos.push(faceAttrs(nonIndexed(g.translate(0, ground, 0)), null, ground, bi));
+        topOf(g.translate(0, ground, 0), bi);
+        geos.push(faceAttrs(nonIndexed(g), null, ground, bi));
         skeletonRoofs++;
       }
     }
@@ -317,6 +329,23 @@ function buildBuildings(data: CityData, night: NightUniforms, fade: FadeUniforms
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   mesh.name = 'buildings';
+  mesh.userData.tops = tops;
+  /** Altitude exacte du toit du bâtiment `bi` à la verticale de (x, z) : le point le plus haut des triangles du bâtiment qui recouvrent ce point (NaN si aucun) */
+  mesh.userData.roofAt = (bi: number, x: number, z: number): number => {
+    const pos = merged.getAttribute('position'), ids = merged.getAttribute('aId');
+    let best = NaN;
+    for (let t = 0; t + 2 < pos.count; t += 3) {
+      if (ids.getX(t) !== bi) continue;
+      const ax = pos.getX(t), az = pos.getZ(t), bx = pos.getX(t + 1), bz = pos.getZ(t + 1), cx = pos.getX(t + 2), cz = pos.getZ(t + 2);
+      const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+      if (Math.abs(det) < 1e-6) continue; // mur vertical : aucune surface vue de dessus
+      const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det, l3 = 1 - l1 - l2;
+      if (l1 < -1e-6 || l2 < -1e-6 || l3 < -1e-6) continue;
+      const y = l1 * pos.getY(t) + l2 * pos.getY(t + 1) + l3 * pos.getY(t + 2);
+      if (!(y <= best)) best = y;
+    }
+    return best;
+  };
   mesh.userData.pitchedRoofs = pitched;
   mesh.userData.skeletonRoofs = skeletonRoofs;
   return mesh;

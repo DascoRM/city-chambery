@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { CityData, HeightFn, Parking, Pt } from '../types';
-import { pointInRing } from './geo';
+import { pointInPoly, pointInRing } from './geo';
 import { parkingColor } from './terrain';
 
 /**
@@ -54,10 +54,10 @@ function letterP(s: number, z: number) {
   return out;
 }
 
-/** Cube-panneau sur poteau : le haut du poteau est à 5 m, le cube mesure 4 m ; teinte = `tint` */
+/** Cube-panneau sur poteau : le poteau part de 4 m sous le point, le cube de 5 à 9 m ; teinte = `tint` */
 function signGeometry() {
   const parts: Parameters<typeof boxes>[0] = [
-    { w: 0.5, h: 5, d: 0.5, x: 0, y: 2.5, z: 0, color: '#5f6470' },
+    { w: 0.5, h: 9, d: 0.5, x: 0, y: 0.5, z: 0, color: '#5f6470' }, // le poteau s'enfonce de 4 m sous le point : il ne flotte ni sur un toit en pente ni sur un sol incliné
     { w: 4, h: 4, d: 4, x: 0, y: 7, z: 0, color: '#ffffff', tint: true },
   ];
   // Un P sur chacune des quatre faces (rotation de la face avant autour de l'axe vertical)
@@ -88,21 +88,24 @@ function signMaterial(night: { value: number }) {
   return mat;
 }
 
-/** Un point à l'intérieur du contour, le plus proche du centroïde (le centroïde d'une forme en L peut tomber dehors) */
-function insidePoint(p: Parking): Pt {
-  if (!p.outer || pointInRing(p.pos[0], p.pos[1], p.outer)) return p.pos;
-  const xs = p.outer.map((q) => q[0]), ys = p.outer.map((q) => q[1]);
-  let best: Pt = p.outer[0], bd = Infinity;
-  for (let i = 0; i <= 12; i++) for (let j = 0; j <= 12; j++) {
-    const x = Math.min(...xs) + ((Math.max(...xs) - Math.min(...xs)) * i) / 12, y = Math.min(...ys) + ((Math.max(...ys) - Math.min(...ys)) * j) / 12;
-    if (!pointInRing(x, y, p.outer)) continue;
-    const d = Math.hypot(x - p.pos[0], y - p.pos[1]);
-    if (d < bd) { bd = d; best = [x, y]; }
+/** Un point à l'intérieur du contour, le plus proche du centroïde (celui d'une forme en L peut tomber dehors) ; `free` : hors de tout bâtiment */
+function insidePoint(p: Parking, free?: (pt: Pt) => boolean): Pt {
+  const ok = (pt: Pt) => !free || free(pt);
+  if (!p.outer) return p.pos;
+  if (pointInRing(p.pos[0], p.pos[1], p.outer) && ok(p.pos)) return p.pos;
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (const [x, y] of p.outer) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  let best: Pt = pointInRing(p.pos[0], p.pos[1], p.outer) ? p.pos : p.outer[0], bd = Infinity;
+  for (let i = 0; i <= 16; i++) for (let j = 0; j <= 16; j++) {
+    const pt: Pt = [x0 + ((x1 - x0) * i) / 16, y0 + ((y1 - y0) * j) / 16];
+    if (!pointInRing(pt[0], pt[1], p.outer) || !ok(pt)) continue;
+    const d = Math.hypot(pt[0] - p.pos[0], pt[1] - p.pos[1]);
+    if (d < bd) { bd = d; best = pt; }
   }
   return best;
 }
 
-export function buildParkingSigns(cfg: ParkingSignsConfig, data: CityData, heightAt: HeightFn, minUnder: (r: Pt[]) => number, night: { value: number }): ParkingSigns | null {
+export function buildParkingSigns(cfg: ParkingSignsConfig, data: CityData, heightAt: HeightFn, minUnder: (r: Pt[]) => number, night: { value: number }, hidden: Set<number> | undefined, roof?: { tops?: Float32Array; roofAt?: (bi: number, x: number, z: number) => number }): ParkingSigns | null {
   const shown = (data.parkings ?? []).filter((p) => p.kind !== 'street' && (p.name || p.capacity || (p.areaM2 ?? 0) >= cfg.minArea || p.kind === 'underground'));
   if (!shown.length) return null;
   const group = new THREE.Group();
@@ -115,25 +118,45 @@ export function buildParkingSigns(cfg: ParkingSignsConfig, data: CityData, heigh
   const hitGeo = new THREE.CylinderGeometry(3, 3, 7, 6);
   hitGeo.translate(0, 6.5, 0);
 
-  // Bâtiment qui recouvre un point (un parking souterrain est sous un bâtiment : le panneau se pose sur son toit)
-  const buildingAt = (pt: Pt) => data.buildings.find((b) => {
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (const [x, y] of b.outer) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
-    return pt[0] >= x0 && pt[0] <= x1 && pt[1] >= y0 && pt[1] <= y1 && pointInRing(pt[0], pt[1], b.outer);
-  });
+  // Bâtiments qui recouvrent un point (indices dans data.buildings, cour intérieure exclue) : un parking souterrain ou en
+  // silo est sous un bâtiment, le panneau se pose sur son toit. Plusieurs polygones peuvent se superposer.
+  const buildingsAt = (pt: Pt): number[] => {
+    const out: number[] = [];
+    data.buildings.forEach((b, i) => {
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const [x, y] of b.outer) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+      if (pt[0] >= x0 && pt[0] <= x1 && pt[1] >= y0 && pt[1] <= y1 && pointInPoly(pt[0], pt[1], b)) out.push(i);
+    });
+    return out;
+  };
   /**
-   * Où poser le panneau : sur le toit du bâtiment qui recouvre le point (souterrains, silos, bâtiments du cadastre),
-   * sinon au sol dans le parking. Une position imposée à la main (`posFixed`) est respectée telle quelle.
+   * Altitude du toit à la verticale du point, **mesurée sur le maillage affiché** (le plus haut des bâtiments qui le recouvrent) ;
+   * estimée pour un bâtiment remplacé par un monument ; null s'il n'y a aucun toit (cour, polygone qui n'a pas été dessiné)
    */
   const roofOf = (at: Pt): number | null => {
-    const b = buildingAt(at);
-    return b ? minUnder(b.outer) + b.h + 4 : null; // gouttière + marge pour le faîtage
+    let best: number | null = null;
+    for (const bi of buildingsAt(at)) {
+      const b = data.buildings[bi];
+      const y = hidden?.has(b.id) ? minUnder(b.outer) + b.h + 2 : roof?.roofAt?.(bi, at[0], -at[1]);
+      if (y !== undefined && Number.isFinite(y) && (best === null || y > best)) best = y;
+    }
+    return best;
   };
+  /**
+   * Où poser le panneau. Souterrains et silos : sur un toit du bâtiment qui les recouvre (une entrée, le centre, puis tout
+   * point du contour qui a un toit : jamais dans une cour). Parkings de surface : hors des bâtiments, sinon sur un toit.
+   * Position imposée à la main : respectée.
+   */
   const place = (p: Parking): { at: Pt; y: number } => {
-    const spots: Pt[] = p.posFixed ? [p.pos] : p.kind === 'underground' ? [...(p.entrances ?? []), p.pos] : [insidePoint(p)];
+    const solid = (pt: Pt) => roofOf(pt) !== null;
+    const spots: Pt[] = p.posFixed ? [p.pos]
+      : p.kind === 'underground' ? [...(p.entrances ?? []), p.pos, insidePoint(p, solid)]
+      : p.kind === 'multi-storey' ? [p.pos, insidePoint(p, solid)] // un silo est le bâtiment : le centre de son toit, pas une entrée en bord de façade
+      : [insidePoint(p, (pt) => !solid(pt)), insidePoint(p, solid)];
     for (const at of spots) {
       const y = roofOf(at);
       if (y !== null) return { at, y };
+      if (p.kind === 'surface' && !solid(at)) return { at, y: heightAt(at[0], at[1]) };
     }
     const at = spots[0];
     return { at, y: heightAt(at[0], at[1]) };
