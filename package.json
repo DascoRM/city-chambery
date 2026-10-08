@@ -8,27 +8,40 @@
     "data": "node scripts/fetch-osm.mjs",
     "check:streets": "node scripts/check-street-labels.mjs",
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && tsc --noEmit -p tsconfig.api.json && vite build",
     "preview": "vite preview",
     "nature": "node scripts/convert-nature.mjs",
     "mascot": "node scripts/convert-mascot.mjs",
     "buildings": "node scripts/convert-buildings.mjs",
     "docker:up": "docker compose up --build -d",
     "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f web"
+    "docker:logs": "docker compose logs -f web",
+    "test": "vitest run",
+    "api:dev": "tsx server/dev.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx server/db/migrate.ts"
   },
   "dependencies": {
-    "three": "^0.186.1"
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.13",
+    "postgres": "^3.4.9",
+    "three": "^0.186.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@gltf-transform/core": "^4.5.1",
     "@gltf-transform/functions": "^4.5.1",
+    "@hono/node-server": "^2.1.4",
+    "@types/node": "^26.6.4",
     "@types/three": "^0.186.0",
+    "drizzle-kit": "^0.31.11",
     "meshoptimizer": "^1.3.0",
     "straight-skeleton": "^3.0.0",
+    "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "vite": "^8.3.1",
     "vite-plugin-pwa": "^1.3.0",
+    "vitest": "^4.1.11",
     "workbox-window": "^7.4.1"
   }
 }

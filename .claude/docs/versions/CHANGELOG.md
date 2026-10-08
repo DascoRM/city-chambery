@@ -1,5 +1,21 @@
 # Journal des itérations
 
+## Itération 80 — 08/10/2026 (branche `feat/EP008-US001-socle-api`, epic EP008)
+
+**Demande de Dasco :** commencer le back-end (pile validée : TypeScript, Hono, Zod, Drizzle, Neon, fonctions Vercel).
+
+**Changements (US001, socle) :**
+- `api/[...path].ts` : fonction Vercel (Node.js, format `fetch` standard) qui sert toutes les routes `/api/*` par l'application Hono de `server/app.ts` ;
+- `GET /api/health` : version courte du commit, environnement, état de la base (`ok`, `non-configuree`, `desactivee-en-previsualisation`, `erreur`) ; **jamais d'adresse ni de mot de passe** dans la réponse ; `Cache-Control: no-store` ; 404 et erreurs en JSON ;
+- `server/env.ts` : **une prévisualisation n'utilise jamais `DATABASE_URL`** (base de production) : seulement `DATABASE_URL_PREVIEW`, sinon la base est désactivée ; la production ignore `DATABASE_URL_PREVIEW` ;
+- `server/db/` : schéma Drizzle (table `app_meta`), migration `0000` générée, connexion paresseuse avec le **pilote PostgreSQL standard** `postgres` (pas de pilote propre à Neon : ADR-001), `migrate.ts` (affiche l'hôte, jamais le mot de passe, rejouable) ;
+- `npm run build` vérifie aussi les types de l'API (`tsconfig.api.json`) ; `npm test` (Vitest, 9 tests) ; `npm run api:dev` ; `npm run db:generate` / `db:migrate` ; proxy `/api` dans le serveur de développement ; le service worker ne sert jamais `/api` depuis son cache ;
+- README : section « API et base de données ».
+
+**Vérifié :** `npm test` (9 tests : choix de la base par environnement, prévisualisation isolée, aucune fuite de secret, 404) ; `npm run build` (types du site et de l'API) ; serveur local : `/api/health` répond 200 en JSON, route inconnue 404.
+
+**Non vérifié :** le déploiement sur Vercel (route en `[...path]`, format `fetch`) ; la connexion à une vraie base Neon (la base n'est pas encore créée) ; le temps de réveil de la base ; les migrations sur une vraie base.
+
 ## Itération 79 — 06/10/2026 (branche `feat/routes-matieres`)
 
 **Demande de Dasco :** distinguer à l'écran les voies piétonnes (56 % des tracés) et celles pour les voitures ; accord pour commencer par les routes avant les monuments.
