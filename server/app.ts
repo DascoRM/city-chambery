@@ -1,5 +1,7 @@
 /// <reference types="node" />
 import { Hono } from 'hono';
+import { getTableName, isTable } from 'drizzle-orm';
+import * as schema from './db/schema.js';
 import { appEnv, appVersion, resolveDatabase, type Env } from './env.js';
 import { database } from './db/client.js';
 import { adminAuth, createRateLimiter } from './auth.js';
@@ -10,6 +12,18 @@ import { addParking, addedInput, customId, listEdits, osmId, overrideInput, rece
  * API du diorama (EP008). Hono, fonctions Vercel du même dépôt. Le site fonctionne sans elle : si elle est en panne
  * ou si la base est absente, le site reste utilisable (progression locale).
  */
+/** Tables que le code attend (d'après le schéma) : sert à détecter des migrations non appliquées */
+const EXPECTED_TABLES = Object.values(schema).filter((t) => isTable(t)).map((t) => getTableName(t as Parameters<typeof getTableName>[0])).sort();
+
+/** Code d'erreur PostgreSQL, que l'erreur vienne du pilote ou soit enveloppée par Drizzle */
+function pgCode(err: unknown): string | undefined {
+  for (let e: unknown = err, i = 0; e && i < 4; e = (e as { cause?: unknown }).cause, i++) {
+    const code = (e as { code?: unknown }).code;
+    if (typeof code === 'string' && /^[0-9A-Z]{5}$/.test(code)) return code;
+  }
+  return undefined;
+}
+
 export type DbStatus = 'ok' | 'non-configuree' | 'desactivee-en-previsualisation' | 'erreur';
 
 /** Vérifie la base avec une requête triviale, sans jamais faire échouer la réponse de santé */
@@ -71,7 +85,7 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
     try {
       const conn = database(env);
       if (!conn.ok) return c.json({ ...base, db: { status: conn.reason } });
-      const stats = await dbStats(async (text) => [...(await conn.sql.unsafe(text))] as Record<string, unknown>[]);
+      const stats = await dbStats(async (text) => [...(await conn.sql.unsafe(text))] as Record<string, unknown>[], EXPECTED_TABLES);
       return c.json({ ...base, db: { status: 'ok', ...stats } });
     } catch {
       return c.json({ ...base, db: { status: 'erreur' } });
@@ -116,6 +130,8 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
   app.notFound((c) => c.json({ error: 'introuvable' }, 404));
   app.onError((err, c) => {
     console.error('[api]', err);
+    // Table absente (code PostgreSQL 42P01) : la base n'a pas reçu les dernières migrations
+    if (pgCode(err) === '42P01') return c.json({ error: 'base non migrée : appliquer les migrations (npm run db:migrate)', code: 'migrations-manquantes' }, 503);
     return c.json({ error: 'erreur interne' }, 500);
   });
 

@@ -14,6 +14,8 @@
 
 **Vérifié :** `npm test` : 27 tests (dont 7 sur les retouches, sur PGlite : publication avec source, remplacement, refus sans source ou avec champ inconnu ou valeur absurde, ajout, doublon 409, retrait, journal, jeton exigé, base absente) ; `npm run build` ; parcours complet en local (API + base locale + site) : recherche « europe », retouche (149 places, note, source « BNLS 2024 »), ajout d'un parking, liste, journal ; le site charge la retouche (149 places, note, source) et l'ajout ; aucune erreur console.
 
+**Correction (signalée par Dasco : `POST /api/admin/parkings/added` → 500 « erreur interne » sur Vercel) :** cause la plus probable, la base de prévisualisation n'avait pas reçu la migration `0001` (table `parking_edits` absente). Désormais une table absente (code PostgreSQL `42P01`) répond **503 `migrations-manquantes`** avec un message clair, et l'administration affiche « Migrations : à jour » ou la liste des tables absentes (comparaison avec le schéma du code). Test ajouté (28).
+
 **Non vérifié :** sur Vercel (la migration `0001` doit être appliquée sur `preview` et `main` par Dasco) ; le délai réel de 60 s du cache de Vercel ; les retouches des **lieux d'histoire** (reste de l'US006) ; la carte de position dans l'administration (US007).
 
 ## Itération 81 — 08/10/2026 (branche `feat/EP008-US005-admin-acces`, epic EP008)

@@ -38,6 +38,8 @@ function show(data) {
   const table = $('tables'); const body = table.querySelector('tbody'); body.replaceChildren();
   if (data.db.status === 'ok') {
     row(db, 'Taille', size(data.db.sizeBytes));
+    if (data.db.missing?.length) row(db, 'Migrations', `à appliquer : tables absentes ${data.db.missing.join(', ')} (npm run db:migrate)`, 'warn');
+    else row(db, 'Migrations', 'à jour', 'ok');
     for (const t of data.db.tables) {
       const tr = document.createElement('tr');
       const a = document.createElement('td'); a.textContent = t.name;
@@ -73,6 +75,7 @@ async function api(method, path, body) {
   try { data = await res.json(); } catch { /* pas de JSON */ }
   if (!res.ok) {
     const detail = Array.isArray(data?.issues) ? data.issues.map((i) => `${(i.path ?? []).join('.') || 'formulaire'} : ${i.message}`).join(' ; ') : '';
+    if (data?.code === 'migrations-manquantes') throw new Error('La base n’a pas reçu les dernières migrations : lancer « npm run db:migrate » sur cette base.');
     throw new Error(data?.code === 'base-indisponible' ? 'Base indisponible.' : `${data?.error ?? `Erreur ${res.status}`}${detail ? ` (${detail})` : ''}`);
   }
   return data;

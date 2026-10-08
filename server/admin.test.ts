@@ -88,6 +88,7 @@ describe('statistiques de la base (PGlite)', () => {
     const stats = await dbStats(async (text) => (await client.query(text)).rows as Record<string, unknown>[]);
     expect(stats.sizeBytes).toBeGreaterThan(0);
     expect(stats.tables).toContainEqual({ name: 'app_meta', rows: 2 });
+    expect((await dbStats(async (text) => (await client.query(text)).rows as Record<string, unknown>[], ['app_meta', 'table_future'])).missing).toEqual(['table_future']);
     await client.close();
   });
 });

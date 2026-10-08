@@ -77,6 +77,15 @@ describe('retouches des parkings : écriture (administration)', () => {
     expect((await send('DELETE', '/api/admin/parkings/edits/way/1', undefined, open)).status).toBe(401);
   });
 
+  it('base sans les dernières migrations : 503 « migrations-manquantes » au lieu d’une erreur interne', async () => {
+    const bare = new PGlite();
+    const old = createApp({ ADMIN_TOKEN: TOKEN }, { db: () => drizzle(bare, { schema }) as unknown as Db });
+    const res = await old.request('/api/admin/parkings/added', { method: 'POST', headers: auth, body: JSON.stringify({ id: 'custom/essai', kind: 'surface', pos: [1, 2], source: 'x' }) });
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe('migrations-manquantes');
+    await bare.close();
+  });
+
   it('sans base : 503 avec un code, le site garde ses retouches locales', async () => {
     const res = await app(false).request('/api/parkings/edits');
     expect(res.status).toBe(503);
