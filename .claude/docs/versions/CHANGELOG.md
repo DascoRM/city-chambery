@@ -15,6 +15,8 @@
 
 **Correction (signalée par Dasco : « Sending form data … violates form-action 'none' ») :** sur Vercel la page s'ouvre aussi à l'adresse `/admin` (sans barre finale) ; les chemins relatifs `admin.css` et `admin.js` pointaient alors vers `/admin.js` (introuvable) : le script ne tournait pas et le formulaire était envoyé tel quel, bloqué par la politique de contenu. Chemins absolus (`/admin/admin.js`). Espaces et retours à la ligne ignorés autour du jeton (variable collée depuis le terminal).
 
+**Correction (diagnostiquée avec Dasco : `/api/health` voit le jeton, `/api/admin/ping` renvoie un 404 de Vercel) :** le fichier `api/[...path].ts` ne captait qu'**un** niveau de chemin (`/api/health`), pas `/api/admin/ping`. Remplacé par `api/index.ts` et une réécriture `/api/:path*` → `/api` dans `vercel.json` (une seule fonction pour toute l'API ; la requête garde son adresse d'origine pour Hono). Diagnostic ajouté : `/api/health` indique `admin: configure | absent` (jamais la valeur) ; jeton absent = 503 avec code dédié ; la page distingue jeton absent, route introuvable et 404 de la plateforme.
+
 **Non vérifié :** déploiement sur Vercel (jeton à saisir par Dasco) ; le blocage d'essais sur Vercel (instances multiples : au mieux) ; l'adresse client derrière le réseau de Vercel (`x-forwarded-for`) ; usage, quotas et alertes (US008) ; connexion GitHub à la place du jeton (plus tard).
 
 ## Itération 80 — 08/10/2026 (branche `feat/EP008-US001-socle-api`, epic EP008)

@@ -404,7 +404,7 @@ src/
   scene/geo.ts             Géométrie 2D commune + rayon depuis un point de l'écran (screenRay)
   scene/roads.ts           Voies piétonnes et hauteur des rubans de voies (partagées)
   scene/walkways.ts        Réseau des voies où l'on marche (éléphants, passants, avatar)
-  api/[...path].ts          Point d'entrée des fonctions Vercel (EP008) : toutes les routes /api/* vers server/app.ts
+  api/index.ts             Point d'entrée de la fonction Vercel (EP008) : /api/* y est réécrit (vercel.json), routé par server/app.ts
   server/                  API (Hono, Zod, Drizzle) : app.ts (routes), env.ts (base et environnement), auth.ts (jeton d'administration, limite d'essais), db/ (schéma, migrations, connexion, statistiques), dev.ts (serveur local)
   public/admin/            Page d'administration (HTML, CSS et JS sans framework, aucun HTML construit à partir de données)
   scene/parkings.ts        Panneaux « P » de la couche Parkings (EP006), posés au sol ou sur le toit (souterrains, silos)
@@ -484,7 +484,7 @@ Tests en local : `npm test` (API) tourne **sans Neon, sans Docker, sans réseau*
 
 ## API et base de données (EP008)
 
-Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le même dépôt : **Hono** (routes), **Zod** (validation), **Drizzle** (base et migrations), PostgreSQL chez **Neon**, fonctions **Vercel** (`api/[...path].ts` → `server/app.ts`). Décision et alternatives écartées : [ADR-001](.claude/docs/architecture/decisions/ADR001-back-end-typescript-vercel-neon.md). Seul point de santé pour l'instant : `GET /api/health` (version, environnement, état de la base ; jamais d'adresse ni de mot de passe).
+Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le même dépôt : **Hono** (routes), **Zod** (validation), **Drizzle** (base et migrations), PostgreSQL chez **Neon**, fonctions **Vercel** (`api/index.ts` → `server/app.ts`, `/api/:path*` réécrit vers `/api` dans `vercel.json`). Décision et alternatives écartées : [ADR-001](.claude/docs/architecture/decisions/ADR001-back-end-typescript-vercel-neon.md). Seul point de santé pour l'instant : `GET /api/health` (version, environnement, état de la base ; jamais d'adresse ni de mot de passe).
 
 - **Variables d'environnement** (à saisir dans Vercel, Settings > Environment Variables ; jamais dans le dépôt) : `DATABASE_URL` (production et développement), `DATABASE_URL_PREVIEW` (prévisualisations). **Une prévisualisation n'utilise jamais `DATABASE_URL`** : sans `DATABASE_URL_PREVIEW`, la base y est désactivée. Le code ne lit que ces adresses PostgreSQL ordinaires : Neon reste remplaçable en changeant `DATABASE_URL`.
 - **Variables posées par l'intégration Neon** : `DATABASE_URL` (connexion avec répartiteur, celle de l'API), `DATABASE_URL_UNPOOLED` (connexion directe, utilisée par les migrations) ; les autres (`PG*`, `POSTGRES_*`) ne sont pas lues par le code.

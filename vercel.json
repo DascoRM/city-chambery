@@ -58,5 +58,11 @@
       "release": true,
       "preview/**": true
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api"
+    }
+  ]
 }

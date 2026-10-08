@@ -16,7 +16,7 @@ try {
   execFileSync(join(root, 'node_modules/.bin/tsc'), ['-p', 'tsconfig.api.json', '--noEmit', 'false', '--outDir', out, '--rootDir', '.'], { cwd: root, stdio: 'inherit' });
   writeFileSync(join(out, 'package.json'), '{ "type": "module" }');
   symlinkSync(join(root, 'node_modules'), join(out, 'node_modules'));
-  const mod = await import(pathToFileURL(join(out, 'api/[...path].js')).href);
+  const mod = await import(pathToFileURL(join(out, 'api/index.js')).href);
   const res = await mod.default.fetch(new Request('http://localhost/api/health'));
   const body = await res.json();
   if (res.status !== 200 || body.ok !== true) throw new Error(`/api/health : ${res.status} ${JSON.stringify(body)}`);
