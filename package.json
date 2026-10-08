@@ -8,7 +8,7 @@
     "data": "node scripts/fetch-osm.mjs",
     "check:streets": "node scripts/check-street-labels.mjs",
     "dev": "vite",
-    "build": "tsc --noEmit && tsc --noEmit -p tsconfig.api.json && vite build",
+    "build": "tsc --noEmit && tsc --noEmit -p tsconfig.api.json && node scripts/check-api-esm.mjs && vite build",
     "preview": "vite preview",
     "nature": "node scripts/convert-nature.mjs",
     "mascot": "node scripts/convert-mascot.mjs",
@@ -19,7 +19,8 @@
     "test": "vitest run",
     "api:dev": "tsx server/dev.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx server/db/migrate.ts"
+    "db:migrate": "tsx server/db/migrate.ts",
+    "check:api": "node scripts/check-api-esm.mjs"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",

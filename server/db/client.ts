@@ -1,7 +1,7 @@
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import { resolveDatabase, type Env } from '../env';
-import * as schema from './schema';
+import { resolveDatabase, type Env } from '../env.js';
+import * as schema from './schema.js';
 
 /**
  * Connexion à la base : paresseuse (créée au premier besoin), une seule connexion par instance de fonction,

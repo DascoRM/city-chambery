@@ -489,7 +489,7 @@ Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le m
 - **Variables posées par l'intégration Neon** : `DATABASE_URL` (connexion avec répartiteur, celle de l'API), `DATABASE_URL_UNPOOLED` (connexion directe, utilisée par les migrations) ; les autres (`PG*`, `POSTGRES_*`) ne sont pas lues par le code.
 - **Créer ou mettre à jour la base** : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (rejouable ; l'adresse se copie depuis la console Neon, sans la coller ailleurs). Les migrations sont dans `server/db/migrations/`.
 - **Développer** : `npm run api:dev` dans un terminal, `npm run dev` dans un autre.
-- **Contrôle** : `npm run build` vérifie aussi les types de l'API (`tsconfig.api.json`) ; `npm test` lance les tests.
+- **Contrôle** : `npm run build` vérifie aussi les types de l'API (`tsconfig.api.json`) et **la charge comme Vercel** (`scripts/check-api-esm.mjs` : projet en ES modules, extension `.js` obligatoire dans les imports relatifs de `api/` et `server/`) ; `npm test` lance les tests.
 
 ---
 

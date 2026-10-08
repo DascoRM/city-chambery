@@ -4,7 +4,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator';
 import { eq } from 'drizzle-orm';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { appMeta } from './schema';
+import { appMeta } from './schema.js';
 
 /**
  * Test d'intégration de la base SANS Neon, sans Docker, sans réseau : PGlite est un vrai PostgreSQL qui tourne dans le

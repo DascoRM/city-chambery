@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { appEnv, appVersion, resolveDatabase, type Env } from './env';
-import { database } from './db/client';
+import { appEnv, appVersion, resolveDatabase, type Env } from './env.js';
+import { database } from './db/client.js';
 
 /**
  * API du diorama (EP008). Hono, fonctions Vercel du même dépôt. Le site fonctionne sans elle : si elle est en panne

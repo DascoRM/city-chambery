@@ -20,6 +20,8 @@
 - **bug trouvé par ce test** : `db:migrate` calculait le dossier des migrations avec `URL.pathname`, qui encode les accents (« chambéry » → `chambe%CC%81ry`) : corrigé avec `fileURLToPath` ;
 - migrations sur la connexion directe `DATABASE_URL_UNPOOLED`.
 
+**Correction après le premier déploiement d'essai (500 `FUNCTION_INVOCATION_FAILED`, signalée par Dasco) :** le projet est en ES modules (`"type": "module"`) : Node y exige l'extension dans les imports relatifs, et mes imports n'en avaient pas (`../server/app`). `tsc` et les tests passaient, la fonction Vercel plantait (`ERR_MODULE_NOT_FOUND`, **reproduit en local** en compilant l'API et en la chargeant avec Node). Imports corrigés (`./app.js`…). **Nouveau contrôle `scripts/check-api-esm.mjs`**, lancé par `npm run build` (et `npm run check:api`) : il compile l'API dans un dossier temporaire, la charge comme Vercel et interroge `/api/health` ; un import sans extension fait maintenant échouer le build, pas la production.
+
 **Non vérifié :** le déploiement sur Vercel (route en `[...path]`, format `fetch`) ; la connexion à une vraie base Neon (la base n'est pas encore créée) ; le temps de réveil de la base ; les migrations sur une vraie base.
 
 ## Itération 79 — 06/10/2026 (branche `feat/routes-matieres`)

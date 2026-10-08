@@ -1,4 +1,4 @@
-import { createApp } from '../server/app';
+import { createApp } from '../server/app.js';
 
 /**
  * Point d'entrée Vercel (fonction Node.js, format « fetch » standard) : toutes les routes /api/* passent par l'application

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createApp } from './app';
-import { appEnv, resolveDatabase } from './env';
+import { createApp } from './app.js';
+import { appEnv, resolveDatabase } from './env.js';
 
 const get = (env: Record<string, string>, path = '/api/health') => createApp(env).request(path);
 
