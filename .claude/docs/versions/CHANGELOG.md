@@ -16,6 +16,8 @@
 
 **Correction (signalée par Dasco : `POST /api/admin/parkings/added` → 500 « erreur interne » sur Vercel) :** cause la plus probable, la base de prévisualisation n'avait pas reçu la migration `0001` (table `parking_edits` absente). Désormais une table absente (code PostgreSQL `42P01`) répond **503 `migrations-manquantes`** avec un message clair, et l'administration affiche « Migrations : à jour » ou la liste des tables absentes (comparaison avec le schéma du code). Test ajouté (28).
 
+**Correction (signalée par Dasco : deux parkings ajoutés, absents de la carte) :** deux causes possibles, corrigées toutes les deux : (1) un parking **ajouté sans nom ni capacité** n'avait pas de panneau (le filtre exigeait un nom, une capacité ou une surface, qu'un ajout n'a pas) : un ajout a toujours son panneau ; (2) le site n'attendait les retouches que **1,5 s** : la base Neon, en veille après 5 minutes, met du temps à se réveiller : délai porté à **4 s** (demandé en même temps que la ville, qui en prend elle-même plus d'une seconde). En `?debug`, la console dit maintenant « retouches publiées : N retouche(s), M ajout(s), en … ms » ou pourquoi elles n'ont pas été reçues. Vérifié en local : un ajout sans nom a son panneau.
+
 **Non vérifié :** sur Vercel (la migration `0001` doit être appliquée sur `preview` et `main` par Dasco) ; le délai réel de 60 s du cache de Vercel ; les retouches des **lieux d'histoire** (reste de l'US006) ; la carte de position dans l'administration (US007).
 
 ## Itération 81 — 08/10/2026 (branche `feat/EP008-US005-admin-acces`, epic EP008)

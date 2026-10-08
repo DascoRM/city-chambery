@@ -36,17 +36,27 @@ export function mergeParkingEdits(file: ParkingEdits, published: ParkingEdits | 
   return { overrides: { ...(file.overrides ?? {}), ...(published.overrides ?? {}) }, added: [...added.values()] };
 }
 
-/** Retouches publiées par l'administration (`/api/parkings/edits`) ; null si l'API ne répond pas vite (le site part sans) */
-export async function fetchPublishedEdits(timeoutMs = 1500): Promise<ParkingEdits | null> {
+/** Résultat de la demande des retouches publiées : les retouches, ou la raison de leur absence (affichée en `?debug`) */
+export type PublishedResult = { edits: ParkingEdits; ms: number } | { edits: null; ms: number; reason: string };
+
+/**
+ * Retouches publiées par l'administration (`/api/parkings/edits`). Demandées en même temps que la ville (qui met elle-même
+ * plus d'une seconde à arriver) ; on attend au plus `timeoutMs` : la base Neon se met en veille après 5 minutes et met un
+ * moment à se réveiller (le premier appel est plus lent), d'où 4 s et non 1,5 s. Au-delà, le site part sans.
+ */
+export async function fetchPublishedEdits(timeoutMs = 4000): Promise<PublishedResult> {
   const ctrl = new AbortController();
+  const t0 = performance.now();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const ms = () => Math.round(performance.now() - t0);
   try {
     const res = await fetch('/api/parkings/edits', { signal: ctrl.signal });
-    if (!res.ok) return null;
+    if (!res.ok) return { edits: null, ms: ms(), reason: `réponse ${res.status}` };
     const body = (await res.json()) as ParkingEdits;
-    return body && typeof body === 'object' ? body : null;
-  } catch {
-    return null; // hors ligne, API absente (développement sans `npm run api:dev`), délai dépassé
+    return body && typeof body === 'object' ? { edits: body, ms: ms() } : { edits: null, ms: ms(), reason: 'réponse vide' };
+  } catch (e) {
+    // hors ligne, API absente (développement sans `npm run api:dev`), délai dépassé
+    return { edits: null, ms: ms(), reason: (e as Error).name === 'AbortError' ? `délai de ${timeoutMs} ms dépassé` : 'API injoignable' };
   } finally {
     clearTimeout(timer);
   }

@@ -86,7 +86,14 @@ async function main() {
   // Retouches publiées par l'administration (EP008) : demandées en même temps que la ville, jamais bloquantes (1,5 s au plus)
   const published = fetchPublishedEdits();
   const data = await loadCity();
-  if (data) applyParkingEdits(data, mergeParkingEdits(parkingsContent as unknown as ParkingEdits, await published));
+  if (data) {
+    const pub = await published;
+    applyParkingEdits(data, mergeParkingEdits(parkingsContent as unknown as ParkingEdits, pub.edits));
+    if (DEBUG) {
+      if (pub.edits) console.info(`[parkings] retouches publiées : ${Object.keys(pub.edits.overrides ?? {}).length} retouche(s), ${(pub.edits.added ?? []).length} ajout(s), en ${pub.ms} ms`);
+      else console.info(`[parkings] retouches publiées non reçues (${pub.reason}, ${pub.ms} ms) : le site part avec parkings.json seul`);
+    }
+  }
   if (!data) {
     lobby.destroy();
     loading.hideBoot();

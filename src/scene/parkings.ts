@@ -106,7 +106,8 @@ function insidePoint(p: Parking, free?: (pt: Pt) => boolean): Pt {
 }
 
 export function buildParkingSigns(cfg: ParkingSignsConfig, data: CityData, heightAt: HeightFn, minUnder: (r: Pt[]) => number, night: { value: number }, hidden: Set<number> | undefined, roof?: { tops?: Float32Array; roofAt?: (bi: number, x: number, z: number) => number }): ParkingSigns | null {
-  const shown = (data.parkings ?? []).filter((p) => p.kind !== 'street' && (p.name || p.capacity || (p.areaM2 ?? 0) >= cfg.minArea || p.kind === 'underground'));
+  // Un parking ajouté à la main a toujours son panneau : il n'a ni contour ni surface, et il a été ajouté exprès
+  const shown = (data.parkings ?? []).filter((p) => p.kind !== 'street' && (p.added || p.name || p.capacity || (p.areaM2 ?? 0) >= cfg.minArea || p.kind === 'underground'));
   if (!shown.length) return null;
   const group = new THREE.Group();
   group.name = 'parking-signs';
