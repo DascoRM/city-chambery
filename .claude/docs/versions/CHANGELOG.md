@@ -14,6 +14,12 @@
 
 **Vérifié :** `npm test` (9 tests : choix de la base par environnement, prévisualisation isolée, aucune fuite de secret, 404) ; `npm run build` (types du site et de l'API) ; serveur local : `/api/health` répond 200 en JSON, route inconnue 404.
 
+**Complément (même itération, 08/10/2026) :**
+- **Déploiements Vercel** (`vercel.json` → `git.deploymentEnabled`) : seuls `main` (production), `release` (recette) et `preview/**` (essai à la demande) déploient ; `feat/…`, `fix/…`, `docs/…`, `exp/…` ne publient plus. Branche `release` créée. Pour tester : `git push origin feat/x:preview/x`. Les builds annulés comptent au quota, d'où `deploymentEnabled` plutôt qu'une commande d'ignore ;
+- **tests de la base en local, sans Neon** : `server/db/migrations.test.ts` rejoue les migrations sur PGlite (PostgreSQL embarqué) : schéma créé, migrations rejouables, requêtes ; 10 tests au total ;
+- **bug trouvé par ce test** : `db:migrate` calculait le dossier des migrations avec `URL.pathname`, qui encode les accents (« chambéry » → `chambe%CC%81ry`) : corrigé avec `fileURLToPath` ;
+- migrations sur la connexion directe `DATABASE_URL_UNPOOLED`.
+
 **Non vérifié :** le déploiement sur Vercel (route en `[...path]`, format `fetch`) ; la connexion à une vraie base Neon (la base n'est pas encore créée) ; le temps de réveil de la base ; les migrations sur une vraie base.
 
 ## Itération 79 — 06/10/2026 (branche `feat/routes-matieres`)

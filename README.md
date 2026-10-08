@@ -463,6 +463,24 @@ Le détail des choix est dans [`.claude/docs/architecture/decisions/DECISIONS.md
 
 ---
 
+## Branches et déploiements Vercel
+
+Pour ne pas publier à chaque branche (quota Vercel Hobby : 100 déploiements par jour, canceled compris) et garder une production sûre, `vercel.json` (`git.deploymentEnabled`) n'autorise que trois familles de branches :
+
+| Branche | Rôle | Déploiement |
+|---|---|---|
+| `main` | **Production** | automatique, sur le domaine de production |
+| `release` | **Recette** (staging) : on y regroupe ce qui est prêt à tester avant la production ; adresse stable ; utilise la base de recette (`DATABASE_URL_PREVIEW`) | automatique |
+| `preview/<sujet>` | **Essai à la demande** d'une fonctionnalité | automatique, sur adresse propre à la branche |
+| toute autre (`feat/…`, `fix/…`, `docs/…`, `exp/…`) | travail en cours | **aucun** |
+
+Pour faire tester une branche : `git push origin feat/mon-sujet:preview/mon-sujet` (la branche locale garde son nom). On supprime ensuite la branche `preview/…` distante. Flux normal : `feat/…` → `release` (recette) → `main` (production, fusion seulement après accord).
+Les prévisualisations sont protégées par l'authentification Vercel : seul un compte connecté les ouvre. Réglage manuel conseillé dans Vercel (Settings > Security > Deployment Retention) : durée de conservation des anciens déploiements.
+
+Tests en local : `npm test` (API) tourne **sans Neon, sans Docker, sans réseau** : les migrations sont rejouées sur PGlite, un vrai PostgreSQL embarqué (`server/db/migrations.test.ts`).
+
+---
+
 ## API et base de données (EP008)
 
 Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le même dépôt : **Hono** (routes), **Zod** (validation), **Drizzle** (base et migrations), PostgreSQL chez **Neon**, fonctions **Vercel** (`api/[...path].ts` → `server/app.ts`). Décision et alternatives écartées : [ADR-001](.claude/docs/architecture/decisions/ADR001-back-end-typescript-vercel-neon.md). Seul point de santé pour l'instant : `GET /api/health` (version, environnement, état de la base ; jamais d'adresse ni de mot de passe).
