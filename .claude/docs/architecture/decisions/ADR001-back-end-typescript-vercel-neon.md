@@ -49,7 +49,7 @@ Le site est statique (Vite, TypeScript, Three.js, Vercel Hobby). Il faut un peti
 ---
 
 ## Conséquences
-- Le schéma de la base reste du SQL standard : un export (`pg_dump`) permet de partir sur n'importe quel Postgres.
+- **Neon doit pouvoir être remplacé** (décision de Dasco, 08/10) : le code ne lit qu'une variable, `DATABASE_URL` ; il utilise un **pilote PostgreSQL standard** (pas le pilote propre à Neon) et du SQL standard ; aucune fonction propre à Neon (branches, pilote HTTP, extensions spécifiques) n'entre dans le code, elles ne servent que côté exploitation (par exemple une base de test pour les prévisualisations). Les migrations (Drizzle) sont dans le dépôt : sur une nouvelle base, on rejoue les migrations puis on restaure l'export (`pg_dump`) ; changer d'hébergeur ne demande donc que de changer `DATABASE_URL`. Procédure testée dans l'US010.
 - Plan Hobby : usage **personnel et non commercial** ; un usage commercial demanderait le plan Pro.
 - Prévisualisations Vercel : base séparée de la production.
 - Sécurité : validation côté serveur (Zod) de tout ce qui est écrit, assainissement de tout texte avant affichage.

@@ -14,6 +14,7 @@
 - [ ] Les migrations de la base sont dans le dépôt et rejouables ; la prévisualisation n'écrit **jamais** dans la base de production
 - [ ] Le site fonctionne **sans** l'API (hors ligne, API en panne) : aucune régression
 - [ ] Aucun secret dans le dépôt
+- [ ] **Neon remplaçable** : le code ne lit que `DATABASE_URL`, utilise un pilote PostgreSQL standard et du SQL standard (aucune fonction propre à Neon)
 
 ---
 

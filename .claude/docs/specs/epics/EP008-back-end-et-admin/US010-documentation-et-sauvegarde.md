@@ -11,6 +11,7 @@
 ## Critères d'acceptation
 
 - [ ] README et ADR à jour ; procédure de création de la base pas à pas
+- [ ] **Changement d'hébergeur testé** : sur une base Postgres vierge (par exemple en local), rejouer les migrations, restaurer l'export, changer `DATABASE_URL` : le site fonctionne ; procédure écrite
 - [ ] Sauvegarde automatique (export hebdomadaire dans un stockage gratuit) et procédure de restauration testée
 
 ---
