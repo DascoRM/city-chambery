@@ -91,6 +91,11 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ✅ *itération 70* En balade, l'éléphant ramené à la fontaine : la caméra le suit puis revient à l'avatar
 - ⬜ Idée liée, hors EP005 : bouton « Voir d'ici » (caméra à hauteur d'homme sur un lieu, sans marcher) — environ une demi-session
 
+## Mis de côté : EP009 « La météo en direct » (étude du 08/10/2026)
+[Epic EP009](../../specs/epics/EP009-meteo-en-direct/epic.md) · [plan front](../../tasks/meteo-front-plan.md) · [plan back](../../tasks/meteo-back-plan.md) : météo réelle de Chambéry (Open-Meteo, modèle AROME) via une route `/api/weather` en cache, rendue en 3D (couvert, pluie, brouillard, neige, orage, vent, nuages). **0 €** tant que le projet reste non commercial ; lots Démo ≈ 6 j (sans back), MVP ≈ 12 j, Complet ≈ 23,5 à 25 j ; principal risque : fluidité mobile. Mis de côté par Dasco le 08/10 ; décisions D1 à D6 ouvertes dans l'epic.
+- ⬜ Reprendre EP009 : choisir le lot et trancher D1 à D6 — *Dasco*
+- Lien : la neige d'hiver demandée plus bas (« Hiver : reprendre les arbres ») recoupe EP009-US007
+
 ## P2 — Fluidité mobile
 Détail dans [PERF-AUDIT.md](../../architecture/PERF-AUDIT.md).
 Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par image. Après (ombres à la demande, arbres simplifiés) : ≈ 2 400 appels et ≈ 1,5 M triangles par image la plupart du temps.

@@ -1,6 +1,6 @@
 # Epic EP009 - La météo en direct sur le diorama
 
-**Statut (08/10/2026) : spec à valider par Dasco ; rien n'est codé.** Études : [plan front / 3D](../../../tasks/meteo-front-plan.md) et [plan back / données](../../../tasks/meteo-back-plan.md) (sources et quotas consultés le 08/10/2026).
+**Statut (08/10/2026) : mise de côté par Dasco (étude jugée bonne, pas engagée pour le moment) ; spec non validée, décisions D1 à D6 ouvertes ; rien n'est codé.** Études : [plan front / 3D](../../../tasks/meteo-front-plan.md) et [plan back / données](../../../tasks/meteo-back-plan.md) (sources et quotas consultés le 08/10/2026).
 
 ## Résumé
 Afficher sur le diorama **la météo réelle de Chambéry** (soleil, couvert, pluie, brouillard, neige, orage, vent), rendue en 3D dans le style maquette, avec une petite route `/api/weather` qui interroge une source gratuite et garde le relevé en cache pour tous les visiteurs.
@@ -94,6 +94,34 @@ Chargement du diorama (sans attendre la météo) → GET /api/weather (délai ma
 | D4 | Quitter l'heure « Direct » fait-il passer en météo simulée ? Ou faut-il les prévisions heure par heure (`hourly`, + ≈ 1 j) pour que la météo suive le curseur d'heure ? | Simulée en v1, `hourly` plus tard |
 | D5 | Météo décorative seulement, ou aussi dans les fiches / le jeu (« il pleut, 12 °C ») ? | Décorative + indicateur |
 | D6 | Forçage pour les démos : `?weather=` seul, ou aussi une route admin pour que tous les amis voient la même météo ? | `?weather=` seul |
+
+---
+
+## Arbitrages entre les deux études
+Les plans front et back divergeaient sur quelques points ; la spec retient :
+| Sujet | Front proposait | Back proposait | Retenu |
+|-------|-----------------|----------------|--------|
+| Libellés de `condition` | `partly_cloudy`, `thunderstorm`… | `partly`, `thunder`… | Contrat du back (JSON v1, unités dans les noms : `windKmh`, `precipMmH`…) ; le site fait la correspondance |
+| Intensités | calculées par le site | calculées par le serveur (0..1) | Serveur ; seuils à calibrer au prototype (choix de rendu, pas des faits météo) |
+| Prévisions `hourly` 24 h | souhaitées pour suivre le curseur d'heure | absentes | Reportées (décision D4) ; hors « Direct », météo simulée |
+| Rafraîchissement | 15 à 30 min | cache serveur 10 min | Cache serveur 10 min, relecture du site toutes les 15 min, onglet visible seulement |
+| Repli côté site | `localStorage` ≤ 3 h | mémoire de session, abandon après 60 min | Le serveur sert déjà le dernier relevé « stale » ≤ 3 h ; le site garde le relevé en mémoire seulement, pas dans `localStorage` ni dans le service worker |
+| Appel de la source | via le back | via le back (option B) | Via `/api/weather` ; l'appel direct depuis le navigateur est écarté (quota partagé, IP du visiteur envoyée à la source, pas de repli) |
+
+## Constats et risques notés pendant l'étude
+- **Existant réutilisable** : `daynight.apply()` (point d'insertion du modificateur météo), `uNight` / `uLit`, saisons, `createParticles`, vent déjà présent (`smoke.wind` repris par les drapeaux, figé à la construction) ; la passe finale du tilt-shift accueille voile, brouillard et flash (4 uniformes, sans passe en plus)
+- **Manques** : pas de `scene.fog`, pas de ciel 3D (fond en dégradé CSS), pas de niveaux de qualité nommés (d'où US001)
+- **TI-02** : pluie et neige animées obligent à rendre en continu, ce qui annule l'économie « 30 img/s au repos » ; parade : cadence plafonnée et arrêt après inactivité
+- **Collision `no-store`** : `server/app.ts` pose `Cache-Control: no-store` sur toutes les routes ; à rendre non écrasant pour `/api/weather`
+- **Sources comparées** (08/10/2026) : Open-Meteo (sans clé ; gratuit non commercial : 600/min, 5 000/h, 10 000/jour, 300 000/mois ; CC BY 4.0) ; MET Norway (sans clé, User-Agent obligatoire, commercial permis, plan B) ; OpenWeatherMap (clé, moins fin qu'AROME) ; Météo-France (jeton, GRIB2, + 2 j)
+- **Sans garantie de service** : les offres gratuites n'ont pas de SLA ; le repli « ciel par défaut » rend une panne invisible
+- **Ne pas promettre** d'éclairs ni de brouillard « en temps réel » : ils sont déduits (code orage, visibilité), pas mesurés
+
+## Non vérifié
+- Aucune mesure sur téléphone : tous les coûts de fluidité sont des estimations (US001 sert à les mesurer)
+- Comportement de `s-maxage` + `stale-while-revalidate` sur une fonction Vercel (à tester sur un déploiement `preview/**`)
+- Tarifs commerciaux d'Open-Meteo, quota par minute de Météo-France, champs exacts de MET Norway
+- Licence exacte des données Météo-France reprises par Open-Meteo (à relire sur leur page Sources avant publication)
 
 ---
 

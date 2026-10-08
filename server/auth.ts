@@ -43,12 +43,13 @@ const clientKey = (headers: Headers) => headers.get('x-forwarded-for')?.split(',
 
 export function adminAuth(env: Env, limiter: RateLimiter = createRateLimiter()): MiddlewareHandler {
   return async (c, next) => {
-    const expected = env.ADMIN_TOKEN;
+    // Espaces et retours à la ligne ignorés aux deux bouts : un jeton collé depuis le terminal (`openssl rand …`) en garde souvent un
+    const expected = env.ADMIN_TOKEN?.trim();
     if (!expected) return c.json({ error: 'introuvable' }, 404); // administration non configurée : fermée
     const key = clientKey(c.req.raw.headers);
     if (limiter.blocked(key)) return c.json({ error: 'trop de tentatives, réessaie dans une minute' }, 429);
     const header = c.req.header('authorization') ?? '';
-    const given = header.startsWith('Bearer ') ? header.slice(7) : '';
+    const given = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
     if (!given || !tokenMatches(expected, given)) {
       limiter.fail(key);
       return c.json({ error: 'non autorisé' }, 401);

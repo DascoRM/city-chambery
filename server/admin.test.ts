@@ -26,6 +26,11 @@ describe('accès à l’administration', () => {
     expect((await call(env, '/api/admin/status')).status).toBe(401);
   });
 
+  it('ignore les espaces et retours à la ligne autour du jeton (variable collée depuis le terminal)', async () => {
+    const res = await call({ ADMIN_TOKEN: `  ${TOKEN}\n` }, '/api/admin/ping', bearer(`${TOKEN} `));
+    expect(res.status).toBe(200);
+  });
+
   it('accepte le bon jeton', async () => {
     const res = await call({ ADMIN_TOKEN: TOKEN }, '/api/admin/ping', bearer(TOKEN));
     expect(res.status).toBe(200);
