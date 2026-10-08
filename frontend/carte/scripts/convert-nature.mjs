@@ -4,7 +4,7 @@
  *
  * Seuls les modèles cités dans les mélanges de content/nature.json sont convertis, avec leurs variantes
  * d'automne et d'hiver (`seasons`), ou ceux passés en arguments :
- * `node scripts/convert-nature.mjs Rock_1 Bush_1`).
+ * `npm run nature -- Rock_1 Bush_1`).
  *
  * Format produit : un seul maillage indexé, couleur par sommet (COLOR_0 : palette du diorama, voir RECOLOR),
  * pas de normales (l'application utilise un rendu à facettes, flatShading) ni de textures.

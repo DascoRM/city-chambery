@@ -82,6 +82,7 @@ npm run nature                   # reconvertit les arbres du pack nature (après
 | `npm run build` | Contrôles (types de chaque partie, chargement de l'API comme sur Vercel), puis build de la carte dans `dist/` (sans outil de placement ni brouillons) et de l'administration dans `dist/admin/` |
 | `npm run check:boundaries` | Contrôle des frontières du dépôt (ADR-002) : la carte et l'administration ne s'importent pas, le front n'importe jamais le code de l'API, chaque partie a sa liste de paquets, pas de HTML brut dans l'administration (lancé par `npm run build`) |
 | `npm run typecheck` | Types seulement : carte, administration, API (et l'API vue comme Vercel la compile) |
+| `npm run build:pi` | Contrôles de la carte puis build de la carte seule : c'est ce que fait l'image Docker du Pi (ni API ni administration sur le Pi) |
 | `npm run build:carte` / `npm run build:admin` | Build d'une seule partie (la carte vide `dist/` : construire l'administration après) |
 | `npm run preview` | Sert le build de production en local |
 | `npm run api:dev` | API en local (http://localhost:8787/api/health) ; `npm run dev` lui renvoie `/api` par un proxy |
@@ -479,7 +480,7 @@ scripts/check-api-esm.mjs  Contrôle du dépôt : l'API se charge comme sur Verc
 scripts/check-boundaries.mjs  Contrôle du dépôt : frontières entre carte, administration et API (lancé par npm run build)
 deploy/                    Docker / nginx ; refresh-data.sh régénère les données pendant le build Docker
 data/dev-db/               Base locale de l'API en dev (PGlite, non versionnée)
-dist/                      Sortie du build (carte), servie par Vercel et nginx
+dist/                      Sortie du build : la carte, et l'administration dans dist/admin/ (Vercel) ; l'image du Pi ne contient que la carte
 .claude/                   Consignes pour Claude (CLAUDE.md) et suivi du projet (docs/)
 ```
 
@@ -514,7 +515,7 @@ Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le m
 
 - **Variables d'environnement** (à saisir dans Vercel, Settings > Environment Variables ; jamais dans le dépôt) : `DATABASE_URL` (production et développement), `DATABASE_URL_PREVIEW` (prévisualisations). **Une prévisualisation n'utilise jamais `DATABASE_URL`** : sans `DATABASE_URL_PREVIEW`, la base y est désactivée. Le code ne lit que ces adresses PostgreSQL ordinaires : Neon reste remplaçable en changeant `DATABASE_URL`.
 - **Variables posées par l'intégration Neon** : `DATABASE_URL` (connexion avec répartiteur, celle de l'API), `DATABASE_URL_UNPOOLED` (connexion directe, utilisée par les migrations) ; les autres (`PG*`, `POSTGRES_*`) ne sont pas lues par le code.
-- **Administration (US005)** : page `/admin/` (application React de `frontend/admin/`, adresses en `#/…` ; non référencée, `noindex`, politique de contenu stricte en en-tête HTTP dans `vercel.json`) et routes `/api/admin/*`, protégées par le jeton **`ADMIN_TOKEN`** (variable Vercel, à définir pour Production **et** Preview ; jamais dans le dépôt). Générer un jeton long : `openssl rand -base64 32`. Sans `ADMIN_TOKEN`, l'administration est **fermée** (404). Le jeton voyage dans l'en-tête `Authorization: Bearer …` (HTTPS) ; page : jeton gardé le temps de l'onglet (`sessionStorage`) ; 5 essais ratés par minute et par adresse, puis blocage (limite par instance de fonction : un limiteur partagé viendra avec US008). En développement : `ADMIN_TOKEN=… npm run api:dev` puis http://localhost:5173/admin/index.html. Aujourd'hui : état de l'application, de la base, taille et lignes par table.
+- **Administration (US005)** : page `/admin/` (application React de `frontend/admin/`, adresses en `#/…` ; non référencée, `noindex`, politique de contenu stricte en en-tête HTTP dans `vercel.json`) et routes `/api/admin/*`, protégées par le jeton **`ADMIN_TOKEN`** (variable Vercel, à définir pour Production **et** Preview ; jamais dans le dépôt). Générer un jeton long : `openssl rand -base64 32`. Sans `ADMIN_TOKEN`, l'administration est **fermée** (l'API répond 503, code `admin-non-configuree`). Le jeton voyage dans l'en-tête `Authorization: Bearer …` (HTTPS) ; page : jeton gardé le temps de l'onglet (`sessionStorage`) ; 5 essais ratés par minute et par adresse, puis blocage (limite par instance de fonction : un limiteur partagé viendra avec US008). En développement : `ADMIN_TOKEN=… npm run api:dev`, `npm run dev` (la carte) et `npm run dev:admin`, puis http://localhost:5174/admin/. Aujourd'hui : état de l'application, de la base, taille et lignes par table.
 - **Retouches des parkings depuis l'administration (US006)** : chercher un parking, le masquer, changer nom, tarif, places, type, position, note, **avec une source obligatoire** ; ajouter un parking absent d'OSM ; liste des retouches et journal. Enregistrées dans la base (tables `parking_edits`, `edit_log`), publiées par `GET /api/parkings/edits` (mise en cache 60 s par Vercel) ; le site les demande au chargement (1,5 s au plus, sinon il part sans) et les fusionne avec celles de `frontend/carte/content/parkings.json` (l'administration l'emporte). La fiche du parking cite la source de la retouche.
 - **Base locale de développement** : sans `DATABASE_URL`, `npm run api:dev` utilise un PostgreSQL embarqué (PGlite, dossier `data/dev-db/`, ignoré par Git) avec les migrations du dépôt : on teste l'administration sans Neon (dans ce mode, la carte « Base de données » de l'administration indique « non configurée », c'est normal).
 - **Créer ou mettre à jour la base** : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (rejouable ; l'adresse se copie depuis la console Neon, sans la coller ailleurs). Les migrations sont dans `server/db/migrations/`.
@@ -525,7 +526,7 @@ Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le m
 
 ## Déployer (Docker, Coolify, Vercel)
 
-Le site est **statique** : `npm run build` produit `dist/`, servi par nginx dans une image Docker.
+Le site est **statique** : `npm run build:pi` produit la carte dans `dist/`, servie par nginx dans une image Docker (l'API et l'administration ne tournent que sur Vercel).
 
 **Régénération des données au build** : l'argument `REFRESH_DATA` (dans `docker-compose.yml`,
 `"true"` par défaut) fait lancer au build `npm run data` (OpenStreetMap, BD TOPO, RGE ALTI) puis
@@ -544,7 +545,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 
 | Fichier | Rôle |
 |---|---|
-| `Dockerfile` | Étape 1 : Node construit le site. Étape 2 : nginx sert `dist/` (image finale sans Node). Images arm64 et amd64, donc compatible avec le Raspberry Pi 5 |
+| `Dockerfile` | Étape 1 : Node construit la carte (`npm run build:pi`). Étape 2 : nginx sert `dist/` (image finale sans Node). Images arm64 et amd64, donc compatible avec le Raspberry Pi 5 |
 | `deploy/nginx.conf` | Compression gzip ; cache 1 an pour `assets/` et pour les données appelées avec `?v=` ; `index.html`, `sw.js` et le manifeste revérifiés à chaque visite (réponse 304 s'ils n'ont pas changé) |
 | `docker-compose.yml` | Un service `web` (conteneur `city-chambery`) ; nginx écoute sur le port 80 du conteneur, publié sur le port **3000** de l'hôte (`'3000:80'`) ; argument `REFRESH_DATA` |
 | `deploy/refresh-data.sh` | Au build, si `REFRESH_DATA=true` : `npm run data` + `npm run nature`, avec retour aux données du dépôt en cas d'échec ou de données incomplètes |

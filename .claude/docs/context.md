@@ -33,7 +33,7 @@ c'est assez plaisant pour que mes amis y passent 10 minutes et en redemandent.*
 - Web desktop et mobile, mode hors-ligne (PWA)
 
 ### Hors scope (pour l'instant)
-- Back-end, comptes, progression partagée entre appareils ou entre amis (voir la section « Architecture » du backlog)
+- Comptes de joueurs, progression partagée entre appareils ou entre amis : prévus par EP008 (back-end léger et administration), en pause pendant EP010
 - Autres quartiers que le centre historique
 - Mode histoire / parcours thématiques, curseur d'époques (backlog P3)
 
@@ -43,16 +43,16 @@ c'est assez plaisant pour que mes amis y passent 10 minutes et en redemandent.*
 
 | Couche | Technologie |
 |--------|-------------|
-| Frontend | Vite 8 + TypeScript 5.9 + Three.js 0.186 ; PWA via vite-plugin-pwa |
-| Backend | Aucun — site 100 % statique |
-| Données | Pipeline Node (`scripts/`) : Overpass (OSM) + IGN BD TOPO + RGE ALTI + straight-skeleton → `public/data/city.json` ; contenu éditorial dans `src/content/*.json` |
+| Frontend | **Carte** (`frontend/carte/`) : Vite 8 + TypeScript 5.9 + Three.js 0.186, sans framework ; PWA via vite-plugin-pwa. **Administration** (`frontend/admin/`) : React 19, wouter, TanStack Query, React Hook Form ([ADR-002](architecture/decisions/ADR002-separer-front-et-back.md)) |
+| Backend | API (`server/`, futur `backend/`) : Hono + Zod + Drizzle sur fonctions Vercel, base PostgreSQL Neon ([ADR-001](architecture/decisions/ADR001-back-end-typescript-vercel-neon.md)) ; facultative : la carte marche sans elle |
+| Données | Pipeline Node (`frontend/carte/scripts/`) : Overpass (OSM) + IGN BD TOPO + RGE ALTI + straight-skeleton → `frontend/carte/public/data/city.json` ; contenu éditorial dans `frontend/carte/content/*.json` |
 | Stockage côté client | localStorage (progression, points, éléphants ramenés) |
 | Modèles 3D | Pack nature Quaternius (CC0) et éléphant de jeremy (CC BY 3.0), convertis en .glb (glTF-Transform, meshoptimizer) |
 | Infrastructure | Image Docker Node → nginx ; cible Coolify sur Raspberry Pi 5 (pas encore déployé) ; Vercel en test |
 
 ### Contraintes
 - Licences : ODbL (OSM), Licence Ouverte Etalab 2.0 (IGN), CC BY 3.0 (éléphant) → attributions affichées dans l'app
-- Pas de tests automatisés : la vérification passe par `npm run build` (types) et le navigateur (`?debug`)
+- Tests Vitest (`npm test`) pour l'API, l'administration et les contrôles du dépôt ; la carte se vérifie par `npm run build` (types, frontières) et le navigateur (`?debug`)
 - Fluidité mobile : voir [PERF-AUDIT.md](architecture/PERF-AUDIT.md)
 
 ---

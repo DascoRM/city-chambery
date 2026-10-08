@@ -46,4 +46,4 @@ Détail : [plan de l'admin React](../../../tasks/admin-react-plan.md) § 4 (ADM-
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Fait le 09/10/2026 (itération 84) ; à vérifier sur `preview/front-back`
