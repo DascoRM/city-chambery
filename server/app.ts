@@ -36,7 +36,8 @@ export function createApp(env: Env = process.env) {
 
   app.get('/health', async (c) => {
     const db = await checkDatabase(env);
-    return c.json({ ok: true, service: 'chambery-diorama-api', version: appVersion(env), env: appEnv(env), db });
+    // `admin` dit seulement si un jeton est configuré (jamais sa valeur) : aide à diagnostiquer une variable mal posée
+    return c.json({ ok: true, service: 'chambery-diorama-api', version: appVersion(env), env: appEnv(env), db, admin: env.ADMIN_TOKEN?.trim() ? 'configure' : 'absent' });
   });
 
   // Administration (US005) : fermée sans ADMIN_TOKEN, protégée par jeton sinon

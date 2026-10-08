@@ -13,9 +13,12 @@ const call = (env: Record<string, string>, path: string, headers: Record<string,
 const bearer = (t: string) => ({ authorization: `Bearer ${t}` });
 
 describe('accès à l’administration', () => {
-  it('est fermée (404) tant qu’aucun jeton n’est configuré', async () => {
+  it('est fermée (503, code dédié) tant qu’aucun jeton n’est configuré', async () => {
     const res = await call({}, '/api/admin/ping', bearer(TOKEN));
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe('admin-non-configuree');
+    expect((await (await call({}, '/api/health')).json()).admin).toBe('absent');
+    expect((await (await call({ ADMIN_TOKEN: TOKEN }, '/api/health')).json()).admin).toBe('configure');
   });
 
   it('refuse sans jeton, avec un mauvais jeton ou un schéma inconnu', async () => {

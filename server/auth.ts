@@ -45,7 +45,8 @@ export function adminAuth(env: Env, limiter: RateLimiter = createRateLimiter()):
   return async (c, next) => {
     // Espaces et retours à la ligne ignorés aux deux bouts : un jeton collé depuis le terminal (`openssl rand …`) en garde souvent un
     const expected = env.ADMIN_TOKEN?.trim();
-    if (!expected) return c.json({ error: 'introuvable' }, 404); // administration non configurée : fermée
+    // Administration non configurée : fermée ; réponse distincte d'une route inconnue pour pouvoir diagnostiquer
+    if (!expected) return c.json({ error: 'administration non configurée', code: 'admin-non-configuree' }, 503);
     const key = clientKey(c.req.raw.headers);
     if (limiter.blocked(key)) return c.json({ error: 'trop de tentatives, réessaie dans une minute' }, 429);
     const header = c.req.header('authorization') ?? '';

@@ -19,11 +19,14 @@ function row(dl, label, value, cls) {
 
 async function load(token) {
   const res = await fetch('/api/admin/status', { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' });
+  if (res.ok) return res.json();
+  let body = null;
+  try { body = await res.json(); } catch { /* réponse qui n'est pas du JSON : page de la plateforme, pas de l'API */ }
   if (res.status === 401) throw new Error('Jeton refusé.');
   if (res.status === 429) throw new Error('Trop de tentatives : réessaie dans une minute.');
-  if (res.status === 404) throw new Error("L'administration n'est pas configurée (ADMIN_TOKEN absent côté serveur).");
-  if (!res.ok) throw new Error(`Erreur ${res.status}.`);
-  return res.json();
+  if (body?.code === 'admin-non-configuree') throw new Error("L'administration n'est pas configurée : ADMIN_TOKEN n'est pas vu par ce déploiement (variable absente pour cet environnement, ou ajoutée après le déploiement : redéployer).");
+  if (res.status === 404) throw new Error(body ? "Route de l'API introuvable (404)." : "L'API ne répond pas à cette adresse (404 de la plateforme, pas de l'API).");
+  throw new Error(`Erreur ${res.status}${body?.error ? ` : ${body.error}` : ''}.`);
 }
 
 function show(data) {
