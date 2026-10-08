@@ -405,7 +405,8 @@ src/
   scene/roads.ts           Voies piétonnes et hauteur des rubans de voies (partagées)
   scene/walkways.ts        Réseau des voies où l'on marche (éléphants, passants, avatar)
   api/[...path].ts          Point d'entrée des fonctions Vercel (EP008) : toutes les routes /api/* vers server/app.ts
-  server/                  API (Hono, Zod, Drizzle) : app.ts (routes), env.ts (base et environnement), db/ (schéma, migrations, connexion), dev.ts (serveur local)
+  server/                  API (Hono, Zod, Drizzle) : app.ts (routes), env.ts (base et environnement), auth.ts (jeton d'administration, limite d'essais), db/ (schéma, migrations, connexion, statistiques), dev.ts (serveur local)
+  public/admin/            Page d'administration (HTML, CSS et JS sans framework, aucun HTML construit à partir de données)
   scene/parkings.ts        Panneaux « P » de la couche Parkings (EP006), posés au sol ou sur le toit (souterrains, silos)
   scene/parking-edits.ts   Retouches manuelles des parkings (parkings.json), validées et appliquées au chargement
   scene/avatar.ts          Avatar de la balade (EP005) : silhouette des passants ×2, tache au sol, anneau d'arrivée, marche le long du chemin
@@ -487,6 +488,7 @@ Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le m
 
 - **Variables d'environnement** (à saisir dans Vercel, Settings > Environment Variables ; jamais dans le dépôt) : `DATABASE_URL` (production et développement), `DATABASE_URL_PREVIEW` (prévisualisations). **Une prévisualisation n'utilise jamais `DATABASE_URL`** : sans `DATABASE_URL_PREVIEW`, la base y est désactivée. Le code ne lit que ces adresses PostgreSQL ordinaires : Neon reste remplaçable en changeant `DATABASE_URL`.
 - **Variables posées par l'intégration Neon** : `DATABASE_URL` (connexion avec répartiteur, celle de l'API), `DATABASE_URL_UNPOOLED` (connexion directe, utilisée par les migrations) ; les autres (`PG*`, `POSTGRES_*`) ne sont pas lues par le code.
+- **Administration (US005)** : page `/admin/` (non référencée, `noindex`) et routes `/api/admin/*`, protégées par le jeton **`ADMIN_TOKEN`** (variable Vercel, à définir pour Production **et** Preview ; jamais dans le dépôt). Générer un jeton long : `openssl rand -base64 32`. Sans `ADMIN_TOKEN`, l'administration est **fermée** (404). Le jeton voyage dans l'en-tête `Authorization: Bearer …` (HTTPS) ; page : jeton gardé le temps de l'onglet (`sessionStorage`) ; 5 essais ratés par minute et par adresse, puis blocage (limite par instance de fonction : un limiteur partagé viendra avec US008). En développement : `ADMIN_TOKEN=… npm run api:dev` puis http://localhost:5173/admin/index.html. Aujourd'hui : état de l'application, de la base, taille et lignes par table.
 - **Créer ou mettre à jour la base** : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (rejouable ; l'adresse se copie depuis la console Neon, sans la coller ailleurs). Les migrations sont dans `server/db/migrations/`.
 - **Développer** : `npm run api:dev` dans un terminal, `npm run dev` dans un autre.
 - **Contrôle** : `npm run build` vérifie aussi les types de l'API (`tsconfig.api.json`) et **la charge comme Vercel** (`scripts/check-api-esm.mjs` : projet en ES modules, extension `.js` obligatoire dans les imports relatifs de `api/` et `server/`) ; `npm test` lance les tests.

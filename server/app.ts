@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { appEnv, appVersion, resolveDatabase, type Env } from './env.js';
 import { database } from './db/client.js';
+import { adminAuth, createRateLimiter } from './auth.js';
+import { dbStats } from './db/stats.js';
 
 /**
  * API du diorama (EP008). Hono, fonctions Vercel du même dépôt. Le site fonctionne sans elle : si elle est en panne
@@ -35,6 +37,25 @@ export function createApp(env: Env = process.env) {
     const db = await checkDatabase(env);
     return c.json({ ok: true, service: 'chambery-diorama-api', version: appVersion(env), env: appEnv(env), db });
   });
+
+  // Administration (US005) : fermée sans ADMIN_TOKEN, protégée par jeton sinon
+  const admin = new Hono();
+  admin.use('*', adminAuth(env, createRateLimiter()));
+  admin.get('/ping', (c) => c.json({ ok: true }));
+  admin.get('/status', async (c) => {
+    const base = { version: appVersion(env), env: appEnv(env), node: process.version, region: env.VERCEL_REGION ?? null };
+    const target = resolveDatabase(env);
+    if (target.url === null) return c.json({ ...base, db: { status: target.reason } });
+    try {
+      const conn = database(env);
+      if (!conn.ok) return c.json({ ...base, db: { status: conn.reason } });
+      const stats = await dbStats(async (text) => [...(await conn.sql.unsafe(text))] as Record<string, unknown>[]);
+      return c.json({ ...base, db: { status: 'ok', ...stats } });
+    } catch {
+      return c.json({ ...base, db: { status: 'erreur' } });
+    }
+  });
+  app.route('/admin', admin);
 
   app.notFound((c) => c.json({ error: 'introuvable' }, 404));
   app.onError((err, c) => {

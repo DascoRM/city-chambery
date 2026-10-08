@@ -37,11 +37,11 @@ Sauvegarde : export hebdomadaire des retouches en JSON dans le dépôt (historiq
 
 | ID | User Story | Estimation | Status |
 |----|------------|-----------|--------|
-| [US001](US001-socle-api-et-base.md) | Socle API et base de données | 3 | 🔲 Todo |
+| [US001](US001-socle-api-et-base.md) | Socle API et base de données | 3 | 🟡 Fait, base à migrer par Dasco |
 | [US002](US002-identite-et-progression.md) | Identité anonyme et progression synchronisée | 5 | 🔲 Todo |
 | [US003](US003-scores-et-classement.md) | Scores et classement | 3 | 🔲 Todo |
 | [US004](US004-amis.md) | Partage entre amis | 5 | 🔲 Todo |
-| [US005](US005-admin-acces-et-tableau-de-bord.md) | Administration : accès protégé et tableau de bord | 3 | 🔲 Todo |
+| [US005](US005-admin-acces-et-tableau-de-bord.md) | Administration : accès protégé et tableau de bord | 3 | 🟡 Accès et état de la base faits ; usage et quotas à venir |
 | [US006](US006-admin-retouches.md) | Administration : retouches des parkings et des lieux | 5 | 🔲 Todo |
 | [US007](US007-admin-carte-de-position.md) | Administration : carte de position | 3 | 🔲 Todo |
 | [US008](US008-garde-fous-de-cout.md) | Garde-fous de coût | 2 | 🔲 Todo |
