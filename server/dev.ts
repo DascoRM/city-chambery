@@ -1,8 +1,26 @@
 /// <reference types="node" />
 import { serve } from '@hono/node-server';
 import { createApp } from './app.js';
+import type { Db } from './parkings.js';
 
-/** Serveur de développement : `npm run api:dev` (le site, lancé par `npm run dev`, lui renvoie /api par un proxy) */
+/**
+ * Serveur de développement : `npm run api:dev` (le site, lancé par `npm run dev`, lui renvoie /api par un proxy).
+ * Sans `DATABASE_URL`, il utilise une **base PostgreSQL locale** (PGlite, dans `data/dev-db/`, ignorée par Git) avec les
+ * migrations du dépôt : on développe et on teste sans Neon ni réseau. Avec `DATABASE_URL`, il utilise cette base.
+ */
 const port = Number(process.env.API_PORT ?? 8787);
-serve({ fetch: createApp().fetch, port });
+let db: Db | undefined;
+if (!process.env.DATABASE_URL) {
+  const { PGlite } = await import('@electric-sql/pglite');
+  const { drizzle } = await import('drizzle-orm/pglite');
+  const { migrate } = await import('drizzle-orm/pglite/migrator');
+  const schema = await import('./db/schema.js');
+  const { fileURLToPath } = await import('node:url');
+  const dir = process.env.DEV_DB_DIR ?? 'data/dev-db';
+  const d = drizzle(new PGlite(dir), { schema });
+  await migrate(d, { migrationsFolder: fileURLToPath(new URL('./db/migrations', import.meta.url)) });
+  db = d as unknown as Db;
+  console.log(`Base locale PGlite : ${dir} (migrations appliquées)`);
+}
+serve({ fetch: createApp(process.env, db ? { db: () => db! } : {}).fetch, port });
 console.log(`API : http://localhost:${port}/api/health`);

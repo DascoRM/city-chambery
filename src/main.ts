@@ -27,7 +27,7 @@ import { createBalade, type Balade, type BaladeConfig } from './game/balade';
 import { createCutaway, type Cutaway, type CutawayConfig } from './scene/cutaway';
 import { buildParkingSigns, type ParkingSigns, type ParkingSignsConfig } from './scene/parkings';
 import { parkingCard } from './ui/parking-card';
-import { applyParkingEdits, type ParkingEdits } from './scene/parking-edits';
+import { applyParkingEdits, fetchPublishedEdits, mergeParkingEdits, type ParkingEdits } from './scene/parking-edits';
 import parkingsContent from './content/parkings.json';
 import { buildAvatar, type Avatar, type AvatarConfig } from './scene/avatar';
 import avatarContent from './content/avatar.json';
@@ -83,8 +83,10 @@ async function main() {
     loading.hideBoot();
   }
   await loading.set(3, 'données');
+  // Retouches publiées par l'administration (EP008) : demandées en même temps que la ville, jamais bloquantes (1,5 s au plus)
+  const published = fetchPublishedEdits();
   const data = await loadCity();
-  if (data) applyParkingEdits(data, parkingsContent as unknown as ParkingEdits);
+  if (data) applyParkingEdits(data, mergeParkingEdits(parkingsContent as unknown as ParkingEdits, await published));
   if (!data) {
     lobby.destroy();
     loading.hideBoot();

@@ -45,9 +45,10 @@ export function parkingCard(p: Parking, osmDate: string): ParkingCardData {
   if (Number.isFinite(h)) lines.push({ text: `↕ Hauteur maximale : ${h.toLocaleString('fr-FR')} m` });
   if (T.access[p.access]) lines.push({ text: `🔑 ${T.access[p.access]}` });
   if (p.note) lines.push({ text: `📝 ${p.note}` });
-  const source = p.added ? T.sourceAdded
+  const by = p.editSource ? ` Source de la retouche : ${p.editSource}.` : '';
+  const source = (p.added ? T.sourceAdded
     : p.edited?.length ? fmt(T.sourceEdited, { date, fields: p.edited.map((f) => FIELD_LABEL[f] ?? f).join(', ') })
-    : fmt(T.sourceNote, { date });
+    : fmt(T.sourceNote, { date })) + (p.added || p.edited?.length ? by : '');
   return {
     id: p.id,
     title: p.name ?? T.unnamed,

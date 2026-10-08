@@ -74,6 +74,8 @@ export interface Parking {
   edited?: string[];
   /** Parking ajouté à la main, absent d'OpenStreetMap */
   added?: boolean;
+  /** Source de la retouche ou de l'ajout (administration) */
+  editSource?: string;
   /** Position imposée à la main : le panneau s'y pose, sans être ramené dans le contour */
   posFixed?: boolean;
 }

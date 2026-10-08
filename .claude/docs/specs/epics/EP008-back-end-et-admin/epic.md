@@ -41,8 +41,8 @@ Sauvegarde : export hebdomadaire des retouches en JSON dans le dépôt (historiq
 | [US002](US002-identite-et-progression.md) | Identité anonyme et progression synchronisée | 5 | 🔲 Todo |
 | [US003](US003-scores-et-classement.md) | Scores et classement | 3 | 🔲 Todo |
 | [US004](US004-amis.md) | Partage entre amis | 5 | 🔲 Todo |
-| [US005](US005-admin-acces-et-tableau-de-bord.md) | Administration : accès protégé et tableau de bord | 3 | 🟡 Accès et état de la base faits ; usage et quotas à venir |
-| [US006](US006-admin-retouches.md) | Administration : retouches des parkings et des lieux | 5 | 🔲 Todo |
+| [US005](US005-admin-acces-et-tableau-de-bord.md) | Administration : accès protégé et tableau de bord | 3 | 🟡 Accès et état de la base faits, essayés par Dasco sur Vercel ; usage et quotas à venir |
+| [US006](US006-admin-retouches.md) | Administration : retouches des parkings et des lieux | 5 | 🟡 Parkings faits ; lieux d'histoire à venir |
 | [US007](US007-admin-carte-de-position.md) | Administration : carte de position | 3 | 🔲 Todo |
 | [US008](US008-garde-fous-de-cout.md) | Garde-fous de coût | 2 | 🔲 Todo |
 | [US009](US009-donnees-personnelles.md) | Données personnelles | 2 | 🔲 Todo |
@@ -50,6 +50,26 @@ Sauvegarde : export hebdomadaire des retouches en JSON dans le dépôt (historiq
 
 **Total : 33 points (≈ 6 à 8 sessions).** Branche d'epic : `feat/EP008-back-end` ; une branche par US fusionnée dedans (règle des epics EP005 à EP007).
 **Ordre conseillé** : US001 (socle) → US005 (accès admin) → US006 et US007 (ce dont Dasco a besoin en premier) → US002 (progression) → US003, US008 → US004, US009, US010.
+
+### Mise à jour du 08/10/2026 : cloisonnement et administration en React ([EP010](../EP010-cloisonnement-et-admin-react/epic.md))
+Dasco a demandé de **cloisonner le dépôt** (site, API, admin, contrat partagé) et de faire **l'administration en React** ; le site public reste sans framework. EP010 porte le socle et passe **avant la suite des écrans** :
+- **Avant la suite d'US005** : EP010-US001 à US005 (structure, `shared/`, tsconfig, socle React, parité avec l'admin actuelle)
+- **Avant US006** : EP010-US006 (session par cookie) et US007 (`content/` à la racine)
+- **Avant US007** : EP010-US008 (`web/`) conseillée ; option de carte à trancher (EP010, décision D5)
+- **Avant US002 à US004** : EP010-US002 (contrats dans `shared/`)
+
+**Nouvel ordre conseillé** : US001 ✅ → US005 (accès, fait) → **EP010-US001 à US005** → US005 (suite : tableau de bord) → **EP010-US006, US007** → US006 → US007 → US002 → US003, US008 → US004, US009, US010.
+
+**Écrans d'administration en React, par US** (front seul, back-end non compté sauf mention ; [plan de l'admin React](../../../tasks/admin-react-plan.md) § 1 et § 4) :
+| US | Écrans | Jours (front) |
+|----|--------|---------------|
+| US005 | Tableau de bord : joueurs actifs, appels par jour, part des quotas, alerte à 70 %, dernière sauvegarde (ADM-08, avec US008) ; connexion GitHub plus tard (ADM-10 : 0,5 + 1,5 back) | 1 (+ 0,5) |
+| US006 | Parkings : liste (lue depuis `/data/city.json`, sans appel de fonction), fiche `ParkingOverride` avec source obligatoire, aperçu, brouillon puis publication (ADM-05) ; lieux, position + source en v1 (ADM-06) ; journal et annulation (ADM-07) | 4,5 à 5 |
+| US007 | Carte de position : iframe du site ≈ 0,5, ou plan 2D Leaflet 1,5 à 2, ou moteur 3D extrait 3 à 4 (ADM-04 / ADM-11) | 0,5 à 4 |
+| US010 | Sauvegarde et export (ADM-09) | 0,5 |
+| | **Total** | **≈ 6,5 à 10,5** (selon la carte) |
+
+L'estimation de l'epic (« 6 à 8 sessions », back-end compris) est donc **dépassée** : EP010 (≈ 5,5 à 6,5 j) plus ces écrans. Points à régler côté back pour US006 : table `edits` et lecture publique des retouches par le site (`GET /api/edits` en cache, repli sur `parkings.json`) ; **la base fait foi, l'export JSON est la sauvegarde**. US008 : Vercel Hobby n'expose sans doute pas l'usage par API (non vérifié) → compter nous-mêmes en base.
 
 ---
 

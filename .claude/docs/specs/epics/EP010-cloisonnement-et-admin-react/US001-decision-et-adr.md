@@ -1,0 +1,45 @@
+# EP010 - US001 - Décision et ADR-002 « Cloisonnement du dépôt »
+
+## User Story
+
+**En tant que** Dasco,
+**je veux** trancher la structure du dépôt et la pile de l'admin (décisions D1 à D9 de l'epic),
+**afin de** que le cloisonnement soit fait une fois, sans revenir dessus.
+
+---
+
+## Critères d'acceptation
+
+- [ ] **Given** les décisions D1 à D9, **When** Dasco les a tranchées, **Then** l'ADR-002 décrit la structure retenue, les règles d'import et la pile de l'admin, avec les options écartées
+- [ ] **Given** DECISIONS.md, **Then** une ligne par décision renvoie à l'ADR-002
+
+---
+
+## Règles métier
+Voir l'[epic](epic.md) : règles 1 à 7 et règles d'import.
+
+---
+
+## Estimation
+
+| Critère | Valeur |
+|---------|--------|
+| Jours | 0,25 |
+| Risque | — |
+| Dépend de | — |
+
+Détail : [plan de cloisonnement](../../../tasks/cloisonnement-depot-plan.md) § 2 et § 3, [plan de l'admin React](../../../tasks/admin-react-plan.md) § 5.2.
+
+---
+
+## Checklist dev
+- [ ] `npm run build` et `npm test` passent
+- [ ] Décisions reportées dans l'epic
+- [ ] Lock commité si les dépendances changent
+- [ ] README, DECISIONS, CHANGELOG si besoin
+- [ ] Validé par Dasco
+
+---
+
+**Priorité** : High
+**Status** : 🔲 Todo

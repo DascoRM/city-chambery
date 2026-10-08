@@ -17,10 +17,39 @@ export interface ParkingOverride {
   pos?: Pt;
   /** Phrase affichée dans la fiche (source à citer) */
   note?: string;
+  /** Source de la retouche (obligatoire depuis l'administration, EP008) */
+  source?: string;
 }
 export interface ParkingEdits {
   overrides?: Record<string, ParkingOverride>;
-  added?: (Partial<Parking> & { id: string; kind: ParkingKind; pos: Pt; note?: string })[];
+  added?: (Partial<Parking> & { id: string; kind: ParkingKind; pos: Pt; note?: string; source?: string })[];
+}
+
+/**
+ * Fusionne les retouches du fichier (`parkings.json`) et celles publiées par l'administration (base, EP008-US006) :
+ * pour un même parking, l'administration l'emporte ; les ajouts sont réunis (l'administration l'emporte à identifiant égal).
+ */
+export function mergeParkingEdits(file: ParkingEdits, published: ParkingEdits | null): ParkingEdits {
+  if (!published) return file;
+  const added = new Map((file.added ?? []).map((a) => [a.id, a]));
+  for (const a of published.added ?? []) added.set(a.id, a);
+  return { overrides: { ...(file.overrides ?? {}), ...(published.overrides ?? {}) }, added: [...added.values()] };
+}
+
+/** Retouches publiées par l'administration (`/api/parkings/edits`) ; null si l'API ne répond pas vite (le site part sans) */
+export async function fetchPublishedEdits(timeoutMs = 1500): Promise<ParkingEdits | null> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch('/api/parkings/edits', { signal: ctrl.signal });
+    if (!res.ok) return null;
+    const body = (await res.json()) as ParkingEdits;
+    return body && typeof body === 'object' ? body : null;
+  } catch {
+    return null; // hors ligne, API absente (développement sans `npm run api:dev`), délai dépassé
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 const KINDS = new Set<string>(['underground', 'multi-storey', 'surface', 'street']);
@@ -48,13 +77,15 @@ export function applyParkingEdits(data: CityData, edits: ParkingEdits): void {
       if (isPt(o.pos)) { out.pos = o.pos; out.posFixed = true; edited.push('pos'); } else bad(`pos invalide (${p.id})`);
     }
     if (typeof o.note === 'string') out.note = o.note;
+    if (typeof o.source === 'string' && o.source.trim()) out.editSource = o.source.trim();
     if (edited.length) out.edited = edited;
     return out;
   });
   for (const a of edits.added ?? []) {
     if (!a || typeof a.id !== 'string' || !KINDS.has(a.kind) || !isPt(a.pos)) { bad(`ajout sans identifiant, type ou position valide (${JSON.stringify(a)?.slice(0, 80)})`); continue; }
     if (known.has(a.id)) { bad(`ajout « ${a.id} » : identifiant déjà pris`); continue; }
-    list.push({ access: 'public', ...a, added: true, posFixed: true } as Parking);
+    const { source, ...rest } = a;
+    list.push({ access: 'public', ...rest, added: true, posFixed: true, ...(source?.trim() ? { editSource: source.trim() } : {}) } as Parking);
   }
   data.parkings = list;
 }
