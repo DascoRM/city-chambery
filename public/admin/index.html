@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'" />
+  <title>Administration · Chambéry en diorama</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <main>
+    <h1>Administration</h1>
+    <p class="sub">Chambéry en diorama · accès réservé</p>
+
+    <form id="login" class="card" autocomplete="off">
+      <label for="token">Jeton d'administration</label>
+      <input id="token" type="password" autocomplete="off" spellcheck="false" required />
+      <button type="submit">Se connecter</button>
+      <p id="login-msg" class="msg" role="alert"></p>
+    </form>
+
+    <section id="board" hidden>
+      <div class="bar">
+        <button id="refresh" type="button">Actualiser</button>
+        <button id="logout" type="button" class="ghost">Se déconnecter</button>
+      </div>
+      <div class="card">
+        <h2>Application</h2>
+        <dl id="app"></dl>
+      </div>
+      <div class="card">
+        <h2>Base de données</h2>
+        <dl id="db"></dl>
+        <table id="tables" hidden>
+          <thead><tr><th>Table</th><th class="n">Lignes</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="hint">Prochainement : retouches des parkings et des lieux, carte de position, usage et quotas.</p>
+    </section>
+  </main>
+  <script src="admin.js" type="module"></script>
+</body>
+</html>

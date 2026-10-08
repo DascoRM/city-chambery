@@ -126,7 +126,9 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         navigateFallback: 'index.html',
         // L'API n'est jamais servie par le cache du service worker
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/admin/],
+        // La page d'administration n'est pas mise en cache pour les visiteurs
+        globIgnores: ['admin/**'],
         runtimeCaching: [
           {
             // Polices Google : feuille de style revérifiée en arrière-plan, fichiers gardés un an

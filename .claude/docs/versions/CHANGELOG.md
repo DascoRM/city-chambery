@@ -1,5 +1,18 @@
 # Journal des itérations
 
+## Itération 81 — 08/10/2026 (branche `feat/EP008-US005-admin-acces`, epic EP008)
+
+**Demande de Dasco :** passer à l'étape suivante (accès à l'administration).
+
+**Changements (US005) :**
+- `server/auth.ts` : jeton secret `ADMIN_TOKEN` (variable Vercel) dans `Authorization: Bearer …` ; **administration fermée (404) sans jeton configuré** ; comparaison **en temps constant** (empreintes SHA-256 de même taille) ; **5 essais ratés par minute et par adresse, puis 429** (limite en mémoire, donc par instance de fonction : un limiteur partagé viendra avec US008) ;
+- `/api/admin/ping` et `/api/admin/status` (version, environnement, Node, région, état de la base, taille, nombre de lignes par table via `server/db/stats.ts`, indépendant du pilote) ; `/api/health` reste publique ;
+- `public/admin/` : page d'administration sans framework (HTML, CSS, JS), politique de contenu stricte, **aucun HTML construit à partir de données** (`textContent` partout), jeton gardé le temps de l'onglet ; sortie des caches du service worker (`globIgnores`, `navigateFallbackDenylist`) ; en-têtes `X-Robots-Tag: noindex` et `Referrer-Policy: no-referrer` sur `/admin` et `/api`.
+
+**Vérifié :** `npm test` : 19 tests (fermeture sans jeton, 401 sans jeton, mauvais jeton ou schéma, accès avec le bon jeton, blocage après 5 échecs sans gêner une autre adresse, jeton jamais renvoyé, `/api/health` publique, statistiques de la base sur PGlite) ; `npm run build` (dont le chargement de l'API comme sur Vercel) ; navigateur en local : mauvais jeton refusé avec message, bon jeton → tableau, session gardée au rechargement, déconnexion ; en version de production (`vite preview`), `/admin/` sert la page d'administration.
+
+**Non vérifié :** déploiement sur Vercel (jeton à saisir par Dasco) ; le blocage d'essais sur Vercel (instances multiples : au mieux) ; l'adresse client derrière le réseau de Vercel (`x-forwarded-for`) ; usage, quotas et alertes (US008) ; connexion GitHub à la place du jeton (plus tard).
+
 ## Itération 80 — 08/10/2026 (branche `feat/EP008-US001-socle-api`, epic EP008)
 
 **Demande de Dasco :** commencer le back-end (pile validée : TypeScript, Hono, Zod, Drizzle, Neon, fonctions Vercel).
