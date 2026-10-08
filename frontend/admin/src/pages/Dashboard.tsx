@@ -14,7 +14,9 @@ const size = (bytes: number) => (bytes >= 1048576 ? `${(bytes / 1048576).toFixed
 
 /** Tableau de bord : état de l'application et de la base (EP008-US005). Usage et quotas viendront avec EP008-US008. */
 export function Dashboard() {
-  const status = useQuery({ queryKey: STATUS_KEY, queryFn: () => api<AdminStatus>('GET', '/api/admin/status') });
+  // 30 s de fraîcheur : l'état reçu à la connexion n'est pas redemandé aussitôt (chaque lecture interroge la base) ;
+  // « Actualiser » relit quand même
+  const status = useQuery({ queryKey: STATUS_KEY, queryFn: () => api<AdminStatus>('GET', '/api/admin/status'), staleTime: 30_000 });
   const data = status.data;
   const db = data?.db;
   const [label, cls] = db ? (DB_LABEL[db.status] ?? [db.status, 'warn']) : ['', 'warn'];

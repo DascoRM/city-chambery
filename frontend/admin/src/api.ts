@@ -40,9 +40,13 @@ export function errorMessage(status: number, body: ApiErrorBody | null, notFound
     if (!body) return "L'API ne répond pas à cette adresse (404 de la plateforme, pas de l'API).";
     return notFound ?? "Route de l'API introuvable (404).";
   }
+  if (status >= 500) return `Erreur ${status}${body?.error ? ` : ${body.error}` : ''}.`;
   const detail = Array.isArray(body?.issues) ? body.issues.map((i) => `${(i.path ?? []).join('.') || 'formulaire'} : ${i.message}`).join(' ; ') : '';
   return `${body?.error ?? `Erreur ${status}`}${detail ? ` (${detail})` : ''}`;
 }
+
+/** Statut d'une `ApiError` quand l'API n'a pas pu être jointe (réseau coupé, serveur arrêté) */
+export const NETWORK_ERROR = 0;
 
 export interface ApiOptions {
   body?: unknown;
@@ -57,7 +61,12 @@ export async function api<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: st
   const headers: Record<string, string> = {};
   if (token) headers.Authorization = `Bearer ${token}`;
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
-  const res = await fetch(path, { method, cache: 'no-store', headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
+  let res: Response;
+  try {
+    res = await fetch(path, { method, cache: 'no-store', headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
+  } catch {
+    throw new ApiError("Impossible de joindre l'API (réseau coupé ou serveur arrêté).", NETWORK_ERROR);
+  }
   let data: unknown = null;
   try { data = await res.json(); } catch { /* pas de JSON : page de la plateforme, pas de l'API */ }
   if (!res.ok) {
@@ -65,6 +74,10 @@ export async function api<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: st
     // Jeton de la session refusé (changé, expiré) : retour à la connexion. Un essai de connexion ne déclenche rien.
     if (res.status === 401 && fromSession) window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
     throw new ApiError(errorMessage(res.status, body, opts.notFound), res.status, body?.code);
+  }
+  // Réponse « réussie » qui n'est pas du JSON : ce n'est pas l'API mais une page de repli (ex. nginx qui sert la carte)
+  if (data === null && res.status !== 204) {
+    throw new ApiError("L'API ne répond pas à cette adresse (la réponse n'est pas du JSON).", res.status);
   }
   return data as T;
 }

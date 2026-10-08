@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Link, Route, Router, Switch } from 'wouter';
 import { useHashLocation } from 'wouter/use-hash-location';
-import { ApiError } from './api';
+import { ApiError, NETWORK_ERROR } from './api';
 import { AuthProvider, useAuth } from './auth';
 import { Layout } from './Layout';
 import { Login } from './pages/Login';
@@ -19,7 +19,7 @@ export function App() {
       queries: {
         // Une seule nouvelle tentative, et seulement si le serveur ou le réseau a flanché (la base Neon se réveille) :
         // une erreur 4xx (jeton refusé, route absente) ne se corrige pas en réessayant
-        retry: (count, error) => count < 1 && !(error instanceof ApiError && error.status < 500),
+        retry: (count, error) => count < 1 && (!(error instanceof ApiError) || error.status === NETWORK_ERROR || error.status >= 500),
         refetchOnWindowFocus: false,
       },
     },

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { api } from '../api';
+import { api, ApiError } from '../api';
 import type { AddedParking, AdminParkingEdits, CityParking, ParkingKind, ParkingOverride } from '../types';
 
 /**
@@ -52,6 +52,9 @@ function Message({ msg, error }: { msg: Msg; error?: string }) {
 export function Parkings() {
   const edits = useQuery({ queryKey: EDITS_KEY, queryFn: () => api<AdminParkingEdits>('GET', '/api/admin/parkings/edits') });
   const [selected, setSelected] = useState<CityParking | null>(null);
+  // Chaque « Choisir » recrée le formulaire, même sur le parking déjà choisi : c'est la façon d'annuler une saisie
+  const [pick, setPick] = useState(0);
+  const choose = (p: CityParking) => { setSelected(p); setPick((n) => n + 1); };
   return (
     <section>
       <div className="card">
@@ -60,8 +63,8 @@ export function Parkings() {
           Les retouches sont publiées tout de suite (le site les lit au chargement, au plus 1 minute de délai) ; chacune demande
           une <b>source</b>. Pour une position, utilise sur le site <code>?debug</code> puis « 📍 Position ».
         </p>
-        <Search overrides={edits.data?.overrides ?? {}} onPick={setSelected} />
-        {selected && <OverrideForm key={selected.id} parking={selected} current={edits.data?.overrides[selected.id]} />}
+        <Search overrides={edits.data?.overrides ?? {}} onPick={choose} />
+        {selected && <OverrideForm key={`${selected.id}#${pick}`} parking={selected} current={edits.data?.overrides[selected.id]} />}
       </div>
       <AddForm />
       <EditList edits={edits.data} error={edits.error} />
@@ -82,7 +85,7 @@ function Search({ overrides, onPick }: { overrides: Record<string, ParkingOverri
     <>
       <label htmlFor="pk-search">Chercher un parking (nom ou identifiant)</label>
       <input id="pk-search" type="search" autoComplete="off" placeholder="ex. Europe, way/37376434"
-        value={q} onChange={(e) => setQ(e.target.value)} onFocus={() => setWanted(true)} />
+        value={q} onChange={(e) => setQ(e.target.value)} onFocus={() => { setWanted(true); if (city.isError) void city.refetch(); }} />
       {city.error && <p className="msg">{city.error.message}</p>}
       <ul className="results">
         {found.map((p) => (
@@ -112,6 +115,16 @@ function OverrideForm({ parking, current }: { parking: CityParking; current?: Pa
   const save = useMutation({ mutationFn: (body: ParkingOverride) => api('PUT', `/api/admin/parkings/overrides/${parking.id}`, { body }) });
   const remove = useMutation({ mutationFn: () => api('DELETE', `/api/admin/parkings/edits/${parking.id}`, { notFound: NOT_FOUND }) });
   const refresh = () => queryClient.invalidateQueries({ queryKey: EDITS_KEY });
+  /** La retouche de ce parking devient tout de suite l'état connu : pendant la relecture (ou si elle échoue), le formulaire
+   *  ne revient pas à l'ancienne valeur, qu'un nouvel enregistrement republierait sans le dire */
+  const publish = (override: ParkingOverride | undefined) =>
+    queryClient.setQueryData<AdminParkingEdits>(EDITS_KEY, (old) => {
+      if (!old) return old;
+      const overrides = { ...old.overrides };
+      if (override) overrides[parking.id] = override;
+      else delete overrides[parking.id];
+      return { ...old, overrides };
+    });
 
   useEffect(() => { ref.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }); }, []);
   // Retouches relues (après un enregistrement, ou arrivées après le choix du parking) : le formulaire les reprend s'il n'est pas en cours de saisie
@@ -127,8 +140,9 @@ function OverrideForm({ parking, current }: { parking: CityParking; current?: Pa
     };
     try {
       await save.mutateAsync(body);
+      publish(body);
+      reset(overrideFields(body));
       setMsg({ text: 'Retouche enregistrée et publiée.', ok: true });
-      reset(f);
       await refresh();
     } catch (e) {
       setMsg({ text: message(e) });
@@ -139,8 +153,9 @@ function OverrideForm({ parking, current }: { parking: CityParking; current?: Pa
     if (!confirm('Retirer cette retouche ?')) return;
     try {
       await remove.mutateAsync();
-      setMsg({ text: 'Retouche retirée.', ok: true });
+      publish(undefined);
       reset(overrideFields(undefined));
+      setMsg({ text: 'Retouche retirée.', ok: true });
       await refresh();
     } catch (e) {
       setMsg({ text: message(e) });
@@ -240,9 +255,15 @@ function EditList({ edits, error }: { edits?: AdminParkingEdits; error: Error | 
     if (!confirm(`Retirer la retouche de ${id} ?`)) return;
     try {
       await remove.mutateAsync(id);
+      queryClient.setQueryData<AdminParkingEdits>(EDITS_KEY, (old) => {
+        if (!old) return old;
+        const overrides = { ...old.overrides };
+        delete overrides[id];
+        return { ...old, overrides, added: old.added.filter((a) => a.id !== id) };
+      });
       await queryClient.invalidateQueries({ queryKey: EDITS_KEY });
     } catch (e) {
-      alert(message(e));
+      if (!(e instanceof ApiError && e.status === 401)) alert(message(e));
     }
   }
 
