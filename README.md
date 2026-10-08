@@ -80,6 +80,10 @@ npm run nature                   # reconvertit les arbres du pack nature (après
 | `npm run dev` | Serveur de développement (avec l'outil de placement et les fiches brouillons) |
 | `npm run build` | Build statique de production dans `dist/` (sans outil de placement ni brouillons) |
 | `npm run preview` | Sert le build de production en local |
+| `npm run api:dev` | API en local (http://localhost:8787/api/health) ; `npm run dev` lui renvoie `/api` par un proxy |
+| `npm test` | Tests de l'API (Vitest) |
+| `npm run db:generate` | Génère une migration SQL depuis `server/db/schema.ts` (sans base) |
+| `npm run db:migrate` | Applique les migrations : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (jamais automatique au déploiement ; le nom d'hôte est affiché avant d'agir) |
 | `npm run docker:up` | Construit l'image Docker et lance le conteneur en arrière-plan (http://localhost:3000) |
 | `npm run docker:logs` | Affiche les journaux du conteneur en continu |
 | `npm run docker:down` | Arrête et supprime le conteneur |
@@ -400,6 +404,8 @@ src/
   scene/geo.ts             Géométrie 2D commune + rayon depuis un point de l'écran (screenRay)
   scene/roads.ts           Voies piétonnes et hauteur des rubans de voies (partagées)
   scene/walkways.ts        Réseau des voies où l'on marche (éléphants, passants, avatar)
+  api/[...path].ts          Point d'entrée des fonctions Vercel (EP008) : toutes les routes /api/* vers server/app.ts
+  server/                  API (Hono, Zod, Drizzle) : app.ts (routes), env.ts (base et environnement), db/ (schéma, migrations, connexion), dev.ts (serveur local)
   scene/parkings.ts        Panneaux « P » de la couche Parkings (EP006), posés au sol ou sur le toit (souterrains, silos)
   scene/parking-edits.ts   Retouches manuelles des parkings (parkings.json), validées et appliquées au chargement
   scene/avatar.ts          Avatar de la balade (EP005) : silhouette des passants ×2, tache au sol, anneau d'arrivée, marche le long du chemin
@@ -454,6 +460,36 @@ Choix techniques : **Three.js** plutôt qu'une librairie de cartographie (rendu 
 simple à maîtriser en scène 3D pure) ; **pas de backend** : tout est statique, hébergeable
 n'importe où (Coolify sur le Pi, Netlify, GitHub Pages…) avec `npm run build`.
 Le détail des choix est dans [`.claude/docs/architecture/decisions/DECISIONS.md`](.claude/docs/architecture/decisions/DECISIONS.md).
+
+---
+
+## Branches et déploiements Vercel
+
+Pour ne pas publier à chaque branche (quota Vercel Hobby : 100 déploiements par jour, canceled compris) et garder une production sûre, `vercel.json` (`git.deploymentEnabled`) n'autorise que trois familles de branches :
+
+| Branche | Rôle | Déploiement |
+|---|---|---|
+| `main` | **Production** | automatique, sur le domaine de production |
+| `release` | **Recette** (staging) : on y regroupe ce qui est prêt à tester avant la production ; adresse stable ; utilise la base de recette (`DATABASE_URL_PREVIEW`) | automatique |
+| `preview/<sujet>` | **Essai à la demande** d'une fonctionnalité | automatique, sur adresse propre à la branche |
+| toute autre (`feat/…`, `fix/…`, `docs/…`, `exp/…`) | travail en cours | **aucun** |
+
+Pour faire tester une branche : `git push origin feat/mon-sujet:preview/mon-sujet` (la branche locale garde son nom). On supprime ensuite la branche `preview/…` distante. Flux normal : `feat/…` → `release` (recette) → `main` (production, fusion seulement après accord).
+Les prévisualisations sont protégées par l'authentification Vercel : seul un compte connecté les ouvre. Réglage manuel conseillé dans Vercel (Settings > Security > Deployment Retention) : durée de conservation des anciens déploiements.
+
+Tests en local : `npm test` (API) tourne **sans Neon, sans Docker, sans réseau** : les migrations sont rejouées sur PGlite, un vrai PostgreSQL embarqué (`server/db/migrations.test.ts`).
+
+---
+
+## API et base de données (EP008)
+
+Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le même dépôt : **Hono** (routes), **Zod** (validation), **Drizzle** (base et migrations), PostgreSQL chez **Neon**, fonctions **Vercel** (`api/[...path].ts` → `server/app.ts`). Décision et alternatives écartées : [ADR-001](.claude/docs/architecture/decisions/ADR001-back-end-typescript-vercel-neon.md). Seul point de santé pour l'instant : `GET /api/health` (version, environnement, état de la base ; jamais d'adresse ni de mot de passe).
+
+- **Variables d'environnement** (à saisir dans Vercel, Settings > Environment Variables ; jamais dans le dépôt) : `DATABASE_URL` (production et développement), `DATABASE_URL_PREVIEW` (prévisualisations). **Une prévisualisation n'utilise jamais `DATABASE_URL`** : sans `DATABASE_URL_PREVIEW`, la base y est désactivée. Le code ne lit que ces adresses PostgreSQL ordinaires : Neon reste remplaçable en changeant `DATABASE_URL`.
+- **Variables posées par l'intégration Neon** : `DATABASE_URL` (connexion avec répartiteur, celle de l'API), `DATABASE_URL_UNPOOLED` (connexion directe, utilisée par les migrations) ; les autres (`PG*`, `POSTGRES_*`) ne sont pas lues par le code.
+- **Créer ou mettre à jour la base** : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (rejouable ; l'adresse se copie depuis la console Neon, sans la coller ailleurs). Les migrations sont dans `server/db/migrations/`.
+- **Développer** : `npm run api:dev` dans un terminal, `npm run dev` dans un autre.
+- **Contrôle** : `npm run build` vérifie aussi les types de l'API (`tsconfig.api.json`) et **la charge comme Vercel** (`scripts/check-api-esm.mjs` : projet en ES modules, extension `.js` obligatoire dans les imports relatifs de `api/` et `server/`) ; `npm test` lance les tests.
 
 ---
 

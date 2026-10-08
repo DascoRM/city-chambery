@@ -92,6 +92,8 @@ export default defineConfig({
     },
   },
   define: { __DATA_VERSION__: JSON.stringify(dataVersion()) },
+  // En développement, /api est renvoyé au serveur de l'API (`npm run api:dev`, port 8787)
+  server: { proxy: { '/api': 'http://localhost:8787' } },
   plugins: [
     poiPlacementApi(),
     // Mode hors-ligne (PWA) : un service worker garde le site, city.json et les modèles sur l'appareil.
@@ -123,6 +125,8 @@ export default defineConfig({
         ignoreURLParametersMatching: [/^v$/],
         cleanupOutdatedCaches: true,
         navigateFallback: 'index.html',
+        // L'API n'est jamais servie par le cache du service worker
+        navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
             // Polices Google : feuille de style revérifiée en arrière-plan, fichiers gardés un an
