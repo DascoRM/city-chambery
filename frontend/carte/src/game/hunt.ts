@@ -38,7 +38,7 @@ export interface HuntOptions {
   fireworks: { launch(from: THREE.Vector3, delay?: number, big?: boolean): void };
   returned: Set<number>;
   points: number;
-  /** Réglages du jeu (src/content/mascot.json, bloc game) */
+  /** Réglages du jeu (content/mascot.json, bloc game) */
   game: Pick<MascotConfig['game'], 'points' | 'bonus' | 'restartSeconds' | 'bubbleSeconds' | 'taunts' | 'missTaunts' | 'catchChance'>;
   /** Bulle de texte ancrée sur un point de la scène */
   bubble(text: string | null, x?: number, y?: number): void;

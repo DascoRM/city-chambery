@@ -1,7 +1,7 @@
 import type { CityData, Parking, ParkingKind, Pt } from '../types';
 
 /**
- * Retouches manuelles des parkings (EP006) : `src/content/parkings.json` → `overrides` (par identifiant OpenStreetMap)
+ * Retouches manuelles des parkings (EP006) : `content/parkings.json` → `overrides` (par identifiant OpenStreetMap)
  * et `added` (parkings absents d'OSM). Appliquées au chargement sur les données de `city.json` : on corrige ou on
  * complète sans relancer le script de données (recharger la page suffit). Rien n'est inventé : ce qu'on ajoute ici
  * doit venir d'une source (la note de la fiche peut la citer).

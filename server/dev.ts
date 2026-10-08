@@ -16,7 +16,9 @@ if (!process.env.DATABASE_URL) {
   const { migrate } = await import('drizzle-orm/pglite/migrator');
   const schema = await import('./db/schema.js');
   const { fileURLToPath } = await import('node:url');
+  const { mkdirSync } = await import('node:fs');
   const dir = process.env.DEV_DB_DIR ?? 'data/dev-db';
+  mkdirSync(dir, { recursive: true }); // PGlite ne crée pas les dossiers parents (data/ n'existe plus d'office)
   const d = drizzle(new PGlite(dir), { schema });
   await migrate(d, { migrationsFolder: fileURLToPath(new URL('./db/migrations', import.meta.url)) });
   db = d as unknown as Db;

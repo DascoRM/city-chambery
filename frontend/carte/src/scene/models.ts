@@ -8,7 +8,7 @@ import { buildCarreCurial } from './models/carrecurial';
 import { dataUrl } from '../dataurl';
 
 /**
- * Monuments modélisés (src/content/models.json).
+ * Monuments modélisés (content/models.json).
  *
  * source :
  *  - "procedural:<nom>" → modèle généré en code (voir PROCEDURAL ci-dessous) ;

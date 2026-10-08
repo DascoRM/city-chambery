@@ -8,7 +8,7 @@ import { roadDistanceIndex } from './roads';
 
 /**
  * Détails de façade tirés du pack de bâtiments (public/models/buildings/details.glb, voir
- * `npm run buildings` et src/content/buildings.json).
+ * `npm run buildings` et content/buildings.json).
  *
  * Auvents (EP001-US008) : un auvent à la façade de chaque bar, café et restaurant dont l'épingle est dans
  * un bâtiment. On retient l'arête du contour du bâtiment qui donne sur la voie la plus proche (et pas sur

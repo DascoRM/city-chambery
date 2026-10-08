@@ -4,7 +4,7 @@ import type { LoadingState } from './loading';
 /**
  * Lobby de démarrage (EP004-US003, piste B « Carte vivante ») : un panneau clair posé sur le diorama, qui explique
  * le projet pendant que la ville charge derrière. « Explorer la carte » est grisé jusqu'à ce qu'elle soit prête.
- * Les textes viennent de `src/content/lobby.json` ; les nombres sont lus dans les données, jamais écrits en dur.
+ * Les textes viennent de `content/lobby.json` ; les nombres sont lus dans les données, jamais écrits en dur.
  */
 export interface LobbyContent {
   eyebrow: string;

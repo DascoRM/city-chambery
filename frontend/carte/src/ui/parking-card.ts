@@ -1,5 +1,5 @@
 import type { Parking } from '../types';
-import texts from '../content/parkings.json';
+import texts from '../../content/parkings.json';
 import { parkingColor } from '../scene/terrain';
 
 /** Contenu de la fiche d'un parking (EP006-US003) : chaque chiffre dit d'où il vient ; l'inconnu est assumé */

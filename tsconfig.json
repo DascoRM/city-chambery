@@ -1,4 +1,5 @@
 {
+  "//": "Provisoire (EP010) : Vercel compile api/ avec ce fichier ; ses options doivent rester celles de la carte (frontend/carte/tsconfig.json) jusqu'à EP010-US006, où il deviendra la config du back.",
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
@@ -13,5 +14,5 @@
     "noEmit": true,
     "types": ["vite/client"]
   },
-  "include": ["src"]
+  "include": ["frontend/carte/src"]
 }

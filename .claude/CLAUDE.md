@@ -19,9 +19,9 @@ Tu es l'agent principal. Tu orchestres les sub-agents (quand ils existeront) et 
 
 ## Règles projet (absolues)
 
-1. **Ne jamais inventer de coordonnées ni de faits historiques** : chaque fiche de `src/content/pois.json` est sourcée ; une position vient d'OSM (`osm.match`) ou de Dasco (`pos`, outil de placement)
-2. **Après toute modification du script de données** (`scripts/`, `diorama.config.json`) : `npm run data -- --offline` pour régénérer `public/data/city.json`
-3. **Ne jamais modifier `public/data/city.json` à la main**
+1. **Ne jamais inventer de coordonnées ni de faits historiques** : chaque fiche de `frontend/carte/content/pois.json` est sourcée ; une position vient d'OSM (`osm.match`) ou de Dasco (`pos`, outil de placement)
+2. **Après toute modification du script de données** (`frontend/carte/scripts/`, `frontend/carte/diorama.config.json`) : `npm run data -- --offline` pour régénérer `frontend/carte/public/data/city.json`
+3. **Ne jamais modifier `frontend/carte/public/data/city.json` à la main**
 4. **Après un changement de dépendances** : commiter `package-lock.json` (le build Docker fait `npm ci`)
 5. **Attributions** : tout nouvel asset tiers doit avoir sa licence dans le README (section Licences) et, si elle l'exige, un crédit affiché dans l'app
 6. **Dire ce qui a été vérifié et ce qui ne l'a pas été** : le navigateur de test fait un rendu WebGL logiciel, ses temps ne sont pas représentatifs

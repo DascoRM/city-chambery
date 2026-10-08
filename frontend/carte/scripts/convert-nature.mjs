@@ -2,7 +2,7 @@
  * Convertit les modèles OBJ du pack Quaternius (assets-src/quaternius-nature/obj/<catégorie>/<Nom>.obj)
  * en .glb légers pour le diorama (public/models/nature/<Nom>.glb).
  *
- * Seuls les modèles cités dans les mélanges de src/content/nature.json sont convertis, avec leurs variantes
+ * Seuls les modèles cités dans les mélanges de content/nature.json sont convertis, avec leurs variantes
  * d'automne et d'hiver (`seasons`), ou ceux passés en arguments :
  * `node scripts/convert-nature.mjs Rock_1 Bush_1`).
  *
@@ -96,7 +96,7 @@ function convert(objPath) {
   return { pos: new Float32Array(pos), col: new Uint8Array(col), idx: pos.length / 3 > 65535 ? new Uint32Array(idx) : new Uint16Array(idx) };
 }
 
-const config = JSON.parse(readFileSync(join(ROOT, 'src/content/nature.json'), 'utf8'));
+const config = JSON.parse(readFileSync(join(ROOT, 'content/nature.json'), 'utf8'));
 /** Variantes de saison d'un modèle (itération 31) : CommonTree_2 → CommonTree_Autumn_2, CommonTree_Dead_2. */
 const seasonal = (name) => {
   const s = config.seasons, m = /^(.+)_(\d+)$/.exec(name);

@@ -2,7 +2,7 @@ node_modules
 dist
 .DS_Store
 # Données brutes Overpass (volumineuses, régénérables)
-data/raw/
+frontend/carte/data/raw/
 # Graphe de connaissances graphify (régénérable)
 graphify-out/
 

@@ -1,7 +1,7 @@
 /**
  * Outil de placement des lieux — chargé uniquement avec `npm run dev`.
  * Touche P (ou bouton 📍) : clic sur la carte → coordonnées `pos` à copier ou à enregistrer
- * directement dans src/content/pois.json.
+ * directement dans content/pois.json.
  */
 import * as THREE from 'three';
 import type { CityData, PlacedPoi, Pt } from '../types';

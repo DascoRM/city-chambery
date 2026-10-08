@@ -70,7 +70,7 @@ export interface Parking {
   dupOf?: string[];
   /** Phrase de la fiche (retouche manuelle, source à citer) */
   note?: string;
-  /** Champs retouchés à la main (src/content/parkings.json) : la fiche ne les attribue plus à OpenStreetMap */
+  /** Champs retouchés à la main (content/parkings.json) : la fiche ne les attribue plus à OpenStreetMap */
   edited?: string[];
   /** Parking ajouté à la main, absent d'OpenStreetMap */
   added?: boolean;

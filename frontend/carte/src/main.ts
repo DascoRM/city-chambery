@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import './style.css';
-import poisContent from './content/pois.json';
-import modelsContent from './content/models.json';
-import natureContent from './content/nature.json';
-import mascotContent from './content/mascot.json';
-import placeHours from './content/place-hours.json';
-import buildingsContent from './content/buildings.json';
+import poisContent from '../content/pois.json';
+import modelsContent from '../content/models.json';
+import natureContent from '../content/nature.json';
+import mascotContent from '../content/mascot.json';
+import placeHours from '../content/place-hours.json';
+import buildingsContent from '../content/buildings.json';
 import type { CityData, Poi, PlacedPoi, Ticker } from './types';
 import { createStage } from './scene/stage';
 import { buildCity } from './scene/city';
@@ -28,15 +28,15 @@ import { createCutaway, type Cutaway, type CutawayConfig } from './scene/cutaway
 import { buildParkingSigns, type ParkingSigns, type ParkingSignsConfig } from './scene/parkings';
 import { parkingCard } from './ui/parking-card';
 import { applyParkingEdits, fetchPublishedEdits, mergeParkingEdits, type ParkingEdits } from './scene/parking-edits';
-import parkingsContent from './content/parkings.json';
+import parkingsContent from '../content/parkings.json';
 import { buildAvatar, type Avatar, type AvatarConfig } from './scene/avatar';
-import avatarContent from './content/avatar.json';
+import avatarContent from '../content/avatar.json';
 import { buildBirds, type BirdsConfig } from './scene/birds';
 import { buildChimneys, type SmokeConfig } from './scene/chimneys';
 import { buildFlags, type FlagSpec } from './scene/flags';
-import lifeContent from './content/life.json';
-import streetsContent from './content/streets.json';
-import lobbyContent from './content/lobby.json';
+import lifeContent from '../content/life.json';
+import streetsContent from '../content/streets.json';
+import lobbyContent from '../content/lobby.json';
 import { buildNature, type NatureConfig } from './scene/nature';
 import { buildHerd, type Herd, type MascotConfig } from './scene/mascot';
 import { createClock } from './time/clock';
@@ -125,7 +125,7 @@ async function main() {
   const clock = createClock();
   let foliage = clock.state().foliage;
   city.trees.setFoliage(foliage);
-  // Arbres modélisés dans certains parcs (src/content/nature.json) ; les arbres simples restent en repli
+  // Arbres modélisés dans certains parcs (content/nature.json) ; les arbres simples restent en repli
   await loading.set(42, 'arbres');
   let nature: Awaited<ReturnType<typeof buildNature>> | null = null;
   try {
@@ -139,7 +139,7 @@ async function main() {
   await loading.set(54, 'monuments');
   const modelsRoot = await buildModels(models, pois, { night: city.night.uNight, data, heightAt: terrain.heightAt, minUnder: terrain.minUnder });
   scene.add(modelsRoot);
-  // Les quatre éléphants échappés de la fontaine, sur les rues et chemins (src/content/mascot.json)
+  // Les quatre éléphants échappés de la fontaine, sur les rues et chemins (content/mascot.json)
   const mascot = mascotContent as unknown as MascotConfig;
   await loading.set(64, 'éléphants');
   let herd: Herd | null = null;
@@ -308,7 +308,7 @@ async function main() {
 
   // La nuit, seuls les lieux ouverts à l'heure choisie restent allumés (horaires OSM opening_hours)
   // Fiche : seulement les vraies horaires. Éclairage (et plus tard les groupes de passants) : les vraies, à défaut
-  // les horaires PROVISOIRES (fictifs) de src/content/place-hours.json, jamais affichés aux visiteurs
+  // les horaires PROVISOIRES (fictifs) de content/place-hours.json, jamais affichés aux visiteurs
   const provisional = (placeHours as { hours: Record<string, string> }).hours;
   const openStatesAt = createOpenStates(data.places.map((p) => p.hours));
   const litStatesAt = createOpenStates(data.places.map((p) => p.hours ?? provisional[p.id]));
@@ -444,7 +444,7 @@ async function main() {
         closePlace();
         parkingSel = p.id;
         const card = parkingCard(p, data.osmDate ?? data.generatedAt);
-        if (DEBUG) card.source += ` · ${p.id}`; // l'identifiant sert aux retouches (src/content/parkings.json)
+        if (DEBUG) card.source += ` · ${p.id}`; // l'identifiant sert aux retouches (content/parkings.json)
         ui.showParkingCard(card);
       }
       else if (ui.placeCardState().place) closePlace(); // clic dans le vide : on ferme

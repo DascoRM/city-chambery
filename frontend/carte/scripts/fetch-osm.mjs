@@ -25,7 +25,7 @@ import { buildParkings } from './lib/parkings.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CONFIG = JSON.parse(await readFile(resolve(ROOT, 'diorama.config.json'), 'utf8'));
-const POIS = JSON.parse(await readFile(resolve(ROOT, 'src/content/pois.json'), 'utf8'));
+const POIS = JSON.parse(await readFile(resolve(ROOT, 'content/pois.json'), 'utf8'));
 const RAW_PATH = resolve(ROOT, 'data/raw/overpass.json');
 const OUT_PATH = resolve(ROOT, 'public/data/city.json');
 const OVERPASS_URL = process.env.OVERPASS_URL ?? 'https://overpass-api.de/api/interpreter';
@@ -555,5 +555,5 @@ console.log(`  ${places.length} bars / cafés / restaurants, ${labels.length} é
 for (const [id, a] of Object.entries(anchors)) console.log(`  POI ${id.padEnd(16)} → ${a.osm} « ${a.osmName} »`);
 if (missing.length) {
   console.warn(`⚠ POI non trouvés dans OSM : ${missing.join(', ')}`);
-  console.warn('  Ajuste "osm.match" dans src/content/pois.json ou ajoute "pos": [x, y] à la main (mètres).');
+  console.warn('  Ajuste "osm.match" dans content/pois.json ou ajoute "pos": [x, y] à la main (mètres).');
 }

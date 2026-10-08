@@ -1,14 +1,14 @@
 #!/bin/sh
 # Régénère les données pendant le build Docker (REFRESH_DATA=true) :
-#   1. npm run data   : OpenStreetMap + hauteurs BD TOPO + relief RGE ALTI → public/data/city.json
-#   2. npm run nature : arbres du pack Quaternius → public/models/nature/*.glb
+#   1. npm run data   : OpenStreetMap + hauteurs BD TOPO + relief RGE ALTI → frontend/carte/public/data/city.json
+#   2. npm run nature : arbres du pack Quaternius → frontend/carte/public/models/nature/*.glb
 #
 # Filet de sécurité : si un service est indisponible (Overpass saturé, IGN en panne…), on garde
 # les données du dépôt au lieu de faire échouer le build ou de publier une carte dégradée.
 # (Quand l'IGN ne répond pas, `npm run data` ne plante pas : il retombe sur des hauteurs estimées
 # et un relief interpolé. On le détecte grâce à l'attribution écrite dans city.json.)
 set -u
-CITY=public/data/city.json
+CITY=frontend/carte/public/data/city.json
 cp "$CITY" /tmp/city.committed.json
 
 restore() {
@@ -28,9 +28,9 @@ else
 fi
 
 echo "▶ Conversion des arbres (pack nature)…"
-if [ -d assets-src/quaternius-nature/obj ]; then
+if [ -d frontend/carte/assets-src/quaternius-nature/obj ]; then
   npm run nature || echo "⚠️  conversion des arbres en erreur → on garde les .glb du dépôt"
 else
-  echo "⚠️  assets-src/ absent du contexte de build → on garde les .glb du dépôt"
+  echo "⚠️  frontend/carte/assets-src/ absent du contexte de build → on garde les .glb du dépôt"
 fi
 exit 0

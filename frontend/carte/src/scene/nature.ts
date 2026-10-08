@@ -9,7 +9,7 @@ import type { Foliage } from '../time/seasons';
 /**
  * Arbres modélisés (pack Quaternius, CC0) à certains endroits de la ville.
  *
- * src/content/nature.json décrit :
+ * content/nature.json décrit :
  *  - des « mélanges » (mixes) : modèles avec leur poids + plage d'échelle ;
  *  - des zones, chacune avec un mélange : espaces verts OSM nommés (`areas`) ou bords d'un cours
  *    d'eau (`water` + `distance` en mètres depuis la berge).
