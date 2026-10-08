@@ -70,8 +70,18 @@ Pour le besoin B (plus tard) : liste des comptes, modération des pseudos et sco
 - **Secrets** hors du dépôt (variables de Vercel / GitHub), **sauvegardes** (Git pour le contenu ; export planifié pour la base).
 - **Abus** : limites de débit sur les scores, validation côté serveur (jamais confiance au navigateur : un score envoyé par le client se triche).
 
-## 8. Coûts (non vérifié)
-Option 1 : essentiellement 0 € (GitHub, Vercel déjà utilisés). Option 2 : offres gratuites existantes chez la plupart des fournisseurs, limitées en quotas ; **à relire au moment du choix** ; l'auto-hébergement sur le Pi coûte du temps d'exploitation (mises à jour, sauvegardes, accès extérieur). Les chiffres précis ne sont pas donnés ici faute de vérification.
+## 8. Coûts : vérifiés le 08/10/2026 sur les pages officielles
+
+**Vercel, plan Hobby (gratuit)** : 100 Go de transfert rapide, 1 000 000 de requêtes CDN, **1 000 000 d'invocations de fonctions**, 4 heures de CPU actif, 360 Go-heures de mémoire, **100 déploiements par jour**, 200 projets, durée maximale d'une fonction 300 s ; au-delà d'une limite, la fonctionnalité s'arrête jusqu'à 30 jours plus tard (pas de facture surprise). **Réserve importante : le plan Hobby est réservé à un usage personnel et non commercial** (règles d'usage équitable) ; un usage commercial demande le plan Pro (20 $ par utilisateur et par mois).
+
+| Service gratuit | Limites gratuites | Piège |
+|---|---|---|
+| **Neon (Postgres)**, branchable à Vercel | 1 Go par projet, 100 heures de calcul par mois et par projet, 100 projets ; le calcul **se met en veille après 5 minutes** et **se réveille tout seul** à la requête | Premier appel après une veille un peu plus lent (non mesuré) |
+| **Supabase** (base + comptes + fichiers + écran d'administration) | 500 Mo de base, 50 000 utilisateurs actifs par mois, 1 Go de fichiers, 5 Go de sortie, 500 000 appels de fonctions, 2 projets | **Projet mis en pause après 1 semaine sans activité** : à relancer à la main |
+| **Turso (SQLite hébergé)** | 100 bases, 5 Go, 500 millions de lignes lues et 10 millions écrites par mois | **Base archivée après 10 jours d'inactivité** (à désarchiver à la main) |
+| **Cloudflare Workers + D1** | 100 000 requêtes par jour, 10 ms de CPU par appel ; D1 : 5 Go, 5 millions de lignes lues et 100 000 écrites par jour | Autre plateforme que Vercel (domaine ou CORS à gérer) |
+
+**Conclusion coûts** : pour un projet entre amis, **le coût peut rester nul**. Les limites ne se frôlent pas : cent amis qui synchronisent trente fois par jour font environ 90 000 appels par mois, soit 9 % du million d'invocations Hobby. Le vrai risque n'est pas la facture mais les **mises en pause** de Supabase (1 semaine) et de Turso (10 jours), qui casseraient le jeu après quelques semaines sans visite. **Neon se réveille seul** : c'est le meilleur choix pour une base sans entretien, avec les **fonctions Vercel du même dépôt** pour l'API.
 
 ## 9. Impacts sur l'architecture
 - Le contenu éditorial reste chargé **au build** (comme `pois.json`) : pas de requête de plus au chargement, mode hors ligne intact.
