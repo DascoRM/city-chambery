@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { MiddlewareHandler } from 'hono';
 import type { Env } from './env.js';

@@ -8,7 +8,7 @@
     "data": "node scripts/fetch-osm.mjs",
     "check:streets": "node scripts/check-street-labels.mjs",
     "dev": "vite",
-    "build": "tsc --noEmit && tsc --noEmit -p tsconfig.api.json && node scripts/check-api-esm.mjs && vite build",
+    "build": "tsc --noEmit && tsc --noEmit -p tsconfig.api.json && tsc --noEmit -p tsconfig.vercel-check.json && node scripts/check-api-esm.mjs && vite build",
     "preview": "vite preview",
     "nature": "node scripts/convert-nature.mjs",
     "mascot": "node scripts/convert-mascot.mjs",

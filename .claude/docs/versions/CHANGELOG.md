@@ -11,6 +11,8 @@
 
 **Vérifié :** `npm test` : 19 tests (fermeture sans jeton, 401 sans jeton, mauvais jeton ou schéma, accès avec le bon jeton, blocage après 5 échecs sans gêner une autre adresse, jeton jamais renvoyé, `/api/health` publique, statistiques de la base sur PGlite) ; `npm run build` (dont le chargement de l'API comme sur Vercel) ; navigateur en local : mauvais jeton refusé avec message, bon jeton → tableau, session gardée au rechargement, déconnexion ; en version de production (`vite preview`), `/admin/` sert la page d'administration.
 
+**Correction après déploiement (signalée par Dasco, build Vercel en erreur `TS2591: Cannot find name 'process'`) :** Vercel vérifie les types de la fonction avec le `tsconfig.json` **racine** (types du navigateur seulement), pas avec `tsconfig.api.json` : le déploiement échouait, d'où `/admin` et `/api/admin` vides. **Reproduit en local** avec `tsconfig.vercel-check.json` (racine + `api/`), désormais lancé par `npm run build`. Correction : les fichiers de `server/` qui utilisent Node le déclarent eux-mêmes (`/// <reference types="node" />`), sans toucher aux types du site.
+
 **Non vérifié :** déploiement sur Vercel (jeton à saisir par Dasco) ; le blocage d'essais sur Vercel (instances multiples : au mieux) ; l'adresse client derrière le réseau de Vercel (`x-forwarded-for`) ; usage, quotas et alertes (US008) ; connexion GitHub à la place du jeton (plus tard).
 
 ## Itération 80 — 08/10/2026 (branche `feat/EP008-US001-socle-api`, epic EP008)

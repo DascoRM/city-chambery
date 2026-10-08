@@ -1,0 +1,5 @@
+{
+  "//": "Vérifie l'API comme Vercel : avec le tsconfig.json racine (types du navigateur seulement). Les fichiers de server/ qui utilisent Node le déclarent eux-mêmes (/// <reference types=\"node\" />).",
+  "extends": "./tsconfig.json",
+  "include": ["api"]
+}

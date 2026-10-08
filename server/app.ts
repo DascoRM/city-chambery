@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { Hono } from 'hono';
 import { appEnv, appVersion, resolveDatabase, type Env } from './env.js';
 import { database } from './db/client.js';

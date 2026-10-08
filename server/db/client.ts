@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { resolveDatabase, type Env } from '../env.js';
