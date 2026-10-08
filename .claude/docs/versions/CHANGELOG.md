@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 79 — 06/10/2026 (branche `feat/routes-matieres`)
+
+**Demande de Dasco :** distinguer à l'écran les voies piétonnes (56 % des tracés) et celles pour les voitures ; accord pour commencer par les routes avant les monuments.
+
+**Changements** (`src/scene/city.ts`, `src/scene/palette.ts`) :
+- **voies piétonnes** : pavé chaud (`#ead8b8`) avec joints sombres et teintes variées par cases de 0,7 m ;
+- **rues pour voitures** : gris chaud clair (`#d6d2cb`, avant : crème) avec un grain très léger (cases de 0,5 m) ;
+- **tirets blancs** au milieu des grandes rues (largeur de 8 m et plus : primaires, secondaires, tertiaires), 2,5 m tous les 7 m, absents à moins de 7 m d'un carrefour ou d'un bout de voie ;
+- motifs calculés au pixel d'après la position dans le monde (aucune texture), qui **s'effacent de loin** (case de moins de 2 pixels : couleur unie, pas de moiré) ; clés de programme `road-paving` et `road-asphalt` ;
+- coût : **+1 appel de rendu** (les tirets), ≈ 5 000 triangles.
+
+**Vérifié :** `npm run build` ; Chrome avec carte graphique, de jour (14 h) : pavé lisible dans la rue de Boigne, voie pour voitures grise avec ses tirets ; de nuit : les tirets restent visibles, la lueur des rues est conservée ; 63 à 72 appels de rendu selon la vue (+1 à +2) ; aucune erreur console.
+
+**Non vérifié :** iPhone (le motif est calculé par pixel : à mesurer avec `?debug`, « pire image ») ; hiver et neige ; l'avis esthétique de Dasco (couleurs réglables en une ligne dans `palette.ts` : `street`, `footway`, `streetMark`) ; les rues à sens unique et les zones 30 ne sont pas distinguées (aucune donnée de sens unique dans `city.json`) ; pas de bordures ni de passages piétons.
+
 ## Itération 76 — 06/10/2026 (branche d'epic `feat/EP006-parkings`)
 
 **Retours de Dasco :** le panneau de La Falaise et celui du Parking Palais de Justice flottent dans le vide (pas posés sur le toit) ; deux « parking sans nom » (rue du Corbelet, montée du Covet) posent le même genre de problème ; chercher ce type de soucis, sans doute liés au nivellement.

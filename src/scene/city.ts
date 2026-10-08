@@ -121,7 +121,7 @@ function splitAtTerrainEdges(g: { x0: number; y0: number; step: number }, poly: 
  * Ruban posé sur le relief le long d'une polyligne + disques aux jonctions (joints arrondis).
  * Les segments sont redécoupés tous les 4 m pour épouser la pente.
  */
-function ribbons(lines: { pts: Pt[]; w: number }[], lift: number, material: THREE.Material | string, terrain: Terrain, extra = 0): THREE.Mesh | null {
+function ribbons(lines: { pts: Pt[]; w: number }[], lift: number, material: THREE.Material | string, terrain: Terrain, extra = 0, joints = true): THREE.Mesh | null {
   if (!lines.length) return null;
   const pos: number[] = [];
   const H = (x: number, zNeg: number) => terrain.heightAt(x, -zNeg) + lift;
@@ -182,7 +182,7 @@ function ribbons(lines: { pts: Pt[]; w: number }[], lift: number, material: THRE
       tri(c[0], c[1], b[0], b[1], d[0], d[1]);
     }
     // Joints arrondis aux sommets d'origine (les points ajoutés sont alignés)
-    for (const [x, py] of raw) {
+    if (joints) for (const [x, py] of raw) {
       const n = 10;
       for (let k = 0; k < n; k++) {
         const a0 = (k / n) * Math.PI * 2, a1 = ((k + 1) / n) * Math.PI * 2;
@@ -209,6 +209,74 @@ function glow<T extends THREE.Mesh | null>(mesh: T, amount: number): T {
   return mesh;
 }
 
+/**
+ * Matières des voies (mode piéton / voiture) : motif calculé au pixel d'après la position dans le monde, sans texture
+ * ni géométrie. Pavé : joints sombres et teintes variées, par cases de 0,7 m ; asphalte : grain très léger. Le motif
+ * s'efface quand une case devient plus petite que 2 pixels (de loin : couleur unie, sans moiré).
+ */
+function roadMaterial(color: string, kind: 'paving' | 'asphalt'): THREE.MeshStandardMaterial {
+  const mat = new THREE.MeshStandardMaterial({ color, roughness: 1 });
+  mat.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vRoadWorld;')
+      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvRoadWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>
+        varying vec3 vRoadWorld;
+        float roadHash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        ${kind === 'paving' ? `
+        vec2 pc = vRoadWorld.xz / 0.7;
+        float fade = 1.0 - smoothstep(0.35, 0.7, max(fwidth(pc.x), fwidth(pc.y)));
+        vec2 pf = fract(pc);
+        float joint = max(step(pf.x, 0.07), step(pf.y, 0.07));
+        float tone = roadHash(floor(pc));
+        diffuseColor.rgb *= 1.0 + (tone - 0.5) * 0.16 * fade;
+        diffuseColor.rgb *= 1.0 - joint * 0.16 * fade;` : `
+        vec2 ac = vRoadWorld.xz / 0.5;
+        float afade = 1.0 - smoothstep(0.35, 0.7, max(fwidth(ac.x), fwidth(ac.y)));
+        diffuseColor.rgb *= 1.0 + (roadHash(floor(ac)) - 0.5) * 0.07 * afade;`}`);
+  };
+  mat.customProgramCacheKey = () => `road-${kind}`;
+  return mat;
+}
+
+/** Tirets blancs au milieu des grandes rues (largeur 8 m et plus), hors des abords des carrefours */
+function centerDashes(roads: CityData['roads']): { pts: Pt[]; w: number }[] {
+  const DASH = 2.5, PERIOD = 7, NEAR_JUNCTION = 7, WIDTH = 0.22;
+  const uses = new Map<string, number>();
+  for (const r of roads) for (const p of r.pts) { const k = `${p[0]},${p[1]}`; uses.set(k, (uses.get(k) ?? 0) + 1); }
+  const out: { pts: Pt[]; w: number }[] = [];
+  for (const r of roads) {
+    if (r.w < 8 || FOOT_KINDS.has(r.kind) || r.pts.length < 2) continue;
+    const at = (d: number): Pt => {
+      let acc = 0;
+      for (let i = 1; i < r.pts.length; i++) {
+        const [ax, ay] = r.pts[i - 1], [bx, by] = r.pts[i], l = Math.hypot(bx - ax, by - ay);
+        if (acc + l >= d) { const t = (d - acc) / (l || 1); return [ax + (bx - ax) * t, ay + (by - ay) * t]; }
+        acc += l;
+      }
+      return r.pts[r.pts.length - 1];
+    };
+    // Distances cumulées des carrefours (sommets partagés avec une autre voie) et longueur totale
+    const cum: number[] = [0];
+    for (let i = 1; i < r.pts.length; i++) cum.push(cum[i - 1] + Math.hypot(r.pts[i][0] - r.pts[i - 1][0], r.pts[i][1] - r.pts[i - 1][1]));
+    const total = cum[cum.length - 1];
+    const junctions = r.pts.flatMap((p, i) => (uses.get(`${p[0]},${p[1]}`) ?? 0) > 1 || i === 0 || i === r.pts.length - 1 ? [cum[i]] : []);
+    for (let d = NEAR_JUNCTION; d + DASH <= total - NEAR_JUNCTION; d += PERIOD) {
+      if (junctions.some((j) => d < j + NEAR_JUNCTION && d + DASH > j - NEAR_JUNCTION)) continue;
+      out.push({ pts: [at(d), at(d + DASH)], w: WIDTH });
+    }
+  }
+  return out;
+}
+
+/** Les tirets passent devant la chaussée (décalage de profondeur plus fort) */
+function dashes(m: THREE.Mesh | null): THREE.Mesh | null {
+  if (m) { const mat = m.material as THREE.Material; mat.polygonOffsetFactor = -4; mat.polygonOffsetUnits = -4; }
+  return m;
+}
+
 function buildFlat(data: CityData, waterMat: THREE.Material, terrain: Terrain): THREE.Group {
   const g = new THREE.Group();
   type Line = Extract<CityData['water'][number], { kind: 'line' }>;
@@ -217,8 +285,9 @@ function buildFlat(data: CityData, waterMat: THREE.Material, terrain: Terrain): 
   const bridges = data.roads.filter((r) => r.bridge);
   // Ordre vertical : voir LIFT (scene/roads.ts), partagé avec tout ce qui marche dans les rues
   const parts = [
-    glow(ribbons(roads.filter((r) => FOOT_KINDS.has(r.kind)), LIFT.foot, PALETTE.footway, terrain), 0.07),
-    glow(ribbons(roads.filter((r) => !FOOT_KINDS.has(r.kind)), LIFT.street, PALETTE.street, terrain), 0.12),
+    glow(ribbons(roads.filter((r) => FOOT_KINDS.has(r.kind)), LIFT.foot, roadMaterial(PALETTE.footway, 'paving'), terrain), 0.07),
+    glow(ribbons(roads.filter((r) => !FOOT_KINDS.has(r.kind)), LIFT.street, roadMaterial(PALETTE.street, 'asphalt'), terrain), 0.12),
+    dashes(ribbons(centerDashes(roads), LIFT.street + 0.04, new THREE.MeshStandardMaterial({ color: PALETTE.streetMark, roughness: 1 }), terrain, 0, false)),
     ribbons(waterLines, LIFT.bank, PALETTE.bank, terrain, 2.2),
     ribbons(waterLines, LIFT.water, waterMat, terrain),
     ribbons(bridges, LIFT.bridge, PALETTE.bridge, terrain, 0.6),
