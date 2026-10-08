@@ -14,6 +14,7 @@
     "build:admin": "vite build frontend/admin",
     "check:boundaries": "node scripts/check-boundaries.mjs",
     "build": "npm run typecheck && node scripts/check-boundaries.mjs && node scripts/check-api-esm.mjs && npm run build:carte && npm run build:admin",
+    "build:pi": "tsc --noEmit -p frontend/carte && node scripts/check-boundaries.mjs && npm run build:carte",
     "preview": "vite preview frontend/carte",
     "nature": "node frontend/carte/scripts/convert-nature.mjs",
     "mascot": "node frontend/carte/scripts/convert-mascot.mjs",
