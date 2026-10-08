@@ -1,6 +1,6 @@
 # Epic EP008 - Back-end léger et administration, pour un coût nul
 
-**Statut : spec écrite le 08/10/2026, à valider par Dasco. Rien n'est codé.** Analyse : [back-end et administration](../../../tasks/analyse-back-end-admin.md) (coûts vérifiés le 08/10/2026).
+**Statut (08/10/2026) : pile validée par Dasco ([ADR-001](../../architecture/decisions/ADR001-back-end-typescript-vercel-neon.md)) ; reste à valider l'ordre des user stories et à créer la base Neon. Rien n'est codé.** Analyse : [back-end et administration](../../../tasks/analyse-back-end-admin.md) (coûts vérifiés le 08/10/2026).
 
 ## Résumé
 Ajouter au site statique un **petit back-end gratuit** (fonctions du même dépôt + une base qui se réveille seule) pour **retrouver la progression des joueurs**, un **classement** et le **partage entre amis**, et une **administration** qui permet à Dasco de corriger parkings et lieux et de placer des éléments sur la carte, sans passer par la conversation.
@@ -9,6 +9,9 @@ Ajouter au site statique un **petit back-end gratuit** (fonctions du même dép�
 - Aujourd'hui tout est dans le navigateur (`localStorage`) : la progression ne suit pas d'un appareil à l'autre, il n'y a ni classement ni amis, et Dasco ne peut corriger le contenu que par fichiers et conversation.
 - Contrainte : **ne rien payer**. Vercel Hobby (gratuit) offre 1 000 000 d'invocations de fonctions par mois et 100 Go de transfert ; il est réservé à un usage **non commercial** (vérifié le 08/10/2026).
 - Pièges des bases gratuites : Supabase se met en pause après 1 semaine sans activité et Turso s'archive après 10 jours : aucun des deux ne convient à un jeu consulté de temps en temps. **Neon (Postgres)** se met en veille après 5 minutes mais **se réveille seul**.
+
+## Pile retenue (validée par Dasco le 08/10/2026)
+**TypeScript** dans le même dépôt que le site : **Hono** (routes typées, léger pour les fonctions), **Zod** (validation de tout ce qui entre), **Drizzle** (accès à la base et migrations), **Neon** (PostgreSQL), fonctions **Vercel**. Pourquoi : mêmes types que le site, un seul `npm run build` qui vérifie tout, retours du compilateur clairs ; Rust, Django, FastAPI, Flask et NestJS ont été écartés (voir l'ADR-001 : Rust n'apporte rien ici, on est à 9 % du quota gratuit). Tests : Vitest, comme le reste de la chaîne TypeScript.
 
 ## Architecture proposée
 ```
