@@ -1,5 +1,21 @@
 # Journal des itérations
 
+## Itération 82 — 08/10/2026 (branche `feat/EP008-US006-retouches-parkings`, epic EP008)
+
+**Demande de Dasco :** suite de l'epic (base Neon prête et migrée sur `main` et `preview` ; administration accessible).
+
+**Changements (US006, parkings) :**
+- base : tables `parking_edits` (une ligne par retouche ou ajout, champs en JSON, **source obligatoire**) et `edit_log` (journal) ; migration `0001` ;
+- `server/parkings.ts` : validation **Zod stricte** (champ inconnu refusé, source non vide, places entières de 1 à 10 000, type parmi quatre, position bornée, identifiants `way|node|relation/…` ou `custom/…`) et accès à la base ;
+- API : `GET /api/parkings/edits` (public, cache 60 s) ; administration : `GET /api/admin/parkings/edits` (+ journal), `PUT /api/admin/parkings/overrides/:id`, `POST /api/admin/parkings/added`, `DELETE /api/admin/parkings/edits/:id` ; sans base : 503 avec code ;
+- site : retouches publiées demandées **en même temps que la ville** (1,5 s au plus, jamais bloquant), fusionnées avec `parkings.json` (l'administration l'emporte) ; la fiche cite « Source de la retouche » ;
+- administration : recherche d'un parking, formulaire de retouche, ajout d'un parking, liste des retouches avec « Retirer », journal ; aucun HTML construit à partir de données ;
+- `npm run api:dev` sans `DATABASE_URL` : **base PostgreSQL locale (PGlite)** avec les migrations, pour tester sans Neon.
+
+**Vérifié :** `npm test` : 27 tests (dont 7 sur les retouches, sur PGlite : publication avec source, remplacement, refus sans source ou avec champ inconnu ou valeur absurde, ajout, doublon 409, retrait, journal, jeton exigé, base absente) ; `npm run build` ; parcours complet en local (API + base locale + site) : recherche « europe », retouche (149 places, note, source « BNLS 2024 »), ajout d'un parking, liste, journal ; le site charge la retouche (149 places, note, source) et l'ajout ; aucune erreur console.
+
+**Non vérifié :** sur Vercel (la migration `0001` doit être appliquée sur `preview` et `main` par Dasco) ; le délai réel de 60 s du cache de Vercel ; les retouches des **lieux d'histoire** (reste de l'US006) ; la carte de position dans l'administration (US007).
+
 ## Itération 81 — 08/10/2026 (branche `feat/EP008-US005-admin-acces`, epic EP008)
 
 **Demande de Dasco :** passer à l'étape suivante (accès à l'administration).

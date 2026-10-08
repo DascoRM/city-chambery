@@ -4,6 +4,7 @@ import { appEnv, appVersion, resolveDatabase, type Env } from './env.js';
 import { database } from './db/client.js';
 import { adminAuth, createRateLimiter } from './auth.js';
 import { dbStats } from './db/stats.js';
+import { addParking, addedInput, customId, listEdits, osmId, overrideInput, recentLog, removeEdit, saveOverride, type Db } from './parkings.js';
 
 /**
  * API du diorama (EP008). Hono, fonctions Vercel du même dépôt. Le site fonctionne sans elle : si elle est en panne
@@ -26,12 +27,31 @@ export async function checkDatabase(env: Env): Promise<{ status: DbStatus; ms?: 
   }
 }
 
-export function createApp(env: Env = process.env) {
+/** Dépendances remplaçables (tests : base PGlite au lieu de Neon) */
+export interface AppDeps {
+  /** Base à utiliser ; par défaut celle de l'environnement (null si aucune) */
+  db?: () => Db | null;
+}
+
+export function createApp(env: Env = process.env, deps: AppDeps = {}) {
   const app = new Hono().basePath('/api');
+  const getDb = deps.db ?? (() => { const c = database(env); return c.ok ? (c.db as unknown as Db) : null; });
 
   app.use('*', async (c, next) => {
     await next();
-    c.header('Cache-Control', 'no-store');
+    if (!c.res.headers.has('Cache-Control')) c.header('Cache-Control', 'no-store'); // une route peut choisir sa mise en cache
+  });
+
+  /** Réponse quand la base n'est pas disponible : le site continue avec ses retouches locales */
+  const noDb = (c: { json: (b: unknown, s: 503) => Response }) => c.json({ error: 'base indisponible', code: 'base-indisponible' }, 503);
+
+  // Retouches des parkings publiées (US006) : lues par le site au chargement ; mises en cache 60 s par Vercel
+  app.get('/parkings/edits', async (c) => {
+    const db = getDb();
+    if (!db) return noDb(c);
+    const edits = await listEdits(db);
+    c.header('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    return c.json(edits);
   });
 
   app.get('/health', async (c) => {
@@ -56,6 +76,40 @@ export function createApp(env: Env = process.env) {
     } catch {
       return c.json({ ...base, db: { status: 'erreur' } });
     }
+  });
+
+  // Retouches des parkings (US006). Toute écriture est validée (Zod) et porte une source.
+  const invalid = (c: { json: (b: unknown, s: 400) => Response }, issues: unknown) => c.json({ error: 'données invalides', issues }, 400);
+  admin.get('/parkings/edits', async (c) => {
+    const db = getDb();
+    if (!db) return noDb(c);
+    return c.json({ ...(await listEdits(db)), log: await recentLog(db) });
+  });
+  admin.put('/parkings/overrides/:id{.+}', async (c) => {
+    const id = osmId.safeParse(c.req.param('id'));
+    if (!id.success) return invalid(c, [{ path: ['id'], message: 'identifiant OpenStreetMap attendu (way/…, node/…, relation/…)' }]);
+    const body = overrideInput.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return invalid(c, body.error.issues);
+    const db = getDb();
+    if (!db) return noDb(c);
+    await saveOverride(db, id.data, body.data);
+    return c.json({ ok: true });
+  });
+  admin.post('/parkings/added', async (c) => {
+    const body = addedInput.safeParse(await c.req.json().catch(() => null));
+    if (!body.success) return invalid(c, body.error.issues);
+    const db = getDb();
+    if (!db) return noDb(c);
+    if (!(await addParking(db, body.data))) return c.json({ error: 'identifiant déjà pris' }, 409);
+    return c.json({ ok: true }, 201);
+  });
+  admin.delete('/parkings/edits/:id{.+}', async (c) => {
+    const raw = c.req.param('id');
+    if (!osmId.safeParse(raw).success && !customId.safeParse(raw).success) return invalid(c, [{ path: ['id'], message: 'identifiant inconnu' }]);
+    const db = getDb();
+    if (!db) return noDb(c);
+    if (!(await removeEdit(db, raw))) return c.json({ error: 'introuvable' }, 404);
+    return c.json({ ok: true });
   });
   app.route('/admin', admin);
 
