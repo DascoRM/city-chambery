@@ -13,6 +13,8 @@
 
 **Correction après déploiement (signalée par Dasco, build Vercel en erreur `TS2591: Cannot find name 'process'`) :** Vercel vérifie les types de la fonction avec le `tsconfig.json` **racine** (types du navigateur seulement), pas avec `tsconfig.api.json` : le déploiement échouait, d'où `/admin` et `/api/admin` vides. **Reproduit en local** avec `tsconfig.vercel-check.json` (racine + `api/`), désormais lancé par `npm run build`. Correction : les fichiers de `server/` qui utilisent Node le déclarent eux-mêmes (`/// <reference types="node" />`), sans toucher aux types du site.
 
+**Correction (signalée par Dasco : « Sending form data … violates form-action 'none' ») :** sur Vercel la page s'ouvre aussi à l'adresse `/admin` (sans barre finale) ; les chemins relatifs `admin.css` et `admin.js` pointaient alors vers `/admin.js` (introuvable) : le script ne tournait pas et le formulaire était envoyé tel quel, bloqué par la politique de contenu. Chemins absolus (`/admin/admin.js`). Espaces et retours à la ligne ignorés autour du jeton (variable collée depuis le terminal).
+
 **Non vérifié :** déploiement sur Vercel (jeton à saisir par Dasco) ; le blocage d'essais sur Vercel (instances multiples : au mieux) ; l'adresse client derrière le réseau de Vercel (`x-forwarded-for`) ; usage, quotas et alertes (US008) ; connexion GitHub à la place du jeton (plus tard).
 
 ## Itération 80 — 08/10/2026 (branche `feat/EP008-US001-socle-api`, epic EP008)
