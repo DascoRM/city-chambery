@@ -83,7 +83,7 @@ npm run nature                   # reconvertit les arbres du pack nature (après
 | `npm run api:dev` | API en local (http://localhost:8787/api/health) ; `npm run dev` lui renvoie `/api` par un proxy |
 | `npm test` | Tests de l'API (Vitest) |
 | `npm run db:generate` | Génère une migration SQL depuis `server/db/schema.ts` (sans base) |
-| `npm run db:migrate` | Applique les migrations : `DATABASE_URL=postgres://… npm run db:migrate` (jamais automatique au déploiement ; le nom d'hôte est affiché avant d'agir) |
+| `npm run db:migrate` | Applique les migrations : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (jamais automatique au déploiement ; le nom d'hôte est affiché avant d'agir) |
 | `npm run docker:up` | Construit l'image Docker et lance le conteneur en arrière-plan (http://localhost:3000) |
 | `npm run docker:logs` | Affiche les journaux du conteneur en continu |
 | `npm run docker:down` | Arrête et supprime le conteneur |
@@ -468,7 +468,8 @@ Le détail des choix est dans [`.claude/docs/architecture/decisions/DECISIONS.md
 Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le même dépôt : **Hono** (routes), **Zod** (validation), **Drizzle** (base et migrations), PostgreSQL chez **Neon**, fonctions **Vercel** (`api/[...path].ts` → `server/app.ts`). Décision et alternatives écartées : [ADR-001](.claude/docs/architecture/decisions/ADR001-back-end-typescript-vercel-neon.md). Seul point de santé pour l'instant : `GET /api/health` (version, environnement, état de la base ; jamais d'adresse ni de mot de passe).
 
 - **Variables d'environnement** (à saisir dans Vercel, Settings > Environment Variables ; jamais dans le dépôt) : `DATABASE_URL` (production et développement), `DATABASE_URL_PREVIEW` (prévisualisations). **Une prévisualisation n'utilise jamais `DATABASE_URL`** : sans `DATABASE_URL_PREVIEW`, la base y est désactivée. Le code ne lit que ces adresses PostgreSQL ordinaires : Neon reste remplaçable en changeant `DATABASE_URL`.
-- **Créer ou mettre à jour la base** : `DATABASE_URL=… npm run db:migrate` (rejouable). Les migrations sont dans `server/db/migrations/`.
+- **Variables posées par l'intégration Neon** : `DATABASE_URL` (connexion avec répartiteur, celle de l'API), `DATABASE_URL_UNPOOLED` (connexion directe, utilisée par les migrations) ; les autres (`PG*`, `POSTGRES_*`) ne sont pas lues par le code.
+- **Créer ou mettre à jour la base** : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (rejouable ; l'adresse se copie depuis la console Neon, sans la coller ailleurs). Les migrations sont dans `server/db/migrations/`.
 - **Développer** : `npm run api:dev` dans un terminal, `npm run dev` dans un autre.
 - **Contrôle** : `npm run build` vérifie aussi les types de l'API (`tsconfig.api.json`) ; `npm test` lance les tests.
 
