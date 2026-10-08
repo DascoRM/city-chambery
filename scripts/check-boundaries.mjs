@@ -6,13 +6,18 @@
  *  - le front ne parle au back que par HTTP : il n'importe jamais le code de l'API (server/, api/) ;
  *  - le back n'importe jamais le front ;
  *  - chaque partie a sa liste de paquets npm : une nouvelle dépendance s'ajoute ici, en connaissance de cause.
- * L'administration ne construit jamais de HTML à partir de données (`dangerouslySetInnerHTML`, `innerHTML` refusés).
+ * L'administration ne construit jamais de HTML à partir de données (`dangerouslySetInnerHTML`, `innerHTML`… refusés).
  *
- * Sans dépendance : lit les `import … from '…'`, `import '…'`, `export … from '…'` et `import('…')`.
+ * Les imports sont lus par TypeScript (`ts.preProcessFile`, déjà installé) : `import`, `export … from`, `import()` et `require()`,
+ * sur plusieurs lignes, avec des commentaires ; un import dans un commentaire ou une chaîne n'est pas compté.
+ * Non contrôlés : les fichiers de configuration (`vite.config.ts`, `vitest.config.ts`, `drizzle.config.ts`), les `index.html`
+ * et les CSS (`@import`, `url()`), qui sont de l'outillage.
+ * Tests : scripts/check-boundaries.test.mjs (`npm test`).
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -55,6 +60,17 @@ const PARTS = {
   },
 };
 
+/** Chemins des modules importés par un fichier source (TypeScript ou JavaScript) */
+export function importsOf(source) {
+  return ts.preProcessFile(source, true, true).importedFiles.map((f) => f.fileName);
+}
+
+const RAW_HTML = /dangerouslySetInnerHTML|\.(?:inner|outer)HTML\b|insertAdjacentHTML|document\.write|createContextualFragment|setHTMLUnsafe|\bsrcDoc\b/;
+/** Vrai si le source construit du HTML à partir de texte (interdit dans l'administration) */
+export function buildsRawHtml(source) {
+  return RAW_HTML.test(source);
+}
+
 /** Partie d'un fichier (chemin relatif à la racine), ou null s'il n'appartient à aucune */
 function partOf(rel) {
   for (const [name, part] of Object.entries(PARTS)) {
@@ -66,7 +82,7 @@ function partOf(rel) {
   return null;
 }
 
-const CODE = /\.(ts|tsx|mts|mjs|js)$/;
+const CODE = /\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
 function* files(dir) {
   let names;
   try { names = readdirSync(dir); } catch { return; }
@@ -78,42 +94,48 @@ function* files(dir) {
   }
 }
 
-const IMPORT = /\b(?:import|export)\s+(?:[^'";]*?\s+from\s+)?['"]([^'"]+)['"]|\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
 const packageName = (spec) => (spec.startsWith('@') ? spec.split('/').slice(0, 2).join('/') : spec.split('/')[0]);
 
-const errors = [];
-let checked = 0;
-for (const [name, part] of Object.entries(PARTS)) {
-  for (const dir of part.dirs) {
-    for (const file of files(join(ROOT, dir))) {
-      checked++;
-      const rel = relative(ROOT, file).split(sep).join('/');
-      const source = readFileSync(file, 'utf8');
-      for (const m of source.matchAll(IMPORT)) {
-        const spec = m[1] ?? m[2];
-        if (spec.startsWith('.') || spec.startsWith('/')) {
-          const target = relative(ROOT, resolve(dirname(file), spec)).split(sep).join('/');
-          const targetPart = partOf(target);
-          if (!targetPart || !part.parts.includes(targetPart)) {
-            errors.push(`${rel} importe ${target} : interdit (${name} → ${targetPart ?? 'hors des parties'})`);
+/** Contrôle tout le dépôt (ou un autre dossier racine, pour les tests) ; renvoie les violations */
+export function checkBoundaries(root = ROOT) {
+  const errors = [];
+  let checked = 0;
+  for (const [name, part] of Object.entries(PARTS)) {
+    for (const dir of part.dirs) {
+      for (const file of files(join(root, dir))) {
+        checked++;
+        const rel = relative(root, file).split(sep).join('/');
+        const source = readFileSync(file, 'utf8');
+        for (const spec of importsOf(source)) {
+          if (spec.startsWith('.') || spec.startsWith('/')) {
+            const target = relative(root, resolve(dirname(file), spec)).split(sep).join('/');
+            const targetPart = partOf(target);
+            if (!targetPart || !part.parts.includes(targetPart)) {
+              errors.push(`${rel} importe ${target} : interdit (${name} → ${targetPart ?? 'hors des parties'})`);
+            }
+          } else if (spec.startsWith('node:')) {
+            if (!part.node) errors.push(`${rel} importe ${spec} : interdit (${name} tourne dans le navigateur)`);
+          } else if (part.packages && !part.packages.includes(packageName(spec)) && !part.packages.includes(spec)) {
+            errors.push(`${rel} importe le paquet « ${packageName(spec)} » : pas dans la liste de ${name} (scripts/check-boundaries.mjs)`);
           }
-        } else if (spec.startsWith('node:')) {
-          if (!part.node) errors.push(`${rel} importe ${spec} : interdit (${name} tourne dans le navigateur)`);
-        } else if (part.packages && !part.packages.includes(packageName(spec)) && !part.packages.includes(spec)) {
-          errors.push(`${rel} importe le paquet « ${packageName(spec)} » : pas dans la liste de ${name} (scripts/check-boundaries.mjs)`);
         }
-      }
-      if (part.noRawHtml && /dangerouslySetInnerHTML|\.innerHTML\b|insertAdjacentHTML/.test(source)) {
-        errors.push(`${rel} construit du HTML brut (dangerouslySetInnerHTML, innerHTML) : interdit dans l'administration`);
+        if (part.noRawHtml && buildsRawHtml(source)) {
+          errors.push(`${rel} construit du HTML brut (dangerouslySetInnerHTML, innerHTML…) : interdit dans l'administration`);
+        }
       }
     }
   }
+  return { errors, checked };
 }
 
-if (errors.length) {
-  console.error(`✗ Frontières du dépôt : ${errors.length} problème(s)`);
-  for (const e of errors) console.error(`  - ${e}`);
-  console.error('Rappel (ADR-002) : le front ne parle au back que par HTTP ; la carte et l\'administration ne partagent pas de code.');
-  process.exit(1);
+// Lancé directement (npm run build, npm run check:boundaries) ; importé par les tests, il ne fait rien de plus
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const { errors, checked } = checkBoundaries();
+  if (errors.length) {
+    console.error(`✗ Frontières du dépôt : ${errors.length} problème(s)`);
+    for (const e of errors) console.error(`  - ${e}`);
+    console.error("Rappel (ADR-002) : le front ne parle au back que par HTTP ; la carte et l'administration ne partagent pas de code.");
+    process.exit(1);
+  }
+  console.log(`✓ Frontières du dépôt respectées (${checked} fichiers : carte, données de la carte, admin, back)`);
 }
-console.log(`✓ Frontières du dépôt respectées (${checked} fichiers : carte, données de la carte, admin, back)`);
