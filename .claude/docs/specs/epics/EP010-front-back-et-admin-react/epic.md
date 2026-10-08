@@ -64,7 +64,7 @@ React 19 · wouter (routage) · TanStack Query (appels à l'API) · React Hook F
 ### Phase 1 - Frontend
 | ID | User Story | Jours | Status |
 |----|------------|-------|--------|
-| [US001](US001-decision-et-adr.md) | ADR-002 « Séparer front et back » (décisions prises le 09/10) | 0,25 | 🔲 Todo |
+| [US001](US001-decision-et-adr.md) | ADR-002 « Séparer front et back » (décisions prises le 09/10) | 0,25 | ✅ [ADR-002](../../../architecture/decisions/ADR002-separer-front-et-back.md) (09/10) |
 | [US002](US002-frontend-carte.md) | `frontend/carte` : la carte dans son dossier (avec contenu, données et scripts) | 1 à 1,5 | 🔲 Todo |
 | [US003](US003-frontend-admin-socle-react.md) | `frontend/admin` : socle React | 1,5 | 🔲 Todo |
 | [US004](US004-admin-parite-et-bascule.md) | Admin : parité avec l'actuelle (état, retouches de parkings), puis suppression de `public/admin` | 1 à 1,5 | 🔲 Todo |

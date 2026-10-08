@@ -10,8 +10,8 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** les décisions D1 à D6 (tranchées le 09/10/2026), **Then** l'ADR-002 décrit la structure, les règles « qui utilise quoi », la pile de l'admin et les options écartées
-- [ ] **Given** DECISIONS.md, **Then** une ligne par décision renvoie à l'ADR-002
+- [x] **Given** les décisions D1 à D6 (tranchées le 09/10/2026), **Then** l'ADR-002 décrit la structure, les règles « qui utilise quoi », la pile de l'admin et les options écartées
+- [x] **Given** DECISIONS.md, **Then** une ligne par décision renvoie à l'ADR-002
 
 ---
 
@@ -34,13 +34,13 @@ Détail : [plan de cloisonnement](../../../tasks/cloisonnement-depot-plan.md), [
 ---
 
 ## Checklist dev
-- [ ] `npm run build` et `npm test` passent
-- [ ] Décisions reportées dans l'epic
-- [ ] Lock commité si les dépendances changent
-- [ ] README, DECISIONS, CHANGELOG si besoin
-- [ ] Validé par Dasco
+- [x] `npm run build` et `npm test` passent
+- [x] Décisions reportées dans l'epic
+- [x] Lock commité si les dépendances changent
+- [x] README, DECISIONS, CHANGELOG si besoin
+- [x] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : ✅ Done (09/10/2026)
