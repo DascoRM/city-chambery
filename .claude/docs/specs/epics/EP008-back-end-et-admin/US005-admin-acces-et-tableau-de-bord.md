@@ -3,7 +3,7 @@
 ## User Story
 
 **En tant que** Dasco (administrateur),
-**je veux** une page `/admin` non référencée, protégée (jeton secret au début, connexion GitHub ensuite), qui montre l'usage et la santé,
+**je veux** une page `/admin` non référencée, protégée (jeton secret au début, puis identifiant et mot de passe d'un compte enregistré en base ; pas de GitHub ni d'autre fournisseur, décision du 09/10/2026), qui montre l'usage et la santé,
 **afin de** garder un site gratuit, simple, et que ce que j'ajoute soit fiable.
 
 ---

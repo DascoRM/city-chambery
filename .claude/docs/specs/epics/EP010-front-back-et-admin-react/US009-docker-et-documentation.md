@@ -10,13 +10,13 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** le Dockerfile, **Then** l'image du Pi ne construit que le site (contrôles compris) tant que l'API n'y tourne pas (D6), et `deploy/refresh-data.sh` marche toujours
-- [ ] **Given** la doc, **Then** README (structure, commandes, admin), CLAUDE.md (règles 1 et 2, checklist), context.md (la ligne « Backend : Aucun » est fausse depuis EP008), getting-started et le schéma d'EP008 sont à jour ; l'historique du CHANGELOG reste tel quel
+- [ ] **Given** le Dockerfile, **Then** l'image du Pi construit la carte seule (D4), et `deploy/refresh-data.sh` marche
+- [ ] **Given** la doc, **Then** README (structure, commandes), CLAUDE.md (règles et checklist), context.md (« Backend : Aucun » est faux depuis EP008), getting-started et le schéma d'EP008 décrivent frontend (carte, admin) et backend ; l'historique reste tel quel
 
 ---
 
 ## Règles métier
-Voir l'[epic](epic.md) : règles 1 à 7 et règles d'import.
+Voir l'[epic](epic.md) : règles 1 à 7 et tableau « Qui a le droit d'utiliser quoi ».
 
 ---
 
@@ -24,6 +24,7 @@ Voir l'[epic](epic.md) : règles 1 à 7 et règles d'import.
 
 | Critère | Valeur |
 |---------|--------|
+| Phase | 2 |
 | Jours | 0,5 |
 | Risque | Faible |
 | Dépend de | US008 |

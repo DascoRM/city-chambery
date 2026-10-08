@@ -17,7 +17,7 @@ Ajouter au site statique un **petit back-end gratuit** (fonctions du même dép�
 ```
 Navigateur ──► Vercel (site statique, plan Hobby)
           └──► /api/* (fonctions Vercel, même dépôt)  ──► Neon Postgres (gratuit, veille automatique)
-Administration : /admin (page statique) ──► /api/admin/* (jeton secret, puis connexion GitHub)
+Administration : /admin (page statique) ──► /api/admin/* (jeton secret, puis comptes d'administration en base)
 Sauvegarde : export hebdomadaire des retouches en JSON dans le dépôt (historique Git)
 ```
 - **Aucun compte** au départ : un identifiant aléatoire et un code personnel pour changer d'appareil ; pas d'adresse électronique, donc très peu de données personnelles.
@@ -51,25 +51,23 @@ Sauvegarde : export hebdomadaire des retouches en JSON dans le dépôt (historiq
 **Total : 33 points (≈ 6 à 8 sessions).** Branche d'epic : `feat/EP008-back-end` ; une branche par US fusionnée dedans (règle des epics EP005 à EP007).
 **Ordre conseillé** : US001 (socle) → US005 (accès admin) → US006 et US007 (ce dont Dasco a besoin en premier) → US002 (progression) → US003, US008 → US004, US009, US010.
 
-### Mise à jour du 08/10/2026 : cloisonnement et administration en React ([EP010](../EP010-cloisonnement-et-admin-react/epic.md))
-Dasco a demandé de **cloisonner le dépôt** (site, API, admin, contrat partagé) et de faire **l'administration en React** ; le site public reste sans framework. EP010 porte le socle et passe **avant la suite des écrans** :
-- **Avant la suite d'US005** : EP010-US001 à US005 (structure, `shared/`, tsconfig, socle React, parité avec l'admin actuelle)
-- **Avant US006** : EP010-US006 (session par cookie) et US007 (`content/` à la racine)
-- **Avant US007** : EP010-US008 (`web/`) conseillée ; option de carte à trancher (EP010, décision D5)
-- **Avant US002 à US004** : EP010-US002 (contrats dans `shared/`)
+### Mise à jour du 08/10/2026 : séparer front et back, administration en React ([EP010](../EP010-front-back-et-admin-react/epic.md))
+Dasco a demandé de **séparer nettement le front et le back** : **frontend** = la carte (Three.js + OSM, conservée telle quelle) et l'administration (en React) ; **backend** = l'API, consommée par l'admin puis, à terme, par la carte. EP010 porte cette réorganisation en deux phases. **EP008 est en pause pendant EP010** (décision de Dasco du 09/10 ; ses réponses du 09/10 et les plans « admin par tables » et « progression » sont mis de côté dans `git stash`, message « EP008 en attente d'EP010 ») :
+- **Phase 1 (front)** : EP010-US001 à US005 (`frontend/carte`, `frontend/admin` en React, qui reprend l'existant à l'identique, retouches de parkings comprises)
+- **Phase 2 (back)** : EP010-US006 à US009 (`backend/`, `contrat/` partagé, session par cookie)
 
-**Nouvel ordre conseillé** : US001 ✅ → US005 (accès, fait) → **EP010-US001 à US005** → US005 (suite : tableau de bord) → **EP010-US006, US007** → US006 → US007 → US002 → US003, US008 → US004, US009, US010.
+**Ordre conseillé** : US001 ✅ → US005 (accès ✅) → US006 (parkings ✅, lieux à venir) → **EP010 phase 1 puis phase 2** → reprise : admin par tables, US005 (suite : tableau de bord), US006 (lieux), US007 → US002 → US003, US008 → US004, US009, US010.
 
 **Écrans d'administration en React, par US** (front seul, back-end non compté sauf mention ; [plan de l'admin React](../../../tasks/admin-react-plan.md) § 1 et § 4) :
 | US | Écrans | Jours (front) |
 |----|--------|---------------|
-| US005 | Tableau de bord : joueurs actifs, appels par jour, part des quotas, alerte à 70 %, dernière sauvegarde (ADM-08, avec US008) ; connexion GitHub plus tard (ADM-10 : 0,5 + 1,5 back) | 1 (+ 0,5) |
-| US006 | Parkings : liste (lue depuis `/data/city.json`, sans appel de fonction), fiche `ParkingOverride` avec source obligatoire, aperçu, brouillon puis publication (ADM-05) ; lieux, position + source en v1 (ADM-06) ; journal et annulation (ADM-07) | 4,5 à 5 |
-| US007 | Carte de position : iframe du site ≈ 0,5, ou plan 2D Leaflet 1,5 à 2, ou moteur 3D extrait 3 à 4 (ADM-04 / ADM-11) | 0,5 à 4 |
-| US010 | Sauvegarde et export (ADM-09) | 0,5 |
-| | **Total** | **≈ 6,5 à 10,5** (selon la carte) |
+| US005 | Tableau de bord : joueurs actifs, appels par jour, part des quotas, alerte à 70 %, dernière sauvegarde (avec US008) ; plus tard, connexion par identifiant et mot de passe (comptes en base, pas de GitHub : décision du 09/10) : ≈ 0,5 front + 1 à 1,5 back, à préciser | 1 (+ 0,5) |
+| US006 | Parkings : repris tels quels par EP010-US004, puis repensés « par tables » ; lieux (position + source en v1) ; journal et annulation | à réestimer avec le plan « admin par tables » |
+| US007 | Carte de position : **la carte Three.js existante affichée dans l'admin**, l'outil 📍 Position renvoie le point cliqué | 0,5 |
+| US010 | Sauvegarde et export | 0,5 |
+| | **Total** | à réestimer |
 
-L'estimation de l'epic (« 6 à 8 sessions », back-end compris) est donc **dépassée** : EP010 (≈ 5,5 à 6,5 j) plus ces écrans. Points à régler côté back pour US006 : table `edits` et lecture publique des retouches par le site (`GET /api/edits` en cache, repli sur `parkings.json`) ; **la base fait foi, l'export JSON est la sauvegarde**. US008 : Vercel Hobby n'expose sans doute pas l'usage par API (non vérifié) → compter nous-mêmes en base.
+L'estimation de l'epic (« 6 à 8 sessions », back-end compris) est donc **dépassée** : EP010 (≈ 6,5 à 8 j) plus ces écrans. Points à régler côté back pour US006 : table `edits` et lecture publique des retouches par le site (`GET /api/edits` en cache, repli sur `parkings.json`) ; **la base fait foi, l'export JSON est la sauvegarde**. US008 : Vercel Hobby n'expose sans doute pas l'usage par API (non vérifié) → compter nous-mêmes en base.
 
 ---
 
@@ -95,4 +93,4 @@ L'estimation de l'epic (« 6 à 8 sessions », back-end compris) est donc **dép
 - [ ] Revue de Dasco sur l'administration et sur l'effet immédiat des retouches
 
 ## Estimation globale
-- **Complexité** : M. **Effort** : 6 à 8 sessions. Incertain : le temps de réveil de la base après une veille, les limites réelles de Neon en préproduction (branches), l'authentification de l'administration (jeton puis GitHub).
+- **Complexité** : M. **Effort** : 6 à 8 sessions. Incertain : le temps de réveil de la base après une veille, les limites réelles de Neon en préproduction (branches), l'authentification de l'administration (jeton, puis comptes en base).
