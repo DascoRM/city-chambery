@@ -42,8 +42,7 @@ import { buildHerd, type Herd, type MascotConfig } from './scene/mascot';
 import { createClock } from './time/clock';
 import { createOpenStates, type OpenState } from './time/openinghours';
 import { placeCategory } from './scene/palette';
-import { createAdaptiveResolution } from './scene/quality';
-import { createPerfHud } from './ui/perfhud';
+import { createAdaptiveResolution, qualityLevel } from './scene/quality';
 import { dataUrl } from './dataurl';
 import { setupPwa } from './pwa';
 import { createUi, showFatal } from './ui/ui';
@@ -220,8 +219,8 @@ async function main() {
   // Densité de pixels plafonnée à 1,5 puis ajustée selon les images/s (scene/quality.ts)
   const quality = createAdaptiveResolution(renderer, () => tiltShift.setSize(app.clientWidth, app.clientHeight));
   tiltShift.setSize(app.clientWidth, app.clientHeight);
-  // Compteur de performance : ajouter ?debug à l'adresse
-  const perfHud = DEBUG ? createPerfHud(renderer, () => quality.pixelRatio) : null;
+  // Compteur de performance : ajouter ?debug à l'adresse (code chargé seulement dans ce cas)
+  const perfHud = DEBUG ? (await import('./ui/perfhud')).createPerfHud(renderer, () => quality.pixelRatio, qualityLevel()) : null;
   await loading.set(92, 'lieux');
   const poiLayer = buildPoiMarkers(pois, terrain.heightAt);
   scene.add(poiLayer.root);
@@ -562,7 +561,8 @@ async function main() {
   if (!lobbyAtStart) loading.hideBoot();
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, parkingSigns, birds, chimneys, flags, clock, herd, hunt, slots } });
+  // perf : mesures du compteur (scripts de mesure)
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, parkingSigns, birds, chimneys, flags, clock, herd, hunt, slots, renderer, stage, perf: perfHud } });
 }
 
 main();
