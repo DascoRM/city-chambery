@@ -1,5 +1,17 @@
 # Journal des itérations
 
+## Itération 94 — 09/10/2026 (branches `fix/EP009-brouillard-06`, `feat/EP009-US005-pluie`, epic EP009)
+
+**Retour de Dasco :** « le brouillard fonctionne, les autres non » (neige, pluie, orage ne donnent rien à voir : seuls le ciel couvert et le brouillard étaient codés) ; « sur iPhone, ça a l'air ok » ; brouillard à 0,6.
+
+**Changements :**
+- brouillard type ramené de 0,8 à 0,6 (`WEATHER_PRESETS.fog`, partagé avec le futur forçage de l'administration) ;
+- **pluie (US005)**, d'après le plan de l'agent du front, relu avant d'être appliqué : crochets « sol mouillé » posés au démarrage sur les rues, les bâtiments et toits, le sol (plus sombres et satinés sous la pluie, sèchent en 2 min) ; deux nappes de traînées calculées par le processeur graphique (proche en rue, lointaine en vue d'ensemble, en fondu selon le zoom), **au-dessus du socle seulement** (rien sur le fond de page, même vue de côté) ; lueurs de nuit + 25 % ; nombre de traînées par niveau de qualité (1 200, 2 500, 5 000 ; `?debug&rainmax=N` pour essayer) ; règle de dégradation (24 img/s avec la densité de pixels au minimum : moitié, puis rien) ; réduit-mouvement (chute × 0,3).
+
+**Vérifié :** `npm run build` et `npm test` (**187 tests**) ; chunk principal + 0,25 Ko (87,82 Ko gzip, **+ 2,36 Ko depuis le début d'EP009** sur 2,5), module météo 9,1 Ko ; dans Chrome avec la puce graphique du Mac : arrivée de la pluie sur une scène posée, + 1 programme et + 1 appel de rendu, pire image 35 ms, 30 img/s au repos ; captures regardées (vue d'ensemble, rue, nuit) ; par l'agent du front : dégradation de bout en bout (processeur ralenti), réduit-mouvement, vue de côté.
+
+**Non vérifié :** la pluie sur un vrai téléphone (Dasco : « ça a l'air ok », sans chiffres) ; brouillard et pluie ensemble ; Safari, Firefox.
+
 ## Itération 93 — 09/10/2026 (branche `feat/EP009-US006-brouillard`, epic EP009)
 
 **Demande de Dasco :** lot MVP de la météo ; US006 : le brouillard, d'après le plan prêt à coder de l'agent du front ([ep009-us006-us005-plan.md](../tasks/ep009-us006-us005-plan.md)), relu avant d'être appliqué.

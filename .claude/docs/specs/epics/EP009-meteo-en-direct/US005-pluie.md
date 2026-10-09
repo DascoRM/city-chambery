@@ -10,14 +10,14 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** `?weather=rain&intensity=0.8`, **Then** des traînées tombent au-dessus du socle (2 appels de rendu au plus, nombre selon le niveau de qualité et l'intensité), et les rues, les toits et le sol paraissent mouillés (plus sombres, satinés)
-- [ ] **Given** une bruine (0,15) puis une averse (0,85), **Then** densité et longueur visiblement différentes
-- [ ] **Given** un zoom de la vue d'ensemble jusqu'à 100 m, **Then** aucun saut des gouttes (deux nappes en fondu)
-- [ ] **Given** la nuit, **Then** les halos des bars et la lueur des rues sont un peu plus forts
-- [ ] **Given** la scène au repos sous la pluie, **Then** 30 img/s (« repos (30 max) »), pluie animée
-- [ ] **Given** l'arrivée de la pluie, **Then** aucune image de plus de 50 ms (crochets du sol mouillé posés au démarrage)
-- [ ] **Given** le budget d'US001, **Then** il est respecté sur le téléphone de mesure
-- [ ] **Given** moins de 24 img/s en mouvement avec la densité de pixels au minimum, **Then** densité divisée par 2, puis coupure (règle 8 de l'epic)
+- [x] **Given** `?weather=rain&intensity=0.8`, **Then** des traînées tombent au-dessus du socle (2 appels de rendu au plus, nombre selon le niveau de qualité et l'intensité), et les rues, les toits et le sol paraissent mouillés (plus sombres, satinés)
+- [x] **Given** une bruine (0,15) puis une averse (0,85), **Then** densité et longueur visiblement différentes
+- [x] **Given** un zoom de la vue d'ensemble jusqu'à 100 m, **Then** aucun saut des gouttes (deux nappes en fondu)
+- [x] **Given** la nuit, **Then** les halos des bars et la lueur des rues sont un peu plus forts
+- [x] **Given** la scène au repos sous la pluie, **Then** 30 img/s (« repos (30 max) »), pluie animée
+- [x] **Given** l'arrivée de la pluie, **Then** aucune image de plus de 50 ms (crochets du sol mouillé posés au démarrage)
+- [ ] **Given** le budget d'US001, **Then** il est respecté sur le téléphone de mesure *(« ça a l'air ok » sur iPhone, Dasco 09/10 ; pas de chiffres)*
+- [x] **Given** moins de 24 img/s en mouvement avec la densité de pixels au minimum, **Then** densité divisée par 2, puis coupure (règle 8 de l'epic)
 
 ---
 
@@ -49,14 +49,14 @@ Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 4.
 ---
 
 ## Checklist dev
-- [ ] Branche `feat/EP009-US005-pluie` depuis `feat/EP009-meteo`
+- [x] Branche `feat/EP009-US005-pluie` depuis `feat/EP009-meteo`
 - [ ] `npm run build` et `npm test` (`weather/budget.test.ts`) ; vérifié dans le navigateur avec `?weather=` et `?debug`
 - [ ] Fluidité : compteur `?debug` avant / après ; mesure GPU sur le Mac ; mesure sur téléphone par Dasco
-- [ ] Le site marche sans la météo
-- [ ] FEATURES, CHANGELOG, DECISIONS
+- [x] Le site marche sans la météo
+- [x] FEATURES, CHANGELOG, DECISIONS
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : ✅ Done (09/10/2026, itération 94) ; rendu à juger par Dasco
