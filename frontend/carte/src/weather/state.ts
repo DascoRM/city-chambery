@@ -1,4 +1,7 @@
-import { WEATHER_CONDITION_FR, WEATHER_MAX_AGE_S, WEATHER_PRESETS, weatherCondition, type WeatherCondition } from '../../../../contrat/meteo.js';
+import {
+  WEATHER_CONDITION_FR, WEATHER_MAX_AGE_S, WEATHER_PRESETS, weatherCondition, weatherResponse,
+  type WeatherAttribution, type WeatherCondition, type WeatherResponse,
+} from '../../../../contrat/meteo.js';
 import { chamberyClock } from '../time/chambery';
 
 /**
@@ -71,6 +74,30 @@ export function weatherFromUrl(search: string): { condition: WeatherCondition; l
 /** Règle D4 : la météo réelle seulement en « Direct » (heure réelle et saison automatique) ; sinon « simulée » (beau temps) */
 export const isLive = (c: { mode: string; season: string }) => c.mode === 'live' && c.season === 'auto';
 
+/**
+ * Réponse du back conforme au contrat (R1 d'US004 : `weatherResponse.safeParse`, objet ouvert : un champ en plus passe) et pas
+ * trop vieille : au-delà de 3 h (horloge du visiteur), jamais montrée (règle 1). Une météo forcée n'a pas de limite d'âge :
+ * son `observedAt` est le début du forçage, qui peut durer 6 h (US012). Null sinon : ciel par défaut, sans exception.
+ */
+export function validWeather(body: unknown, nowMs: number): WeatherResponse | null {
+  const p = weatherResponse.safeParse(body);
+  if (!p.success) return null;
+  return p.data.forced || nowMs - Date.parse(p.data.observedAt) <= WEATHER_MAX_AGE_S * 1000 ? p.data : null;
+}
+
+/** Réponse du back → relevé de la carte (les intensités du back décident du rendu, jamais un code : règle 4) */
+export function readingFromResponse(b: WeatherResponse): Reading {
+  const temperatureC = b.forced ? null : b.temperatureC; // une météo forcée n'a jamais de température (le back l'envoie déjà nulle)
+  return {
+    condition: b.condition,
+    look: lookOf({ cloudCover: b.cloudCover, rain: b.rainIntensity, snow: b.snowIntensity, fog: b.fog, thunder: b.thunder, windKmh: b.windKmh, windFromDeg: b.windFromDeg, temperatureC }),
+    temperatureC, forced: b.forced, forcedUntilMs: b.forcedUntil ? Date.parse(b.forcedUntil) : null, stale: b.stale,
+    observedAtMs: Date.parse(b.observedAt), model: b.model,
+    wind: { kmh: b.windKmh, gustKmh: b.windGustKmh, fromDeg: b.windFromDeg },
+    attribution: b.forced ? null : b.attribution, // pas de crédit pour une météo forcée (règle 11)
+  };
+}
+
 /** Relevé retenu par la carte : réponse du back (US004) ou relevé simulé par l'outil de debug */
 export interface Reading {
   condition: WeatherCondition;
@@ -85,6 +112,10 @@ export interface Reading {
   /** Heure de validité du pas du modèle (début du forçage pour une météo forcée) */
   observedAtMs: number;
   model: string | null;
+  /** Vent du relevé (km/h, d'où il vient) */
+  wind?: { kmh: number; gustKmh: number | null; fromDeg: number };
+  /** Crédit de la source, à afficher à côté des données (CC BY 4.0) */
+  attribution?: WeatherAttribution | null;
 }
 
 /** État de la lecture de `/api/weather` : `none` tant qu'elle n'existe pas (US004) ou sans API (carte du Pi, 404) */
@@ -116,7 +147,8 @@ export function resolveWeather(i: WeatherInputs, nowMs: number, clear: WeatherLo
   if (i.url) return out('url', i.url.look, i.url.condition);
   if (i.debug) return out('debug', i.debug.look, i.debug.condition);
   if (i.api === 'none') return out('none');
-  const r = i.reading;
+  // Forçage terminé (le back reprend seul la météo réelle) : on ne le garde pas au-delà de sa fin
+  const r = i.reading?.forced && i.reading.forcedUntilMs !== null && nowMs > i.reading.forcedUntilMs ? null : i.reading;
   if (r?.forced) return out('admin', r.look, r.condition, r);
   if (i.api === 'disabled') return out('disabled');
   if (!i.live) return out('simulated', clear, 'clear');
@@ -144,6 +176,10 @@ export const ago = (ms: number) => {
 };
 /** `icon_seamless` → « ICON » */
 export const modelLabel = (m: string | null) => (m ? m.split('_')[0].toUpperCase() : 'météo');
+const DIRS = ['du nord', 'du nord-est', 'd’est', 'du sud-est', 'du sud', 'du sud-ouest', 'd’ouest', 'du nord-ouest'];
+/** « Vent d’ouest, 14 km/h (rafales 30 km/h) » ; d'où il vient, comme les bulletins météo */
+export const windWords = (w: { kmh: number; gustKmh: number | null; fromDeg: number }) =>
+  w.kmh < 2 ? 'Vent calme' : `Vent ${DIRS[Math.round(w.fromDeg / 45) % 8]}, ${Math.round(w.kmh)} km/h${w.gustKmh !== null && w.gustKmh >= w.kmh + 10 ? ` (rafales ${Math.round(w.gustKmh)} km/h)` : ''}`;
 /** « modèle ICON, 10 h 00 (il y a 6 min) » : l'heure de validité du modèle, jamais « observé » (règle 1) */
 const modelLine = (r: Reading, nowMs: number) => `modèle ${modelLabel(r.model)}, ${hm(r.observedAtMs)} (${ago(nowMs - r.observedAtMs)})`;
 
@@ -168,7 +204,7 @@ export function chipOf(s: Resolved, night: boolean): ChipView | null {
   }
 }
 
-export interface PanelView { title: string; lines: string[]; backToLive: boolean }
+export interface PanelView { title: string; lines: string[]; backToLive: boolean; credit?: WeatherAttribution | null }
 
 /** Contenu du panneau de la puce (texte seulement : le panneau l'écrit avec textContent) */
 export function panelOf(s: Resolved, nowMs: number): PanelView {
@@ -182,7 +218,9 @@ export function panelOf(s: Resolved, nowMs: number): PanelView {
     case 'admin': return view(fr, [`Météo forcée (démo) par l’administration${r?.forcedUntilMs ? `, jusqu’à ${hm(r.forcedUntilMs)}` : ''}.`]);
     case 'live': case 'stale': {
       const t = temp(r!.temperatureC);
-      return view(`${fr}${t ? `, ${t}` : ''}`, [s.status === 'live' ? modelLine(r!, nowMs) : `Ancien relevé (${ago(nowMs - r!.observedAtMs)}) : modèle ${modelLabel(r!.model)}, ${hm(r!.observedAtMs)}.`]);
+      const lines = [s.status === 'live' ? modelLine(r!, nowMs) : `Ancien relevé (${ago(nowMs - r!.observedAtMs)}) : modèle ${modelLabel(r!.model)}, ${hm(r!.observedAtMs)}.`];
+      if (r!.wind) lines.push(windWords(r!.wind));
+      return { ...view(`${fr}${t ? `, ${t}` : ''}`, lines), credit: r!.attribution ?? null };
     }
     case 'simulated': return view('Beau temps simulé', ['L’heure ou la saison est choisie : la météo réelle ne s’affiche qu’en direct.'], true);
     case 'disabled': return view('Météo coupée', ['Coupée depuis l’administration : ciel par défaut. Nouvel essai dans 15 min.']);
