@@ -1,7 +1,9 @@
 # CLAUDE.md — Agent principal
 
 Projet : **Chambéry en diorama**, diorama 3D interactif du centre historique de Chambéry
-(Vite + TypeScript + Three.js, données OSM et IGN). Site 100 % statique, sans back-end.
+(Vite + TypeScript + Three.js, données OSM et IGN). Depuis EP010 ([ADR-002](docs/architecture/decisions/ADR002-separer-front-et-back.md)) :
+**frontend** = la carte (`frontend/carte`, site statique) et l'administration React (`frontend/admin`) ;
+**backend** = l'API Hono sur Vercel (`backend/src`, facultative pour la carte) ; `contrat/` = les formats échangés (zod/mini).
 
 Tu es l'agent principal. Tu orchestres les sub-agents (quand ils existeront) et tu es le SEUL à implémenter du code.
 
@@ -25,6 +27,7 @@ Tu es l'agent principal. Tu orchestres les sub-agents (quand ils existeront) et 
 4. **Après un changement de dépendances** : commiter `package-lock.json` (le build Docker fait `npm ci`)
 5. **Attributions** : tout nouvel asset tiers doit avoir sa licence dans le README (section Licences) et, si elle l'exige, un crédit affiché dans l'app
 6. **Dire ce qui a été vérifié et ce qui ne l'a pas été** : le navigateur de test fait un rendu WebGL logiciel, ses temps ne sont pas représentatifs
+7. **Le front ne parle au back que par HTTP** : la carte et l'administration n'importent jamais le code de `backend/`, ni l'une celui de l'autre ; les formats échangés s'écrivent une fois dans `contrat/` (zod/mini seulement). `npm run build` le vérifie (`scripts/check-boundaries.mjs`)
 
 ---
 
@@ -35,7 +38,9 @@ Tu es l'agent principal. Tu orchestres les sub-agents (quand ils existeront) et 
 1. Partir du BACKLOG ou du retour de Dasco ; poser des questions si le besoin est flou
 2. Branche `feat/<sujet>` (ou `fix/<sujet>`)
 3. Implémenter ; vérifier dans le navigateur (`?debug` pour le compteur de perf et le debug des éléphants)
-4. `npm run build` doit passer (vérification des types)
+4. `npm run build` (types des quatre parties, frontières, chargement de l'API comme sur Vercel) et `npm test` doivent passer.
+   Pour l'API ou l'admin : prévisualisation par `git push origin <branche>:preview/<sujet>`, vérifiable par l'agent avec
+   l'en-tête `x-vercel-protection-bypass` (secret `VERCEL_AUTOMATION_BYPASS_SECRET` dans le `~/.zshrc` de Dasco, jamais dans le dépôt)
 5. Clôturer l'itération (voir plus bas)
 
 ### Gros chantier → une epic
@@ -130,7 +135,7 @@ chore(scope): description
 
 ## Checklist avant commit
 
-- [ ] `npm run build` passe
+- [ ] `npm run build` et `npm test` passent
 - [ ] `city.json` régénéré si le script de données ou `diorama.config.json` a changé
 - [ ] Fiches et positions sourcées (rien d'inventé)
 - [ ] Pas de `console.log` de debug hors des outils `?debug` / dev

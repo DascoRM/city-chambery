@@ -30,14 +30,27 @@ Pas de fichier `.env` : les seules variables utiles concernent la régénératio
 npm run dev
 
 # Production en local — http://localhost:4173
-npm run build        # vérifie les types (tsc --noEmit) puis construit dist/
+npm run build        # contrôles (types, frontières, API comme sur Vercel) puis construit dist/ (carte) et dist/admin/
 npm run preview
 
-# Production avec Docker (même image que Coolify) — http://localhost:3000
+# Production avec Docker (même image que Coolify, la carte seule) — http://localhost:3000
 npm run docker:up
 npm run docker:logs
 npm run docker:down
 ```
+
+### Développer avec l'API et l'administration
+
+Trois terminaux :
+
+```bash
+ADMIN_TOKEN=un-jeton-local npm run api:dev   # l'API, http://localhost:8787/api/health (base locale PGlite sans DATABASE_URL)
+npm run dev                                  # la carte, http://localhost:5173 (sert aussi /data/city.json à l'admin)
+npm run dev:admin                            # l'administration, http://localhost:5174/admin/ (se connecter avec le jeton local)
+```
+
+La session d'administration est un cookie posé par l'API (EP010-US008) : rien à copier dans la page. Structure du dépôt :
+`frontend/carte`, `frontend/admin`, `backend/src`, `contrat/` ([ADR-002](../architecture/decisions/ADR002-separer-front-et-back.md)).
 
 ---
 
@@ -47,7 +60,7 @@ npm run docker:down
 |----------|-------------|
 | `npm run dev` | Serveur de développement |
 | `npm run build` | Contrôles (types, frontières entre les parties) puis build de la carte et de l'administration |
-| `npm test` | Tests Vitest : API, administration, contrôles du dépôt |
+| `npm test` | Tests Vitest : back (API), administration, contrat, carte, contrôles du dépôt |
 | `npm run dev:admin` | Administration en dev (http://localhost:5174/admin/), avec `npm run api:dev` et `npm run dev` |
 | `npm run preview` | Sert le build en local |
 | `npm run data` | Télécharge OSM + hauteurs BD TOPO + relief RGE ALTI et écrit `frontend/carte/public/data/city.json` (1 à 2 min) |

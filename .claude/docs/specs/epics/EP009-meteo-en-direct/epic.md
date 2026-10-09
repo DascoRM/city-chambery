@@ -58,7 +58,7 @@ Estimations à ± 30 %, développement + vérification navigateur ; **le test su
 
 **Ordre conseillé** : US001 → US002 → US006 (démontrable à Dasco) ; US003 en parallèle (le site ne dépend que du contrat) → US004 → US005 ; le reste selon l'envie et la saison (neige à planifier avant l'hiver si on veut l'effet démo).
 
-Branche d'epic : `feat/EP009-meteo`, une branche par US fusionnée dedans. US003 touche `server/` : à partir d'EP008 une fois fusionnée dans main (ou rebaser).
+Branche d'epic : `feat/EP009-meteo`, une branche par US fusionnée dedans. US003 touche `backend/src/` : à partir d'EP008 une fois fusionnée dans main (ou rebaser).
 
 ---
 
@@ -112,7 +112,7 @@ Les plans front et back divergeaient sur quelques points ; la spec retient :
 - **Existant réutilisable** : `daynight.apply()` (point d'insertion du modificateur météo), `uNight` / `uLit`, saisons, `createParticles`, vent déjà présent (`smoke.wind` repris par les drapeaux, figé à la construction) ; la passe finale du tilt-shift accueille voile, brouillard et flash (4 uniformes, sans passe en plus)
 - **Manques** : pas de `scene.fog`, pas de ciel 3D (fond en dégradé CSS), pas de niveaux de qualité nommés (d'où US001)
 - **TI-02** : pluie et neige animées obligent à rendre en continu, ce qui annule l'économie « 30 img/s au repos » ; parade : cadence plafonnée et arrêt après inactivité
-- **Collision `no-store`** : `server/app.ts` pose `Cache-Control: no-store` sur toutes les routes ; à rendre non écrasant pour `/api/weather`
+- **Collision `no-store`** : `backend/src/app.ts` pose `Cache-Control: no-store` sur toutes les routes ; à rendre non écrasant pour `/api/weather`
 - **Sources comparées** (08/10/2026) : Open-Meteo (sans clé ; gratuit non commercial : 600/min, 5 000/h, 10 000/jour, 300 000/mois ; CC BY 4.0) ; MET Norway (sans clé, User-Agent obligatoire, commercial permis, plan B) ; OpenWeatherMap (clé, moins fin qu'AROME) ; Météo-France (jeton, GRIB2, + 2 j)
 - **Sans garantie de service** : les offres gratuites n'ont pas de SLA ; le repli « ciel par défaut » rend une panne invisible
 - **Ne pas promettre** d'éclairs ni de brouillard « en temps réel » : ils sont déduits (code orage, visibilité), pas mesurés
