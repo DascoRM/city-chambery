@@ -7,7 +7,9 @@ import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
-const POIS_PATH = resolve(ROOT, 'src/content/pois.json');
+const POIS_PATH = resolve(ROOT, 'content/pois.json');
+/** Sortie à la racine du dépôt : Vercel (`outputDirectory`) et le Dockerfile lisent dist/. */
+const OUT_DIR = resolve(ROOT, '../../dist');
 
 /**
  * Version des données : empreinte de public/data/city.json et de public/models/ (calculée au build).
@@ -30,7 +32,7 @@ function dataVersion(): string {
 
 /**
  * Outil de placement (dev uniquement) : reçoit une position cliquée sur la carte
- * et l'écrit dans src/content/pois.json. N'existe pas dans le build de production.
+ * et l'écrit dans content/pois.json. N'existe pas dans le build de production.
  */
 function poiPlacementApi(): Plugin {
   return {
@@ -82,7 +84,10 @@ function poiPlacementApi(): Plugin {
 }
 
 export default defineConfig({
+  root: ROOT,
   build: {
+    outDir: OUT_DIR,
+    emptyOutDir: true, // dist/ est hors de la racine de la carte : Vite ne le vide pas sans cette option
     rolldownOptions: {
       output: {
         // three.js (≈ 90 % du poids du code) dans son propre fichier : il ne change qu'avec la version de

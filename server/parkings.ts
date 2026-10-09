@@ -6,7 +6,7 @@ import { editLog, parkingEdits } from './db/schema.js';
 
 /**
  * Retouches des parkings (EP008-US006) : validation (Zod) et accès à la base. Le format est celui de
- * `src/content/parkings.json` (`overrides`, `added`), appliqué par le site au chargement (`src/scene/parking-edits.ts`).
+ * `frontend/carte/content/parkings.json` (`overrides`, `added`), appliqué par le site au chargement (`frontend/carte/src/scene/parking-edits.ts`).
  * Toute retouche porte une **source** (texte libre : lien, document, « vu sur place le … »).
  */
 export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;

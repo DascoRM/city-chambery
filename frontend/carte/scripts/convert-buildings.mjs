@@ -1,7 +1,7 @@
 /**
  * Convertit les pièces retenues du pack de bâtiments (assets-src/buildings, « Building Kit » de Kenney, CC0)
  * en un seul fichier glTF : public/models/buildings/details.glb, une pièce par nœud nommé.
- * Lancer : `npm run buildings`. Pièces, échelle et décalages : src/content/buildings.json.
+ * Lancer : `npm run buildings`. Pièces, échelle et décalages : content/buildings.json.
  *
  * Particularités du pack :
  *  - les couleurs viennent d'une texture de palette lue par les coordonnées UV (et non de couleurs de
@@ -21,7 +21,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = join(ROOT, 'assets-src/buildings');
 const OUT_DIR = join(ROOT, 'public/models/buildings');
 const OUT = join(OUT_DIR, 'details.glb');
-const config = JSON.parse(readFileSync(join(ROOT, 'src/content/buildings.json'), 'utf8'));
+const config = JSON.parse(readFileSync(join(ROOT, 'content/buildings.json'), 'utf8'));
 
 const palette = readPng(join(SRC, 'Textures/colormap.png'));
 

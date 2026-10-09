@@ -4,7 +4,7 @@
 # Étape 2 : servir dist/ avec nginx (image finale légère, sans Node)
 # Images multi-architecture : fonctionne sur le Raspberry Pi 5 (arm64) comme sur un PC (amd64).
 #
-# Données : par défaut, celles du dépôt (public/data/city.json, public/models/) sont utilisées telles quelles.
+# Données : par défaut, celles du dépôt (frontend/carte/public/data/city.json, frontend/carte/public/models/) sont utilisées telles quelles.
 # Avec REFRESH_DATA=true (réglé dans docker-compose.yml), le build lance aussi `npm run data`
 # (OpenStreetMap + IGN) et `npm run nature`, avec retour aux données du dépôt si un service échoue
 # (voir deploy/refresh-data.sh).

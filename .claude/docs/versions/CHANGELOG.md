@@ -1,5 +1,19 @@
 # Journal des itérations
 
+## Itération 83 — 09/10/2026 (branches `feat/EP010-US001-adr` et `feat/EP010-US002-frontend-carte`, epic EP010)
+
+**Demande de Dasco :** séparer nettement le front (carte + admin) et le back (API) ; décisions D1 à D6 tranchées ; créer la branche d'epic, mettre EP008 de côté et commencer les deux premières US.
+
+**Changements :**
+- branche d'epic `feat/EP010-front-back` (partie de `feat/EP008-back-end`) ; EP008 en pause : les réponses de Dasco du 09/10 et les plans « admin par tables » et « progression » (fichiers non commités de l'autre session) sont dans `git stash` (« EP008 en attente d'EP010 ») ;
+- **US001** : [ADR-002](../architecture/decisions/ADR002-separer-front-et-back.md) « Séparer le front et le back ; administration en React » ;
+- **US002** : la carte et tout son pipeline de données passent dans `frontend/carte/` (`src/`, `content/` sorti de `src/`, `public/`, `scripts/` de données, `diorama.config.json`, `assets-src/`, `index.html`, `vite.config.ts`, cache `data/raw/`) ; Vite construit toujours dans `dist/` à la racine ; tsconfig propre à la carte ; le tsconfig racine garde ses options (Vercel compile `api/` avec) jusqu'à EP010-US006 ; scripts npm, Docker, `.gitignore` et `refresh-data.sh` suivent ; README et CLAUDE.md à jour ;
+- correctif lié : `npm run api:dev` créait sa base locale dans `data/dev-db` sans créer `data/` (qui n'existe plus d'office) → dossier créé au besoin.
+
+**Vérifié :** `npm run build` et `npm test` (28 tests) ; **`dist/` identique octet pour octet** à celui d'avant le déplacement (mêmes fichiers, mêmes empreintes, même `sw.js`, donc même `?v=` des données) ; `npm run data -- --offline` donne un `city.json` identique hors `generatedAt` (comparé à l'ancien script sur le même cache) ; `npm run check:streets` ; carte en dev dans Chrome headless (GPU) : rendu, HUD, lobby, `?debug` (30 img/s au repos, 2 409 appels), aucune erreur ; avec `npm run api:dev` : retouches de parkings reçues par le proxy ; `/admin/` servi ; outil de placement : écrit bien `frontend/carte/content/pois.json`.
+
+**Non vérifié :** déploiement Vercel (prévisualisation `preview/front-back` pas encore poussée) ; image Docker (Docker absent de ce Mac) ; `REFRESH_DATA=true` (chemins de `refresh-data.sh` relus, pas exécutés).
+
 ## Itération 82 — 08/10/2026 (branche `feat/EP008-US006-retouches-parkings`, epic EP008)
 
 **Demande de Dasco :** suite de l'epic (base Neon prête et migrée sur `main` et `preview` ; administration accessible).

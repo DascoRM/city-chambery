@@ -47,4 +47,4 @@ Détail : [plan de cloisonnement](../../../tasks/cloisonnement-depot-plan.md) §
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🟡 Fait le 09/10/2026 (itération 83) ; reste la vérification sur `preview/front-back` et Docker
