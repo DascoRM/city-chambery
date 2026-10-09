@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './auth';
 import { Layout } from './Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { Parkings } from './pages/Parkings';
 
 /**
  * Administration (EP010). Routage par « # » (`/admin/#/parkings`) : aucune réécriture d'adresse à régler côté serveur
@@ -41,6 +42,7 @@ function Shell() {
       {signedIn ? (
         <Switch>
           <Route path="/" component={Dashboard} />
+          <Route path="/parkings" component={Parkings} />
           <Route>
             <p className="card">Page introuvable. <Link href="/">Retour au tableau de bord</Link></p>
           </Route>

@@ -77,11 +77,14 @@ npm run nature                   # reconvertit les arbres du pack nature (après
 | Commande | Rôle |
 |---|---|
 | `npm install` | Installe les dépendances. Après un changement de dépendances, commiter `package-lock.json` (sinon le build Docker échoue sur `npm ci`) |
-| `npm run dev` | Serveur de développement (avec l'outil de placement et les fiches brouillons) |
-| `npm run build` | Build statique de production dans `dist/` (sans outil de placement ni brouillons) |
+| `npm run dev` | Carte : serveur de développement, http://localhost:5173 (avec l'outil de placement et les fiches brouillons) |
+| `npm run dev:admin` | Administration (React) en développement : http://localhost:5174/admin/ ; lancer aussi `npm run api:dev` (l'API) et `npm run dev` (la carte, qui sert `/data/city.json`) |
+| `npm run build` | Contrôles (types de chaque partie, chargement de l'API comme sur Vercel), puis build de la carte dans `dist/` (sans outil de placement ni brouillons) et de l'administration dans `dist/admin/` |
+| `npm run typecheck` | Types seulement : carte, administration, API (et l'API vue comme Vercel la compile) |
+| `npm run build:carte` / `npm run build:admin` | Build d'une seule partie (la carte vide `dist/` : construire l'administration après) |
 | `npm run preview` | Sert le build de production en local |
 | `npm run api:dev` | API en local (http://localhost:8787/api/health) ; `npm run dev` lui renvoie `/api` par un proxy |
-| `npm test` | Tests de l'API (Vitest) |
+| `npm test` | Tests (Vitest) : l'API (Node, base PGlite) et l'administration (React, DOM simulé par happy-dom) |
 | `npm run db:generate` | Génère une migration SQL depuis `server/db/schema.ts` (sans base) |
 | `npm run db:migrate` | Applique les migrations : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (jamais automatique au déploiement ; le nom d'hôte est affiché avant d'agir) |
 | `npm run docker:up` | Construit l'image Docker et lance le conteneur en arrière-plan (http://localhost:3000) |
@@ -458,7 +461,16 @@ frontend/
     public/icons/          Icônes de l'appli (mode hors-ligne, écran d'accueil)
     assets-src/            Sources des modèles (pack Quaternius en .obj), pas servies par le site
     data/raw/              Caches des téléchargements (non versionnés)
-    public/admin/          Page d'administration actuelle (HTML, CSS, JS sans framework) ; passera dans frontend/admin/ (React, EP010-US003 et US004)
+
+  admin/                   L'ADMINISTRATION : React 19, wouter (adresses en #/…), TanStack Query, React Hook Form ; servie sous /admin/
+    index.html             Page de l'administration
+    vite.config.ts         Base /admin/, sortie dans dist/admin/ (construite après la carte : hors de son service worker)
+    tsconfig.json          Config TypeScript de l'administration (JSX)
+    src/api.ts             Seul accès à l'API : jeton de session, erreurs traduites en français
+    src/auth.tsx           Connexion, déconnexion, retour à la connexion si le jeton est refusé
+    src/pages/             Login, Dashboard (état de l'application et de la base), Parkings (retouches, ajouts, journal)
+    src/types.ts           Formats des réponses de l'API (provisoire : passeront dans contrat/, EP010-US007)
+    src/**/*.test.ts(x)    Tests de l'administration (npm test)
 
 api/index.ts               Point d'entrée imposé par Vercel (EP008) : /api/* y est réécrit (vercel.json), routé par server/app.ts
 server/                    API (Hono, Zod, Drizzle) : app.ts (routes), env.ts (base et environnement), auth.ts (jeton d'administration, limite d'essais), parkings.ts (retouches), db/ (schéma, migrations, connexion, statistiques), dev.ts (serveur local) ; deviendra backend/ (EP010 phase 2)
@@ -490,7 +502,7 @@ Pour ne pas publier à chaque branche (quota Vercel Hobby : 100 déploiements pa
 Pour faire tester une branche : `git push origin feat/mon-sujet:preview/mon-sujet` (la branche locale garde son nom). On supprime ensuite la branche `preview/…` distante. Flux normal : `feat/…` → `release` (recette) → `main` (production, fusion seulement après accord).
 Les prévisualisations sont protégées par l'authentification Vercel : seul un compte connecté les ouvre. Réglage manuel conseillé dans Vercel (Settings > Security > Deployment Retention) : durée de conservation des anciens déploiements.
 
-Tests en local : `npm test` (API) tourne **sans Neon, sans Docker, sans réseau** : les migrations sont rejouées sur PGlite, un vrai PostgreSQL embarqué (`server/db/migrations.test.ts`).
+Tests en local : `npm test` (API et administration) tourne **sans Neon, sans Docker, sans réseau** : les migrations sont rejouées sur PGlite, un vrai PostgreSQL embarqué (`server/db/migrations.test.ts`).
 
 ---
 
@@ -500,12 +512,12 @@ Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le m
 
 - **Variables d'environnement** (à saisir dans Vercel, Settings > Environment Variables ; jamais dans le dépôt) : `DATABASE_URL` (production et développement), `DATABASE_URL_PREVIEW` (prévisualisations). **Une prévisualisation n'utilise jamais `DATABASE_URL`** : sans `DATABASE_URL_PREVIEW`, la base y est désactivée. Le code ne lit que ces adresses PostgreSQL ordinaires : Neon reste remplaçable en changeant `DATABASE_URL`.
 - **Variables posées par l'intégration Neon** : `DATABASE_URL` (connexion avec répartiteur, celle de l'API), `DATABASE_URL_UNPOOLED` (connexion directe, utilisée par les migrations) ; les autres (`PG*`, `POSTGRES_*`) ne sont pas lues par le code.
-- **Administration (US005)** : page `/admin/` (non référencée, `noindex`) et routes `/api/admin/*`, protégées par le jeton **`ADMIN_TOKEN`** (variable Vercel, à définir pour Production **et** Preview ; jamais dans le dépôt). Générer un jeton long : `openssl rand -base64 32`. Sans `ADMIN_TOKEN`, l'administration est **fermée** (404). Le jeton voyage dans l'en-tête `Authorization: Bearer …` (HTTPS) ; page : jeton gardé le temps de l'onglet (`sessionStorage`) ; 5 essais ratés par minute et par adresse, puis blocage (limite par instance de fonction : un limiteur partagé viendra avec US008). En développement : `ADMIN_TOKEN=… npm run api:dev` puis http://localhost:5173/admin/index.html. Aujourd'hui : état de l'application, de la base, taille et lignes par table.
+- **Administration (US005)** : page `/admin/` (application React de `frontend/admin/`, adresses en `#/…` ; non référencée, `noindex`, politique de contenu stricte en en-tête HTTP dans `vercel.json`) et routes `/api/admin/*`, protégées par le jeton **`ADMIN_TOKEN`** (variable Vercel, à définir pour Production **et** Preview ; jamais dans le dépôt). Générer un jeton long : `openssl rand -base64 32`. Sans `ADMIN_TOKEN`, l'administration est **fermée** (404). Le jeton voyage dans l'en-tête `Authorization: Bearer …` (HTTPS) ; page : jeton gardé le temps de l'onglet (`sessionStorage`) ; 5 essais ratés par minute et par adresse, puis blocage (limite par instance de fonction : un limiteur partagé viendra avec US008). En développement : `ADMIN_TOKEN=… npm run api:dev` puis http://localhost:5173/admin/index.html. Aujourd'hui : état de l'application, de la base, taille et lignes par table.
 - **Retouches des parkings depuis l'administration (US006)** : chercher un parking, le masquer, changer nom, tarif, places, type, position, note, **avec une source obligatoire** ; ajouter un parking absent d'OSM ; liste des retouches et journal. Enregistrées dans la base (tables `parking_edits`, `edit_log`), publiées par `GET /api/parkings/edits` (mise en cache 60 s par Vercel) ; le site les demande au chargement (1,5 s au plus, sinon il part sans) et les fusionne avec celles de `frontend/carte/content/parkings.json` (l'administration l'emporte). La fiche du parking cite la source de la retouche.
 - **Base locale de développement** : sans `DATABASE_URL`, `npm run api:dev` utilise un PostgreSQL embarqué (PGlite, dossier `data/dev-db/`, ignoré par Git) avec les migrations du dépôt : on teste l'administration sans Neon (dans ce mode, la carte « Base de données » de l'administration indique « non configurée », c'est normal).
 - **Créer ou mettre à jour la base** : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (rejouable ; l'adresse se copie depuis la console Neon, sans la coller ailleurs). Les migrations sont dans `server/db/migrations/`.
-- **Développer** : `npm run api:dev` dans un terminal, `npm run dev` dans un autre.
-- **Contrôle** : `npm run build` vérifie aussi les types de l'API (`tsconfig.api.json`) et **la charge comme Vercel** (`scripts/check-api-esm.mjs` : projet en ES modules, extension `.js` obligatoire dans les imports relatifs de `api/` et `server/`) ; `npm test` lance les tests.
+- **Développer** : `npm run api:dev` dans un terminal, `npm run dev` (la carte) dans un autre ; pour l'administration, `npm run dev:admin` en plus (http://localhost:5174/admin/ ; en local, `ADMIN_TOKEN=… npm run api:dev` pour s'y connecter).
+- **Contrôle** : `npm run build` vérifie aussi les types de l'administration et de l'API (`tsconfig.api.json`) et **la charge comme Vercel** (`scripts/check-api-esm.mjs` : projet en ES modules, extension `.js` obligatoire dans les imports relatifs de `api/` et `server/`) ; `npm test` lance les tests.
 
 ---
 

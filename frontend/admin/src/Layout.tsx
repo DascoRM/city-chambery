@@ -5,6 +5,7 @@ import { useAuth } from './auth';
 /** Pages de l'administration, dans l'ordre de la navigation */
 const PAGES: { path: string; label: string }[] = [
   { path: '/', label: 'Tableau de bord' },
+  { path: '/parkings', label: 'Parkings' },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
