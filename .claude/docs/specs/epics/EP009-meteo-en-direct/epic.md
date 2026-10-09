@@ -1,6 +1,6 @@
 # Epic EP009 - La météo en direct sur le diorama
 
-**Statut (09/10/2026) : reprise à la demande de Dasco (« géré par le back et affiché sur le front ») ; spec v2 à valider par Dasco avant de coder ; rien n'est codé.** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
+**Statut (09/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé, en commençant par US003 (contrat et route).** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
 
 ## Résumé
 Afficher sur le diorama **la météo réelle de Chambéry** (soleil, couvert, pluie, brouillard, neige, orage, vent), rendue en 3D dans le style maquette.
@@ -52,7 +52,7 @@ frontend/admin   écran « Météo » : ce que voient les visiteurs, relevé bru
 |----|------------|---------|-------|-----|--------|
 | [US001](US001-niveaux-de-qualite-et-mesure.md) | Niveaux de qualité, temps GPU, mesure de la pluie sur téléphone | Scène | 0,75 à 1 | Démo | 🔲 Todo |
 | [US002](US002-socle-meteo-et-mode-force.md) | Socle météo : état, fondu, couvert, `?weather=`, puce, réglages posés au démarrage | Scène, UI | 3 | Démo | 🔲 Todo |
-| [US003](US003-route-api-weather.md) | Contrat météo et route `/api/weather` (ICON, cache, repli, tests, contrôle du build) | Contrat, API | 1,5 à 2 (dont contrat 0,25) | Démo (contrat), MVP | 🔲 Todo |
+| [US003](US003-route-api-weather.md) | Contrat météo et route `/api/weather` (ICON, cache, repli, tests, contrôle du build) | Contrat, API | 1,5 à 2 (dont contrat 0,25) | Démo (contrat), MVP | 🔄 In Progress |
 | [US004](US004-meteo-reelle-cote-site.md) | Météo réelle côté carte : lecture, relances, états, crédits | Carte, UI | 1 à 1,5 | MVP | 🔲 Todo |
 | [US005](US005-pluie.md) | Pluie | Scène | 2,5 à 3 | MVP | 🔲 Todo |
 | [US006](US006-brouillard.md) | Brouillard | Scène | 1,5 | Démo | 🔲 Todo |
@@ -119,20 +119,20 @@ Démarrage du diorama (rien n'attend la météo)
 ## Décisions
 | # | Question | Décision ou recommandation | Statut |
 |---|----------|----------------------------|--------|
-| D1 | Quel lot engager ? | Le MVP, dans l'ordre conseillé (contrat et route d'abord) ; la suite selon la mesure sur téléphone (US001) | **À trancher** |
-| D2 | Le projet reste-t-il non commercial ? (Open-Meteo gratuit et Vercel Hobby l'exigent tous les deux) | Oui ; sinon MET Norway (commercial permis, +0,5 j) ou Open-Meteo payant (≈ 29 €/mois, non vérifié) + Vercel Pro | **À reconfirmer** |
+| D1 | Quel lot engager ? | Le MVP, dans l'ordre conseillé (contrat et route d'abord) ; la suite selon la mesure sur téléphone (US001) | Retenu (09/10) |
+| D2 | Le projet reste-t-il non commercial ? (Open-Meteo gratuit et Vercel Hobby l'exigent tous les deux) | Oui, le projet reste non commercial ; sinon il faudrait MET Norway (commercial permis, +0,5 j) ou Open-Meteo payant (≈ 29 €/mois, non vérifié) + Vercel Pro | Retenu (09/10) |
 | D3 | Source | Open-Meteo avec le **modèle ICON** (`icon_seamless`), pas AROME : AROME ne donne ni la visibilité ni l'orage à Chambéry (0 h de brouillard et d'orage sur 1 434 h d'historique). Pas de source de secours au départ | Retenu (09/10) |
 | D4 | Hors de l'heure « Direct » | Météo « simulée » (beau temps) ; prévisions heure par heure plus tard (US013) | Retenu (09/10) |
 | D5 | Décorative, ou aussi dans les fiches et le jeu ? | Décorative + puce | Retenu (09/10) |
 | D6 | Forçage pour les démos | `?weather=` pour régler le rendu **et** forçage ou coupure depuis l'admin, vus par tous les visiteurs (US012) | Retenu (09/10) |
-| D7 | Seuils de rendu réglables dans l'admin ? | Non : constantes nommées dans `backend/src/meteo/normalize.ts` (sinon +1 j, et des états incohérents possibles) | Recommandé |
-| D8 | Où ranger le forçage ? | Dans la table existante `app_meta` (clé `meteo.forcage`) : **aucune migration**, aucun conflit avec EP008 | Recommandé |
-| D9 | Libellé de la condition | Règle 5 : même libellé que la source 98 % du temps, contre 82 % avec la seule couverture nuageuse | Recommandé |
+| D7 | Seuils de rendu réglables dans l'admin ? | Non : constantes nommées dans `backend/src/meteo/normalize.ts` (sinon +1 j, et des états incohérents possibles) | Retenu (09/10) |
+| D8 | Où ranger le forçage ? | Dans la table existante `app_meta` (clé `meteo.forcage`) : **aucune migration**, aucun conflit avec EP008 | Retenu (09/10) |
+| D9 | Libellé de la condition | Règle 5 : même libellé que la source 98 % du temps, contre 82 % avec la seule couverture nuageuse | Retenu (09/10) |
 | D10 | Relevé planifié (matin, après-midi, soir) ou à la demande ? | **À la demande, avec cache** ; la carte attend 8 s puis réessaie à 60 s. Une tâche planifiée une fois par jour pourra servir plus tard à un historique | Retenu (09/10) |
-| D11 | Pluie et neige au-dessus du socle seulement, ou partout à l'écran ? | Socle seulement : partout, la pluie dessine des tirets sur le fond beige, qui font penser à de la neige | **À trancher** |
-| D12 | Repères de jeu (gemmes ✦, épingles, éléphants) dans le brouillard | Toujours visibles : ils percent le brouillard | **À trancher** |
+| D11 | Pluie et neige au-dessus du socle seulement, ou partout à l'écran ? | Socle seulement : partout, la pluie dessine des tirets sur le fond beige, qui font penser à de la neige | Retenu (09/10) |
+| D12 | Repères de jeu (gemmes ✦, épingles, éléphants) dans le brouillard | Toujours visibles : ils percent le brouillard | Retenu (09/10) |
 
-D3 à D6 et D10 : accord de Dasco le 09/10 sur les recommandations de l'agent du back. D7 à D9 se valident avec la spec.
+D3 à D6 et D10 : accord de Dasco le 09/10 sur les recommandations de l'agent du back. D1, D2, D7 à D9, D11 et D12 : validation de la spec v2 par Dasco le 09/10 (recommandations retenues).
 
 ---
 
@@ -183,7 +183,7 @@ Les plans v2 corrigent aussi la v1 : brouillard **linéaire** calé sur la dista
 - **Complexité** : L (Démo, MVP) à XL (Complet)
 - **Effort estimé** : Démo ≈ 5,5 j, MVP ≈ 10,25 à 12 j, Admin ≈ 11,25 à 13,25 j, Complet ≈ 21 à 25 j (dont back, contrat et admin ≈ 2,5 à 3,25 j)
 - **Coût en euros** : 0 € tant que le projet reste non commercial
-- **Ce que Dasco aura à faire** : trancher D1, D2, D11 et D12 ; mesurer sur son téléphone (US001, protocole fourni) ; valider les rendus avec `?weather=` ; vérifier que la prévisualisation a une base (US012) ; donner son accord pour la production. Ni clé, ni variable d'environnement, ni migration
+- **Ce que Dasco aura à faire** : mesurer sur son téléphone (US001, protocole fourni) ; valider les rendus avec `?weather=` ; vérifier que la prévisualisation a une base (US012) ; donner son accord pour la production. Ni clé, ni variable d'environnement, ni migration
 
 ---
 

@@ -91,9 +91,10 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ✅ *itération 70* En balade, l'éléphant ramené à la fontaine : la caméra le suit puis revient à l'avatar
 - ⬜ Idée liée, hors EP005 : bouton « Voir d'ici » (caméra à hauteur d'homme sur un lieu, sans marcher) — environ une demi-session
 
-## EP009 « La météo en direct » : spec v2 à valider (09/10/2026)
+## EP009 « La météo en direct » : en cours (spec v2 validée le 09/10/2026)
 [Epic EP009](../../specs/epics/EP009-meteo-en-direct/epic.md) · [plan back v2](../../tasks/ep009-back-plan-v2.md) · [plan front v2](../../tasks/ep009-front-plan-v2.md) : reprise le 09/10 à la demande de Dasco (« géré par le back et affiché sur le front »). Le back interroge Open-Meteo (modèle ICON, pas AROME : AROME ne donne ni brouillard ni orage à Chambéry), traduit ses codes en 9 conditions du contrat (`contrat/meteo.ts`) et garde le relevé en cache (`/api/weather`) ; la carte l'affiche en 3D ; l'admin peut forcer ou couper la météo pour tous (US012). Relevé à la demande plutôt que planifié (D10, accord de Dasco). **0 €** tant que le projet reste non commercial ; lots Démo ≈ 5,5 j, MVP ≈ 10,25 à 12 j, Admin + 1 à 1,25 j, Complet ≈ 21 à 25 j ; principal risque : fluidité mobile (aucun téléphone mesuré ; pluie GPU mesurée sur le Mac : +0,1 à +0,45 ms par image). Branche d'epic `feat/EP009-meteo`.
-- ⬜ Valider la spec v2 ; trancher D1 (lot), D2 (non commercial), D11 (pluie au-dessus du socle seulement), D12 (repères visibles dans le brouillard) — *Dasco*
+- ✅ *09/10* Spec v2 validée par Dasco : lot MVP engagé (contrat et route d'abord), projet non commercial, pluie et neige au-dessus du socle seulement, repères de jeu visibles dans le brouillard
+- ⬜ US001 : mesure de la pluie prototype sur l'iPhone (protocole dans la fiche US001) — *Dasco*
 - Lien : la neige d'hiver demandée plus bas (« Hiver : reprendre les arbres ») recoupe EP009-US007
 - Lien : EP008 doit garder la table `app_meta` (forçage de la météo, US012) et prévoir les lignes météo du journal dans `audit_log`
 
