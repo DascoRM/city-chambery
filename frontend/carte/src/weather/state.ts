@@ -34,8 +34,8 @@ function lookOf(v: RawLook): WeatherLook {
 }
 
 /**
- * Valeurs types d'une météo forcée : les MÊMES règles que le forçage de l'administration côté back (`forcedResponse`,
- * backend/src/meteo/normalize.ts), donc le même rendu (R4 d'US002). `intensity` remplace l'intensité principale (pluie seule,
+ * Valeurs types d'une météo forcée : le forçage de l'administration côté back (EP009-US012) suivra les MÊMES règles
+ * (plan ep009-back-plan-v2, `forcedResponse`), donc le même rendu (R4 d'US002). `intensity` remplace l'intensité principale (pluie seule,
  * neige seule ou brouillard ; ignorée pour « pluie et neige » et pour le ciel sec) ; vent par défaut : 10 km/h d'ouest.
  */
 export function presetLook(c: WeatherCondition, o: { intensity?: number | null; windKmh?: number | null; windFromDeg?: number | null; temperatureC?: number | null } = {}): WeatherLook {
