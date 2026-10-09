@@ -66,8 +66,8 @@ c'est assez plaisant pour que mes amis y passent 10 minutes et en redemandent.*
 ## État actuel
 
 - [x] POC diorama, exploration et mini-jeu (itérations 1 à 37)
-- [ ] EP008 — Back-end léger et administration (en pause pendant EP010 ; retouches des parkings livrées)
-- [ ] EP010 — Séparer le front et le back, administration React, contrat, session par cookie (phases 1 et 2 livrées le 09/10, reste la vérification finale)
+- [ ] EP008 — Back-end léger et administration (retouches des parkings livrées ; reprise après EP010 : admin « par tables », progression)
+- [x] EP010 — Séparer le front et le back, administration React, contrat, session par cookie (terminée le 09/10/2026)
 - [ ] P1 — Fiabiliser le POC (position des lieux, relecture des fiches, « la ville vit »)
 - [ ] P1 — Fluidité (arbres par quartier, moins d'images à l'arrêt)
 - [ ] Déploiement sur le Pi (Coolify) puis session de test avec les amis

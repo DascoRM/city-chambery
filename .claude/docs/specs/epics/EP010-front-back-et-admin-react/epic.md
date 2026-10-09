@@ -1,6 +1,6 @@
 # Epic EP010 - Séparer le front et le back, et poser l'administration en React
 
-**Statut (09/10/2026) : phase 1 (front) livrée et vérifiée par Dasco sur la prévisualisation, fusionnée dans la branche d'epic ; phase 2 (back) planifiée ([plan](../../../tasks/ep010-phase2-plan.md)), en attente de 7 réponses de Dasco.** v2 : réécrite après le retour de Dasco (« bien différencier front et back ; d'abord le front avec l'admin React, puis le back »). Prérequis des écrans d'[EP008](../EP008-back-end-et-admin/epic.md). Études : [plan de cloisonnement](../../../tasks/cloisonnement-depot-plan.md), [plan de l'admin React](../../../tasks/admin-react-plan.md) (08/10/2026).
+**Statut (09/10/2026) : terminée.** Phases 1 et 2 livrées, relues par deux agents indépendants (corrections faites), vérifiées sur la prévisualisation par l'agent et par Dasco (connexion, Docker) ; mise en production par la PR `feat/EP010-front-back` → `main`, avec la partie déjà faite d'EP008 (API, retouches des parkings).
 
 ## Résumé
 Ranger le dépôt en **deux parties nettes** :
@@ -75,7 +75,7 @@ React 19 · wouter (routage par « # », sans réécriture serveur) · TanStack 
 |----|------------|-------|--------|
 | [US006](US006-backend.md) | `backend/` : l'API dans son dossier, sa propre config TypeScript | 0,5 à 1 | ✅ Fait (09/10), trois étapes vérifiées sur la prévisualisation |
 | [US007](US007-contrat-front-back.md) | `contrat/` : schémas partagés entre front et back | 0,5 | ✅ Fait (09/10), vérifié sur la prévisualisation |
-| [US008](US008-session-admin-par-cookie.md) | Session d'administration par cookie `HttpOnly` | 0,75 | 🟡 Fait (09/10), relu et corrigé ; vérifié par l'agent sur la prévisualisation ; reste la connexion avec le vrai jeton (Dasco) |
+| [US008](US008-session-admin-par-cookie.md) | Session d'administration par cookie `HttpOnly` | 0,75 | ✅ Fait (09/10), relu et corrigé ; connexion vérifiée par Dasco sur la prévisualisation |
 | [US009](US009-docker-et-documentation.md) | Docker / Coolify et documentation | 0,5 | ✅ Fait (09/10) ; image Docker vérifiée par Dasco (la carte s'affiche, 404 sur `/admin` et `/api`) |
 
 **Total : ≈ 6,5 à 8 jours** (± 30 %, rien n'est mesuré). Phase 1 ≈ 4,25 à 5,25 j ; phase 2 ≈ 2,25 à 2,75 j.
