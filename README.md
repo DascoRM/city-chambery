@@ -80,6 +80,7 @@ npm run nature                   # reconvertit les arbres du pack nature (après
 | `npm run dev` | Carte : serveur de développement, http://localhost:5173 (avec l'outil de placement et les fiches brouillons) |
 | `npm run dev:admin` | Administration (React) en développement : http://localhost:5174/admin/ ; lancer aussi `npm run api:dev` (l'API) et `npm run dev` (la carte, qui sert `/data/city.json`) |
 | `npm run build` | Contrôles (types de chaque partie, chargement de l'API comme sur Vercel), puis build de la carte dans `dist/` (sans outil de placement ni brouillons) et de l'administration dans `dist/admin/` |
+| `npm run check:boundaries` | Contrôle des frontières du dépôt (ADR-002) : la carte et l'administration ne s'importent pas, le front n'importe jamais le code de l'API, chaque partie a sa liste de paquets, pas de HTML brut dans l'administration (lancé par `npm run build`) |
 | `npm run typecheck` | Types seulement : carte, administration, API (et l'API vue comme Vercel la compile) |
 | `npm run build:carte` / `npm run build:admin` | Build d'une seule partie (la carte vide `dist/` : construire l'administration après) |
 | `npm run preview` | Sert le build de production en local |
@@ -475,6 +476,7 @@ frontend/
 api/index.ts               Point d'entrée imposé par Vercel (EP008) : /api/* y est réécrit (vercel.json), routé par server/app.ts
 server/                    API (Hono, Zod, Drizzle) : app.ts (routes), env.ts (base et environnement), auth.ts (jeton d'administration, limite d'essais), parkings.ts (retouches), db/ (schéma, migrations, connexion, statistiques), dev.ts (serveur local) ; deviendra backend/ (EP010 phase 2)
 scripts/check-api-esm.mjs  Contrôle du dépôt : l'API se charge comme sur Vercel (lancé par npm run build)
+scripts/check-boundaries.mjs  Contrôle du dépôt : frontières entre carte, administration et API (lancé par npm run build)
 deploy/                    Docker / nginx ; refresh-data.sh régénère les données pendant le build Docker
 data/dev-db/               Base locale de l'API en dev (PGlite, non versionnée)
 dist/                      Sortie du build (carte), servie par Vercel et nginx
