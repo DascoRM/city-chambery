@@ -20,7 +20,7 @@ describe('errorMessage : réponses en erreur traduites pour Dasco', () => {
   });
 
   it('données refusées : le détail de chaque champ est donné', () => {
-    const body = { error: 'données invalides', issues: [{ path: ['source'], message: 'requis' }, { message: 'aucune retouche' }] };
+    const body = { error: 'données invalides', issues: [{ path: ['source'], message: 'requis' }, { path: [], message: 'aucune retouche' }] };
     expect(errorMessage(400, body)).toBe('données invalides (source : requis ; formulaire : aucune retouche)');
     expect(errorMessage(500, null)).toBe('Erreur 500.');
     expect(errorMessage(500, { error: 'erreur interne' })).toBe('Erreur 500 : erreur interne.');

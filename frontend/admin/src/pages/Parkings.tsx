@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { api, ApiError } from '../api';
-import type { AddedParking, AdminParkingEdits, CityParking, ParkingKind, ParkingOverride } from '../types';
+import {
+  addedInput, adminParkingEdits, overrideInput,
+  type AddedInput, type AdminParkingEdits, type OverrideInput, type ParkingKind, type PublishedOverride,
+} from '../../../../contrat/parkings.js';
+import { api, ApiError, issuesText } from '../api';
+import type { CityParking } from '../types';
 
 /**
  * Retouches des parkings (EP008-US006), reprises à l'identique de l'admin d'origine (EP010-US004) : chercher un parking de la
@@ -17,7 +21,7 @@ const KIND_FR: Record<ParkingKind, string> = { surface: 'de surface', 'multi-sto
 const kindFr = (kind: string) => KIND_FR[kind as ParkingKind] ?? kind;
 
 /** Résumé d'une retouche : « masqué, nom « … », payant, 149 places, … » */
-export function summary(o: Omit<ParkingOverride, 'source'>): string {
+export function summary(o: Omit<PublishedOverride, 'source'>): string {
   return [
     o.hide && 'masqué',
     o.name && `nom « ${o.name} »`,
@@ -43,6 +47,8 @@ const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
 const fee = (v: string) => (v === 'paid' ? true : v === 'free' ? false : undefined);
 const feeField = (f: boolean | undefined) => (f === undefined ? '' : f ? 'paid' : 'free');
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+/** Retire les champs vides (undefined), comme le fait l'envoi en JSON, avant de valider avec le contrat */
+const withoutEmpty = <T extends object>(o: T): T => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as T;
 
 interface Msg { text: string; ok?: boolean }
 function Message({ msg, error }: { msg: Msg; error?: string }) {
@@ -50,7 +56,7 @@ function Message({ msg, error }: { msg: Msg; error?: string }) {
 }
 
 export function Parkings() {
-  const edits = useQuery({ queryKey: EDITS_KEY, queryFn: () => api<AdminParkingEdits>('GET', '/api/admin/parkings/edits') });
+  const edits = useQuery({ queryKey: EDITS_KEY, queryFn: () => api('GET', '/api/admin/parkings/edits', { schema: adminParkingEdits }) });
   const [selected, setSelected] = useState<CityParking | null>(null);
   // Chaque « Choisir » recrée le formulaire, même sur le parking déjà choisi : c'est la façon d'annuler une saisie
   const [pick, setPick] = useState(0);
@@ -72,7 +78,7 @@ export function Parkings() {
   );
 }
 
-function Search({ overrides, onPick }: { overrides: Record<string, ParkingOverride>; onPick: (p: CityParking) => void }) {
+function Search({ overrides, onPick }: { overrides: Record<string, PublishedOverride>; onPick: (p: CityParking) => void }) {
   const [q, setQ] = useState('');
   const [wanted, setWanted] = useState(false); // la liste (city.json, ≈ 1,4 Mo) n'est lue qu'au premier clic dans la recherche
   const city = useQuery({ queryKey: CITY_KEY, queryFn: loadCityParkings, enabled: wanted, staleTime: Infinity });
@@ -102,22 +108,22 @@ function Search({ overrides, onPick }: { overrides: Record<string, ParkingOverri
 }
 
 interface OverrideFields { hide: boolean; name: string; fee: string; capacity: string; kind: string; x: string; y: string; note: string; source: string }
-const overrideFields = (o?: ParkingOverride): OverrideFields => ({
+const overrideFields = (o?: PublishedOverride): OverrideFields => ({
   hide: !!o?.hide, name: o?.name ?? '', fee: feeField(o?.fee), capacity: o?.capacity?.toString() ?? '', kind: o?.kind ?? '',
   x: o?.pos?.[0]?.toString() ?? '', y: o?.pos?.[1]?.toString() ?? '', note: o?.note ?? '', source: o?.source ?? '',
 });
 
-function OverrideForm({ parking, current }: { parking: CityParking; current?: ParkingOverride }) {
+function OverrideForm({ parking, current }: { parking: CityParking; current?: PublishedOverride }) {
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, formState } = useForm<OverrideFields>({ defaultValues: overrideFields(current) });
   const [msg, setMsg] = useState<Msg>({ text: '' });
   const ref = useRef<HTMLFormElement>(null);
-  const save = useMutation({ mutationFn: (body: ParkingOverride) => api('PUT', `/api/admin/parkings/overrides/${parking.id}`, { body }) });
+  const save = useMutation({ mutationFn: (body: OverrideInput) => api('PUT', `/api/admin/parkings/overrides/${parking.id}`, { body }) });
   const remove = useMutation({ mutationFn: () => api('DELETE', `/api/admin/parkings/edits/${parking.id}`, { notFound: NOT_FOUND }) });
   const refresh = () => queryClient.invalidateQueries({ queryKey: EDITS_KEY });
   /** La retouche de ce parking devient tout de suite l'état connu : pendant la relecture (ou si elle échoue), le formulaire
    *  ne revient pas à l'ancienne valeur, qu'un nouvel enregistrement republierait sans le dire */
-  const publish = (override: ParkingOverride | undefined) =>
+  const publish = (override: PublishedOverride | undefined) =>
     queryClient.setQueryData<AdminParkingEdits>(EDITS_KEY, (old) => {
       if (!old) return old;
       const overrides = { ...old.overrides };
@@ -134,10 +140,13 @@ function OverrideForm({ parking, current }: { parking: CityParking; current?: Pa
   const onSubmit = handleSubmit(async (f) => {
     const x = num(f.x), y = num(f.y);
     if ((x === undefined) !== (y === undefined)) return setMsg({ text: 'Position : il faut x et y.' });
-    const body: ParkingOverride = {
+    // Mêmes règles que le serveur (contrat), avant l'envoi : un champ refusé est signalé tout de suite, en français
+    const checked = overrideInput.safeParse(withoutEmpty({
       hide: f.hide || undefined, name: text(f.name), fee: fee(f.fee), capacity: num(f.capacity), kind: text(f.kind) as ParkingKind | undefined,
       pos: x === undefined || y === undefined ? undefined : [x, y], note: text(f.note), source: f.source.trim(),
-    };
+    }));
+    if (!checked.success) return setMsg({ text: issuesText(checked.error.issues) });
+    const body = checked.data;
     try {
       await save.mutateAsync(body);
       publish(body);
@@ -203,15 +212,16 @@ function AddForm() {
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, formState } = useForm<AddFields>({ defaultValues: ADD_DEFAULTS });
   const [msg, setMsg] = useState<Msg>({ text: '' });
-  const add = useMutation({ mutationFn: (body: AddedParking) => api('POST', '/api/admin/parkings/added', { body }) });
+  const add = useMutation({ mutationFn: (body: AddedInput) => api('POST', '/api/admin/parkings/added', { body }) });
 
   const onSubmit = handleSubmit(async (f) => {
-    const body: AddedParking = {
+    const checked = addedInput.safeParse(withoutEmpty({
       id: `custom/${f.id.trim()}`, kind: f.kind, pos: [Number(f.x), Number(f.y)], name: text(f.name), fee: fee(f.fee),
       capacity: num(f.capacity), note: text(f.note), source: f.source.trim(),
-    };
+    }));
+    if (!checked.success) return setMsg({ text: issuesText(checked.error.issues) });
     try {
-      await add.mutateAsync(body);
+      await add.mutateAsync(checked.data);
       setMsg({ text: 'Parking ajouté et publié.', ok: true });
       reset(ADD_DEFAULTS);
       await queryClient.invalidateQueries({ queryKey: EDITS_KEY });

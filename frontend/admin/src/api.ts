@@ -1,4 +1,9 @@
-import type { ApiErrorBody } from './types';
+import * as z from 'zod/mini';
+import { fr } from 'zod/locales';
+import type { ApiErrorBody } from '../../../contrat/erreurs.js';
+
+// Messages de validation du contrat (zod/mini) en français, comme ceux que renvoie le back
+z.config(fr());
 
 /**
  * Accès à l'API depuis l'administration : un seul point d'entrée, qui ajoute le jeton et traduit les erreurs en français.
@@ -41,21 +46,41 @@ export function errorMessage(status: number, body: ApiErrorBody | null, notFound
     return notFound ?? "Route de l'API introuvable (404).";
   }
   if (status >= 500) return `Erreur ${status}${body?.error ? ` : ${body.error}` : ''}.`;
-  const detail = Array.isArray(body?.issues) ? body.issues.map((i) => `${(i.path ?? []).join('.') || 'formulaire'} : ${i.message}`).join(' ; ') : '';
+  const detail = Array.isArray(body?.issues) ? issuesText(body.issues) : '';
   return `${body?.error ?? `Erreur ${status}`}${detail ? ` (${detail})` : ''}`;
+}
+
+/** Noms français des champs de l'API, pour dire lequel est refusé */
+const FIELD: Record<string, string> = {
+  id: 'identifiant', hide: 'masquer', name: 'nom', fee: 'tarif', capacity: 'places', kind: 'type', pos: 'position', note: 'note', source: 'source',
+};
+
+/** « places : Trop grand … ; source : Trop petit … » à partir des champs refusés (par le back ou par le contrat ici) */
+export function issuesText(issues: readonly { path?: readonly PropertyKey[]; message: string }[]): string {
+  return issues.map((i) => {
+    const path = (i.path ?? []).map(String);
+    return `${path.length ? [FIELD[path[0]] ?? path[0], ...path.slice(1)].join('.') : 'formulaire'} : ${i.message}`;
+  }).join(' ; ');
 }
 
 /** Statut d'une `ApiError` quand l'API n'a pas pu être jointe (réseau coupé, serveur arrêté) */
 export const NETWORK_ERROR = 0;
 
-export interface ApiOptions {
+/** Schéma du contrat qui vérifie une réponse (`safeParse` de zod/mini) */
+export interface ResponseSchema<T> {
+  safeParse(data: unknown): { success: true; data: T } | { success: false };
+}
+
+export interface ApiOptions<T> {
   body?: unknown;
   /** Jeton à essayer (connexion) ; par défaut, celui de la session */
   token?: string;
   notFound?: string;
+  /** Schéma du contrat : une réponse qui ne le respecte pas devient une erreur claire au lieu d'un écran faux */
+  schema?: ResponseSchema<T>;
 }
 
-export async function api<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, opts: ApiOptions = {}): Promise<T> {
+export async function api<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, opts: ApiOptions<T> = {}): Promise<T> {
   const fromSession = opts.token === undefined;
   const token = opts.token ?? tokenStore.get();
   const headers: Record<string, string> = {};
@@ -78,6 +103,11 @@ export async function api<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: st
   // Réponse « réussie » qui n'est pas du JSON : ce n'est pas l'API mais une page de repli (ex. nginx qui sert la carte)
   if (data === null && res.status !== 204) {
     throw new ApiError("L'API ne répond pas à cette adresse (la réponse n'est pas du JSON).", res.status);
+  }
+  if (opts.schema) {
+    const checked = opts.schema.safeParse(data);
+    if (!checked.success) throw new ApiError("Réponse inattendue de l'API : son format ne correspond pas au contrat (versions différentes ? recharge la page).", res.status);
+    return checked.data;
   }
   return data as T;
 }

@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { App } from './App';
-import type { AdminStatus } from './types';
+import type { AdminStatusResponse } from '../../../contrat/sante.js';
 
-const STATUS: AdminStatus = {
+const STATUS: AdminStatusResponse = {
   version: 'abc1234',
   env: 'preview',
   node: 'v22.0.0',
@@ -72,5 +72,13 @@ describe('administration : connexion et tableau de bord', () => {
     render(<App />);
     submitToken('bon');
     expect(await screen.findByText("Impossible de joindre l'API (réseau coupé ou serveur arrêté).")).toBeTruthy();
+  });
+
+  it('signale une réponse qui ne respecte pas le contrat, au lieu d’afficher un tableau de bord faux', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ version: 'abc1234' }))); // champs manquants
+    render(<App />);
+    submitToken('bon');
+    expect(await screen.findByText(/Réponse inattendue de l'API : son format ne correspond pas au contrat/)).toBeTruthy();
+    expect(sessionStorage.getItem('diorama-admin-token')).toBeNull();
   });
 });

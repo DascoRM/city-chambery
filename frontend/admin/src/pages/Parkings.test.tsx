@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { App } from '../App';
-import type { AdminParkingEdits, CityParking } from '../types';
+import type { AdminParkingEdits } from '../../../../contrat/parkings.js';
+import type { CityParking } from '../types';
 
 const CITY: { parkings: CityParking[] } = {
   parkings: [
@@ -180,5 +181,15 @@ describe('administration : retouches des parkings (parité avec l’admin d’or
     fireEvent.blur(search);
     fireEvent.focus(search);
     expect(await screen.findByRole('button', { name: 'Choisir' })).toBeTruthy();
+  });
+
+  it('vérifie la retouche avec le contrat avant l’envoi, message en français', async () => {
+    render(<App />);
+    const form = await choose('europe');
+    fireEvent.change(within(form).getByLabelText('Places'), { target: { value: '20000' } });
+    fireEvent.change(within(form).getByLabelText('Source (obligatoire)'), { target: { value: 'essai' } });
+    fireEvent.submit(form);
+    expect(await within(form).findByText('places : Trop grand : nombre doit être <=10000')).toBeTruthy();
+    expect(calls.some((c) => c.method === 'PUT')).toBe(false);
   });
 });
