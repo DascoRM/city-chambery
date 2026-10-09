@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 95 — 10/10/2026 (branche `feat/EP009-US007-neige`, epic EP009)
+
+**Demande de Dasco :** « tu peux faire la neige oui » ; « la nuit c'est ok avec le brouillard pour les bars et bâtiments ».
+
+**Changements :**
+- **neige (US007)**, d'après le plan de l'agent du front ([ep009-us007-plan.md](../tasks/ep009-us007-plan.md)), relu avant d'être appliqué :
+  - neige au sol : le crochet « sol mouillé » d'US005 devient un seul morceau de GLSL pour le mouillé et la neige, posé au démarrage sur 12 matériaux (les 4 d'US005, plus houppiers, arbres modélisés, cheminées, auvents, toits de la cathédrale, du Carré Curial et du château) ; ce qui regarde le ciel blanchit selon la pente (jamais les façades), par plaques, vers un blanc bleuté ; chaussées à moitié dégagées, voies piétonnes presque blanches ; les 8 nouveaux matériaux ne se mouillent pas (la pluie ne change pas) ;
+  - flocons : même système GPU et même programme que la pluie, chute lente, balancement, dérive au vent, deux nappes au-dessus du socle ; 800 / 1 500 / 3 000 par nappe selon le niveau (`?debug&snowmax=N`) ; même règle de dégradation et même réduit-mouvement que la pluie ;
+  - la neige au sol s'accumule (tout blanc en ≈ 1 min 10) et fond (≈ 15 min) ; `?weather=sleet` mêle gouttes et flocons ;
+  - arbres d'hiver : quand il neige, tous les arbres (nus compris) se coiffent de blanc ; des arbres enneigés sans neige qui tombe : reporté (question à Dasco).
+
+**Vérifié :** `npm run build` et `npm test` (**196 tests**) ; chunk principal + 0,36 Ko (88,18 Ko gzip, **+ 2,72 Ko depuis le début d'EP009** sur 3,5), module météo 9,8 Ko ; build identique (même empreinte) à celui mesuré par l'agent ; captures regardées (vue d'ensemble et rue de jour, Carré Curial de nuit, flocons à 220 m) ; par l'agent, dans Chrome avec la puce graphique du Mac : sans météo, lumières, fond et appels identiques à `976841d` ; arrivée de la neige + 1 programme (aucun après la pluie), aucun pendant l'accumulation, pire image 18 à 46 ms ; 30 img/s au repos ; coût par image dans le bruit ; rien sur le fond de page vue de côté ; dégradation de bout en bout (processeur ralenti) ; réduit-mouvement.
+
+**Non vérifié :** la neige sur un vrai téléphone (flocons et calcul de la neige au sol sur 12 matériaux) ; Safari, Firefox ; la vraie neige de `/api/weather` (jamais en octobre : seulement `?weather=snow` et `sleet`) ; le rendu au goût de Dasco (teinte lavande la nuit, rues, toits pentus sombres, taille des flocons en rue, bassins qui blanchissent).
+
 ## Itération 94 — 09/10/2026 (branches `fix/EP009-brouillard-06`, `feat/EP009-US005-pluie`, epic EP009)
 
 **Retour de Dasco :** « le brouillard fonctionne, les autres non » (neige, pluie, orage ne donnent rien à voir : seuls le ciel couvert et le brouillard étaient codés) ; « sur iPhone, ça a l'air ok » ; brouillard à 0,6.

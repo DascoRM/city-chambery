@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 09/10/2026 — itération 94 (la section Carte n'a pas changé depuis l'itération 74, hormis les retouches publiées vérifiées par le contrat).
+État au 10/10/2026 — itération 95 (la section Carte n'a pas changé depuis l'itération 74, hormis les retouches publiées vérifiées par le contrat).
 
 ## Administration (EP008, EP010)
 
@@ -18,6 +18,7 @@
 | Météo de Chambéry gérée par le back (`GET /api/weather`, US003) | ✅ Vérifiée sur la prévisualisation | Open-Meteo, modèle ICON du DWD, coordonnées fixes du centre ; le back traduit les codes de la source en 9 conditions (ciel dégagé, éclaircies, couvert, brouillard, bruine, pluie, neige, pluie et neige, orage) avec température, nuages, précipitations, vent, visibilité ; relevé renouvelé à chaque pas de 15 min du modèle, une seule requête pour tous les visiteurs ; si la source tombe, dernier bon relevé jusqu'à 3 h ; format partagé dans `contrat/meteo.ts`. Libellés et seuils à valider par Dasco (US011) |
 | Puce météo, ciel couvert et `?weather=` (US002) | 🟡 À valider (rendu du couvert, mise en page) | Puce après la saison (icône, texte sur ordinateur) et son panneau ; `?weather=clear`, `partly`, `cloudy`, `fog`, `drizzle`, `rain`, `snow`, `sleet`, `thunder` force une météo sans réseau ; ciel couvert (lumière grise et douce, ombres effacées, fond grisé), avec un fondu ; « Simulée » hors de l'heure Direct ; préférences « Afficher la météo » et « Effets réduits » ; sans météo, la carte est identique à avant. Pas encore : pluie, brouillard (US005, US006) |
 | Pluie (US005) | 🟡 À voir par Dasco | `?weather=rain` (ou un relevé de pluie) : traînées au-dessus du socle, bruine ou averse selon l'intensité, sol mouillé, lueurs de nuit plus fortes ; moins de gouttes sur téléphone ; coupée seule si l'appareil peine |
+| Neige (US007) | 🟡 À voir par Dasco | `?weather=snow` (ou un relevé de neige) : flocons lents qui se balancent, au-dessus du socle ; toits, sol, parcs, arbres, cheminées et auvents blanchissent selon la pente (pas les façades), par plaques, en ≈ 1 min, et fondent en ≈ 15 min ; chaussées à moitié dégagées ; `?weather=sleet` : pluie et neige mêlées ; moins de flocons sur téléphone, coupés seuls si l'appareil peine |
 | Brouillard (US006) | ✅ Vu par Dasco (0,6) | `?weather=fog` (ou un relevé de brouillard) : le fond de la ville se noie dans la couleur du fond de page, à tous les zooms, sans liseré autour du socle ; gemmes, épingles, halos et éléphants restent visibles ; s'efface sans saut |
 | La vraie météo sur la carte (US004) | 🟡 À voir par Dasco (prévisualisation) | La carte lit `/api/weather` sans jamais l'attendre, puis toutes les 15 min si l'onglet est visible ; puce « ⛅ 15 °C » et panneau (condition, heure du modèle, vent, crédit Open-Meteo) ; « Ancien relevé » après une coupure, jusqu'à 3 h ; « Indisponible » ou « Coupée » sinon, avec le ciel par défaut ; sans API (carte du Pi), rien ne change |
 
