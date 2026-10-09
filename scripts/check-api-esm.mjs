@@ -26,7 +26,11 @@ try {
   const res = await mod.default.fetch(new Request('http://localhost/api/health'));
   const body = await res.json();
   if (res.status !== 200 || body.ok !== true) throw new Error(`/api/health : ${res.status} ${JSON.stringify(body)}`);
-  console.log('✓ API chargée comme sur Vercel (ESM) : /api/health répond 200');
+  // La réponse respecte le contrat partagé avec le front (contrat/sante.ts, compilé avec l'API)
+  const { healthResponse } = await import(pathToFileURL(join(out, 'contrat/sante.js')).href);
+  const check = healthResponse.safeParse(body);
+  if (!check.success) throw new Error(`/api/health ne respecte pas le contrat : ${JSON.stringify(check.error.issues)}`);
+  console.log('✓ API chargée comme sur Vercel (ESM) : /api/health répond 200, conforme au contrat');
 } catch (err) {
   console.error('✗ L\'API ne se charge pas comme sur Vercel :', err.code ?? '', err.message);
   process.exitCode = 1;

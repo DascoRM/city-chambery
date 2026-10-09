@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 86 — 09/10/2026 (branche `feat/EP010-US007-contrat`, epic EP010)
+
+**Demande de Dasco :** US007 validée avec `zod/mini` (« Zod m'intéresse surtout sur le back pour le typage » ; la carte se connectera bientôt à l'API) ; session glissante limitée à 8 h (US008).
+
+**Changements :**
+- `contrat/` : `erreurs.ts`, `sante.ts`, `parkings.ts` en `zod/mini`, tsconfig sans DOM ni Node, 6 tests ;
+- back : schémas lus dans le contrat, réponses vérifiées à la compilation (`satisfies`), un code sur chaque erreur (`introuvable`, `donnees-invalides`, `deja-pris`, `non-autorise`, `trop-de-tentatives`, `erreur-interne`), messages de validation en français ; tests : réponses réelles validées par le contrat ; `check-api-esm` vérifie `/api/health` avec le contrat ;
+- administration : types de l'API tirés du contrat ; chaque réponse vérifiée (« Réponse inattendue de l'API » au lieu d'un écran faux) ; formulaires des parkings vérifiés avant l'envoi avec les règles du serveur, messages en français et champs nommés en français (« places : Trop grand : nombre doit être <=10000 ») ;
+- carte : retouches publiées vérifiées par le contrat une par une (une retouche hors contrat est ignorée sans jeter les autres) ; types de parkings tirés du contrat ; premiers tests de la carte ;
+- Vitest : 5 projets (back, admin, contrat, carte, outillage) ; README (structure avec `contrat/`, commandes).
+
+**Vérifié :** `npm run build` (types des 4 configurations, frontières, API conforme au contrat) et `npm test` : **72 tests** ; poids mesurés : carte 77,2 → 85,5 Ko gzip, administration 83,0 → 108,4 Ko (dont 1,2 Ko de messages français) ; en local sur le `dist/` (Chrome, API sur PGlite) : parcours complet de l'administration, carte qui reçoit et accepte une retouche publiée, sans erreur ; **sur la prévisualisation** (`c3e0ee1`, par l'agent) : build « success », `/api/health` conforme, erreurs avec leur code, carte sans erreur, page de l'administration sans erreur sous la CSP.
+
+**Non vérifié :** la connexion à l'administration sur la prévisualisation (jeton de Preview connu de Dasco seulement).
+
 ## Itération 85 — 09/10/2026 (branche `feat/EP010-US006-backend`, epic EP010)
 
 **Demande de Dasco :** phase 1 vérifiée sur la prévisualisation (« tout me paraît ok ») ; réponses aux 7 points de la phase 2 ; secret de contournement Vercel ajouté pour que l'agent vérifie lui-même.

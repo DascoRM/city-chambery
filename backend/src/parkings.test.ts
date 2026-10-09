@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from './app.js';
 import * as schema from './db/schema.js';
 import type { Db } from './parkings.js';
-
+import { adminParkingEdits, publishedEdits } from '../../contrat/parkings.js';
 
 /** Corps JSON d'une réponse (sans les types du navigateur, `Response.json()` rend `unknown`) */
 const json = (res: Response): Promise<any> => res.json();
@@ -33,7 +33,7 @@ describe('retouches des parkings : écriture (administration)', () => {
     const pub = await app().request('/api/parkings/edits');
     expect(pub.status).toBe(200);
     expect(pub.headers.get('cache-control')).toContain('s-maxage=60');
-    const body = await json(pub);
+    const body = publishedEdits.parse(await json(pub)); // ce que lit la carte, conforme au contrat
     expect(body.overrides['way/37376434']).toEqual({ capacity: 149, note: 'Chiffre de la Ville', source: 'BNLS 2024' });
     expect(body.updatedAt).toBeTypeOf('string');
   });
@@ -69,8 +69,8 @@ describe('retouches des parkings : écriture (administration)', () => {
   it('garde un journal des modifications', async () => {
     await send('PUT', '/api/admin/parkings/overrides/node/5', { fee: false, source: 'x' });
     await send('DELETE', '/api/admin/parkings/edits/node/5');
-    const body = await json(await send('GET', '/api/admin/parkings/edits'));
-    expect(body.log.map((l: { action: string }) => l.action)).toEqual(['remove', 'override']);
+    const body = adminParkingEdits.parse(await json(await send('GET', '/api/admin/parkings/edits')));
+    expect(body.log.map((l) => l.action)).toEqual(['remove', 'override']);
   });
 
   it('les écritures exigent le jeton', async () => {

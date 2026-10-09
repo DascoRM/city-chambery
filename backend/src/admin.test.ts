@@ -7,7 +7,7 @@ import { createApp } from './app.js';
 import { createRateLimiter, tokenMatches } from './auth.js';
 import { dbStats } from './db/stats.js';
 import { appMeta } from './db/schema.js';
-
+import { adminStatusResponse } from '../../contrat/sante.js';
 
 /** Corps JSON d'une réponse (sans les types du navigateur, `Response.json()` rend `unknown`) */
 const json = (res: Response): Promise<any> => res.json();
@@ -45,7 +45,7 @@ describe('accès à l’administration', () => {
 
   it('status : sans base configurée, le dit sans échouer ni rien divulguer', async () => {
     const res = await call({ ADMIN_TOKEN: TOKEN }, '/api/admin/status', bearer(TOKEN));
-    const body = await json(res);
+    const body = adminStatusResponse.parse(await json(res)); // conforme au contrat
     expect(res.status).toBe(200);
     expect(body.db.status).toBe('non-configuree');
     expect(JSON.stringify(body)).not.toContain(TOKEN);

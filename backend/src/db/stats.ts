@@ -1,3 +1,5 @@
+import type { DbStats } from '../../../contrat/sante.js';
+
 /**
  * Statistiques de la base pour l'administration : taille et nombre de lignes par table. Ne dépend d'aucun pilote : on lui
  * passe une fonction qui exécute une requête SQL et renvoie des lignes (postgres.js en production, PGlite dans les tests).
@@ -7,12 +9,9 @@ export type RunSql = (text: string) => Promise<Rows>;
 
 const quote = (name: string) => `"${name.replaceAll('"', '""')}"`;
 
-export interface DbStats {
-  sizeBytes: number;
-  tables: { name: string; rows: number }[];
-  /** Tables attendues par le code mais absentes de la base : des migrations restent à appliquer */
-  missing: string[];
-}
+/** Format des statistiques : contrat partagé avec l'administration (`contrat/sante.ts`) */
+export type { DbStats };
+
 
 export async function dbStats(run: RunSql, expected: string[] = []): Promise<DbStats> {
   const [size] = await run('select pg_database_size(current_database())::bigint as bytes');

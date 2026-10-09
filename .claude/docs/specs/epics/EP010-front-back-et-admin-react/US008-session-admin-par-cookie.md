@@ -15,7 +15,7 @@
 - [ ] **Given** les routes d'écriture, **Then** elles exigent la session et refusent les requêtes intersites
 - [ ] **Given** la future connexion par identifiant et mot de passe (décision D6, EP008-US005), **Then** elle posera le même cookie : rien à refaire côté session
 
-> **Décisions du 09/10/2026** : le jeton ne sert plus qu'à ouvrir la session, ensuite seul le cookie est accepté (D8) ; **session prolongée à chaque action** (renouvellement silencieux) : expire après 2 h sans activité, 8 h au plus depuis la connexion, ce maximum restant à confirmer (D9) ; clé tirée d'`ADMIN_TOKEN`, pas de nouvelle variable pour l'instant (D10). Conception : [plan de la phase 2](../../../tasks/ep010-phase2-plan.md) § 4 (écrit pour 2 h fixes : à adapter au renouvellement).
+> **Décisions du 09/10/2026** : le jeton ne sert plus qu'à ouvrir la session, ensuite seul le cookie est accepté (D8) ; **session prolongée à chaque action** (renouvellement silencieux) : expire après 2 h sans activité, 8 h au plus depuis la connexion (D9, confirmé) ; clé tirée d'`ADMIN_TOKEN`, pas de nouvelle variable pour l'instant (D10). Conception : [plan de la phase 2](../../../tasks/ep010-phase2-plan.md) § 4 (écrit pour 2 h fixes : à adapter au renouvellement).
 
 ---
 

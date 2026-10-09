@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { api, tokenStore, UNAUTHORIZED_EVENT } from './api';
-import type { AdminStatus } from './types';
+import { adminStatusResponse } from '../../../contrat/sante.js';
 
 /** Clé de cache de l'état de l'application et de la base (GET /api/admin/status) */
 export const STATUS_KEY = ['admin', 'status'] as const;
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const login = useCallback(async (token: string) => {
-    const status = await api<AdminStatus>('GET', '/api/admin/status', { token });
+    const status = await api('GET', '/api/admin/status', { token, schema: adminStatusResponse });
     tokenStore.set(token);
     queryClient.setQueryData(STATUS_KEY, status);
     setNotice('');

@@ -29,7 +29,7 @@ const PARTS = {
   carte: {
     dirs: ['frontend/carte/src'],
     parts: ['carte', 'contrat'],
-    packages: ['three', 'virtual:pwa-register'],
+    packages: ['three', 'virtual:pwa-register', 'vitest'],
     node: false,
   },
   'données de la carte': {
@@ -55,7 +55,7 @@ const PARTS = {
   contrat: {
     dirs: ['contrat'],
     parts: ['contrat'],
-    packages: ['zod'],
+    packages: ['zod', 'vitest'],
     node: false,
   },
 };

@@ -81,12 +81,12 @@ npm run nature                   # reconvertit les arbres du pack nature (après
 | `npm run dev:admin` | Administration (React) en développement : http://localhost:5174/admin/ ; lancer aussi `npm run api:dev` (l'API) et `npm run dev` (la carte, qui sert `/data/city.json`) |
 | `npm run build` | Contrôles (types de chaque partie, chargement de l'API comme sur Vercel), puis build de la carte dans `dist/` (sans outil de placement ni brouillons) et de l'administration dans `dist/admin/` |
 | `npm run check:boundaries` | Contrôle des frontières du dépôt (ADR-002) : la carte et l'administration ne s'importent pas, le front n'importe jamais le code de l'API, chaque partie a sa liste de paquets, pas de HTML brut dans l'administration (lancé par `npm run build`) |
-| `npm run typecheck` | Types seulement : carte, administration, API (et l'API vue comme Vercel la compile) |
+| `npm run typecheck` | Types seulement : carte, administration, back (le `tsconfig.json` racine, celui que Vercel utilise) et contrat |
 | `npm run build:pi` | Contrôles de la carte puis build de la carte seule : c'est ce que fait l'image Docker du Pi (ni API ni administration sur le Pi) |
 | `npm run build:carte` / `npm run build:admin` | Build d'une seule partie (la carte vide `dist/` : construire l'administration après) |
 | `npm run preview` | Sert le build de production en local |
 | `npm run api:dev` | API en local (http://localhost:8787/api/health) ; `npm run dev` lui renvoie `/api` par un proxy |
-| `npm test` | Tests (Vitest) : l'API (Node, base PGlite) et l'administration (React, DOM simulé par happy-dom) |
+| `npm test` | Tests (Vitest), un projet par partie : back (Node, base PGlite), administration (React, DOM simulé par happy-dom), contrat, carte (fonctions sans navigateur), outillage (contrôles du dépôt) |
 | `npm run db:generate` | Génère une migration SQL depuis `backend/src/db/schema.ts` (sans base) |
 | `npm run db:migrate` | Applique les migrations : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (jamais automatique au déploiement ; le nom d'hôte est affiché avant d'agir) |
 | `npm run docker:up` | Construit l'image Docker et lance le conteneur en arrière-plan (http://localhost:3000) |
@@ -473,6 +473,13 @@ frontend/
     src/pages/             Login, Dashboard (état de l'application et de la base), Parkings (retouches, ajouts, journal)
     src/types.ts           Formats des réponses de l'API (provisoire : passeront dans contrat/, EP010-US007)
     src/**/*.test.ts(x)    Tests de l'administration (npm test)
+
+contrat/                   Ce que se disent le front et le back (EP010-US007) : schémas zod/mini des requêtes et réponses de l'API,
+                           lus par le back (validation, types), l'administration (réponses, formulaires) et la carte (retouches publiées)
+  erreurs.ts               Codes d'erreur et corps d'une erreur
+  sante.ts                 /api/health, /api/admin/status
+  parkings.ts              Retouches des parkings : requêtes, réponses publiées, journal
+  tsconfig.json            Ni DOM ni Node : seulement zod/mini
 
 api/index.ts               Point d'entrée imposé par Vercel (EP008) : /api/* y est réécrit (vercel.json), routé par backend/src/app.ts
 backend/

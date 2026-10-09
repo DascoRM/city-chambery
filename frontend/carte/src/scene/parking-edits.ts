@@ -1,4 +1,5 @@
 import type { CityData, Parking, ParkingKind, Pt } from '../types';
+import { customId, osmId, parkingKind, publishedAdded, publishedOverride, type PublishedEdits } from '../../../../contrat/parkings.js';
 
 /**
  * Retouches manuelles des parkings (EP006) : `content/parkings.json` → `overrides` (par identifiant OpenStreetMap)
@@ -29,7 +30,7 @@ export interface ParkingEdits {
  * Fusionne les retouches du fichier (`parkings.json`) et celles publiées par l'administration (base, EP008-US006) :
  * pour un même parking, l'administration l'emporte ; les ajouts sont réunis (l'administration l'emporte à identifiant égal).
  */
-export function mergeParkingEdits(file: ParkingEdits, published: ParkingEdits | null): ParkingEdits {
+export function mergeParkingEdits(file: ParkingEdits, published: PublishedEdits | null): ParkingEdits {
   if (!published) return file;
   const added = new Map((file.added ?? []).map((a) => [a.id, a]));
   for (const a of published.added ?? []) added.set(a.id, a);
@@ -37,7 +38,33 @@ export function mergeParkingEdits(file: ParkingEdits, published: ParkingEdits | 
 }
 
 /** Résultat de la demande des retouches publiées : les retouches, ou la raison de leur absence (affichée en `?debug`) */
-export type PublishedResult = { edits: ParkingEdits; ms: number } | { edits: null; ms: number; reason: string };
+export type PublishedResult = { edits: PublishedEdits; ms: number } | { edits: null; ms: number; reason: string };
+
+/**
+ * Garde les retouches publiées conformes au contrat partagé avec l'API (`contrat/parkings.ts`, EP010-US007), **une par une** :
+ * une retouche hors contrat est ignorée (et signalée dans la console) sans jeter les autres ; le site ne plante jamais à cause
+ * d'une réponse inattendue (API d'une autre version, page de repli…). Null si la réponse n'a pas la forme attendue.
+ */
+export function validPublishedEdits(body: unknown): PublishedEdits | null {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
+  const raw = body as { overrides?: unknown; added?: unknown; updatedAt?: unknown };
+  const out: PublishedEdits = { overrides: {}, added: [], updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : null };
+  if (raw.overrides && typeof raw.overrides === 'object') {
+    for (const [id, o] of Object.entries(raw.overrides)) {
+      const checked = publishedOverride.safeParse(o);
+      if (checked.success && osmId.safeParse(id).success) out.overrides[id] = checked.data;
+      else bad(`retouche publiée « ${id} » hors contrat`);
+    }
+  }
+  if (Array.isArray(raw.added)) {
+    for (const a of raw.added) {
+      const checked = publishedAdded.safeParse(a);
+      if (checked.success && customId.safeParse(checked.data.id).success) out.added.push(checked.data);
+      else bad(`ajout publié hors contrat (${JSON.stringify(a)?.slice(0, 80)})`);
+    }
+  }
+  return out;
+}
 
 /**
  * Retouches publiées par l'administration (`/api/parkings/edits`). Demandées en même temps que la ville (qui met elle-même
@@ -52,8 +79,8 @@ export async function fetchPublishedEdits(timeoutMs = 4000): Promise<PublishedRe
   try {
     const res = await fetch('/api/parkings/edits', { signal: ctrl.signal });
     if (!res.ok) return { edits: null, ms: ms(), reason: `réponse ${res.status}` };
-    const body = (await res.json()) as ParkingEdits;
-    return body && typeof body === 'object' ? { edits: body, ms: ms() } : { edits: null, ms: ms(), reason: 'réponse vide' };
+    const edits = validPublishedEdits(await res.json());
+    return edits ? { edits, ms: ms() } : { edits: null, ms: ms(), reason: 'réponse vide ou hors contrat' };
   } catch (e) {
     // hors ligne, API absente (développement sans `npm run api:dev`), délai dépassé
     return { edits: null, ms: ms(), reason: (e as Error).name === 'AbortError' ? `délai de ${timeoutMs} ms dépassé` : 'API injoignable' };
@@ -62,7 +89,7 @@ export async function fetchPublishedEdits(timeoutMs = 4000): Promise<PublishedRe
   }
 }
 
-const KINDS = new Set<string>(['underground', 'multi-storey', 'surface', 'street']);
+const KINDS = new Set<string>(parkingKind.options); // une seule liste des types : celle du contrat
 const isPt = (p: unknown): p is Pt => Array.isArray(p) && p.length === 2 && p.every((v) => typeof v === 'number' && Number.isFinite(v));
 
 /** Retouche invalide : on l'ignore et on le dit dans la console, le site ne plante jamais à cause de ce fichier */
