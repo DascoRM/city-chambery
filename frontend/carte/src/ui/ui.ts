@@ -90,7 +90,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
         <span class="sun-times" aria-label="Lever et coucher du soleil"></span>
         <button class="live" data-action="live" aria-pressed="true" title="Suivre l'heure réelle de Chambéry">Direct</button>
         <button class="season" data-action="season" title="Saison : automatique (date du jour) ou choisie"></button>
-        <button class="weather" data-action="weather" aria-expanded="false" hidden><span class="w-icon" aria-hidden="true"></span><span class="w-text"></span></button>
+        <button class="weather" data-action="weather" aria-expanded="false" aria-controls="weather-panel" hidden><span class="w-icon" aria-hidden="true"></span><span class="w-text"></span></button>
       </div>
     </nav>
 

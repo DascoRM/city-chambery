@@ -196,6 +196,7 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
 .weather-panel[hidden] { display: none; }
 .weather-panel .close { position: absolute; top: 8px; right: 8px; }
 .weather-panel h2 { font-size: 19px; margin: 0 28px 6px 0; }
+.weather-panel h2:focus { outline: none; }
 .weather-panel p { margin: 4px 0; line-height: 1.45; }
 .wp-body p:first-child { color: #4b3f37; }
 .wp-live { margin: 8px 0 2px; box-shadow: none; }

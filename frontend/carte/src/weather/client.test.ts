@@ -11,6 +11,7 @@ const now = () => NOW;
 const reply = (status: number, b: unknown, raw = false) => vi.fn(async () => new Response(raw ? String(b) : JSON.stringify(b), { status }));
 const ok = { ok: true, body: body as never, ms: 1 } as const;
 const ko = (reason: 'indisponible' | 'desactivee' | 'absente' | 'reseau' | 'delai' | 'hors-contrat'): WeatherFetch => ({ ok: false, reason, ms: 1 });
+afterEach(() => vi.useRealTimers()); // même si un test échoue avant de les rendre
 
 describe('lecture de /api/weather : la carte ne plante jamais', () => {
   it('200 conforme au contrat (même avec un champ en plus) → ok', async () => {
@@ -36,6 +37,10 @@ describe('lecture de /api/weather : la carte ne plante jamais', () => {
     expect(await fetchWeather(reply(200, old), 8000, now)).toMatchObject({ reason: 'hors-contrat' });
     const forced = { ...old, source: 'admin', model: null, forced: true, forcedUntil: '2026-10-09T11:04:00Z', temperatureC: null };
     expect((await fetchWeather(reply(200, forced), 8000, now)).ok).toBe(true);
+  });
+  it('la réponse s’arrête en cours de lecture et le délai expire : « delai », pas « hors-contrat » (relecture M7)', async () => {
+    const stalled = vi.fn(async () => new Response(new ReadableStream({ start: (c) => c.error(Object.assign(new Error('abort'), { name: 'AbortError' })) }), { status: 200 }));
+    expect(await fetchWeather(stalled, 8000, now)).toMatchObject({ ok: false, reason: 'delai' });
   });
   it('délai de 8 s dépassé → abandon (rien ne l’attend)', async () => {
     vi.useFakeTimers();
@@ -109,8 +114,7 @@ describe('relectures programmées (minuteries simulées)', () => {
     await vi.advanceTimersByTimeAsync(60 * 60_000);
     expect(f).toHaveBeenCalledTimes(2); // onglet caché : aucune requête
     visible = true;
-    c.interaction();
-    c.wake();
+    c.wake(); // retour sur l'onglet, sans geste (relecture I1 b)
     await vi.advanceTimersByTimeAsync(0);
     expect(f).toHaveBeenCalledTimes(3); // relevé de plus de 15 min : relu tout de suite
   });
@@ -125,6 +129,42 @@ describe('relectures programmées (minuteries simulées)', () => {
     c.interaction();
     await vi.advanceTimersByTimeAsync(0);
     expect(f).toHaveBeenCalledTimes(4);
+  });
+
+  it('retour du réseau : relu seulement si l’onglet est visible et le visiteur présent (relecture I1 a)', async () => {
+    const f = reply(503, { error: 'x', code: 'meteo-indisponible' });
+    const c = client(f);
+    c.start();
+    await vi.advanceTimersByTimeAsync(0);
+    visible = false;
+    c.wake();
+    c.online();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(f).toHaveBeenCalledOnce(); // onglet caché : rien
+    visible = true;
+    await vi.advanceTimersByTimeAsync(40 * 60_000); // 40 min sans geste (onglet de nouveau visible)
+    const n = f.mock.calls.length;
+    c.online();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(f).toHaveBeenCalledTimes(n); // visiteur absent depuis 40 min : rien
+    c.interaction();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(f).toHaveBeenCalledTimes(n + 1); // il revient : relu
+  });
+
+  it('onglet caché 45 min puis revenu, sans geste : relu tout de suite (relecture I1 b)', async () => {
+    const f = reply(200, body);
+    const c = client(f);
+    c.start();
+    await vi.advanceTimersByTimeAsync(0);
+    visible = false;
+    c.wake();
+    await vi.advanceTimersByTimeAsync(45 * 60_000);
+    expect(f).toHaveBeenCalledOnce();
+    visible = true;
+    c.wake();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(f).toHaveBeenCalledTimes(2);
   });
 
   it('lecture déjà partie pendant le chargement de la ville : réutilisée, pas de seconde requête', async () => {

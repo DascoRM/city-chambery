@@ -1,5 +1,5 @@
 import type * as THREE from 'three';
-import { WEATHER_MAX_AGE_S, type WeatherCondition } from '../../../../contrat/meteo.js';
+import { WEATHER_MAX_AGE_S, type WeatherAttribution, type WeatherCondition } from '../../../../contrat/meteo.js';
 import type { Ticker } from '../types';
 import type { ClockState } from '../time/clock';
 import type { QualityLevel } from '../scene/quality';
@@ -35,8 +35,8 @@ export interface WeatherCtx {
   /** « Revenir au direct » : heure réelle et saison automatique */
   backToLive(): void;
   chip(c: WeatherChip | null): void;
-  /** Crédit de la source (pied de page, accueil) : affiché seulement quand la scène montre ses données (règle 11) */
-  credit(on: boolean): void;
+  /** Crédit de la source (pied de page, accueil), tel que l'envoie le back : seulement quand la scène montre ses données (règle 11), sinon null */
+  credit(a: WeatherAttribution | null): void;
 }
 
 /** Réglage de l'outil de debug : une condition (valeurs types), et ce qu'on veut changer */
@@ -68,6 +68,9 @@ export function prefetchWeather() {
   if (!early && !weatherFromUrl(location.search)) early = fetchWeather();
 }
 
+/** Puce pendant une lecture, quand le panneau est ouvert (au démarrage, elle reste masquée) */
+const WAITING: WeatherChip = { icon: '⛅', text: '…', label: 'Météo : lecture en cours', off: true };
+
 const sameLook = (a: WeatherLook, b: WeatherLook) =>
   a.cloud === b.cloud && a.rain === b.rain && a.snow === b.snow && a.fog === b.fog && a.storm === b.storm && a.windSpeed === b.windSpeed && a.windTowards === b.windTowards;
 
@@ -81,22 +84,25 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
   const cur: WeatherLook = { ...clear }; // départ : la scène d'aujourd'hui, puis fondu vers la météo
   let target: WeatherLook = { ...clear };
   let res: Resolved;
-  let blending = false, night = false, open = false, credit: boolean | null = null;
+  let blending = false, night = false, open = false, creditKey: string | null = null;
   let ageTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Panneau ouvert : son texte (« il y a 6 min ») est rafraîchi chaque minute */
+  let tick: ReturnType<typeof setInterval> | undefined;
   /** Relevé simulé par l'outil de debug : il passe devant celui du back tant qu'il existe */
   let debugReading: Reading | null = null;
   let real: { api: WeatherInputs['api']; reading: Reading | null } = { api: 'none', reading: null };
 
   const panel = createWeatherPanel(ctx.root, {
     anchor: () => ctx.root.querySelector<HTMLElement>('.time .weather'),
-    onClose: () => { open = false; showChip(); },
+    onClose: () => { open = false; clearInterval(tick); showChip(); },
     onBackToLive: () => ctx.backToLive(),
     onEnabled: (on) => { setEnabled(on); },
     onReduced: (on) => { pref.reduced = on; saveWeatherPref(pref); update(); },
   });
   const showChip = () => {
     night = ctx.night() > 0.5;
-    const c = res.status === 'off' ? WEATHER_OFF : chipOf(res, night);
+    // Panneau ouvert pendant une lecture (météo réactivée) : la puce reste, sous le panneau
+    const c = res.status === 'off' ? WEATHER_OFF : chipOf(res, night) ?? (open ? WAITING : null);
     ctx.chip(c && { ...c, expanded: open });
   };
   const update = () => {
@@ -106,8 +112,9 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
     res = resolveWeather(inputs, now, clear);
     if (!sameLook(res.target, target)) { target = res.target; blending = true; }
     showChip();
-    const fromSource = res.status === 'live' || res.status === 'stale';
-    if (fromSource !== credit) { credit = fromSource; ctx.credit(fromSource); }
+    const a = res.status === 'live' || res.status === 'stale' ? res.reading?.attribution ?? null : null;
+    const key = a ? `${a.text}|${a.url}|${a.licence}|${a.licenceUrl}` : '';
+    if (key !== creditKey) { creditKey = key; ctx.credit(a); }
     if (open) panel.render({ ...panelOf(res, now), enabled: inputs.enabled, reduced: pref.reduced, systemReduced: mq.matches });
     // Un relevé vieillit même sans relecture (onglet ouvert sans interaction) : « ancien » après 1 h, retiré après 3 h (règle 1)
     clearTimeout(ageTimer);
@@ -160,8 +167,10 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
   return {
     update(dt) {
       if (!blending) return; // temps stable : rien à faire
+      const { cloud, rain, snow, fog, storm } = cur;
       blending = blendLook(cur, target, dt);
-      ctx.sky(skyModifier);
+      // Le ciel ne lit que les nuages et les précipitations : le fondu du vent (plus long) ne recalcule pas l'ambiance
+      if (cur.cloud !== cloud || cur.rain !== rain || cur.snow !== snow || cur.fog !== fog || cur.storm !== storm) ctx.sky(skyModifier);
     },
     onClock(c) {
       const live = isLive(c);
@@ -171,7 +180,7 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
     togglePanel() {
       if (!inputs.enabled) { setEnabled(true); return; }
       open = !open;
-      if (open) panel.open(); else panel.close();
+      if (open) { panel.open(); tick = setInterval(update, 60_000); } else panel.close();
       update();
     },
     reducedMotion: () => mq.matches || pref.reduced,

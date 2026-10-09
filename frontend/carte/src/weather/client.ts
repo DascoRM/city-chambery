@@ -32,7 +32,8 @@ export async function fetchWeather(f: typeof fetch = fetch, timeoutMs = FETCH_TI
     }
     if (res.status === 404) return { ok: false, reason: 'absente', ms: ms() }; // carte sans API (Pi), ou API trop ancienne
     if (!res.ok) return { ok: false, reason: 'indisponible', ms: ms() }; // 5xx, mandataire en erreur : on réessaiera
-    const body = validWeather(await res.json().catch(() => null), now());
+    // Le délai court aussi pendant la lecture du corps : c'est un retard (« delai »), pas une réponse hors contrat
+    const body = validWeather(await res.json().catch((e: Error) => { if (e?.name === 'AbortError') throw e; return null; }), now());
     return body ? { ok: true, body, ms: ms() } : { ok: false, reason: 'hors-contrat', ms: ms() };
   } catch (e) {
     return { ok: false, reason: (e as Error)?.name === 'AbortError' ? 'delai' : 'reseau', ms: ms() };
@@ -96,13 +97,18 @@ export function createWeatherClient(d: {
   return {
     /** Première lecture ; `pending` : celle déjà partie pendant le chargement de la ville (prefetch) */
     start(pending?: Promise<WeatherFetch>) { stopped = false; void load(pending); },
-    wake: schedule,
+    /** Changement de visibilité de l'onglet : y revenir compte comme une présence (le temps passé ailleurs n'est pas de l'inactivité) */
+    wake() {
+      if (d.visible()) lastInputAt = now();
+      schedule();
+    },
     interaction() {
       const away = now() - lastInputAt > IDLE_MS;
       lastInputAt = now();
       if (away) schedule();
     },
-    online() { if (last && !last.ok && last.reason !== 'absente') void load(); },
+    /** Retour du réseau après un échec : relu tout de suite, si l'onglet est visible et le visiteur présent (sinon à son retour) */
+    online() { if (last && !last.ok && last.reason !== 'absente' && d.visible() && now() - lastInputAt <= IDLE_MS) void load(); },
     /** Météo désactivée par le visiteur : plus aucune lecture */
     stop() { stopped = true; clearTimeout(timer); },
     /** Pour les tests et l'outil de debug */

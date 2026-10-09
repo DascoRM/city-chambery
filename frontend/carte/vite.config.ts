@@ -89,6 +89,8 @@ export default defineConfig({
     outDir: OUT_DIR,
     emptyOutDir: true, // dist/ est hors de la racine de la carte : Vite ne le vide pas sans cette option
     rolldownOptions: {
+      // Appels sur `z` (Zod) déclarés purs : les schémas du contrat inutiles à la carte ne sont pas gardés (−1,3 Ko gzip).
+      // Revers : un appel `z.…()` dont le résultat ne sert pas serait retiré en production ; check-boundaries.mjs l'interdit
       treeshake: { manualPureFunctions: ['z'] },
       output: {
         // three.js (≈ 90 % du poids du code) dans son propre fichier : il ne change qu'avec la version de

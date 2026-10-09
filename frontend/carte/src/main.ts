@@ -600,9 +600,9 @@ async function main() {
           sky: (m) => dayNight.setWeather(m), night: () => dayNight.getNight(), clock: () => clock.state(),
           backToLive: () => { clock.setSeason('auto'); clock.live(); }, chip: ui.setWeatherChip,
           // Crédit de la source (règle 11) : en bas à droite et dans les crédits de l'accueil, seulement avec ses données
-          credit: (on) => {
-            ui.setWeatherCredit(on);
-            lobby.setCredits(on ? `${credits} · Météo : Open-Meteo.com, modèle ICON du DWD (CC BY 4.0)` : credits);
+          credit: (a) => {
+            ui.setWeatherCredit(!!a);
+            lobby.setCredits(a ? `${credits} · ${a.text} (${a.licence})` : credits);
           },
         });
         weather = w;
