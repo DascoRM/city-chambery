@@ -6,24 +6,14 @@ import type { ApiErrorBody } from '../../../contrat/erreurs.js';
 z.config(fr());
 
 /**
- * Accès à l'API depuis l'administration : un seul point d'entrée, qui ajoute le jeton et traduit les erreurs en français.
- * Le front ne parle au back que par HTTP (ADR-002). Le jeton est gardé le temps de l'onglet (sessionStorage), comme dans
- * l'admin d'origine ; il sera remplacé par un cookie de session en phase 2 (EP010-US008).
+ * Accès à l'API depuis l'administration : un seul point d'entrée, qui traduit les erreurs en français et vérifie les réponses
+ * avec le contrat. Le front ne parle au back que par HTTP (ADR-002). Pas de jeton dans le navigateur (EP010-US008) : après la
+ * connexion, la session est un cookie HttpOnly que le navigateur envoie seul et que la page ne peut pas lire.
  */
-const KEY = 'diorama-admin-token';
 
-export const tokenStore = {
-  get(): string | null {
-    try { return sessionStorage.getItem(KEY); } catch { return null; }
-  },
-  set(value: string | null) {
-    try { if (value) sessionStorage.setItem(KEY, value); else sessionStorage.removeItem(KEY); }
-    catch { /* stockage indisponible : la session ne survit pas au rechargement */ }
-  },
-};
-
-/** Émis quand l'API refuse le jeton gardé : l'administration revient à l'écran de connexion */
+/** Émis quand l'API refuse la session (absente, expirée) : l'administration revient à l'écran de connexion */
 export const UNAUTHORIZED_EVENT = 'admin-unauthorized';
+export type UnauthorizedDetail = { code?: string };
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number, readonly code?: string) {
@@ -36,7 +26,10 @@ export class ApiError extends Error {
  * l'API). `notFound` remplace le message d'un 404 renvoyé par l'API (ex. une retouche déjà retirée).
  */
 export function errorMessage(status: number, body: ApiErrorBody | null, notFound?: string): string {
+  if (body?.code === 'session-expiree') return SESSION_EXPIRED;
   if (status === 401) return 'Jeton refusé.';
+  if (body?.code === 'origine-refusee') return "Requête refusée : elle ne vient pas de l'administration (origine).";
+  if (body?.code === 'type-de-contenu') return 'Requête refusée : corps en JSON attendu.';
   if (status === 429) return 'Trop de tentatives : réessaie dans une minute.';
   if (body?.code === 'admin-non-configuree') return "L'administration n'est pas configurée : ADMIN_TOKEN n'est pas vu par ce déploiement (variable absente pour cet environnement, ou ajoutée après le déploiement : redéployer).";
   if (body?.code === 'migrations-manquantes') return 'La base n’a pas reçu les dernières migrations : lancer « npm run db:migrate » sur cette base.';
@@ -63,6 +56,9 @@ export function issuesText(issues: readonly { path?: readonly PropertyKey[]; mes
   }).join(' ; ');
 }
 
+/** Message d'une session expirée (décision D9 : 2 h sans activité, 8 h au plus depuis la connexion) */
+export const SESSION_EXPIRED = 'Session expirée (2 h sans activité, ou 8 h depuis la connexion) : reconnecte-toi.';
+
 /** Statut d'une `ApiError` quand l'API n'a pas pu être jointe (réseau coupé, serveur arrêté) */
 export const NETWORK_ERROR = 0;
 
@@ -73,22 +69,21 @@ export interface ResponseSchema<T> {
 
 export interface ApiOptions<T> {
   body?: unknown;
-  /** Jeton à essayer (connexion) ; par défaut, celui de la session */
-  token?: string;
+  /** 401 attendu (connexion, vérification de la session au démarrage) : pas de retour à l'écran de connexion */
+  expect401?: boolean;
   notFound?: string;
   /** Schéma du contrat : une réponse qui ne le respecte pas devient une erreur claire au lieu d'un écran faux */
   schema?: ResponseSchema<T>;
 }
 
 export async function api<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, opts: ApiOptions<T> = {}): Promise<T> {
-  const fromSession = opts.token === undefined;
-  const token = opts.token ?? tokenStore.get();
   const headers: Record<string, string> = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
   if (opts.body !== undefined) headers['Content-Type'] = 'application/json';
   let res: Response;
   try {
-    res = await fetch(path, { method, cache: 'no-store', headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
+    // Pas d'option `mode` : en mode « cors » (par défaut) le navigateur envoie l'Origin réelle, que l'API contrôle sur les
+    // écritures ; `mode: 'same-origin'` l'enverrait « null » avec la politique `no-referrer` de vercel.json
+    res = await fetch(path, { method, cache: 'no-store', credentials: 'same-origin', headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
   } catch {
     throw new ApiError("Impossible de joindre l'API (réseau coupé ou serveur arrêté).", NETWORK_ERROR);
   }
@@ -96,8 +91,8 @@ export async function api<T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: st
   try { data = await res.json(); } catch { /* pas de JSON : page de la plateforme, pas de l'API */ }
   if (!res.ok) {
     const body = data as ApiErrorBody | null;
-    // Jeton de la session refusé (changé, expiré) : retour à la connexion. Un essai de connexion ne déclenche rien.
-    if (res.status === 401 && fromSession) window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
+    // Session refusée (absente, expirée, jeton changé) : retour à la connexion. Un essai de connexion ne déclenche rien.
+    if (res.status === 401 && !opts.expect401) window.dispatchEvent(new CustomEvent<UnauthorizedDetail>(UNAUTHORIZED_EVENT, { detail: { code: body?.code } }));
     throw new ApiError(errorMessage(res.status, body, opts.notFound), res.status, body?.code);
   }
   // Réponse « réussie » qui n'est pas du JSON : ce n'est pas l'API mais une page de repli (ex. nginx qui sert la carte)
