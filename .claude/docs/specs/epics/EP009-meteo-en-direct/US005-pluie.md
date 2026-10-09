@@ -50,7 +50,7 @@ Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 4.
 
 ## Checklist dev
 - [x] Branche `feat/EP009-US005-pluie` depuis `feat/EP009-meteo`
-- [ ] `npm run build` et `npm test` (`weather/budget.test.ts`) ; vérifié dans le navigateur avec `?weather=` et `?debug`
+- [x] `npm run build` et `npm test` (`weather/budget.test.ts`) ; vérifié dans le navigateur avec `?weather=` et `?debug`
 - [ ] Fluidité : compteur `?debug` avant / après ; mesure GPU sur le Mac ; mesure sur téléphone par Dasco
 - [x] Le site marche sans la météo
 - [x] FEATURES, CHANGELOG, DECISIONS
