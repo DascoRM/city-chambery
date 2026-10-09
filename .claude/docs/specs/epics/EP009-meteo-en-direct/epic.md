@@ -1,6 +1,6 @@
 # Epic EP009 - La météo en direct sur le diorama
 
-**Statut (09/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé ; US003 (contrat et route `/api/weather`) livrée et vérifiée sur la prévisualisation ; US001 livrée, sauf la mesure sur iPhone (Dasco) ; US002 (socle : couvert, puce, `?weather=`) et US004 (la vraie météo sur la carte) US006 (brouillard) et US005 (pluie) livrées : **lot MVP terminé** (reste la validation de Dasco) ; plan prêt pour US012 (admin), en attente de ses réponses ; neige, orage, vent, nuages : lot Complet.** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
+**Statut (09/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé ; US003 (contrat et route `/api/weather`) livrée et vérifiée sur la prévisualisation ; US001 livrée, sauf la mesure sur iPhone (Dasco) ; US002 (socle : couvert, puce, `?weather=`) et US004 (la vraie météo sur la carte) US006 (brouillard) et US005 (pluie) livrées : **lot MVP terminé** (reste la validation de Dasco) ; plan prêt pour US012 (admin), en attente de ses réponses ; **US007 (neige) engagée** ; orage, vent, nuages : lot Complet.** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
 
 ## Résumé
 Afficher sur le diorama **la météo réelle de Chambéry** (soleil, couvert, pluie, brouillard, neige, orage, vent), rendue en 3D dans le style maquette.
@@ -57,7 +57,7 @@ frontend/admin   écran « Météo » : ce que voient les visiteurs, relevé bru
 | [US004](US004-meteo-reelle-cote-site.md) | Météo réelle côté carte : lecture, relances, états, crédits | Carte, UI | 1 à 1,5 | MVP | ✅ Done (09/10) |
 | [US005](US005-pluie.md) | Pluie | Scène | 2,5 à 3 | MVP | ✅ Done (09/10) |
 | [US006](US006-brouillard.md) | Brouillard | Scène | 1,5 | Démo | ✅ Done (09/10) |
-| [US007](US007-neige.md) | Neige (flocons, sol, toits, arbres) | Scène | 3 à 4 | Complet | 🔲 Todo |
+| [US007](US007-neige.md) | Neige (flocons, sol, toits, arbres) | Scène | 3 à 4 | Complet | 🔄 In Progress (plan) |
 | [US008](US008-orage.md) | Orage | Scène | 2 | Complet | 🔲 Todo |
 | [US009](US009-vent.md) | Vent (fumées, drapeaux, arbres) | Scène | 2 à 2,5 | Complet | 🔲 Todo |
 | [US010](US010-nuages-de-maquette.md) | Nuages de maquette | Scène | 1,5 | Complet | 🔲 Todo |
@@ -112,7 +112,7 @@ Démarrage du diorama (rien n'attend la météo)
 9. **Aucune recompilation en cours de route** : tout ce qui touche aux matériaux standards (objet brouillard inactif, crochets du sol mouillé, de la neige et du balancement, à 0) est posé **au démarrage**, et `castShadow` n'est jamais basculé. Mesuré : brouillard créé après le démarrage = 4,4 s d'image figée, bascule des ombres = 3 s. Critère de chaque US de rendu : aucune image de plus de 50 ms quand un effet apparaît
 10. **Accessibilité** : `prefers-reduced-motion` ou « Effets réduits » coupe éclairs, flashs et balancement et ralentit les précipitations ; jamais plus de 3 éclairs par seconde
 11. **Attributions** (règle projet n° 5) : « Météo : Open-Meteo.com, modèle ICON du DWD » (CC BY 4.0, données adaptées pour le diorama) dans le README (section Licences), à côté de la puce (panneau) et dans les crédits de l'app ; pas de crédit quand la météo est forcée
-12. **Poids** : module météo chargé à la demande (≈ 8 à 10 Ko gzip une fois complet) ; chunk principal + 2,5 Ko gzip au plus. *Après US004, + 2,1 Ko seront consommés : le plafond est à rediscuter avant US005 (crochets du sol mouillé, de la neige, du balancement)*
+12. **Poids** : module météo chargé à la demande (≈ 8 à 10 Ko gzip une fois complet) ; chunk principal **+ 3,5 Ko gzip au plus** (relevé de 2,5 à 3,5 Ko le 09/10 pour la neige : + 2,36 Ko pris après US005)
 13. **Forçage** (D6) : priorité à l'adresse (`?weather=`), puis à l'administration (`forced`), puis au direct ; un forçage de l'admin dure de 5 min à 6 h, puis la météo réelle revient seule
 
 ---
@@ -120,7 +120,7 @@ Démarrage du diorama (rien n'attend la météo)
 ## Décisions
 | # | Question | Décision ou recommandation | Statut |
 |---|----------|----------------------------|--------|
-| D1 | Quel lot engager ? | Le MVP, dans l'ordre conseillé (contrat et route d'abord) ; la suite selon la mesure sur téléphone (US001) | Retenu (09/10) |
+| D1 | Quel lot engager ? | Le MVP, dans l'ordre conseillé (contrat et route d'abord) ; la suite selon la mesure sur téléphone (US001). MVP terminé le 09/10 ; **puis la neige (US007)**, à la demande de Dasco | Retenu (09/10) |
 | D2 | Le projet reste-t-il non commercial ? (Open-Meteo gratuit et Vercel Hobby l'exigent tous les deux) | Oui, le projet reste non commercial ; sinon il faudrait MET Norway (commercial permis, +0,5 j) ou Open-Meteo payant (≈ 29 €/mois, non vérifié) + Vercel Pro | Retenu (09/10) |
 | D3 | Source | Open-Meteo avec le **modèle ICON** (`icon_seamless`), pas AROME : AROME ne donne ni la visibilité ni l'orage à Chambéry (0 h de brouillard et d'orage sur 1 434 h d'historique). Pas de source de secours au départ | Retenu (09/10) |
 | D4 | Hors de l'heure « Direct » | Météo « simulée » (beau temps) ; prévisions heure par heure plus tard (US013) | Retenu (09/10) |

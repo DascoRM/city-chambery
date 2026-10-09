@@ -49,7 +49,7 @@ Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 4.
 - [x] Fluidité : compteur `?debug` avant / après, aucun programme nouveau
 - [x] Le site marche sans la météo
 - [x] FEATURES, CHANGELOG, DECISIONS
-- [x] Validé par Dasco (09/10 : « le brouillard fonctionne », 0,6)
+- [x] Validé par Dasco (09/10 : « le brouillard fonctionne », 0,6 ; halos des bars et bâtiments la nuit : « c'est ok »)
 
 ---
 
