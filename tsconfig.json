@@ -1,18 +1,26 @@
 {
-  "//": "Provisoire (EP010) : Vercel compile api/ avec ce fichier ; ses options doivent rester celles de la carte (frontend/carte/tsconfig.json) jusqu'à EP010-US006, où il deviendra la config du back.",
+  "//": "Config TypeScript du back (EP010-US006) : api/, backend/src/, contrat/. Vercel compile api/index.ts avec le tsconfig.json le plus proche en remontant depuis api/ : celui-ci (n'en créer aucun dans api/). Pas de paths ni de références de projet (non gérés par Vercel). La carte (frontend/carte) et l'administration (frontend/admin) ont le leur.",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "node"
+    ],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "resolveJsonModule": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "noEmit": true,
-    "types": ["vite/client"]
+    "noEmit": true
   },
-  "include": ["frontend/carte/src"]
+  "include": [
+    "api",
+    "backend/src",
+    "contrat",
+    "drizzle.config.ts"
+  ]
 }

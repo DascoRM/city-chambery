@@ -13,7 +13,7 @@ import { pathToFileURL } from 'node:url';
 const root = resolve(import.meta.dirname, '..');
 const out = mkdtempSync(join(tmpdir(), 'api-esm-'));
 try {
-  execFileSync(join(root, 'node_modules/.bin/tsc'), ['-p', 'tsconfig.api.json', '--noEmit', 'false', '--outDir', out, '--rootDir', '.'], { cwd: root, stdio: 'inherit' });
+  execFileSync(join(root, 'node_modules/.bin/tsc'), ['-p', 'tsconfig.json', '--noEmit', 'false', '--outDir', out, '--rootDir', '.'], { cwd: root, stdio: 'inherit' });
   writeFileSync(join(out, 'package.json'), '{ "type": "module" }');
   symlinkSync(join(root, 'node_modules'), join(out, 'node_modules'));
   const mod = await import(pathToFileURL(join(out, 'api/index.js')).href);

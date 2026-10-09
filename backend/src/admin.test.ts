@@ -8,6 +8,9 @@ import { createRateLimiter, tokenMatches } from './auth.js';
 import { dbStats } from './db/stats.js';
 import { appMeta } from './db/schema.js';
 
+
+/** Corps JSON d'une réponse (sans les types du navigateur, `Response.json()` rend `unknown`) */
+const json = (res: Response): Promise<any> => res.json();
 const TOKEN = 'jeton-de-test-0123456789';
 const call = (env: Record<string, string>, path: string, headers: Record<string, string> = {}) => createApp(env).request(path, { headers });
 const bearer = (t: string) => ({ authorization: `Bearer ${t}` });
@@ -16,9 +19,9 @@ describe('accès à l’administration', () => {
   it('est fermée (503, code dédié) tant qu’aucun jeton n’est configuré', async () => {
     const res = await call({}, '/api/admin/ping', bearer(TOKEN));
     expect(res.status).toBe(503);
-    expect((await res.json()).code).toBe('admin-non-configuree');
-    expect((await (await call({}, '/api/health')).json()).admin).toBe('absent');
-    expect((await (await call({ ADMIN_TOKEN: TOKEN }, '/api/health')).json()).admin).toBe('configure');
+    expect((await json(res)).code).toBe('admin-non-configuree');
+    expect((await json(await call({}, '/api/health'))).admin).toBe('absent');
+    expect((await json(await call({ ADMIN_TOKEN: TOKEN }, '/api/health'))).admin).toBe('configure');
   });
 
   it('refuse sans jeton, avec un mauvais jeton ou un schéma inconnu', async () => {
@@ -37,12 +40,12 @@ describe('accès à l’administration', () => {
   it('accepte le bon jeton', async () => {
     const res = await call({ ADMIN_TOKEN: TOKEN }, '/api/admin/ping', bearer(TOKEN));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true });
+    expect(await json(res)).toEqual({ ok: true });
   });
 
   it('status : sans base configurée, le dit sans échouer ni rien divulguer', async () => {
     const res = await call({ ADMIN_TOKEN: TOKEN }, '/api/admin/status', bearer(TOKEN));
-    const body = await res.json();
+    const body = await json(res);
     expect(res.status).toBe(200);
     expect(body.db.status).toBe('non-configuree');
     expect(JSON.stringify(body)).not.toContain(TOKEN);

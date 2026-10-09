@@ -521,7 +521,7 @@ Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le m
 - **Base locale de développement** : sans `DATABASE_URL`, `npm run api:dev` utilise un PostgreSQL embarqué (PGlite, dossier `backend/data/dev-db/`, ignoré par Git) avec les migrations du dépôt : on teste l'administration sans Neon (dans ce mode, la carte « Base de données » de l'administration indique « non configurée », c'est normal).
 - **Créer ou mettre à jour la base** : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (rejouable ; l'adresse se copie depuis la console Neon, sans la coller ailleurs). Les migrations sont dans `backend/src/db/migrations/`.
 - **Développer** : `npm run api:dev` dans un terminal, `npm run dev` (la carte) dans un autre ; pour l'administration, `npm run dev:admin` en plus (http://localhost:5174/admin/ ; en local, `ADMIN_TOKEN=… npm run api:dev` pour s'y connecter).
-- **Contrôle** : `npm run build` vérifie aussi les types de l'administration et de l'API (`tsconfig.api.json`) et **la charge comme Vercel** (`scripts/check-api-esm.mjs` : projet en ES modules, extension `.js` obligatoire dans les imports relatifs de `api/` et `backend/src/`) ; `npm test` lance les tests.
+- **Contrôle** : `npm run build` vérifie aussi les types de l'administration et de l'API (`tsconfig.json` racine : la config du back, celle que Vercel utilise) et **la charge comme Vercel** (`scripts/check-api-esm.mjs` : projet en ES modules, extension `.js` obligatoire dans les imports relatifs de `api/` et `backend/src/`) ; `npm test` lance les tests.
 
 ---
 

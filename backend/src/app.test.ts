@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { createApp } from './app.js';
 import { appEnv, resolveDatabase } from './env.js';
 
+
+/** Corps JSON d'une réponse (sans les types du navigateur, `Response.json()` rend `unknown`) */
+const json = (res: Response): Promise<any> => res.json();
 const get = (env: Record<string, string>, path = '/api/health') => createApp(env).request(path);
 
 describe('environnement', () => {
@@ -32,12 +35,12 @@ describe('GET /api/health', () => {
   it('répond sans base configurée (le site fonctionne sans l’API)', async () => {
     const res = await get({});
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ ok: true, service: 'chambery-diorama-api', env: 'development', db: { status: 'non-configuree' } });
+    expect(await json(res)).toMatchObject({ ok: true, service: 'chambery-diorama-api', env: 'development', db: { status: 'non-configuree' } });
   });
 
   it('dit que la base est désactivée en prévisualisation', async () => {
     const res = await get({ VERCEL_ENV: 'preview', DATABASE_URL: 'postgres://utilisateur:secret@prod/db' });
-    expect((await res.json()).db.status).toBe('desactivee-en-previsualisation');
+    expect((await json(res)).db.status).toBe('desactivee-en-previsualisation');
   });
 
   it('ne divulgue ni adresse ni mot de passe, même quand la base est injoignable', async () => {
@@ -51,7 +54,7 @@ describe('GET /api/health', () => {
 
   it('affiche la version courte du commit et interdit la mise en cache', async () => {
     const res = await get({ VERCEL_GIT_COMMIT_SHA: 'abcdef1234567890' });
-    expect((await res.json()).version).toBe('abcdef1');
+    expect((await json(res)).version).toBe('abcdef1');
     expect(res.headers.get('cache-control')).toBe('no-store');
   });
 });
@@ -60,6 +63,6 @@ describe('routes inconnues', () => {
   it('répondent 404 en JSON', async () => {
     const res = await get({}, '/api/nimporte-quoi');
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ error: 'introuvable' });
+    expect(await json(res)).toEqual({ error: 'introuvable' });
   });
 });
