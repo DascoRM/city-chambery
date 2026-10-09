@@ -1,5 +1,24 @@
 # Journal des itérations
 
+## Itération 88 — 09/10/2026 (branche `feat/EP009-US003-contrat-et-route`, epic EP009)
+
+**Demande de Dasco :** « je veux que la météo soit gérée par le back et affichée sur le front », en planifiant les US avec les agents ; relevé à la demande plutôt que planifié (réponse de l'agent du back acceptée) ; spec v2 validée (« Ok, tu peux attaquer les travaux ») : lot MVP, contrat et route d'abord.
+
+**Changements :**
+- **spec EP009 v2** (epic + 13 US, dont US012 écran Météo de l'admin et US013 prévisions) consolidée à partir des plans de deux agents (back et front 3D) ; décisions D1 à D12 ;
+- **contrat** `contrat/meteo.ts` : 9 conditions et leurs libellés, valeurs types de démo partagées par `?weather=` et le forçage de l'admin, réponse de `/api/weather`, formats du forçage et de l'écran admin (US012) ; codes d'erreur `meteo-indisponible`, `meteo-desactivee` ;
+- **route `GET /api/weather`** (`backend/src/meteo/`) : Open-Meteo, modèle ICON du DWD, coordonnées fixes du centre (paramètres de la requête ignorés) ; relevé renouvelé à chaque pas de 15 min de la source (30 s après son début), une seule requête pour tous les visiteurs ; nouvel essai après 60 s en cas d'échec, 10 min après un refus 429 ; dernier bon relevé (`stale`) jusqu'à 3 h, puis 503 ; les codes de la source deviennent les 9 conditions (présence et force par les valeurs continues, type par le code de la source) ; CDN : 60 s, puis 60 s servie pendant le renouvellement ; `check-api-esm` vérifie la route compilée avec une source simulée ;
+- **relecture indépendante** (agent, [ep009-us003-revue.md](../tasks/ep009-us003-revue.md)) : 0 défaut bloquant, 2 importants, 9 mineurs, **tous corrigés** :
+  - I1 : par temps froid, la neige annoncée par la source sortait en bruine ou pluie (ICON arrondit sa neige par 0,07 cm) → la neige suit le code de la source ;
+  - I2, et instabilité constatée avant la relecture : les tests qui démarrent PGlite dépassaient parfois 5 s (tests) et 10 s (`beforeEach`) sur une machine chargée → 20 s ;
+  - M9 et V2 : cache fixe de 10 min et `stale-while-revalidate=300` (une réponse pouvait vivre 6 min) → pas de 15 min et 60 s ;
+  - M1 : 429 ; M2 : 29 codes WMO (le 97 manquait à la liste) ; M3 : erreurs mal classées ; M4 : « fog: 0.5 » avec « Couvert » ; M5 à M8 : commentaires, README, tests ;
+- README (route, licence Open-Meteo, structure du code).
+
+**Vérifié :** `npm run build` (aussi avec `ADMIN_TOKEN` et `VERCEL_ENV=preview`) et `npm test` : **110 tests** (back 57, admin 24, contrat 10, carte 4, outillage 15), plusieurs passages verts sous forte charge ; en local contre la vraie source (« Couvert, 13,6 °C », second appel servi par le cache en 1 ms) ; **prévisualisation** `preview/EP009-meteo` (agent, en-tête de contournement) : réponses conformes au contrat, le navigateur ne reçoit que `public, max-age=0`, `MISS` → `HIT` → `STALE` à 65 s → `HIT` → `MISS` après 3 min sans visite, `/api/health` intact derrière la réécriture `/api/:path*`, la source donne le nouveau pas dès son début (12 h 15 min 03 s → pas de 12 h 15) ; la carte est identique à l'octet près.
+
+**Non vérifié :** le réglage Fluid compute du projet Vercel ; des refus 429 réels sur les adresses partagées de Vercel ; l'hiver à Chambéry (I1 est montré sur des sommets alpins) ; libellés et seuils pas encore vus par Dasco ; la carte n'affiche pas encore la météo (US004).
+
 ## Itération 87 — 09/10/2026 (branches `feat/EP010-US008-session`, `feat/EP010-US009-docker-doc`, `fix/EP010-phase2-revue`, epic EP010)
 
 **Demande de Dasco :** session glissante limitée à 8 h (US008) ; le Pi reste prévu par principe (D11) ; « mutualiser tous les agents nécessaires ».

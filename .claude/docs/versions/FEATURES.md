@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 09/10/2026 — itération 87 (la section Carte n'a pas changé depuis l'itération 74, hormis les retouches publiées vérifiées par le contrat).
+État au 09/10/2026 — itération 88 (la section Carte n'a pas changé depuis l'itération 74, hormis les retouches publiées vérifiées par le contrat).
 
 ## Administration (EP008, EP010)
 
@@ -10,6 +10,12 @@
 | Session d'administration (EP010-US008) | ✅ Vérifié par Dasco (prévisualisation, 09/10) | Le jeton ne sert qu'à se connecter ; ensuite un cookie `HttpOnly` que la page ne peut pas lire ; prolongée à chaque action (2 h sans activité), 8 h au plus ; « Se déconnecter » ferme la session même si une réponse lente revient après ; changer `ADMIN_TOKEN` ferme toutes les sessions |
 | Tableau de bord | ✅ Vérifié par Dasco (prévisualisation, 09/10) | Version, environnement, Node.js, région ; base : état, taille, migrations à appliquer, lignes par table. Pas encore : usage et quotas (EP008-US005 / US008) |
 | Retouches des parkings depuis l'administration | ✅ Vérifié par Dasco (prévisualisation, 09/10) | Page « Parkings » : chercher un parking de la carte, le masquer ou changer nom, tarif, places, type, position, note **avec une source obligatoire** ; ajouter un parking absent d'OSM ; liste des retouches avec « Retirer » ; journal. Publiées tout de suite pour la carte (au plus 1 minute de délai). Pas encore : lieux d'histoire, carte de position (EP008-US006 et US007) |
+
+## Météo (EP009, en cours)
+
+| Fonctionnalité | État | Détail |
+|---|---|---|
+| Météo de Chambéry gérée par le back (`GET /api/weather`, US003) | 🟡 API seule, vérifiée sur la prévisualisation ; pas encore affichée sur la carte (US004) | Open-Meteo, modèle ICON du DWD, coordonnées fixes du centre ; le back traduit les codes de la source en 9 conditions (ciel dégagé, éclaircies, couvert, brouillard, bruine, pluie, neige, pluie et neige, orage) avec température, nuages, précipitations, vent, visibilité ; relevé renouvelé à chaque pas de 15 min du modèle, une seule requête pour tous les visiteurs ; si la source tombe, dernier bon relevé jusqu'à 3 h ; format partagé dans `contrat/meteo.ts`. Libellés et seuils à valider par Dasco (US011) |
 
 ## Carte / diorama
 

@@ -1,6 +1,6 @@
 # Epic EP009 - La météo en direct sur le diorama
 
-**Statut (09/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé, en commençant par US003 (contrat et route).** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
+**Statut (09/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé ; US003 (contrat et route `/api/weather`) livrée et vérifiée sur la prévisualisation, suite : US001.** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
 
 ## Résumé
 Afficher sur le diorama **la météo réelle de Chambéry** (soleil, couvert, pluie, brouillard, neige, orage, vent), rendue en 3D dans le style maquette.
@@ -15,16 +15,17 @@ Afficher sur le diorama **la météo réelle de Chambéry** (soleil, couvert, pl
 ## Architecture
 ```
 Open-Meteo, modèle ICON du DWD (icon_seamless) : gratuit, sans clé
-      ▲ au plus 1 appel / 10 min par instance, et seulement si quelqu'un regarde
+      ▲ au plus 1 appel par pas de 15 min du modèle et par instance, et seulement si quelqu'un regarde
       │ coordonnées fixes du centre (45,5658 ; 5,9205), aucune donnée du visiteur
 backend/src/meteo/
       open-meteo.ts   appel (délai 4 s), réponse amont vérifiée par Zod
       normalize.ts    codes WMO + valeurs continues → 9 conditions et intensités 0..1 (l'enum et son mapper)
-      service.ts      cache 10 min, une seule requête amont en vol, pas de nouvel essai pendant 60 s après un échec,
+      service.ts      relevé gardé jusqu'au pas suivant (+ 30 s), une seule requête amont en vol, nouvel essai 60 s
+                      après un échec (10 min après un refus 429),
                       repli : dernier bon relevé « stale » jusqu'à 3 h, puis 503 meteo-indisponible
                       forçage de l'admin lu dans app_meta, au plus toutes les 30 min par instance (US012)
       │
-GET /api/weather ── public, max-age=0, s-maxage=60, stale-while-revalidate=300 (CDN de Vercel)
+GET /api/weather ── public, max-age=0, s-maxage=60, stale-while-revalidate=60 (CDN de Vercel : 2 min au plus)
       │  format : contrat/meteo.ts (zod/mini), partagé par le back, la carte et l'admin
       ▼
 frontend/carte   module météo chargé à la demande → vérification par le contrat → état lissé (fondu)
@@ -37,9 +38,9 @@ frontend/admin   écran « Météo » : ce que voient les visiteurs, relevé bru
 - **Carte du Pi** : pas d'API (nginx répond 404 sur `/api/`), donc pas de météo et pas de relance. C'est voulu.
 
 ## Objectifs
-1. Voir sur le diorama le temps qu'il fait à Chambéry (au plus 10 min de retard), sans retarder le chargement
+1. Voir sur le diorama le temps qu'il fait à Chambéry (le pas de 15 min en cours du modèle, vu par tous au plus 2 à 3 min après son début), sans retarder le chargement
 2. Des effets lisibles et jolis, dans la palette pastel de la maquette
-3. **0 €** : au pire 1,5 % du quota gratuit d'Open-Meteo par instance active en continu (3 % avec deux), 4,3 % au plus des invocations Vercel gratuites, aucun réveil de la base sans forçage
+3. **0 €** : ≈ 1 % du quota gratuit d'Open-Meteo par instance active en continu (4 appels par heure), 4,3 % au plus des invocations Vercel gratuites, aucun réveil de la base sans forçage
 4. **Aucune régression de fluidité** : effets mesurés, niveaux de qualité, dégradation automatique, aucune image figée par une recompilation
 5. Le site marche sans la météo : hors ligne, API en panne, carte du Pi, préférence « météo désactivée », météo coupée depuis l'admin
 6. Dasco pilote la météo depuis l'administration : voir ce que reçoivent les visiteurs, forcer une météo pour une démo, la couper
@@ -52,7 +53,7 @@ frontend/admin   écran « Météo » : ce que voient les visiteurs, relevé bru
 |----|------------|---------|-------|-----|--------|
 | [US001](US001-niveaux-de-qualite-et-mesure.md) | Niveaux de qualité, temps GPU, mesure de la pluie sur téléphone | Scène | 0,75 à 1 | Démo | 🔲 Todo |
 | [US002](US002-socle-meteo-et-mode-force.md) | Socle météo : état, fondu, couvert, `?weather=`, puce, réglages posés au démarrage | Scène, UI | 3 | Démo | 🔲 Todo |
-| [US003](US003-route-api-weather.md) | Contrat météo et route `/api/weather` (ICON, cache, repli, tests, contrôle du build) | Contrat, API | 1,5 à 2 (dont contrat 0,25) | Démo (contrat), MVP | 🔄 In Progress |
+| [US003](US003-route-api-weather.md) | Contrat météo et route `/api/weather` (ICON, cache, repli, tests, contrôle du build) | Contrat, API | 1,5 à 2 (dont contrat 0,25) | Démo (contrat), MVP | ✅ Done (09/10) |
 | [US004](US004-meteo-reelle-cote-site.md) | Météo réelle côté carte : lecture, relances, états, crédits | Carte, UI | 1 à 1,5 | MVP | 🔲 Todo |
 | [US005](US005-pluie.md) | Pluie | Scène | 2,5 à 3 | MVP | 🔲 Todo |
 | [US006](US006-brouillard.md) | Brouillard | Scène | 1,5 | Démo | 🔲 Todo |
@@ -104,7 +105,7 @@ Démarrage du diorama (rien n'attend la météo)
 2. **Le diorama n'attend jamais la météo** : sans réponse, ciel par défaut (comportement actuel), sans message d'erreur bloquant
 3. **Position fixe** : 45,5658 ; 5,9205, les coordonnées de `CHAMBERY` (`frontend/carte/src/time/chambery.ts`), recopiées dans le back avec leur source puisque le back n'importe pas la carte. **Jamais la géolocalisation du visiteur**, et aucun paramètre de sa requête n'est transmis à la source
 4. **Seul le back parle à la source** et traduit ses codes : l'énumération et sa correspondance sont dans `backend/src/meteo/normalize.ts` ; la carte ne voit jamais un code WMO
-5. **Intensités par les valeurs continues, libellé par la source** (D9) : présence et force de la pluie, de la neige et du brouillard tirées des mm/h, de la visibilité et de la couverture nuageuse ; bruine ou pluie, et ciel par temps sec, selon le code de la source ; orage seulement pour les codes 95 à 99 (déduit, pas mesuré). Les seuils sont des choix de rendu : constantes nommées dans le code (D7), calibrées avec Dasco
+5. **Intensités par les valeurs continues, libellé par la source** (D9) : présence et force des précipitations et du brouillard tirées des mm/h, de la visibilité et de la couverture nuageuse ; type de précipitation (bruine, pluie, et neige par temps froid) et ciel par temps sec selon le code de la source ; orage seulement pour les codes 95 à 99 (déduit, pas mesuré). Les seuils sont des choix de rendu : constantes nommées dans le code (D7), calibrées avec Dasco
 6. **Température** : neige seulement à 2 °C ou moins, sinon pluie (appliqué par le back, et par la carte pour `?weather=snow`)
 7. **Direct ou simulée** (D4) : météo réelle seulement à l'heure « Direct » et en saison automatique ; sinon « simulée » (beau temps), avec un bouton « Revenir au direct »
 8. **Fluidité d'abord** : si la densité de pixels est déjà au minimum et que deux mesures de suite en mouvement passent sous 24 img/s, densité des précipitations divisée par 2, puis coupure ; jamais de remontée dans la session ; la lumière et le brouillard (gratuits) restent. *Remplace le seuil de 40 img/s de la v1, qui aurait coupé la pluie en permanence sur l'iPhone, déjà à 30-31 img/s sans météo*
@@ -151,7 +152,7 @@ Les plans v2 corrigent aussi la v1 : brouillard **linéaire** calé sur la dista
 - **Les recompilations de shaders sont la vraie menace** (règle 9), bien plus que le coût des effets
 - **Défaut existant découvert** : la passe finale de l'effet maquette éclaircit les bords du socle (couleurs prémultipliées) ; invisible aujourd'hui, liseré blanc avec le brouillard. Correction de 4 lignes dans US002
 - **TI-02** : la boucle ne s'arrête déjà jamais (les éléphants marchent) ; la pluie n'ajoute aucune image, seulement du travail par image
-- **Quotas d'Open-Meteo par adresse IP** : les fonctions Vercel sortent par des IP partagées, des refus (429) dus à d'autres projets sont possibles [non constaté] ; parade : repli « stale » de 3 h, erreur visible dans l'écran admin, source de secours MET Norway (+0,5 j) si ça arrive
+- **Quotas d'Open-Meteo par adresse IP** : les fonctions Vercel sortent par des IP partagées, des refus (429) dus à d'autres projets sont possibles [non constaté] ; parade : 10 min sans appel après un refus 429, repli « stale » de 3 h, erreur visible dans l'écran admin, source de secours MET Norway (+0,5 j) si ça arrive
 - **Réveils de la base Neon** (US012 seulement) : lecture du forçage bornée ; ≈ 0 à 10 CU-h par mois selon l'usage, sur 100 gratuites [estimé] ; un onglet oublié ne coûte rien, puisque la carte cesse de relire après 30 min sans interaction
 - **Coordination avec EP008** (autre session) : fichiers communs `backend/src/app.ts`, `contrat/erreurs.ts` (une ligne par chantier), `scripts/check-api-esm.mjs`, navigation de l'admin. EP008 doit garder `app_meta` et prévoir les lignes météo du journal dans `audit_log` ; le second chantier à fusionner se rebase
 - **Sans garantie de service** : les offres gratuites n'en ont pas ; le repli « ciel par défaut » rend une panne invisible
