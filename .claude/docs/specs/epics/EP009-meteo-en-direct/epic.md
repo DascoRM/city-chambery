@@ -1,6 +1,6 @@
 # Epic EP009 - La météo en direct sur le diorama
 
-**Statut (09/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé ; US003 (contrat et route `/api/weather`) livrée et vérifiée sur la prévisualisation ; US001 livrée, sauf la mesure sur iPhone (Dasco) ; suite : US002.** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
+**Statut (09/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé ; US003 (contrat et route `/api/weather`) livrée et vérifiée sur la prévisualisation ; US001 livrée, sauf la mesure sur iPhone (Dasco) ; US002 (socle : couvert, puce, `?weather=`) livrée ; suite : US004.** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
 
 ## Résumé
 Afficher sur le diorama **la météo réelle de Chambéry** (soleil, couvert, pluie, brouillard, neige, orage, vent), rendue en 3D dans le style maquette.
@@ -52,7 +52,7 @@ frontend/admin   écran « Météo » : ce que voient les visiteurs, relevé bru
 | ID | User Story | Domaine | Jours | Lot | Status |
 |----|------------|---------|-------|-----|--------|
 | [US001](US001-niveaux-de-qualite-et-mesure.md) | Niveaux de qualité, temps GPU, mesure de la pluie sur téléphone | Scène | 0,75 à 1 | Démo | 🔄 Code livré (09/10), mesure iPhone en attente |
-| [US002](US002-socle-meteo-et-mode-force.md) | Socle météo : état, fondu, couvert, `?weather=`, puce, réglages posés au démarrage | Scène, UI | 3 | Démo | 🔲 Todo |
+| [US002](US002-socle-meteo-et-mode-force.md) | Socle météo : état, fondu, couvert, `?weather=`, puce, réglages posés au démarrage | Scène, UI | 3 | Démo | ✅ Done (09/10) |
 | [US003](US003-route-api-weather.md) | Contrat météo et route `/api/weather` (ICON, cache, repli, tests, contrôle du build) | Contrat, API | 1,5 à 2 (dont contrat 0,25) | Démo (contrat), MVP | ✅ Done (09/10) |
 | [US004](US004-meteo-reelle-cote-site.md) | Météo réelle côté carte : lecture, relances, états, crédits | Carte, UI | 1 à 1,5 | MVP | 🔲 Todo |
 | [US005](US005-pluie.md) | Pluie | Scène | 2,5 à 3 | MVP | 🔲 Todo |
@@ -101,7 +101,7 @@ Démarrage du diorama (rien n'attend la météo)
 ---
 
 ## Règles métier
-1. **Rien d'inventé** : la scène montre le relevé du modèle avec son heure de validité (`observedAt`) ; la puce dit « modèle ICON, 10 h 00 », **jamais « observé »** ; un relevé de plus de 3 h n'est jamais montré comme actuel (ni par le back, ni par la carte) ; une météo forcée n'affiche pas de température
+1. **Rien d'inventé** : la scène montre le relevé du modèle avec son heure de validité (`observedAt`) ; la puce dit « modèle ICON, 10 h 00 », **jamais « observé »** ; un relevé de plus de 3 h n'est jamais montré comme actuel (ni par le back, ni par la carte) ; une météo forcée vaut jusqu'à sa fin (`forcedUntil`, toujours présent quand `forced`), sans cette limite de 3 h, et n'affiche pas de température
 2. **Le diorama n'attend jamais la météo** : sans réponse, ciel par défaut (comportement actuel), sans message d'erreur bloquant
 3. **Position fixe** : 45,5658 ; 5,9205, les coordonnées de `CHAMBERY` (`frontend/carte/src/time/chambery.ts`), recopiées dans le back avec leur source puisque le back n'importe pas la carte. **Jamais la géolocalisation du visiteur**, et aucun paramètre de sa requête n'est transmis à la source
 4. **Seul le back parle à la source** et traduit ses codes : l'énumération et sa correspondance sont dans `backend/src/meteo/normalize.ts` ; la carte ne voit jamais un code WMO
@@ -112,7 +112,7 @@ Démarrage du diorama (rien n'attend la météo)
 9. **Aucune recompilation en cours de route** : tout ce qui touche aux matériaux standards (objet brouillard inactif, crochets du sol mouillé, de la neige et du balancement, à 0) est posé **au démarrage**, et `castShadow` n'est jamais basculé. Mesuré : brouillard créé après le démarrage = 4,4 s d'image figée, bascule des ombres = 3 s. Critère de chaque US de rendu : aucune image de plus de 50 ms quand un effet apparaît
 10. **Accessibilité** : `prefers-reduced-motion` ou « Effets réduits » coupe éclairs, flashs et balancement et ralentit les précipitations ; jamais plus de 3 éclairs par seconde
 11. **Attributions** (règle projet n° 5) : « Météo : Open-Meteo.com, modèle ICON du DWD » (CC BY 4.0, données adaptées pour le diorama) dans le README (section Licences), à côté de la puce (panneau) et dans les crédits de l'app ; pas de crédit quand la météo est forcée
-12. **Poids** : module météo chargé à la demande (≈ 8 à 10 Ko gzip une fois complet) ; chunk principal + 2,5 Ko gzip au plus
+12. **Poids** : module météo chargé à la demande (≈ 8 à 10 Ko gzip une fois complet) ; chunk principal + 2,5 Ko gzip au plus. *Après US004, + 2,1 Ko seront consommés : le plafond est à rediscuter avant US005 (crochets du sol mouillé, de la neige, du balancement)*
 13. **Forçage** (D6) : priorité à l'adresse (`?weather=`), puis à l'administration (`forced`), puis au direct ; un forçage de l'admin dure de 5 min à 6 h, puis la météo réelle revient seule
 
 ---
