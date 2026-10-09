@@ -1,5 +1,18 @@
 # Journal des itérations
 
+## Itération 92 — 09/10/2026 (branche `fix/EP009-carte-revue`, epic EP009)
+
+**Demande de Dasco :** « Pourquoi aucun agent ne tourne ? » : relecture indépendante du code de la carte d'US001, US002 et US004 par un agent, en parallèle des plans d'US006, US005 et US012.
+
+**Changements :**
+- **relecture** ([ep009-carte-revue.md](../tasks/ep009-carte-revue.md)) : 0 défaut bloquant, 2 importants, 10 mineurs ; les deux longues images que j'avais signalées ne viennent pas de la météo (charge de la machine ; premier panneau ouvert, quel qu'il soit) ;
+- **corrigés** : retour sur l'onglet après une longue absence relu sans geste, retour du réseau relu seulement onglet visible et visiteur présent (I1) ; `check-boundaries` refuse dans la carte et le contrat un appel `z…()` dont le résultat ne sert pas, que l'option `manualPureFunctions` du build retirerait en silence (I2) ; le fondu du vent ne recalcule plus l'ambiance (M1) ; la puce donne l'heure du modèle et grise un ancien relevé (M2) ; crédit de l'accueil repris de la réponse du back (M3) ; focus du panneau au clavier, `aria-controls` (M4) ; panneau rafraîchi chaque minute, puce gardée pendant une lecture (M5) ; délai expiré pendant la lecture classé « delai » (M7) ; tests (M9) ;
+- **gardés tels quels** : « Coupée » pour la coupure par l'administration (« désactivée » reste le choix du visiteur ; spec corrigée, M6) ; l'horloge du visiteur en avance de plus de 3 h (M8, risque déjà accepté, noté au BACKLOG) ; le câblage de `weather/index.ts` sans test (BACKLOG).
+
+**Vérifié :** `npm run build` et `npm test` (**165 tests**) ; chunk principal inchangé (87,58 Ko gzip), module météo 5,73 Ko ; dans Chrome avec la puce graphique du Mac, réponse simulée : puce « Pluie, 13 °C (modèle ICON de 17 h 15) », ancien relevé grisé, focus sur le titre du panneau à l'ouverture au clavier puis rendu à la puce par Échap, crédit de l'accueil repris du back.
+
+**Non vérifié :** que le fondu du vent n'appelle plus le cycle jour/nuit (lu dans le code, pas mesuré) ; Safari, Firefox, un vrai téléphone.
+
 ## Itération 91 — 09/10/2026 (branche `feat/EP009-US004-meteo-reelle-carte`, epic EP009)
 
 **Demande de Dasco :** la météo gérée par le back, **affichée sur la carte** (US004) ; « Pourquoi aucun agent ne tourne ? » : trois agents relancés en parallèle (relecture du code de la carte, plans d'US006 et US005, plan d'US012).

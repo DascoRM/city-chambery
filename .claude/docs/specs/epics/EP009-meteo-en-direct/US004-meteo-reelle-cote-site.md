@@ -10,15 +10,15 @@
 
 ## Critères d'acceptation
 
-- [x] **Given** l'API disponible, **When** le diorama démarre, **Then** la météo arrive après la scène (jamais devant l'écran de chargement) et s'installe en fondu depuis le beau temps ; la puce dit « modèle ICON, 10 h 00 (il y a 6 min) »
+- [x] **Given** l'API disponible, **When** le diorama démarre, **Then** la météo arrive après la scène (jamais devant l'écran de chargement) et s'installe en fondu depuis le beau temps ; la puce dit « Pluie, 13 °C (modèle ICON de 10 h 00) » et le panneau « modèle ICON, 10 h 00 (il y a 6 min) » ; un ancien relevé a l'icône grisée
 - [x] **Given** 503 `meteo-indisponible`, un délai de 8 s dépassé ou hors ligne, **Then** ciel par défaut, « Météo non disponible » (dès que la carte est prête : la lecture part pendant le chargement de la ville), nouvel essai à 60 s, puis 2, 4 et 8 min (au plus 15), et au retour du réseau. *Après un succès, une panne passagère garde le dernier relevé, marqué « Ancien relevé », jusqu'à 3 h (question 2 posée à Dasco)*
 - [x] **Given** 404 (carte du Pi, sans API), **Then** ciel par défaut, puce masquée, aucune relance
-- [x] **Given** 503 `meteo-desactivee`, **Then** ciel par défaut, « Météo désactivée », relue dans 15 min
+- [x] **Given** 503 `meteo-desactivee`, **Then** ciel par défaut, puce « Coupée » (« Météo coupée par l’administration » : « désactivée » est réservé au choix du visiteur), relue dans 15 min
 - [x] **Given** une réponse hors contrat (`v: 2`, intensité supérieure à 1, condition inconnue, page HTML), **Then** ciel par défaut et relance, sans exception
 - [x] **Given** l'onglet caché, ou aucune interaction depuis 30 min, **Then** aucune requête ; au retour, relecture si le relevé a plus de 15 min *(vérifié par les tests, avec de fausses minuteries ; pas dans le navigateur)*
 - [x] **Given** une météo forcée par l'admin, **Then** « Météo forcée (démo) », sans température ; **Given** `stale`, ou un relevé de plus d'1 h, **Then** « Ancien relevé (il y a 1 h 10) » ; **Given** un relevé de plus de 3 h (horloge du visiteur, même sans relecture), **Then** ciel par défaut ; une météo forcée, elle, vaut jusqu'à `forcedUntil`
 - [x] **Given** de la neige annoncée à plus de 2 °C, **Then** de la pluie
-- [x] **Given** les crédits, **Then** « Météo : Open-Meteo.com » avec lien et CC BY 4.0 en bas à droite (visible sur mobile : la barre d'outils monte au-dessus du pied de page) et dans l'écran d'accueil ; le panneau de la puce montre `attribution` (texte, lien, licence) ; rien pour une météo forcée
+- [x] **Given** les crédits, **Then** « Météo : Open-Meteo.com » avec lien et CC BY 4.0 en bas à droite (visible sur mobile : la barre d'outils monte au-dessus du pied de page) et dans l'écran d'accueil (texte de l'`attribution` envoyée par le back, sans lien, comme les autres crédits de l'accueil) ; le panneau de la puce montre `attribution` (texte, lien, licence) ; rien pour une météo forcée
 
 ---
 
