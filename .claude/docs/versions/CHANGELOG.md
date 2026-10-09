@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 84 — 09/10/2026 (branches `feat/EP010-US003-admin-react`, `feat/EP010-US004-admin-parite`, `feat/EP010-US005-frontieres`, `fix/EP010-phase1-revue`, epic EP010)
+
+**Demande de Dasco :** feu vert pour la prévisualisation d'US002 et la suite d'EP010 (« mutualiser tous les agents nécessaires ») ; l'autre session Claude est suspendue jusqu'à la fin de ce travail, puis relira le code et l'analyse.
+
+**Changements :**
+- **US003** : `frontend/admin/`, l'administration en **React 19** (wouter avec adresses en `#/…`, TanStack Query, React Hook Form), construite après la carte dans `dist/admin/` (hors du service worker de la carte) ; client API unique (`src/api.ts`) : jeton de session, erreurs traduites, retour à la connexion si le jeton est refusé ; connexion et tableau de bord ; CSP en en-tête Vercel (`frame-ancestors 'none'`) ; scripts `dev:admin`, `typecheck`, `build:carte`, `build:admin` ; Vitest en projets (API sous Node, admin sous happy-dom). **Sans `@vitejs/plugin-react`** (conflit de Babel avec `vite-plugin-pwa`) : Vite compile le JSX, seul le Fast Refresh manque en dev ;
+- **US004** : page « Parkings », parité avec l'ancienne admin (recherche, retouche avec source obligatoire, ajout, liste avec « Retirer », journal), mêmes appels à l'API ; `frontend/carte/public/admin/` supprimé ;
+- **US005** : `scripts/check-boundaries.mjs`, lancé par `npm run build` : la carte et l'admin ne s'importent pas, le front n'importe jamais l'API, une liste de paquets par partie, pas de HTML brut dans l'admin ;
+- **relecture indépendante de la phase 1** (agent, [ep010-phase1-revue.md](../tasks/ep010-phase1-revue.md)) : 2 défauts moyens, 7 faibles, aucun grave, **tous corrigés** : formulaire de retouche qui revenait à l'ancienne valeur pendant la relecture (M1) ; contrôle des frontières qui laissait passer certains imports (M2 : imports désormais lus par TypeScript) ; réponse 200 non JSON prise pour un succès (F1) ; CSP absente hors Vercel et admin construite dans l'image du Pi (F2 : balise meta au build, `npm run build:pi` dans le Dockerfile) ; état demandé deux fois (F3) ; re-choisir un parking (F4) ; liste des parkings non relue après un échec (F5) ; README, context.md et getting-started (F6, F7) ; messages 5xx et réseau, alerte en double, motifs de HTML brut, commentaire du script `nature` (I1, I2, I4, I8). I3 (champs vidés après « Retirer la retouche », l'ancienne admin les gardait) laissé tel quel : plus fidèle à l'état publié ;
+- **plan détaillé de la phase 2** (agent, [ep010-phase2-plan.md](../tasks/ep010-phase2-plan.md)) : `backend/`, `contrat/`, session par cookie, Docker ; 7 points à valider par Dasco.
+
+**Vérifié :** `npm run build` (types des quatre configs, frontières, chargement de l'API, carte, admin) et `npm test` : **60 tests** (28 API, 17 admin, 15 outillage) ; les tests de M1, F4 et F5 échouent sur l'ancien code ; parcours réels dans Chrome headless contre l'API locale (PGlite) sur le `dist/` construit, **sous la CSP** : mauvais jeton refusé, tableau de bord, rechargement, page inconnue, déconnexion, retouche d'un parking (149 places, note, source), ajout, liste, journal, route publique lue par la carte, retrait, sans erreur ni violation de CSP ; admin : 83 Ko gzip ; service worker de la carte sans fichier de l'admin ; `npm run build:pi` ne produit que la carte ; la carte reste identique à l'octet près (vérifié par le relecteur) ; Vercel a construit les prévisualisations d'US002 et de la phase 1 (statut « success »).
+
+**Non vérifié :** la prévisualisation elle-même (protégée par l'authentification Vercel : à ouvrir par Dasco) ; l'image Docker (Docker absent de ce Mac) ; l'admin avec un service worker de la carte déjà installé (lu dans la config seulement).
+
 ## Itération 83 — 09/10/2026 (branches `feat/EP010-US001-adr` et `feat/EP010-US002-frontend-carte`, epic EP010)
 
 **Demande de Dasco :** séparer nettement le front (carte + admin) et le back (API) ; décisions D1 à D6 tranchées ; créer la branche d'epic, mettre EP008 de côté et commencer les deux premières US.

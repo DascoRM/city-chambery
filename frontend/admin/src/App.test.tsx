@@ -58,4 +58,19 @@ describe('administration : connexion et tableau de bord', () => {
     render(<App />);
     expect(await screen.findByText(/tables absentes edit_log/)).toBeTruthy();
   });
+
+  it('refuse une réponse qui n’est pas du JSON, comme une page de repli en 200 (revue F1)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('<!doctype html><title>Carte</title>', { status: 200, headers: { 'Content-Type': 'text/html' } })));
+    render(<App />);
+    submitToken('nimporte-quoi');
+    expect(await screen.findByText("L'API ne répond pas à cette adresse (la réponse n'est pas du JSON).")).toBeTruthy();
+    expect(sessionStorage.getItem('diorama-admin-token')).toBeNull();
+  });
+
+  it('traduit une panne de réseau', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch'); }));
+    render(<App />);
+    submitToken('bon');
+    expect(await screen.findByText("Impossible de joindre l'API (réseau coupé ou serveur arrêté).")).toBeTruthy();
+  });
 });

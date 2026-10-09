@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { App } from '../App';
 import type { AdminParkingEdits, CityParking } from '../types';
 
@@ -14,14 +14,20 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 
 let edits: AdminParkingEdits;
 let calls: { method: string; url: string; body?: unknown }[];
+/** Pannes simulées : relecture des retouches en erreur 500, lectures de city.json en erreur 502 */
+let failEditsReads = false;
+let cityFailures = 0;
 
 /** Fausse API : retient les appels et applique les écritures comme le vrai serveur */
 const fakeServer = vi.fn(async (url: string, init?: RequestInit) => {
   const method = init?.method ?? 'GET';
   const body = init?.body ? JSON.parse(String(init.body)) : undefined;
   calls.push({ method, url, body });
-  if (url === '/data/city.json') return json(CITY);
-  if (url === '/api/admin/parkings/edits' && method === 'GET') return json(edits);
+  if (url === '/data/city.json') {
+    if (cityFailures > 0) { cityFailures--; return new Response('Bad Gateway', { status: 502 }); }
+    return json(CITY);
+  }
+  if (url === '/api/admin/parkings/edits' && method === 'GET') return failEditsReads ? json({ error: 'erreur interne' }, 500) : json(edits);
   if (url.startsWith('/api/admin/parkings/overrides/') && method === 'PUT') {
     edits.overrides[url.slice('/api/admin/parkings/overrides/'.length)] = body;
     return json({ ok: true });
@@ -58,6 +64,8 @@ beforeEach(() => {
     log: [{ id: 1, at: '2026-10-08T20:00:00Z', action: 'override', target: 'way/2', source: 'relevé sur place' }],
   };
   calls = [];
+  failEditsReads = false;
+  cityFailures = 0;
   vi.stubGlobal('fetch', fakeServer);
   vi.stubGlobal('confirm', () => true);
 });
@@ -137,5 +145,40 @@ describe('administration : retouches des parkings (parité avec l’admin d’or
       body: { id: 'custom/parking-du-rosaire', kind: 'surface', pos: [12.5, -4], source: 'vu sur place le 08/10' },
     });
     expect(await screen.findByText('custom/parking-du-rosaire : ajout : sans nom, de surface, [12.5, -4]')).toBeTruthy();
+  });
+
+  it('garde la valeur enregistrée, même si la relecture des retouches échoue (revue M1)', async () => {
+    render(<App />);
+    const form = await choose('way/2');
+    failEditsReads = true;
+    fireEvent.change(within(form).getByLabelText('Places'), { target: { value: '30' } });
+    fireEvent.submit(form);
+    expect(await within(form).findByText('Retouche enregistrée et publiée.')).toBeTruthy();
+    expect((within(form).getByLabelText('Places') as HTMLInputElement).value).toBe('30');
+    // la relecture a été demandée (et échoue) : le formulaire ne revient pas à l'ancienne valeur (25)
+    await waitFor(() => expect(calls.filter((c) => c.method === 'GET' && c.url === '/api/admin/parkings/edits').length).toBeGreaterThan(1));
+    expect((within(form).getByLabelText('Places') as HTMLInputElement).value).toBe('30');
+    expect(within(form).getByRole('button', { name: 'Retirer la retouche' })).toBeTruthy();
+  });
+
+  it('« Choisir » à nouveau le même parking annule la saisie en cours (revue F4)', async () => {
+    render(<App />);
+    let form = await choose('europe');
+    fireEvent.change(within(form).getByLabelText('Nom'), { target: { value: 'Saisie à annuler' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Choisir' }));
+    form = screen.getByRole('form', { name: 'Retouche du parking' });
+    expect((within(form).getByLabelText('Nom') as HTMLInputElement).value).toBe('');
+  });
+
+  it('relit la liste des parkings au retour dans la recherche après un échec (revue F5)', async () => {
+    cityFailures = 2; // la lecture et sa nouvelle tentative échouent
+    render(<App />);
+    const search = await screen.findByLabelText('Chercher un parking (nom ou identifiant)');
+    fireEvent.focus(search);
+    fireEvent.change(search, { target: { value: 'europe' } });
+    expect(await screen.findByText('Impossible de lire la liste des parkings.', {}, { timeout: 4000 })).toBeTruthy();
+    fireEvent.blur(search);
+    fireEvent.focus(search);
+    expect(await screen.findByRole('button', { name: 'Choisir' })).toBeTruthy();
   });
 });

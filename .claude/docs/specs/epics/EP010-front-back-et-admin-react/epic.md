@@ -48,7 +48,7 @@ api/index.ts    3 lignes imposées par Vercel (il ne cherche les fonctions que d
 Le front ne parle au back **que par HTTP**. Contrôle : un tsconfig par partie + `check-boundaries.mjs` (≈ 50 lignes) dans `npm run build`, avec un message clair (« frontend/admin/src/x.ts importe backend/src/app.ts : interdit »).
 
 ### L'administration en React
-React 19 · wouter (routage) · TanStack Query (appels à l'API) · React Hook Form + schémas de `contrat/` (formulaires) · CSS simple repris de l'admin actuelle · Vitest + Testing Library. Moins de 150 Ko gzip au chargement. Aucun effet sur la carte.
+React 19 · wouter (routage par « # », sans réécriture serveur) · TanStack Query (appels à l'API) · React Hook Form + schémas de `contrat/` (formulaires) · CSS simple repris de l'admin actuelle · Vitest + Testing Library. Moins de 150 Ko gzip au chargement. Aucun effet sur la carte.
 
 **Carte de position dans l'admin (EP008-US007)** : l'admin **affiche la carte Three.js existante** dans un cadre (`/?debug&admin=1`) ; l'outil 📍 Position, qui existe déjà, renvoie le point cliqué à l'admin (`postMessage`). Même moteur, même rendu, aucun code de la carte copié dans l'admin, ≈ 0,5 j. *(Pas de seconde carte : Leaflet et MapLibre, évoqués par l'étude, sont écartés.)*
 
@@ -66,9 +66,9 @@ React 19 · wouter (routage) · TanStack Query (appels à l'API) · React Hook F
 |----|------------|-------|--------|
 | [US001](US001-decision-et-adr.md) | ADR-002 « Séparer front et back » (décisions prises le 09/10) | 0,25 | ✅ [ADR-002](../../../architecture/decisions/ADR002-separer-front-et-back.md) (09/10) |
 | [US002](US002-frontend-carte.md) | `frontend/carte` : la carte dans son dossier (avec contenu, données et scripts) | 1 à 1,5 | 🟡 Fait (09/10), à vérifier sur `preview/front-back` avant fusion |
-| [US003](US003-frontend-admin-socle-react.md) | `frontend/admin` : socle React | 1,5 | 🔲 Todo |
-| [US004](US004-admin-parite-et-bascule.md) | Admin : parité avec l'actuelle (état, retouches de parkings), puis suppression de `public/admin` | 1 à 1,5 | 🔲 Todo |
-| [US005](US005-frontieres-du-front.md) | Frontières du front vérifiées au build | 0,5 | 🔲 Todo |
+| [US003](US003-frontend-admin-socle-react.md) | `frontend/admin` : socle React | 1,5 | 🟡 Fait (09/10), à vérifier sur `preview/front-back` |
+| [US004](US004-admin-parite-et-bascule.md) | Admin : parité avec l'actuelle (état, retouches de parkings), puis suppression de `public/admin` | 1 à 1,5 | 🟡 Fait (09/10), à vérifier sur `preview/front-back` |
+| [US005](US005-frontieres-du-front.md) | Frontières du front vérifiées au build | 0,5 | ✅ Fait (09/10) : `scripts/check-boundaries.mjs` |
 
 ### Phase 2 - Backend
 | ID | User Story | Jours | Status |

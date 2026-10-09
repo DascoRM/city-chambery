@@ -7,7 +7,7 @@ Le détail complet (réglages, lieux, monuments, déploiement, dépannage) est d
 - Node.js 20+ (développement)
 - Docker (optionnel, pour tester l'image de production)
 
-Les données (`public/data/city.json`, `public/models/`) sont déjà dans le dépôt : pas besoin de les télécharger pour lancer le projet.
+Les données (`frontend/carte/public/data/city.json`, `frontend/carte/public/models/`) sont déjà dans le dépôt : pas besoin de les télécharger pour lancer le projet.
 
 ---
 
@@ -46,11 +46,13 @@ npm run docker:down
 | Commande | Description |
 |----------|-------------|
 | `npm run dev` | Serveur de développement |
-| `npm run build` | Build de production + vérification des types (seule vérification automatique : pas de tests ni de lint) |
+| `npm run build` | Contrôles (types, frontières entre les parties) puis build de la carte et de l'administration |
+| `npm test` | Tests Vitest : API, administration, contrôles du dépôt |
+| `npm run dev:admin` | Administration en dev (http://localhost:5174/admin/), avec `npm run api:dev` et `npm run dev` |
 | `npm run preview` | Sert le build en local |
-| `npm run data` | Télécharge OSM + hauteurs BD TOPO + relief RGE ALTI et écrit `public/data/city.json` (1 à 2 min) |
-| `npm run data -- --offline` | Reconstruit `city.json` depuis `data/raw/`, sans réseau (≈ 10 s) — **après toute modification des scripts ou de `diorama.config.json`** |
-| `npm run nature` | Reconvertit les arbres du pack nature selon `src/content/nature.json` |
+| `npm run data` | Télécharge OSM + hauteurs BD TOPO + relief RGE ALTI et écrit `frontend/carte/public/data/city.json` (1 à 2 min) |
+| `npm run data -- --offline` | Reconstruit `city.json` depuis `frontend/carte/data/raw/`, sans réseau (≈ 10 s) — **après toute modification des scripts ou de `frontend/carte/diorama.config.json`** |
+| `npm run nature` | Reconvertit les arbres du pack nature selon `frontend/carte/content/nature.json` |
 | `npm run mascot` | Reconvertit l'éléphant mascotte |
 
 Variables pour `npm run data` : `OVERPASS_URL` (autre serveur OSM), `NO_BDTOPO=1`, `NO_ALTI=1`.

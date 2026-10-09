@@ -1,8 +1,23 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('.', import.meta.url));
+
+/**
+ * Politique de contenu de l'administration. Elle est aussi envoyée en en-tête par Vercel (vercel.json, avec
+ * `frame-ancestors 'none'`, qui n'est valable qu'en en-tête) ; la balise ci-dessous la garde partout ailleurs (vite preview,
+ * tout serveur statique). Seulement au build : en dev, Vite injecte des <style> que `style-src 'self'` bloquerait.
+ */
+export const CSP = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'";
+
+function cspMeta(): Plugin {
+  return {
+    name: 'admin-csp-meta',
+    apply: 'build',
+    transformIndexHtml: () => [{ tag: 'meta', attrs: { 'http-equiv': 'Content-Security-Policy', content: CSP }, injectTo: 'head-prepend' }],
+  };
+}
 
 /**
  * Administration (EP010) : application React servie sous /admin/. Construite APRÈS la carte, dans dist/admin/ : le service
@@ -17,6 +32,7 @@ export default defineConfig({
   base: '/admin/',
   publicDir: false,
   oxc: { jsx: { runtime: 'automatic' } },
+  plugins: [cspMeta()],
   server: {
     port: 5174,
     strictPort: true,
