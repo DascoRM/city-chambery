@@ -71,7 +71,8 @@ async function loadCity(): Promise<CityData | null> {
 
 async function main() {
   // Météo (EP009) : module demandé tout de suite, en parallèle de la ville, sauf préférence « météo désactivée »
-  const weatherChunk = loadWeatherPref().enabled ? loadWeatherModule() : null;
+  // (la lecture de /api/weather part dès l'arrivée du module, pendant le chargement de la ville ; jamais avec ?weather=)
+  const weatherChunk = loadWeatherPref().enabled ? loadWeatherModule().then((m) => { m?.prefetchWeather(); return m; }) : null;
   // Écran initial (index.html) → lobby (EP004) : le lobby apparaît tout de suite et la ville charge derrière.
   // ?lobby=0 : pas de lobby ; ?lobby=1 : toujours ; en mode ?debug : pas de lobby, sauf ?lobby=1
   const loading = createLoading();
@@ -256,7 +257,8 @@ async function main() {
   let placeIdx: number | null = null; // fiche de lieu ouverte
   let weather: WeatherModule | null = null; // module météo, branché quand il arrive (EP009)
   // Modèle de la mascotte sous licence CC BY 3.0 : crédit obligatoire, affiché avec les autres
-  const ui = createUi(app, pois, `${data.attribution} · Éléphant : jeremy (Poly Pizza), CC BY 3.0`, {
+  const credits = `${data.attribution} · Éléphant : jeremy (Poly Pizza), CC BY 3.0`;
+  const ui = createUi(app, pois, credits, {
     onJournalPick: (id) => openPoi(id),
     onToggleCategory: (cat, v) => {
       placeLayer.setCategoryVisible(cat, v);
@@ -537,7 +539,7 @@ async function main() {
     controls.update();
   };
   if (lobby.isOpen()) lobbyView();
-  lobby.setCredits(`${data.attribution} · Éléphant : jeremy (Poly Pizza), CC BY 3.0`);
+  lobby.setCredits(credits);
   lobby.onEnter(() => {
     controls.autoRotate = false;
     ui.showHint(); // le lobby n'explique pas les gestes : l'aide s'affiche à l'entrée sur la carte
@@ -597,6 +599,11 @@ async function main() {
           root: app, scene, camera, focus: () => controls.target, quality: qualityLevel(), wind,
           sky: (m) => dayNight.setWeather(m), night: () => dayNight.getNight(), clock: () => clock.state(),
           backToLive: () => { clock.setSeason('auto'); clock.live(); }, chip: ui.setWeatherChip,
+          // Crédit de la source (règle 11) : en bas à droite et dans les crédits de l'accueil, seulement avec ses données
+          credit: (on) => {
+            ui.setWeatherCredit(on);
+            lobby.setCredits(on ? `${credits} · Météo : Open-Meteo.com, modèle ICON du DWD (CC BY 4.0)` : credits);
+          },
         });
         weather = w;
         tickers.push(w);

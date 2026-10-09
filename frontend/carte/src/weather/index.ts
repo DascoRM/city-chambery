@@ -1,5 +1,5 @@
 import type * as THREE from 'three';
-import type { WeatherCondition } from '../../../../contrat/meteo.js';
+import { WEATHER_MAX_AGE_S, type WeatherCondition } from '../../../../contrat/meteo.js';
 import type { Ticker } from '../types';
 import type { ClockState } from '../time/clock';
 import type { QualityLevel } from '../scene/quality';
@@ -7,9 +7,10 @@ import { applyWeatherSky, type SkyValues } from './sky';
 import { WEATHER_OFF, type WeatherChip } from '../ui/ui';
 import { loadWeatherPref, saveWeatherPref } from '../state/weather-pref';
 import {
-  blendLook, chipOf, clearLook, isLive, panelOf, presetLook, resolveWeather, weatherFromUrl, windTowards, windVisual,
-  type Resolved, type WeatherInputs, type WeatherLook, type WeatherStatus,
+  OLD_AFTER_S, blendLook, chipOf, clearLook, isLive, panelOf, presetLook, readingFromResponse, resolveWeather, weatherFromUrl,
+  windTowards, windVisual, type Reading, type Resolved, type WeatherInputs, type WeatherLook, type WeatherStatus,
 } from './state';
+import { createWeatherClient, fetchWeather, type WeatherFetch } from './client';
 import { createWeatherPanel } from './panel';
 
 /**
@@ -34,6 +35,8 @@ export interface WeatherCtx {
   /** « Revenir au direct » : heure réelle et saison automatique */
   backToLive(): void;
   chip(c: WeatherChip | null): void;
+  /** Crédit de la source (pied de page, accueil) : affiché seulement quand la scène montre ses données (règle 11) */
+  credit(on: boolean): void;
 }
 
 /** Réglage de l'outil de debug : une condition (valeurs types), et ce qu'on veut changer */
@@ -59,6 +62,12 @@ export interface WeatherModule extends Ticker {
   state(): { status: WeatherStatus; condition: WeatherCondition | null; target: WeatherLook; current: WeatherLook; quality: QualityLevel; reduced: boolean };
 }
 
+let early: Promise<WeatherFetch> | null = null;
+/** Lecture lancée dès l'arrivée du module, pendant le chargement de la ville (main.ts) ; jamais avec ?weather= (zéro réseau) */
+export function prefetchWeather() {
+  if (!early && !weatherFromUrl(location.search)) early = fetchWeather();
+}
+
 const sameLook = (a: WeatherLook, b: WeatherLook) =>
   a.cloud === b.cloud && a.rain === b.rain && a.snow === b.snow && a.fog === b.fog && a.storm === b.storm && a.windSpeed === b.windSpeed && a.windTowards === b.windTowards;
 
@@ -72,13 +81,17 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
   const cur: WeatherLook = { ...clear }; // départ : la scène d'aujourd'hui, puis fondu vers la météo
   let target: WeatherLook = { ...clear };
   let res: Resolved;
-  let blending = false, night = false, open = false;
+  let blending = false, night = false, open = false, credit: boolean | null = null;
+  let ageTimer: ReturnType<typeof setTimeout> | undefined;
+  /** Relevé simulé par l'outil de debug : il passe devant celui du back tant qu'il existe */
+  let debugReading: Reading | null = null;
+  let real: { api: WeatherInputs['api']; reading: Reading | null } = { api: 'none', reading: null };
 
   const panel = createWeatherPanel(ctx.root, {
     anchor: () => ctx.root.querySelector<HTMLElement>('.time .weather'),
     onClose: () => { open = false; showChip(); },
     onBackToLive: () => ctx.backToLive(),
-    onEnabled: (on) => { pref.enabled = inputs.enabled = on; saveWeatherPref(pref); update(); },
+    onEnabled: (on) => { setEnabled(on); },
     onReduced: (on) => { pref.reduced = on; saveWeatherPref(pref); update(); },
   });
   const showChip = () => {
@@ -87,11 +100,51 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
     ctx.chip(c && { ...c, expanded: open });
   };
   const update = () => {
-    res = resolveWeather(inputs, Date.now(), clear);
+    inputs.reading = debugReading ?? real.reading;
+    inputs.api = debugReading ? 'ok' : real.api;
+    const now = Date.now();
+    res = resolveWeather(inputs, now, clear);
     if (!sameLook(res.target, target)) { target = res.target; blending = true; }
     showChip();
-    if (open) panel.render({ ...panelOf(res, Date.now()), enabled: inputs.enabled, reduced: pref.reduced, systemReduced: mq.matches });
+    const fromSource = res.status === 'live' || res.status === 'stale';
+    if (fromSource !== credit) { credit = fromSource; ctx.credit(fromSource); }
+    if (open) panel.render({ ...panelOf(res, now), enabled: inputs.enabled, reduced: pref.reduced, systemReduced: mq.matches });
+    // Un relevé vieillit même sans relecture (onglet ouvert sans interaction) : « ancien » après 1 h, retiré après 3 h (règle 1)
+    clearTimeout(ageTimer);
+    const r = res.reading;
+    if (r && !r.forced) {
+      const age = now - r.observedAtMs, next = age < OLD_AFTER_S * 1000 ? OLD_AFTER_S * 1000 : WEATHER_MAX_AGE_S * 1000 + 1;
+      if (age < next) ageTimer = setTimeout(update, next - age);
+    }
   };
+
+  // Lecture de /api/weather (US004) : jamais avec ?weather= (zéro réseau)
+  const client = inputs.url ? null : createWeatherClient({
+    visible: () => document.visibilityState === 'visible',
+    onResult: (r) => {
+      if (r.ok) real = { api: 'ok', reading: readingFromResponse(r.body) };
+      else if (r.reason === 'absente') real = { api: 'none', reading: null }; // carte du Pi (sans API) : puce masquée, plus de relecture
+      else if (r.reason === 'desactivee') real = { api: 'disabled', reading: null };
+      // Panne passagère : on garde le dernier relevé, présenté comme ancien (il disparaîtra à 3 h), sinon ciel par défaut
+      else real = { api: 'unavailable', reading: real.reading && { ...real.reading, stale: true } };
+      update();
+    },
+  });
+  const setEnabled = (on: boolean) => {
+    pref.enabled = inputs.enabled = on;
+    saveWeatherPref(pref);
+    if (!on) client?.stop();
+    else if (client) { real = { api: 'waiting', reading: real.reading }; client.start(); }
+    update();
+  };
+  if (client && inputs.enabled) {
+    real.api = 'waiting';
+    client.start(early ?? undefined);
+    early = null;
+  }
+  document.addEventListener('visibilitychange', () => client?.wake());
+  for (const ev of ['pointerdown', 'keydown', 'wheel']) window.addEventListener(ev, () => client?.interaction(), { passive: true });
+  window.addEventListener('online', () => client?.online());
   mq.addEventListener('change', update);
   update();
 
@@ -116,7 +169,7 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
       else if (ctx.night() > 0.5 !== night) showChip(); // icône de nuit (lune)
     },
     togglePanel() {
-      if (!inputs.enabled) { pref.enabled = inputs.enabled = true; saveWeatherPref(pref); update(); return; }
+      if (!inputs.enabled) { setEnabled(true); return; }
       open = !open;
       if (open) panel.open(); else panel.close();
       update();
@@ -127,10 +180,9 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
       update();
     },
     live(v) {
-      inputs.reading = v
+      debugReading = v
         ? { condition: v.condition ?? 'cloudy', look: debugLook(v), temperatureC: v.temperatureC ?? null, forced: false, forcedUntilMs: null, stale: false, observedAtMs: Date.now(), model: 'debug' }
         : null;
-      inputs.api = v ? 'ok' : 'none';
       update();
     },
     state: () => ({ status: res.status, condition: res.condition, target: { ...target }, current: { ...cur }, quality: ctx.quality, reduced: mq.matches || pref.reduced }),
