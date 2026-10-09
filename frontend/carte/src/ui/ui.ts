@@ -128,7 +128,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     <button class="help card" data-action="lobby" aria-label="À propos : revoir l'accueil" title="Revoir l'accueil">?</button>
     <div class="toast" role="status"></div>
     <div class="tooltip" hidden></div>
-    <footer class="attribution">${esc(attribution)}<span class="long"> · Textes : sources citées dans chaque fiche</span></footer>
+    <footer class="attribution">${esc(attribution)}<span class="weather-credit" hidden> · Météo : <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a> (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>)</span><span class="long"> · Textes : sources citées dans chaque fiche</span></footer>
   `,
   );
 
@@ -342,6 +342,13 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   const sunTimesEl = root.querySelector<HTMLElement>('.sun-times')!;
   const timeBox = root.querySelector<HTMLElement>('.time')!;
   const weatherBtn = root.querySelector<HTMLButtonElement>('[data-action="weather"]')!;
+  const weatherCredit = root.querySelector<HTMLElement>('.weather-credit')!;
+  // Sur mobile, la barre d'outils se pose au-dessus du pied de page, dont la hauteur dépend de la largeur et des crédits
+  const footer = root.querySelector<HTMLElement>('.attribution')!;
+  const fitFooter = () => root.style.setProperty('--foot', `${footer.offsetHeight}px`);
+  window.addEventListener('resize', fitFooter);
+  void document.fonts?.ready.then(fitFooter); // la police arrive après : le texte peut changer de nombre de lignes
+  fitFooter();
   let lastWeather = '';
   let playing = false;
   hourIn.addEventListener('input', () => h.onHour(Number(hourIn.value)));
@@ -398,6 +405,8 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
       parkingLegend.hidden = !on;
     },
     showParkingsButton: () => { parkingsBtn.hidden = false; },
+    /** Crédit Open-Meteo du pied de page (EP009) : visible seulement quand la scène montre ses données (pas forcée) */
+    setWeatherCredit: (on: boolean) => { weatherCredit.hidden = !on; fitFooter(); },
     /** Puce météo (EP009) : null = masquée (pas d'API, première lecture en cours) */
     setWeatherChip: (c: WeatherChip | null) => {
       const key = c ? `${c.icon}|${c.text}|${c.label}|${!!c.off}|${!!c.expanded}` : '';

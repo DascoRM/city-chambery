@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 91 — 09/10/2026 (branche `feat/EP009-US004-meteo-reelle-carte`, epic EP009)
+
+**Demande de Dasco :** la météo gérée par le back, **affichée sur la carte** (US004) ; « Pourquoi aucun agent ne tourne ? » : trois agents relancés en parallèle (relecture du code de la carte, plans d'US006 et US005, plan d'US012).
+
+**Changements :**
+- **lecture de `/api/weather`** (`weather/client.ts`) : partie pendant le chargement de la ville, jamais attendue (8 s au plus) ; réponse vérifiée par le contrat ; relances à 60 s, puis 2, 4, 8 min, au plus 15 ; relecture toutes les 15 min si l'onglet est visible et le visiteur actif ; aucune relance sans API (404 de la carte du Pi) ; jamais d'exception vers la carte ;
+- **la vraie météo sur la carte** : fondu depuis le beau temps, puce (« ⛅ 15 °C »), panneau (« Éclaircies, 15 °C », « modèle ICON, 16 h 15 (il y a 7 min) », vent en mots) ; après une coupure passagère, le dernier relevé reste, marqué « Ancien relevé », jusqu'à 3 h ; une météo forcée (US012) vaut jusqu'à sa fin, sans température ni crédit ;
+- **crédits Open-Meteo** (CC BY 4.0) : dans le panneau (texte, lien, licence), en bas à droite et dans l'accueil, seulement quand la carte montre ces données ;
+- **mobile** : la barre d'outils (et le « ? », le journal, la légende des parkings) se pose au-dessus du pied de page, dont la hauteur est mesurée (le pied de page touchait déjà la barre d'heure à 375 et 320 px) ;
+- README (lecture de la route, crédits) ; spec US004 précisée ; US012 : la carte devra relire la météo à la fin d'un forçage.
+
+**Vérifié :** `npm run build` et `npm test` (**157 tests**) ; chunk principal + 0,95 Ko gzip (86,63 → 87,58 Ko ; **+ 2,1 Ko depuis le début d'EP009**, sur 2,5 permis), module météo 5,46 Ko ; dans Chrome avec la puce graphique du Mac, 23 cas de `/api/weather` simulés (direct, fondu, panneau, crédits, 503 indisponible et coupée, 404 sans relance, réponses hors contrat, météo forcée, ancien relevé, délai dépassé, hors ligne puis retour du réseau, `?weather=` sans requête, 375, 320 et 390 px) ; **la carte avec la vraie route en local** : « Éclaircies, 15 °C », une seule requête, crédits ; capture regardée.
+
+**Non vérifié :** l'onglet caché et l'inactivité de 30 min dans un vrai navigateur (tests avec de fausses minuteries seulement) ; la carte du Pi (404 simulé) ; Safari, Firefox, un vrai téléphone ; pendant le fondu vers la vraie météo, la pire image a varié de 23 à 81 ms selon les passages, sur une machine très chargée (charge 22 sur 8 cœurs) : remesure demandée à l'agent relecteur.
+
 ## Itération 90 — 09/10/2026 (branche `feat/EP009-US002-socle-meteo`, epic EP009)
 
 **Demande de Dasco :** lot MVP de la météo ; US002 : le socle de la météo sur la carte (couvert, puce, `?weather=`), sans rien changer quand il n'y a pas de météo.

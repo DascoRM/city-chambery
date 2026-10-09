@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { WEATHER_PRESETS, type WeatherCondition } from '../../../../contrat/meteo.js';
+import { WEATHER_PRESETS, type WeatherCondition, type WeatherResponse } from '../../../../contrat/meteo.js';
 import {
-  blendLook, chipOf, clearLook, isLive, panelOf, presetLook, resolveWeather, weatherFromUrl, windTowards, windVisual,
-  type Reading, type WeatherInputs, type WeatherLook,
+  blendLook, chipOf, clearLook, isLive, panelOf, presetLook, readingFromResponse, resolveWeather, validWeather, weatherFromUrl,
+  windTowards, windVisual, windWords, type Reading, type WeatherInputs, type WeatherLook,
 } from './state';
 
 const WIND = { towards: 30, speed: 0.7 }; // content/life.json (smoke.wind)
@@ -132,5 +132,50 @@ describe('fondu (R3 d’US002)', () => {
     blendLook(cur, target, 2.08);
     expect(cur.cloud).toBeCloseTo(0.5, 1);
     expect(cur.windTowards > 350 || cur.windTowards < 10).toBe(true);
+  });
+});
+
+describe('réponse du back (US004) → relevé de la carte', () => {
+  const body: WeatherResponse = {
+    v: 1, source: 'open-meteo', model: 'icon_seamless', observedAt: '2026-10-09T08:00:00Z', fetchedAt: '2026-10-09T08:01:00Z',
+    stale: false, forced: false, condition: 'rain', temperatureC: 12.6, cloudCover: 1, precipMmH: 2, rainIntensity: 0.5,
+    snowIntensity: 0, windKmh: 11.9, windGustKmh: 23.8, windFromDeg: 331, visibilityM: 22940, fog: 0, thunder: false,
+    attribution: { text: 'Météo : Open-Meteo.com, modèle ICON du DWD (données adaptées pour le diorama)', url: 'https://open-meteo.com/', licence: 'CC BY 4.0', licenceUrl: 'https://creativecommons.org/licenses/by/4.0/' },
+  };
+  it('garde les intensités du back, convertit le vent, garde le crédit', () => {
+    const r = readingFromResponse(body);
+    expect(r.look).toMatchObject({ cloud: 1, rain: 0.5, snow: 0, fog: 0, storm: 0, windTowards: 299 });
+    expect(r).toMatchObject({ condition: 'rain', temperatureC: 12.6, forced: false, observedAtMs: Date.parse(body.observedAt) });
+    expect(r.attribution?.licence).toBe('CC BY 4.0');
+  });
+  it('neige annoncée à plus de 2 °C : montrée en pluie (règle 6) ; à 0 °C : neige', () => {
+    expect(readingFromResponse({ ...body, condition: 'snow', temperatureC: 4, rainIntensity: 0, snowIntensity: 0.6 }).look).toMatchObject({ rain: 0.6, snow: 0 });
+    expect(readingFromResponse({ ...body, condition: 'snow', temperatureC: 0, rainIntensity: 0, snowIntensity: 0.6 }).look).toMatchObject({ snow: 0.6, rain: 0 });
+  });
+  it('météo forcée par l’administration : ni température ni crédit, « Météo forcée (démo) », valable jusqu’à sa fin', () => {
+    const forced = readingFromResponse({ ...body, source: 'admin', model: null, forced: true, forcedUntil: '2026-10-09T09:00:00Z', temperatureC: 14, attribution: null });
+    expect(forced).toMatchObject({ temperatureC: null, attribution: null, forced: true });
+    const s = resolveWeather(inputs({ reading: forced }), NOW, CLEAR);
+    expect(chipOf(s, false)).toMatchObject({ text: 'Démo', label: 'Météo forcée (démo) : Pluie' });
+    expect(panelOf(s, NOW)).toMatchObject({ title: 'Pluie', lines: ['Météo forcée (démo) par l’administration, jusqu’à 11 h 00.'] });
+    expect(resolveWeather(inputs({ reading: forced }), Date.parse('2026-10-09T09:00:01Z'), CLEAR).status).toBe('unavailable');
+  });
+  it('panneau en direct : relevé, vent en mots, crédit (texte, lien, licence)', () => {
+    const p = panelOf(resolveWeather(inputs({ reading: readingFromResponse(body) }), NOW, CLEAR), NOW);
+    expect(p.lines).toEqual(['modèle ICON, 10 h 00 (il y a 6 min)', 'Vent du nord-ouest, 12 km/h (rafales 24 km/h)']);
+    expect(p.credit?.url).toBe('https://open-meteo.com/');
+  });
+  it('vent en mots', () => {
+    expect(windWords({ kmh: 14.1, gustKmh: 29.9, fromDeg: 257 })).toBe('Vent d’ouest, 14 km/h (rafales 30 km/h)');
+    expect(windWords({ kmh: 8, gustKmh: 12, fromDeg: 180 })).toBe('Vent du sud, 8 km/h');
+    expect(windWords({ kmh: 1, gustKmh: null, fromDeg: 90 })).toBe('Vent calme');
+  });
+  it('validation : contrat (objet ouvert), relevé de moins de 3 h ; sinon null, sans exception', () => {
+    expect(validWeather({ ...body, nouveau: 1 }, NOW)).not.toBeNull();
+    for (const b of [undefined, 'texte', { ...body, v: 2 }, { ...body, cloudCover: 7 }, { ...body, condition: 'grele' }, { ...body, observedAt: 'hier' }]) {
+      expect(validWeather(b, NOW)).toBeNull();
+    }
+    expect(validWeather(body, Date.parse('2026-10-09T11:00:00Z'))).not.toBeNull();
+    expect(validWeather(body, Date.parse('2026-10-09T11:00:01Z'))).toBeNull();
   });
 });

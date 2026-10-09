@@ -157,7 +157,7 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
 .parking-legend[hidden] { display: none; }
 .parking-legend span { display: flex; align-items: center; gap: 8px; }
 .parking-legend i { width: 18px; height: 12px; border-radius: 3px; background: var(--c); border: 1px solid rgba(0, 0, 0, 0.15); }
-@media (max-width: 700px) { .parking-legend { bottom: 168px; } }
+@media (max-width: 700px) { .parking-legend { bottom: calc(168px + var(--lift, 0px)); } }
 .picker-panel { position: absolute; z-index: 3; left: 16px; bottom: 96px; width: min(330px, calc(100vw - 32px)); padding: 10px 12px; font-size: 12.5px; }
 .picker-panel[hidden] { display: none; }
 .picker-help { margin: 4px 0; color: var(--muted); }
@@ -203,6 +203,9 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
 .wp-toggle { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
 .wp-toggle[hidden] { display: none; }
 .wp-toggle input { accent-color: var(--teal); margin: 0; }
+.wp-credit { font-size: 11.5px; color: var(--muted); }
+.wp-credit[hidden] { display: none; }
+.wp-credit a, .attribution a { color: inherit; }
 .weather-debug { position: absolute; z-index: 4; left: 16px; top: 200px; padding: 8px 12px; font-size: 12px; }
 .weather-debug summary { cursor: pointer; font-weight: 700; }
 .weather-debug select { display: block; margin-top: 6px; font: inherit; }
@@ -228,7 +231,12 @@ body.is-night .attribution { color: #b8bfd8; }
   .journal { right: 16px; width: auto; }
   .attribution { left: 16px; right: auto; bottom: 6px; }
   .attribution .long { display: none; }
-  .tools { bottom: 28px; }
+  /* Pied de page de 2 à 4 lignes selon la largeur et les crédits (EP009) : la barre d'outils et ce qui la surmonte montent
+     d'autant (--foot : hauteur mesurée par ui.ts ; 18 px = la hauteur que supposait la mise en page) */
+  #app { --lift: max(0px, calc(var(--foot, 18px) - 18px)); }
+  .tools { bottom: calc(28px + var(--lift)); }
+  .recenter { bottom: calc(96px + var(--lift)); }
+  .journal { bottom: calc(88px + var(--lift)); }
   .place-card { width: min(270px, calc(100vw - 24px)); }
   .compass { top: 88px; bottom: auto; right: 16px; width: 42px; height: 42px; }
   .legend { font-size: 12px; }
@@ -291,6 +299,7 @@ body.is-night .attribution { color: #b8bfd8; }
 .hud, .tools, .compass, .help, .attribution { transition: opacity 0.5s ease; }
 .help { position: absolute; z-index: 1; right: 16px; bottom: 92px; width: 46px; height: 46px; padding: 0; border-radius: 50%; cursor: pointer; font: 600 20px Fraunces, Georgia, serif; color: var(--ink); }
 .help:hover { background: #fff; }
+@media (max-width: 720px) { .help { bottom: calc(92px + var(--lift)); } } /* au-dessus du pied de page, comme la barre d'outils */
 @media (max-width: 720px) {
   .lobby { align-items: flex-end; padding: 0; }
   .lobby-panel { width: 100%; padding: 26px 22px 20px; gap: 16px; border-radius: 24px 24px 0 0; max-height: 92%; }

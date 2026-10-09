@@ -20,6 +20,13 @@ export function createWeatherPanel(root: HTMLElement, h: {
     if (text) e.textContent = text;
     return e;
   };
+  /** Lien vers une adresse https seulement : le crédit vient du réseau (jamais de `javascript:` ni d'adresse inattendue) */
+  const link = (href: string, text: string) => {
+    if (!/^https:\/\//.test(href)) return text;
+    const a = make('a', '', text);
+    Object.assign(a, { href, target: '_blank', rel: 'noopener' });
+    return a;
+  };
   const toggle = (text: string, on: (v: boolean) => void) => {
     const label = make('label', 'wp-toggle'), input = make('input');
     input.type = 'checkbox';
@@ -35,10 +42,11 @@ export function createWeatherPanel(root: HTMLElement, h: {
   close.setAttribute('aria-label', 'Fermer');
   const title = make('h2');
   const body = make('div', 'wp-body');
+  const credit = make('p', 'wp-credit');
   const live = make('button', 'btn wp-live', 'Revenir au direct');
   const enabled = toggle('Afficher la météo', h.onEnabled);
   const reduced = toggle('Effets réduits (ni éclairs ni balancement, pluie ralentie)', h.onReduced);
-  el.append(close, title, body, live, enabled.label, reduced.label);
+  el.append(close, title, body, credit, live, enabled.label, reduced.label);
   root.appendChild(el);
 
   /** Au-dessus de la puce sur ordinateur ; sous 720 px, le style en fait un tiroir en bas de l'écran */
@@ -66,6 +74,9 @@ export function createWeatherPanel(root: HTMLElement, h: {
     render(v: PanelState) {
       title.textContent = v.title;
       body.replaceChildren(...v.lines.map((l) => make('p', '', l)));
+      // Crédit de la source à côté des données (CC BY 4.0 : crédit, lien, licence) ; aucun pour une météo forcée
+      credit.hidden = !v.credit;
+      if (v.credit) credit.replaceChildren(`${v.credit.text} · `, link(v.credit.url, 'open-meteo.com'), ' · ', link(v.credit.licenceUrl, v.credit.licence));
       live.hidden = !v.backToLive;
       enabled.input.checked = v.enabled;
       reduced.input.checked = v.reduced || v.systemReduced;
