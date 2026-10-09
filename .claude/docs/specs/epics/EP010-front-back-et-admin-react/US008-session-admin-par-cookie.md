@@ -47,4 +47,4 @@ Détail : [plan de l'admin React](../../../tasks/admin-react-plan.md) § 3.3 (AD
 ---
 
 **Priorité** : Medium
-**Status** : 🔲 Todo
+**Status** : 🟡 Fait le 09/10/2026 (itération 87) ; reste la connexion avec le vrai jeton sur la prévisualisation

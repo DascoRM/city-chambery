@@ -45,4 +45,4 @@ Détail : [plan de cloisonnement](../../../tasks/cloisonnement-depot-plan.md) §
 ---
 
 **Priorité** : Medium
-**Status** : 🔲 Todo
+**Status** : 🟡 Fait le 09/10/2026 (itération 87) ; reste `docker compose build` chez Dasco
