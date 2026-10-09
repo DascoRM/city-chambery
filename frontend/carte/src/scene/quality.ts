@@ -1,6 +1,48 @@
 import type * as THREE from 'three';
 
 /**
+ * Niveau de qualité (EP009-US001) : la puissance supposée de l'appareil, lue une fois au démarrage. Une seule règle pour
+ * toute la carte (passants, oiseaux, et plus tard les effets météo) :
+ *  - ordinateur → `high` ;
+ *  - téléphone ou tablette (pointeur grossier, ou fenêtre de moins de 700 px) → `medium`, et `low` si le navigateur dit
+ *    3 Go de mémoire ou moins (`navigator.deviceMemory` : Chrome Android seulement ; Safari ne le donne pas) ;
+ *  - `?quality=low|medium|high` dans l'adresse force le niveau (mesures, essais).
+ * Affiché par le compteur `?debug`.
+ */
+export type QualityLevel = 'low' | 'medium' | 'high';
+const LEVELS: readonly string[] = ['low', 'medium', 'high'];
+
+export interface DeviceInfo {
+  /** Pointeur grossier (écran tactile sans souris) */
+  coarse: boolean;
+  /** Largeur de la fenêtre (px CSS) */
+  width: number;
+  /** Mémoire annoncée par le navigateur (Go), si elle est connue */
+  deviceMemory?: number;
+  /** Valeur de `?quality=` */
+  param?: string | null;
+}
+
+/** La règle, sans navigateur (testée) */
+export function initialQuality(d: DeviceInfo): QualityLevel {
+  if (d.param && LEVELS.includes(d.param)) return d.param as QualityLevel;
+  if (!d.coarse && d.width >= 700) return 'high';
+  return d.deviceMemory !== undefined && d.deviceMemory <= 3 ? 'low' : 'medium';
+}
+
+let level: QualityLevel | null = null;
+/** Niveau de qualité de cet appareil (lu au premier appel, puis gardé pour toute la visite) */
+export function qualityLevel(): QualityLevel {
+  level ??= initialQuality({
+    coarse: typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches,
+    width: typeof innerWidth === 'number' ? innerWidth : 1280,
+    deviceMemory: typeof navigator === 'undefined' ? undefined : (navigator as Navigator & { deviceMemory?: number }).deviceMemory,
+    param: typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('quality'),
+  });
+  return level;
+}
+
+/**
  * Résolution adaptative (itération 29).
  *
  * La densité de pixels part de min(densité de l'écran, 1,5) : sur un écran Retina (densité 2), ça fait

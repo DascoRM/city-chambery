@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 09/10/2026 — itération 88 (la section Carte n'a pas changé depuis l'itération 74, hormis les retouches publiées vérifiées par le contrat).
+État au 09/10/2026 — itération 89 (la section Carte n'a pas changé depuis l'itération 74, hormis les retouches publiées vérifiées par le contrat).
 
 ## Administration (EP008, EP010)
 
@@ -83,6 +83,7 @@
 | Pipeline de données `npm run data` | ✅ | Overpass → projection → découpage → choix des toits → `public/data/city.json` (1,2 Mo, 360 Ko compressé) ; mode `--offline` |
 | Cadence adaptée | ✅ | Itération 42 : 30 images/s quand rien ne bouge, pleine vitesse pendant les mouvements (caméra, souris, lecture ▶, mini-jeu) ; la résolution adaptative ne mesure que les images en mouvement ; mode affiché par `?debug` |
 | Code découpé (appli / three.js) | ✅ | Itération 43 : three.js dans son propre fichier (171,6 Ko gzip), l'appli à part (44,5 Ko gzip) ; une mise à jour ne retélécharge que l'appli |
+| Niveau de qualité et compteur `?debug` (EP009-US001) | ✅ (mesure sur téléphone en attente) | `high` sur ordinateur, `medium` sur téléphone, `low` avec peu de mémoire ; `?quality=` le force ; le compteur `?debug` (chargé seulement dans ce cas) affiche le niveau et le temps du processeur graphique (« n/d » sur Safari) ; `?debug&rain=2500` : pluie prototype de mesure |
 | Attribution OSM (ODbL) | ✅ | |
 | Déploiement | ⬜ | Cible : Coolify sur le Pi |
 

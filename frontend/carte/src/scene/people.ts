@@ -5,6 +5,7 @@ import { buildWalkways, largeComponents, type Edge, type Walkways, type WalkwayO
 import { blobShadow } from './mascot';
 import { placeCategory } from './palette';
 import { curveAt } from './curve';
+import { qualityLevel } from './quality';
 
 /**
  * Passants (EP001-US001) : petites silhouettes qui marchent sur les voies OSM, comme les éléphants mais sur
@@ -137,7 +138,7 @@ export function buildPeople(cfg: PeopleConfig, data: CityData, heightAt: HeightF
   const mainSet = largeComponents(g, cfg.minComponent);
   const main = [...mainSet];
   if (!main.length) return null;
-  const mobile = typeof matchMedia === 'function' && (matchMedia('(pointer: coarse)').matches || innerWidth < 700);
+  const mobile = qualityLevel() !== 'high'; // une seule détection de l'appareil (scene/quality.ts, EP009-US001)
   const factor = mobile ? cfg.mobileFactor : 1;
   const count = Math.max(0, Math.round(cfg.max * factor));
   const slots = Math.max(0, Math.round(cfg.groups.max * factor));
