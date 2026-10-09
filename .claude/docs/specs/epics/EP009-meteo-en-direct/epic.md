@@ -1,6 +1,6 @@
 # Epic EP009 - La météo en direct sur le diorama
 
-**Statut (09/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé ; US003 (contrat et route `/api/weather`) livrée et vérifiée sur la prévisualisation ; US001 livrée, sauf la mesure sur iPhone (Dasco) ; US002 (socle : couvert, puce, `?weather=`) et US004 (la vraie météo sur la carte) et US006 (brouillard) livrées ; plans prêts pour US005 (pluie) et US012 (admin), en attente des réponses de Dasco.** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
+**Statut (09/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé ; US003 (contrat et route `/api/weather`) livrée et vérifiée sur la prévisualisation ; US001 livrée, sauf la mesure sur iPhone (Dasco) ; US002 (socle : couvert, puce, `?weather=`) et US004 (la vraie météo sur la carte) US006 (brouillard) et US005 (pluie) livrées : **lot MVP terminé** (reste la validation de Dasco) ; plan prêt pour US012 (admin), en attente de ses réponses ; neige, orage, vent, nuages : lot Complet.** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
 
 ## Résumé
 Afficher sur le diorama **la météo réelle de Chambéry** (soleil, couvert, pluie, brouillard, neige, orage, vent), rendue en 3D dans le style maquette.
@@ -55,7 +55,7 @@ frontend/admin   écran « Météo » : ce que voient les visiteurs, relevé bru
 | [US002](US002-socle-meteo-et-mode-force.md) | Socle météo : état, fondu, couvert, `?weather=`, puce, réglages posés au démarrage | Scène, UI | 3 | Démo | ✅ Done (09/10) |
 | [US003](US003-route-api-weather.md) | Contrat météo et route `/api/weather` (ICON, cache, repli, tests, contrôle du build) | Contrat, API | 1,5 à 2 (dont contrat 0,25) | Démo (contrat), MVP | ✅ Done (09/10) |
 | [US004](US004-meteo-reelle-cote-site.md) | Météo réelle côté carte : lecture, relances, états, crédits | Carte, UI | 1 à 1,5 | MVP | ✅ Done (09/10) |
-| [US005](US005-pluie.md) | Pluie | Scène | 2,5 à 3 | MVP | 🔲 Todo |
+| [US005](US005-pluie.md) | Pluie | Scène | 2,5 à 3 | MVP | ✅ Done (09/10) |
 | [US006](US006-brouillard.md) | Brouillard | Scène | 1,5 | Démo | ✅ Done (09/10) |
 | [US007](US007-neige.md) | Neige (flocons, sol, toits, arbres) | Scène | 3 à 4 | Complet | 🔲 Todo |
 | [US008](US008-orage.md) | Orage | Scène | 2 | Complet | 🔲 Todo |

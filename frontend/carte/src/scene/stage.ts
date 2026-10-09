@@ -156,5 +156,5 @@ export function createStage(container: HTMLElement, bounds: CityData['bounds'], 
     if (camera.position.distanceTo(flight.pos) < 0.5) flight = null;
   };
 
-  return { renderer, scene, camera, controls, clampTarget, flyTo, flyToView, follow, followGap, setLimits, limits, isFlying, zoomTo, heading, resetNorth, updateFlight, size, lights: { sun, hemi, fill } };
+  return { renderer, scene, camera, controls, clampTarget, flyTo, flyToView, follow, followGap, setLimits, limits, isFlying, zoomTo, heading, resetNorth, updateFlight, size, bounds, lights: { sun, hemi, fill } };
 }

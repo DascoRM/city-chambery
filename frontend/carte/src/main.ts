@@ -597,6 +597,7 @@ async function main() {
       try {
         const w = m.startWeather({
           root: app, scene, camera, focus: () => controls.target, quality: qualityLevel(), wind, size: stage.size, post: tiltShift.setWeather,
+          bounds: stage.bounds, onFpsSample: (f) => quality.onSample(f),
           sky: (m) => dayNight.setWeather(m), night: () => dayNight.getNight(), clock: () => clock.state(),
           backToLive: () => { clock.setSeason('auto'); clock.live(); }, chip: ui.setWeatherChip,
           // Crédit de la source (règle 11) : en bas à droite et dans les crédits de l'accueil, seulement avec ses données

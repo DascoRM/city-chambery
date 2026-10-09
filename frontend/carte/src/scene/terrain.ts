@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { CityData, Parking, Poly, Pt } from '../types';
 import { PALETTE } from './palette';
+import { weatherSurface } from './weather-surface';
 
 /**
  * Relief du diorama.
@@ -149,7 +150,7 @@ export function buildGround(data: CityData, terrain: Terrain): THREE.Group {
   geo.setIndex(idx);
   geo.computeVertexNormals();
   const base = paintGround(data);
-  const groundMat = new THREE.MeshStandardMaterial({ map: base, roughness: 1 });
+  const groundMat = weatherSurface(new THREE.MeshStandardMaterial({ map: base, roughness: 1 })); // sol mouillé (EP009-US005)
   const ground = new THREE.Mesh(geo, groundMat);
   ground.receiveShadow = true;
   ground.name = 'terrain';

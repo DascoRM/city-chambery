@@ -25,13 +25,10 @@ export interface WeatherCtx extends EffectsCtx {
   camera: THREE.Camera;
   /** Point regardé (brouillard, précipitations) */
   focus(): THREE.Vector3;
-  quality: QualityLevel;
   /** Vent de beau temps (content/life.json) : objet partagé par la fumée et les drapeaux (US009 le fera varier) */
   wind: { towards: number; speed: number };
   /** Pose le modificateur du ciel dans le cycle jour/nuit et le recalcule (dayNight.setWeather) */
   sky(modifier: (v: SkyValues, dayF: number) => void): void;
-  /** 0 = jour, 1 = nuit */
-  night(): number;
   clock(): ClockState;
   /** « Revenir au direct » : heure réelle et saison automatique */
   backToLive(): void;
@@ -77,10 +74,11 @@ const sameLook = (a: WeatherLook, b: WeatherLook) =>
 
 export function startWeather(ctx: WeatherCtx): WeatherModule {
   const clear = clearLook(ctx.wind);
-  const effects = createEffects(ctx);
+  const effects = createEffects(ctx, () => mq.matches || pref.reduced);
   /** Le ciel suit la météo lissée `cur` (lue à chaque recalcul du cycle jour/nuit) ; les effets lisent le fond qui en résulte */
   const skyModifier = (v: SkyValues, dayF: number) => {
     applyWeatherSky(v, cur, dayF);
+    v.glow = effects.glow();
     effects.readSky(v.bg, v.exposure);
   };
   const pref = loadWeatherPref();
@@ -171,13 +169,15 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
 
   return {
     update(dt) {
+      let sky = false;
       if (blending) {
         const { cloud, rain, snow, fog, storm } = cur;
         blending = blendLook(cur, target, dt);
         // Le ciel ne lit que les nuages et les précipitations : le fondu du vent (plus long) ne recalcule pas l'ambiance
-        if (cur.cloud !== cloud || cur.rain !== rain || cur.snow !== snow || cur.fog !== fog || cur.storm !== storm) ctx.sky(skyModifier);
+        sky = cur.cloud !== cloud || cur.rain !== rain || cur.snow !== snow || cur.fog !== fog || cur.storm !== storm;
       }
-      effects.update(cur); // brouillard : suit la caméra ; sans effet, rien
+      // Brouillard (suit la caméra), pluie (et son vent), sol mouillé ; vrai si les lueurs de nuit changent ; sans effet, rien
+      if (effects.update(cur, dt) || sky) ctx.sky(skyModifier);
     },
     onClock(c) {
       const live = isLive(c);

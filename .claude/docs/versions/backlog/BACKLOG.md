@@ -100,6 +100,8 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ✅ *itération 90* US002 : socle météo (réglages inactifs posés au démarrage, ciel couvert, puce et panneau, `?weather=`, préférences, sélecteur `?debug`)
 - ⬜ Juger le rendu du couvert (`?weather=cloudy`, `?weather=partly`, de jour et de nuit) et la puce dans la barre d'heure, sur ordinateur et téléphone — *Dasco*
 - ✅ *itération 93* US006 : brouillard (portée selon la caméra, couleur du fond, voile, halos par-dessus), sans recompilation
+- ✅ *itération 94* US005 : pluie (deux nappes au-dessus du socle, sol mouillé, lueurs de nuit, dégradation) — **lot MVP d'EP009 terminé**
+- ⬜ Lot Complet d'EP009 (neige US007, orage US008, vent US009, nuages US010, finitions US011) : à engager ou non ; plafond du chunk principal à relever avant (2,36 Ko pris sur 2,5) — *Dasco*
 - ✅ *09/10* Épaisseur du brouillard type : 0,6 (Dasco ; 0,8 noyait la ville de jour)
 - ⬜ Juger les halos des bars, plus pâles dans le brouillard la nuit — *Dasco*
 - ✅ *itération 92* Relecture du code de la carte (US001, US002, US004) : 2 défauts importants et 7 mineurs corrigés

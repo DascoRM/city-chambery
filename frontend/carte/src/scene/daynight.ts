@@ -65,7 +65,7 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
   let day = initial.day, hour = initial.hour, night = 0;
   // Météo (EP009) : modificateur fourni par le module météo (chargé à la demande), appliqué après l'heure ; sans lui, rien ne change
   let weather: ((v: SkyValues, dayF: number) => void) | null = null;
-  const sv: SkyValues = { hemiI: 0, keyI: 0, exposure: 0, sky, key: keyCol, bg };
+  const sv: SkyValues = { hemiI: 0, keyI: 0, exposure: 0, glow: 1, sky, key: keyCol, bg };
   let lastBg = '';
   const lastSun = new THREE.Vector3(NaN, NaN, NaN);
   const listeners: ((h: number, night: number) => void)[] = [];
@@ -88,8 +88,9 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
     sv.hemiI = lerp(lerp(NIGHT.hemi, DAY.hemi, dayF), DUSK.hemi, duskMix * dayF);
     sv.keyI = lerp(NIGHT.keyI, DAY.keyI, dayF);
     sv.exposure = lerp(NIGHT.exposure, DAY.exposure, dayF);
-    weather?.(sv, dayF); // météo (EP009) : ciel voilé, lumière grise, fond désaturé
-    const { hemiI, keyI, exposure } = sv;
+    sv.glow = 1;
+    weather?.(sv, dayF); // météo (EP009) : ciel voilé, lumière grise, fond désaturé ; lueurs de nuit plus fortes sous la pluie
+    const { hemiI, keyI, exposure, glow: glowGain } = sv;
 
     // Soleil le jour (repère : x = est, −z = nord, y = haut), lune la nuit (fixe, haute, un peu à l'ouest)
     const { sun, hemi, fill } = d.lights;
@@ -121,13 +122,13 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
     for (const m of glowMeshes) {
       const mat = m.material as THREE.MeshStandardMaterial;
       mat.emissive.copy(warm);
-      mat.emissiveIntensity = (m.userData.nightGlow as number) * d.night.uNight.value;
+      mat.emissiveIntensity = (m.userData.nightGlow as number) * d.night.uNight.value * glowGain;
     }
     if (d.placeHalos) {
       const o = d.night.uNight.value;
       d.placeHalos.visible = o > 0.02;
-      if (glowU) glowU.value = 1.4 * o;
-      for (const m of haloPoints) m.opacity = 0.9 * o;
+      if (glowU) glowU.value = 1.4 * o * glowGain;
+      for (const m of haloPoints) m.opacity = Math.min(1, 0.9 * o * glowGain);
     }
 
     // Fond de page (dégradé CSS)
