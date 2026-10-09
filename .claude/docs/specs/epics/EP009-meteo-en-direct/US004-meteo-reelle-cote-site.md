@@ -61,7 +61,7 @@ Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 3 
 
 ## Checklist dev
 - [x] Branche `feat/EP009-US004-meteo-reelle-carte` depuis `feat/EP009-meteo`
-- [x] `npm run build` et `npm test` (`weather/client.test.ts`) ; vérifié dans le navigateur avec l'API locale, sans API, hors ligne et avec le build du Pi
+- [x] `npm run build` et `npm test` (`weather/client.test.ts`) ; vérifié dans le navigateur avec l'API locale, sans API et hors ligne *(build du Pi : 404 simulé, image Docker non essayée)*
 - [ ] Prévisualisation : la carte reçoit la météo réelle
 - [x] Le site marche sans la météo
 - [x] FEATURES, CHANGELOG, DECISIONS, README (Licences)
