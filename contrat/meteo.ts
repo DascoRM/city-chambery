@@ -27,7 +27,7 @@ export const WEATHER_PRESETS: Record<WeatherCondition, { cloudCover: number; rai
   clear: { cloudCover: 0.05, rainIntensity: 0, snowIntensity: 0, fog: 0, thunder: false },
   partly: { cloudCover: 0.45, rainIntensity: 0, snowIntensity: 0, fog: 0, thunder: false },
   cloudy: { cloudCover: 0.95, rainIntensity: 0, snowIntensity: 0, fog: 0, thunder: false },
-  fog: { cloudCover: 1, rainIntensity: 0, snowIntensity: 0, fog: 0.8, thunder: false },
+  fog: { cloudCover: 1, rainIntensity: 0, snowIntensity: 0, fog: 0.6, thunder: false }, // 0,6 : choix de Dasco (09/10), 0,8 noyait la ville de jour
   drizzle: { cloudCover: 1, rainIntensity: 0.15, snowIntensity: 0, fog: 0, thunder: false },
   rain: { cloudCover: 1, rainIntensity: 0.5, snowIntensity: 0, fog: 0, thunder: false },
   snow: { cloudCover: 1, rainIntensity: 0, snowIntensity: 0.6, fog: 0, thunder: false },
