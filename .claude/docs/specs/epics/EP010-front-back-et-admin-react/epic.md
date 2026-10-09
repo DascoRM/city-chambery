@@ -26,10 +26,10 @@ frontend/
 └── admin/      l'administration React, servie sous /admin/
 
 backend/
-├── src/        l'API (Hono, Zod, Drizzle) : ex-server/
-└── db/         schéma et migrations
+├── src/        l'API (Hono, Zod, Drizzle) : ex-server/, renommé tel quel ; db/ dedans (schéma, migrations)
+└── data/       base locale de dev (PGlite, non versionnée)
 
-contrat/        ce que se disent le front et le back : schémas Zod des requêtes et réponses de l'API
+contrat/        ce que se disent le front et le back : schémas des requêtes et réponses de l'API (zod/mini, D12)
 api/index.ts    3 lignes imposées par Vercel (il ne cherche les fonctions que dans `api/` à la racine) : renvoie vers backend/
 ```
 
@@ -73,7 +73,7 @@ React 19 · wouter (routage par « # », sans réécriture serveur) · TanStack 
 ### Phase 2 - Backend
 | ID | User Story | Jours | Status |
 |----|------------|-------|--------|
-| [US006](US006-backend.md) | `backend/` : l'API dans son dossier, sa propre config TypeScript | 0,5 à 1 | 🔲 Todo |
+| [US006](US006-backend.md) | `backend/` : l'API dans son dossier, sa propre config TypeScript | 0,5 à 1 | ✅ Fait (09/10), trois étapes vérifiées sur la prévisualisation |
 | [US007](US007-contrat-front-back.md) | `contrat/` : schémas partagés entre front et back | 0,5 | 🔲 Todo |
 | [US008](US008-session-admin-par-cookie.md) | Session d'administration par cookie `HttpOnly` | 0,75 | 🔲 Todo |
 | [US009](US009-docker-et-documentation.md) | Docker / Coolify et documentation | 0,5 | 🔲 Todo |
@@ -108,8 +108,18 @@ Branche d'epic : `feat/EP010-front-back`, partie de `feat/EP008-back-end`, une b
 | D2 | Où va le pipeline de données (`scripts/`, `content/`, `public/`) ? | ✅ **Tout dans `frontend/carte`** |
 | D3 | Admin : React 19, wouter, CSS simple ? | ✅ **Oui** |
 | D4 | L'admin sur le Pi (il n'y a pas d'API sur le Pi) ? | ✅ **Vercel seulement** ; l'image du Pi ne construit que la carte |
-| D5 | Session : cookie `HttpOnly` 2 h pour les écritures de l'admin ? | ✅ **Oui** (en phase 2 ; les retouches de parkings s'écrivent aujourd'hui avec le jeton seul) |
+| D5 | Session : cookie `HttpOnly` pour les écritures de l'admin ? | ✅ **Oui** (en phase 2 ; les retouches de parkings s'écrivent aujourd'hui avec le jeton seul) ; durée : voir D9 |
 | D6 | Connexion de l'administration ? | ✅ **Pas de GitHub ni d'autre fournisseur.** Plus tard : **connexion simple par identifiant et mot de passe, avec des utilisateurs enregistrés en base** (hors EP010, voir EP008-US005). D'ici là, le jeton actuel, échangé contre le cookie de session (US008) |
+
+### Décisions de la phase 2 (Dasco, 09/10/2026, d'après le [plan de la phase 2](../../../tasks/ep010-phase2-plan.md))
+| # | Question | Décision |
+|---|----------|----------|
+| D7 | Arborescence du back | ✅ **`backend/src/`**, renommage de `server/` (« backend » répond à « frontend »), `db/` dedans : aucun import interne réécrit |
+| D8 | Le jeton d'administration | ✅ **Ne sert plus qu'à ouvrir la session** ; ensuite seul le cookie est accepté (« on reprendra cette partie » avec les comptes en base) |
+| D9 | Durée de la session | ✅ **Prolongée à chaque action** (renouvellement silencieux) : expire après 2 h sans activité ; 8 h au plus depuis la connexion (proposé, à confirmer) |
+| D10 | Clé qui signe la session | ✅ **Pas de nouvelle variable pour l'instant** : tirée d'`ADMIN_TOKEN` (changer le jeton ferme toutes les sessions) ; à reprendre plus tard |
+| D11 | Hébergement sur le Raspberry Pi 5 (Coolify) | ✅ **On part du principe qu'il reste prévu** (Dasco se pose encore la question) : nginx répond 404 sur `/api` et `/admin` au lieu de la page de la carte (US009) |
+| D12 | Zod dans la carte | ✅ **Proposé : tout `contrat/` en `zod/mini`** (≈ 7 Ko gzip au lieu de 26) ; le back et l'admin s'en servent pour valider et typer, la carte pour vérifier les réponses de l'API (retouches publiées, puis la connexion front-back à venir) ; à confirmer par Dasco avant US007 |
 
 ---
 

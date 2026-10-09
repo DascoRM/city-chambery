@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 85 — 09/10/2026 (branche `feat/EP010-US006-backend`, epic EP010)
+
+**Demande de Dasco :** phase 1 vérifiée sur la prévisualisation (« tout me paraît ok ») ; réponses aux 7 points de la phase 2 ; secret de contournement Vercel ajouté pour que l'agent vérifie lui-même.
+
+**Changements :**
+- phase 1 (US002 à US005 et corrections de la relecture) **fusionnée dans la branche d'epic** ;
+- **US006, étape A** : `server/` devient `backend/src/` (renommage pur, `db/` dedans) ; `api/index.ts`, `drizzle.config.ts`, scripts npm, Vitest (projet « back »), `check-boundaries`, base locale de dev dans `backend/data/` suivent ;
+- **étape B** : le `tsconfig.json` racine devient celui du back (NodeNext, sans DOM, types Node) ; `tsconfig.api.json` fusionné ; un import relatif sans `.js` (la cause du 500 de l'itération 80) est maintenant refusé dès la compilation ; tests : petit utilitaire `json()` ;
+- **étape C** : `tsconfig.vercel-check.json` et les cinq `/// <reference types="node" />` supprimés ; `noEmitOnError` ; `check-api-esm` refuse un `api/tsconfig.json` ;
+- décisions D7 à D12 dans l'epic ; `~/.zshrc` de Dasco réparé (guillemet fermant manquant sur la ligne du secret, copie gardée dans `~/.zshrc.avant-claude`).
+
+**Vérifié :** à chaque étape, `npm run build` et `npm test` (60 tests), `drizzle-kit generate` (« No schema changes »), `npm run api:dev` sur la base déplacée ; **sur la prévisualisation, par l'agent** (en-tête de contournement) après chaque étape A, B, C : build Vercel « success », `/api/health` à la bonne version (`d4652cd`, `124e4d8`, `3f90df9`) avec la base connectée et l'admin configurée, 404 de l'API sur une route inconnue, 401 sur `/api/admin/status` sans jeton, retouches publiées, carte, admin, service worker et données en 200, en-têtes de sécurité de l'admin ; carte ouverte dans Chrome : rendu, retouches reçues, aucune erreur.
+
+**Non vérifié :** la connexion à l'admin sur la prévisualisation (le jeton de Preview n'est connu que de Dasco) ; le journal de build Vercel (non accessible à l'agent ; le statut « success » et les réponses ont été vérifiés).
+
 ## Itération 84 — 09/10/2026 (branches `feat/EP010-US003-admin-react`, `feat/EP010-US004-admin-parite`, `feat/EP010-US005-frontieres`, `fix/EP010-phase1-revue`, epic EP010)
 
 **Demande de Dasco :** feu vert pour la prévisualisation d'US002 et la suite d'EP010 (« mutualiser tous les agents nécessaires ») ; l'autre session Claude est suspendue jusqu'à la fin de ce travail, puis relira le code et l'analyse.
