@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { buildsRawHtml, checkBoundaries, importsOf } from './check-boundaries.mjs';
+import { buildsRawHtml, callsZForEffect, checkBoundaries, importsOf } from './check-boundaries.mjs';
 
 describe('importsOf : les imports sont lus comme TypeScript les lit', () => {
   it('trouve les imports sur plusieurs lignes, même avec une apostrophe ou un point-virgule en commentaire', () => {
@@ -20,6 +20,15 @@ describe('importsOf : les imports sont lus comme TypeScript les lit', () => {
   it('ignore un import en commentaire ou dans une chaîne', () => {
     expect(importsOf("// import { x } from '../../carte/src/x';\nexport const a = 1;")).toEqual([]);
     expect(importsOf(`const s = "import { x } from '../../carte/src/x'";`)).toEqual([]);
+  });
+});
+
+describe('callsZForEffect : appel sur z dont le résultat serait retiré du build de la carte', () => {
+  it.each(['z.inc();', 'z.config(fr());', 'z.position.set(0, 1, 0);', 'z();'])('refuse %s', (source) => expect(callsZForEffect(source)).toBe(true));
+  it('laisse passer les schémas du contrat et une fonction z dont le résultat sert', () => {
+    expect(callsZForEffect("export const a = z.object({ b: z.string() });\nconst u = z.union([\n  z.extend(a, {}),\n  z.object({}),\n]);")).toBe(false);
+    expect(callsZForEffect('const h = z(i, j) + z(i + 1, j);')).toBe(false);
+    expect(callsZForEffect('// z.inc();\nconst s = "z.inc();";')).toBe(false);
   });
 });
 

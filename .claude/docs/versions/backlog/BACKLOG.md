@@ -99,6 +99,12 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ US001 : mesure de la pluie prototype sur l'iPhone (protocole dans la fiche US001) — *Dasco*
 - ✅ *itération 90* US002 : socle météo (réglages inactifs posés au démarrage, ciel couvert, puce et panneau, `?weather=`, préférences, sélecteur `?debug`)
 - ⬜ Juger le rendu du couvert (`?weather=cloudy`, `?weather=partly`, de jour et de nuit) et la puce dans la barre d'heure, sur ordinateur et téléphone — *Dasco*
+- ✅ *itération 92* Relecture du code de la carte (US001, US002, US004) : 2 défauts importants et 7 mineurs corrigés
+- ⬜ Météo : une horloge du visiteur en avance de plus de 3 h fait refuser tous les relevés (« Indisponible ») ; piste : âge calculé avec l'heure du serveur — à décider (relecture M8)
+- ⬜ Météo : tester le câblage de `weather/index.ts` (vieillissement du relevé, crédit, réactivation) avec un DOM simulé — *petit*
+- ⬜ Défaut antérieur (relecture de la carte) : quatre programmes de profondeur des ombres se compilent ≈ 1 min après le démarrage (image de 30 à 50 ms) ; les compiler au démarrage — *petit*
+- ⬜ Défaut antérieur : le premier panneau ouvert (journal, météo…) coûte 60 à 110 ms une fois ; à mesurer sur téléphone avant d'agir
+- ⬜ Défauts antérieurs de mise en page : à 320 px, le « ? » recouvre la fin de la légende ; avec `?debug` à 375 px, la ligne « Position » fait passer la puce météo sous le « ? »
 - ✅ *itération 91* US004 : la vraie météo sur la carte (lecture de `/api/weather`, relances, puce, panneau, crédits Open-Meteo, outils au-dessus du pied de page sur mobile)
 - ⬜ Défaut déjà présent : entre ≈ 1 160 et 1 225 px de large, la barre d'heure passe sous la boussole (avant EP009 : entre 1 174 et 1 236 px) — *petit*
 - ⬜ Avant US005 : le chunk principal aura pris + 2,1 Ko sur 2,5 après US004 ; relever le plafond ou alléger (la date ISO du contrat coûte 0,43 Ko à la carte)

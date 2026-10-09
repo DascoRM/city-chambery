@@ -31,6 +31,7 @@ const PARTS = {
     parts: ['carte', 'contrat'],
     packages: ['three', 'virtual:pwa-register', 'vitest'],
     node: false,
+    pureZ: true,
   },
   'données de la carte': {
     dirs: ['frontend/carte/scripts'],
@@ -57,6 +58,7 @@ const PARTS = {
     parts: ['contrat'],
     packages: ['zod', 'vitest'],
     node: false,
+    pureZ: true,
   },
 };
 
@@ -69,6 +71,26 @@ const RAW_HTML = /dangerouslySetInnerHTML|\.(?:inner|outer)HTML\b|insertAdjacent
 /** Vrai si le source construit du HTML à partir de texte (interdit dans l'administration) */
 export function buildsRawHtml(source) {
   return RAW_HTML.test(source);
+}
+
+/**
+ * Vrai si le source appelle `z…(…)` sans en garder le résultat (instruction seule). Le build de la carte déclare purs les
+ * appels sur `z` (`treeshake.manualPureFunctions`, frontend/carte/vite.config.ts : les schémas inutiles du contrat partent) :
+ * un tel appel y serait retiré sans prévenir, en production seulement (relecture EP009 de la carte, I2).
+ */
+export function callsZForEffect(source) {
+  const root = (e) => { while (ts.isPropertyAccessExpression(e) || ts.isElementAccessExpression(e) || ts.isCallExpression(e)) e = e.expression; return e; };
+  let found = false;
+  const visit = (n) => {
+    if (found) return;
+    if (ts.isExpressionStatement(n) && ts.isCallExpression(n.expression)) {
+      const r = root(n.expression.expression);
+      if (ts.isIdentifier(r) && r.text === 'z') { found = true; return; }
+    }
+    ts.forEachChild(n, visit);
+  };
+  visit(ts.createSourceFile('source.ts', source, ts.ScriptTarget.Latest));
+  return found;
 }
 
 /** Partie d'un fichier (chemin relatif à la racine), ou null s'il n'appartient à aucune */
@@ -118,6 +140,9 @@ export function checkBoundaries(root = ROOT) {
           } else if (part.packages && !part.packages.includes(packageName(spec)) && !part.packages.includes(spec)) {
             errors.push(`${rel} importe le paquet « ${packageName(spec)} » : pas dans la liste de ${name} (scripts/check-boundaries.mjs)`);
           }
+        }
+        if (part.pureZ && callsZForEffect(source)) {
+          errors.push(`${rel} appelle z…() sans en garder le résultat : le build de la carte le retirerait (manualPureFunctions, frontend/carte/vite.config.ts) ; renommer la variable`);
         }
         if (part.noRawHtml && buildsRawHtml(source)) {
           errors.push(`${rel} construit du HTML brut (dangerouslySetInnerHTML, innerHTML…) : interdit dans l'administration`);

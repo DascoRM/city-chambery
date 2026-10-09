@@ -85,7 +85,9 @@ describe('ce que montre la carte (priorités, Direct ou simulée)', () => {
 describe('puce et panneau : rien d’inventé', () => {
   const at = (o: Partial<WeatherInputs>) => resolveWeather(inputs(o), NOW, CLEAR);
   it('direct : condition, température, « modèle ICON, 10 h 00 (il y a 6 min) », jamais « observé »', () => {
-    expect(chipOf(at({}), false)).toEqual({ icon: '🌧️', text: '13 °C', label: 'Météo : Pluie, 13 °C, direct' });
+    expect(chipOf(at({}), false)).toEqual({ icon: '🌧️', text: '13 °C', label: 'Météo : Pluie, 13 °C (modèle ICON de 10 h 00)', off: false });
+    // Ancien relevé : icône grisée, et la puce le dit (relecture M2)
+    expect(chipOf(at({ reading: reading({ stale: true }) }), false)).toMatchObject({ label: 'Météo : Pluie, 13 °C (ancien relevé : modèle ICON de 10 h 00)', off: true });
     const p = panelOf(at({}), NOW);
     expect(p).toMatchObject({ title: 'Pluie, 13 °C', lines: ['modèle ICON, 10 h 00 (il y a 6 min)'], backToLive: false });
     expect(JSON.stringify(p)).not.toMatch(/observ/i);

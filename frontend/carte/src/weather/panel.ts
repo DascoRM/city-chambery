@@ -36,11 +36,13 @@ export function createWeatherPanel(root: HTMLElement, h: {
   };
 
   const el = make('section', 'weather-panel card');
+  el.id = 'weather-panel'; // aria-controls de la puce
   el.hidden = true;
   el.setAttribute('aria-label', 'Météo');
   const close = make('button', 'icon close', '✕');
   close.setAttribute('aria-label', 'Fermer');
   const title = make('h2');
+  title.tabIndex = -1; // reçoit le focus à l'ouverture (lecteur d'écran, clavier)
   const body = make('div', 'wp-body');
   const credit = make('p', 'wp-credit');
   const live = make('button', 'btn wp-live', 'Revenir au direct');
@@ -59,7 +61,9 @@ export function createWeatherPanel(root: HTMLElement, h: {
   };
   const hide = () => {
     if (el.hidden) return;
+    const inside = el.contains(document.activeElement);
     el.hidden = true;
+    if (inside) h.anchor()?.focus(); // le focus revient à la puce, pas au début de la page
     h.onClose();
   };
   close.addEventListener('click', hide);
@@ -69,7 +73,7 @@ export function createWeatherPanel(root: HTMLElement, h: {
 
   return {
     isOpen: () => !el.hidden,
-    open() { el.hidden = false; place(); },
+    open() { el.hidden = false; place(); title.focus({ preventScroll: true }); },
     close: hide,
     render(v: PanelState) {
       title.textContent = v.title;

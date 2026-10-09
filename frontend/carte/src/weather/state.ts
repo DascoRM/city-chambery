@@ -196,7 +196,9 @@ export function chipOf(s: Resolved, night: boolean): ChipView | null {
     case 'admin': return { icon: icon(s.condition, night), text: 'Démo', label: `Météo forcée (démo) : ${fr}` };
     case 'live': case 'stale': {
       const t = temp(r!.temperatureC);
-      return { icon: icon(s.condition, night), text: t || fr, label: `Météo : ${fr}${t ? `, ${t}` : ''}, ${s.status === 'live' ? 'direct' : 'ancien relevé'}` };
+      // L'heure de validité du modèle, jamais « observé » (règle 1) ; un ancien relevé a l'icône grisée
+      const old = s.status === 'stale';
+      return { icon: icon(s.condition, night), text: t || fr, label: `Météo : ${fr}${t ? `, ${t}` : ''} (${old ? 'ancien relevé : ' : ''}modèle ${modelLabel(r!.model)} de ${hm(r!.observedAtMs)})`, off: old };
     }
     case 'simulated': return { icon: icon('clear', night), text: 'Simulée', label: 'Météo simulée (beau temps) : l’heure ou la saison est choisie' };
     case 'disabled': return { icon: '⛅', text: 'Coupée', label: 'Météo coupée par l’administration', off: true };
@@ -224,7 +226,8 @@ export function panelOf(s: Resolved, nowMs: number): PanelView {
     }
     case 'simulated': return view('Beau temps simulé', ['L’heure ou la saison est choisie : la météo réelle ne s’affiche qu’en direct.'], true);
     case 'disabled': return view('Météo coupée', ['Coupée depuis l’administration : ciel par défaut. Nouvel essai dans 15 min.']);
-    case 'none': case 'waiting': case 'unavailable': return view('Météo non disponible', ['Ciel par défaut ; nouvel essai automatique.']);
+    case 'waiting': return view('Météo', ['Lecture en cours…']);
+    case 'none': case 'unavailable': return view('Météo non disponible', ['Ciel par défaut ; nouvel essai automatique.']);
   }
 }
 
