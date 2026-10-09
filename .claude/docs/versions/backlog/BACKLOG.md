@@ -99,6 +99,7 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ US001 : mesure de la pluie prototype sur l'iPhone (protocole dans la fiche US001) — *Dasco*
 - ✅ *itération 90* US002 : socle météo (réglages inactifs posés au démarrage, ciel couvert, puce et panneau, `?weather=`, préférences, sélecteur `?debug`)
 - ⬜ Juger le rendu du couvert (`?weather=cloudy`, `?weather=partly`, de jour et de nuit) et la puce dans la barre d'heure, sur ordinateur et téléphone — *Dasco*
+- ✅ *itération 91* US004 : la vraie météo sur la carte (lecture de `/api/weather`, relances, puce, panneau, crédits Open-Meteo, outils au-dessus du pied de page sur mobile)
 - ⬜ Défaut déjà présent : entre ≈ 1 160 et 1 225 px de large, la barre d'heure passe sous la boussole (avant EP009 : entre 1 174 et 1 236 px) — *petit*
 - ⬜ Avant US005 : le chunk principal aura pris + 2,1 Ko sur 2,5 après US004 ; relever le plafond ou alléger (la date ISO du contrat coûte 0,43 Ko à la carte)
 - ⬜ Idée (relecture d'US003, V4) : limiter le débit des routes publiques de l'API dans le pare-feu de Vercel (une chaîne de requête aléatoire contourne le cache du CDN, chaque appel coûte une invocation ; vrai aussi pour `/api/health`) — non étudié

@@ -21,6 +21,7 @@
 - [ ] **Given** la base indisponible, **Then** `PUT` et `DELETE` répondent 503 `base-indisponible`, et la route publique continue sans forçage après 1,5 s au plus
 - [ ] **Given** chaque changement, **Then** une ligne de journal, absente du journal des parkings
 - [ ] **Given** un forçage en cours, **Then** l'écran montre aussi le relevé réel (le service relit la source pour la vue admin)
+- [ ] **Given** la fin d'un forçage (`forcedUntil`), **Then** la carte relit `/api/weather` peu après (en tenant compte des 2 min du CDN) au lieu d'attendre sa relecture de 15 min (aujourd'hui, elle abandonne le forçage à l'heure dite et affiche « Indisponible » jusqu'à la relecture)
 
 **Écran « Météo »**
 - [ ] **Given** l'onglet « Météo », **Then** quatre cartes : ce que voient les visiteurs (libellé, température, âge, pastille Direct, Ancien relevé, Forcée, Coupée ou Indisponible), relevé brut (point de grille, valeurs et unités d'Open-Meteo), cette instance de l'API (appels à la source, échecs, dernière erreur, avec « compteurs depuis le démarrage de cette instance, ce ne sont pas des totaux »), forcer la météo ; relu toutes les 60 s quand la page est ouverte

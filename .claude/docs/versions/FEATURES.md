@@ -1,6 +1,6 @@
 # Fonctionnalités
 
-État au 09/10/2026 — itération 90 (la section Carte n'a pas changé depuis l'itération 74, hormis les retouches publiées vérifiées par le contrat).
+État au 09/10/2026 — itération 91 (la section Carte n'a pas changé depuis l'itération 74, hormis les retouches publiées vérifiées par le contrat).
 
 ## Administration (EP008, EP010)
 
@@ -15,8 +15,9 @@
 
 | Fonctionnalité | État | Détail |
 |---|---|---|
-| Météo de Chambéry gérée par le back (`GET /api/weather`, US003) | 🟡 API seule, vérifiée sur la prévisualisation ; pas encore affichée sur la carte (US004) | Open-Meteo, modèle ICON du DWD, coordonnées fixes du centre ; le back traduit les codes de la source en 9 conditions (ciel dégagé, éclaircies, couvert, brouillard, bruine, pluie, neige, pluie et neige, orage) avec température, nuages, précipitations, vent, visibilité ; relevé renouvelé à chaque pas de 15 min du modèle, une seule requête pour tous les visiteurs ; si la source tombe, dernier bon relevé jusqu'à 3 h ; format partagé dans `contrat/meteo.ts`. Libellés et seuils à valider par Dasco (US011) |
-| Puce météo, ciel couvert et `?weather=` (US002) | 🟡 À valider (rendu du couvert, mise en page) | Puce après la saison (icône, texte sur ordinateur) et son panneau ; `?weather=clear`, `partly`, `cloudy`, `fog`, `drizzle`, `rain`, `snow`, `sleet`, `thunder` force une météo sans réseau ; ciel couvert (lumière grise et douce, ombres effacées, fond grisé), avec un fondu ; « Simulée » hors de l'heure Direct ; préférences « Afficher la météo » et « Effets réduits » ; sans météo, la carte est identique à avant. Pas encore : pluie, brouillard, météo réelle sur la carte (US004 à US006) |
+| Météo de Chambéry gérée par le back (`GET /api/weather`, US003) | ✅ Vérifiée sur la prévisualisation | Open-Meteo, modèle ICON du DWD, coordonnées fixes du centre ; le back traduit les codes de la source en 9 conditions (ciel dégagé, éclaircies, couvert, brouillard, bruine, pluie, neige, pluie et neige, orage) avec température, nuages, précipitations, vent, visibilité ; relevé renouvelé à chaque pas de 15 min du modèle, une seule requête pour tous les visiteurs ; si la source tombe, dernier bon relevé jusqu'à 3 h ; format partagé dans `contrat/meteo.ts`. Libellés et seuils à valider par Dasco (US011) |
+| Puce météo, ciel couvert et `?weather=` (US002) | 🟡 À valider (rendu du couvert, mise en page) | Puce après la saison (icône, texte sur ordinateur) et son panneau ; `?weather=clear`, `partly`, `cloudy`, `fog`, `drizzle`, `rain`, `snow`, `sleet`, `thunder` force une météo sans réseau ; ciel couvert (lumière grise et douce, ombres effacées, fond grisé), avec un fondu ; « Simulée » hors de l'heure Direct ; préférences « Afficher la météo » et « Effets réduits » ; sans météo, la carte est identique à avant. Pas encore : pluie, brouillard (US005, US006) |
+| La vraie météo sur la carte (US004) | 🟡 À voir par Dasco (prévisualisation) | La carte lit `/api/weather` sans jamais l'attendre, puis toutes les 15 min si l'onglet est visible ; puce « ⛅ 15 °C » et panneau (condition, heure du modèle, vent, crédit Open-Meteo) ; « Ancien relevé » après une coupure, jusqu'à 3 h ; « Indisponible » ou « Coupée » sinon, avec le ciel par défaut ; sans API (carte du Pi), rien ne change |
 
 ## Carte / diorama
 
