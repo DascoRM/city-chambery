@@ -11,9 +11,9 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     projects: [
-      // 20 s au lieu de 5 : démarrer PGlite (PostgreSQL en WebAssembly) et rejouer les migrations dépasse 5 s quand la
-      // machine est chargée (constaté le 09/10/2026 : échecs « Test timed out in 5000ms » au hasard)
-      { test: { name: 'back', include: ['backend/src/**/*.test.ts'], environment: 'node', testTimeout: 20_000 } },
+      // 20 s au lieu de 5 (tests) et 10 (beforeEach) : démarrer PGlite (PostgreSQL en WebAssembly) et rejouer les migrations
+      // dépasse ces délais quand la machine est chargée (constaté le 09/10/2026 : « Test timed out in 5000ms » au hasard)
+      { test: { name: 'back', include: ['backend/src/**/*.test.ts'], environment: 'node', testTimeout: 20_000, hookTimeout: 20_000 } },
       {
         oxc: { jsx: { runtime: 'automatic' } },
         test: { name: 'admin', include: ['frontend/admin/src/**/*.test.{ts,tsx}'], environment: 'happy-dom' },

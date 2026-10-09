@@ -86,7 +86,7 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
     return c.json(edits);
   });
 
-  // Météo de Chambéry (EP009) : la source est appelée au plus une fois toutes les 10 min par instance ; mise en cache 60 s par Vercel
+  // Météo de Chambéry (EP009) : la source est appelée au plus une fois par pas de 15 min et par instance ; mise en cache par Vercel
   app.route('/weather', weatherRoutes(weather));
 
   app.get('/health', async (c) => {
