@@ -26,7 +26,7 @@ frontend/
 │               (src/, index.html, vite.config.ts, content/, public/, scripts/, diorama.config.json,
 │                assets-src/, data/raw/ = cache des téléchargements OSM / IGN)
 └── admin/      l'administration, en React 19 (wouter, TanStack Query, React Hook Form, CSS simple), servie sous /admin/
-backend/        l'API (Hono, Zod, Drizzle) : ex-server/ ; data/dev-db/ (base locale de dev, PGlite) la suivra
+backend/        src/ : l'API (Hono, Zod, Drizzle), ex-server/ avec db/ dedans ; data/dev-db/ : base locale de dev (PGlite)
 contrat/        les formats échangés entre front et back (schémas Zod), écrits une seule fois
 api/index.ts    3 lignes imposées par Vercel (il ne cherche les fonctions que dans api/ à la racine) : renvoie vers backend/
 scripts/        contrôles du dépôt seulement (check-api-esm, check-boundaries)

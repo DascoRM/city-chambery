@@ -9,7 +9,7 @@
     "check:streets": "node frontend/carte/scripts/check-street-labels.mjs",
     "dev": "vite frontend/carte",
     "dev:admin": "vite frontend/admin",
-    "typecheck": "tsc --noEmit -p frontend/carte && tsc --noEmit -p frontend/admin && tsc --noEmit -p tsconfig.api.json && tsc --noEmit -p tsconfig.vercel-check.json",
+    "typecheck": "tsc --noEmit -p frontend/carte && tsc --noEmit -p frontend/admin && tsc --noEmit -p .",
     "build:carte": "vite build frontend/carte",
     "build:admin": "vite build frontend/admin",
     "check:boundaries": "node scripts/check-boundaries.mjs",
@@ -23,9 +23,9 @@
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f web",
     "test": "vitest run",
-    "api:dev": "tsx server/dev.ts",
+    "api:dev": "tsx backend/src/dev.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx server/db/migrate.ts",
+    "db:migrate": "tsx backend/src/db/migrate.ts",
     "check:api": "node scripts/check-api-esm.mjs"
   },
   "dependencies": {

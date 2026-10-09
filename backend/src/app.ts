@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { Hono } from 'hono';
 import { getTableName, isTable } from 'drizzle-orm';
 import * as schema from './db/schema.js';

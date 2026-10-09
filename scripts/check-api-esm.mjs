@@ -5,15 +5,21 @@
  * interroge /api/health. Lancé par `npm run build`.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const root = resolve(import.meta.dirname, '..');
+// Vercel compile api/index.ts avec le tsconfig.json le plus proche en remontant depuis api/ : un fichier api/tsconfig.json
+// prendrait le pas sur la config du back (tsconfig.json racine) sans prévenir
+if (existsSync(join(root, 'api/tsconfig.json'))) {
+  console.error('✗ api/tsconfig.json existe : Vercel le prendrait à la place du tsconfig.json racine (config du back). Le supprimer.');
+  process.exit(1);
+}
 const out = mkdtempSync(join(tmpdir(), 'api-esm-'));
 try {
-  execFileSync(join(root, 'node_modules/.bin/tsc'), ['-p', 'tsconfig.api.json', '--noEmit', 'false', '--outDir', out, '--rootDir', '.'], { cwd: root, stdio: 'inherit' });
+  execFileSync(join(root, 'node_modules/.bin/tsc'), ['-p', 'tsconfig.json', '--noEmit', 'false', '--outDir', out, '--rootDir', '.'], { cwd: root, stdio: 'inherit' });
   writeFileSync(join(out, 'package.json'), '{ "type": "module" }');
   symlinkSync(join(root, 'node_modules'), join(out, 'node_modules'));
   const mod = await import(pathToFileURL(join(out, 'api/index.js')).href);

@@ -15,6 +15,8 @@
 - [ ] **Given** EP008-US006, **Then** le format des retouches (`ParkingOverride`, aujourd'hui dans `src/scene/parking-edits.ts`) y sera écrit
 - [ ] **Given** `contrat/`, **When** on y importe `document` ou `node:fs`, **Then** la compilation échoue
 
+> **Décisions du 09/10/2026 (D12, à confirmer)** : tout `contrat/` en **`zod/mini`** (mêmes schémas et types, ≈ 7 Ko gzip au lieu de 26). Le back valide et type ses entrées avec ; l'admin vérifie les réponses ; **la carte vérifie les retouches publiées une par une** avec le contrat, en gardant sa tolérance (une retouche invalide est ignorée sans jeter les autres) : ≈ +7 Ko gzip pour la carte, prête pour la connexion front-back. Détail : [plan de la phase 2](../../../tasks/ep010-phase2-plan.md) § 3 (écrit avant cette décision : il prévoyait « types seulement » pour la carte).
+
 ---
 
 ## Règles métier

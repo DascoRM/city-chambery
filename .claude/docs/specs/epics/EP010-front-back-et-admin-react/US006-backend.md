@@ -10,11 +10,11 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** `server/` → `backend/src` et `server/db` → `backend/db`, **Then** `api/index.ts` (3 lignes, imposées par Vercel) renvoie vers `backend/`
-- [ ] **Given** le tsconfig du back, **When** on déploie sur `preview/front-back`, **Then** `/api/health` et `/api/admin/status` répondent
-- [ ] **Given** cette prévisualisation verte, **Then** `tsconfig.vercel-check.json` et les `/// <reference types="node" />` sont supprimés (pas avant)
-- [ ] **Given** `npm run api:dev`, Drizzle (`db:generate`, `db:migrate`) et les tests, **Then** ils marchent avec les nouveaux chemins ; les tests ne chargent plus la config de la carte
-- [ ] **Given** `check-boundaries.mjs`, **Then** il refuse que le back importe le front
+- [x] **Given** `server/` → `backend/src` (`db/` dedans, décision D7), **Then** `api/index.ts` (3 lignes, imposées par Vercel) renvoie vers `backend/`
+- [x] **Given** le tsconfig du back, **When** on déploie sur `preview/front-back`, **Then** `/api/health` et `/api/admin/status` répondent
+- [x] **Given** cette prévisualisation verte, **Then** `tsconfig.vercel-check.json` et les `/// <reference types="node" />` sont supprimés (pas avant)
+- [x] **Given** `npm run api:dev`, Drizzle (`db:generate`, `db:migrate`) et les tests, **Then** ils marchent avec les nouveaux chemins ; les tests ne chargent plus la config de la carte
+- [x] **Given** `check-boundaries.mjs`, **Then** il refuse que le back importe le front
 
 ---
 
@@ -46,4 +46,4 @@ Détail : [plan de cloisonnement](../../../tasks/cloisonnement-depot-plan.md) §
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : ✅ Done (09/10/2026, itération 85) : étapes A (renommage), B (tsconfig racine = back) et C (fin des contournements), chacune vérifiée sur `preview/front-back`

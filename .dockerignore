@@ -4,7 +4,7 @@ dist
 .git
 .DS_Store
 frontend/carte/data/raw
-data/dev-db
+backend/data
 # Pack nature : seules les sources .obj servent à `npm run nature` (REFRESH_DATA=true)
 frontend/carte/assets-src/quaternius-nature/fbx
 frontend/carte/assets-src/quaternius-nature/Preview.jpg

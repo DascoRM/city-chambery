@@ -7,4 +7,4 @@ frontend/carte/data/raw/
 graphify-out/
 
 # Base PostgreSQL locale de développement (npm run api:dev, PGlite)
-data/dev-db/
+backend/data/
