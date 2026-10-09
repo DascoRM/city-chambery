@@ -1,5 +1,151 @@
 # Journal des itérations
 
+## Itération 87 — 09/10/2026 (branches `feat/EP010-US008-session`, `feat/EP010-US009-docker-doc`, `fix/EP010-phase2-revue`, epic EP010)
+
+**Demande de Dasco :** session glissante limitée à 8 h (US008) ; le Pi reste prévu par principe (D11) ; « mutualiser tous les agents nécessaires ».
+
+**Changements :**
+- **US008, session d'administration** : le jeton ne sert qu'à `POST /api/admin/login` ; ensuite un cookie `diorama_admin` (`HttpOnly`, `Secure` hors dev http, `SameSite=Strict`, `Path=/api/admin`) portant un jeton signé HMAC-SHA256 sans état ; prolongée à chaque requête (2 h sans activité), 8 h au plus depuis la connexion ; `Authorization: Bearer` refusé ailleurs ; écritures de la même origine et en JSON seulement ; `GET /api/admin/session`, `POST /api/admin/logout` ; limite d'essais réservée à la connexion ; administration React sans jeton dans le navigateur (session vérifiée au démarrage, retour à la connexion si elle expire) ;
+- **US009** : nginx répond 404 sur `/api` (JSON) et `/admin` sur le Pi ; README, CLAUDE.md (règle 7 : le front ne parle au back que par HTTP), context.md, getting-started, schéma d'EP008 ;
+- **incident** : la première prévisualisation d'US008 a échoué au build, à cause du contrôle `check-api-esm` (il supposait `ADMIN_TOKEN` absent ; Vercel l'injecte pendant le build) ; corrigé et reproduit en local avec les variables de Vercel ;
+- **relecture indépendante de la phase 2** (agent, [ep010-phase2-revue.md](../tasks/ep010-phase2-revue.md)) : 2 défauts moyens, 7 faibles, aucun grave, **tous corrigés** :
+  - M1 : une lecture lente revenue après « Se déconnecter » rouvrait la session (cookie prolongé) → témoin de déconnexion `diorama_admin_sortie` qui fait refuser toute session ouverte avant ;
+  - F1 : le proxy de Vite réécrivait l'hôte (connexion refusée hors `localhost`) → `changeOrigin: false` ;
+  - F2, F3, I2 : clé = empreinte de l'environnement et du jeton (une clé contenant « PUBLIC » ou « PRIVATE » cassait la session ; une session de prévisualisation ne vaut plus en production) ; `ADMIN_SESSION_SECRET` retirée ;
+  - F4 : le cookie vit jusqu'au plafond de 8 h, pour que « Session expirée » s'affiche vraiment ;
+  - F5 : `check-api-esm` ouvre et relit une vraie session ; F6, F7 : documentation, poids de l'administration corrigé (+11 Ko et non +24) ;
+  - infos traitées : limite d'essais par /64 en IPv6 sans grossir sans fin, API de dev sur `127.0.0.1`, retouche hors contrat écartée par le back au lieu de bloquer la page Parkings, corps d'erreur communs.
+
+**Vérifié :** `npm run build` (aussi avec `ADMIN_TOKEN` et `VERCEL_ENV=preview`, comme sur Vercel) et `npm test` : **90 tests** (back 41, admin 24, contrat 6, carte 4, outillage 15) ; dans Chrome sur le `dist/` avec l'API locale : connexion, cookie `HttpOnly`/`SameSite=Strict`/`/api/admin`/8 h, rien dans le stockage de la page, rechargement, déconnexion qui efface le cookie, retouche, ajout et retrait de parking ; en dev, connexion et écritures par le proxy de l'admin ; **sur la prévisualisation** (`e41422d`, par l'agent) : build « success », `/api/health`, session sans cookie 401, mauvais jeton 401 (l'hôte public est bien reçu par la fonction), connexion depuis un autre site 403, déconnexion 204 avec le témoin (`Secure`, 8 h), carte sans erreur.
+
+**Vérifié par Dasco :** `docker compose build` : la carte s'affiche, `/admin` et `/api` répondent 404 (ni API ni administration sur le Pi) ; sur la prévisualisation, connexion avec le jeton de Preview, cookie présent, tests passés. EP010 terminée : branche d'epic proposée en production (PR vers `main`, accord de Dasco), avec la partie faite d'EP008.
+
+**Non vérifié :** Safari et Firefox.
+
+## Itération 86 — 09/10/2026 (branche `feat/EP010-US007-contrat`, epic EP010)
+
+**Demande de Dasco :** US007 validée avec `zod/mini` (« Zod m'intéresse surtout sur le back pour le typage » ; la carte se connectera bientôt à l'API) ; session glissante limitée à 8 h (US008).
+
+**Changements :**
+- `contrat/` : `erreurs.ts`, `sante.ts`, `parkings.ts` en `zod/mini`, tsconfig sans DOM ni Node, 6 tests ;
+- back : schémas lus dans le contrat, réponses vérifiées à la compilation (`satisfies`), un code sur chaque erreur (`introuvable`, `donnees-invalides`, `deja-pris`, `non-autorise`, `trop-de-tentatives`, `erreur-interne`), messages de validation en français ; tests : réponses réelles validées par le contrat ; `check-api-esm` vérifie `/api/health` avec le contrat ;
+- administration : types de l'API tirés du contrat ; chaque réponse vérifiée (« Réponse inattendue de l'API » au lieu d'un écran faux) ; formulaires des parkings vérifiés avant l'envoi avec les règles du serveur, messages en français et champs nommés en français (« places : Trop grand : nombre doit être <=10000 ») ;
+- carte : retouches publiées vérifiées par le contrat une par une (une retouche hors contrat est ignorée sans jeter les autres) ; types de parkings tirés du contrat ; premiers tests de la carte ;
+- Vitest : 5 projets (back, admin, contrat, carte, outillage) ; README (structure avec `contrat/`, commandes).
+
+**Vérifié :** `npm run build` (types des 4 configurations, frontières, API conforme au contrat) et `npm test` : **72 tests** ; poids mesurés : carte 77,2 → 85,5 Ko gzip, administration 97,8 → 108,7 Ko, soit +11 Ko (dont 1,2 Ko de messages français ; chiffre corrigé après la relecture de la phase 2, qui avait relevé un « +24 Ko » mesuré contre une version trop ancienne) ; en local sur le `dist/` (Chrome, API sur PGlite) : parcours complet de l'administration, carte qui reçoit et accepte une retouche publiée, sans erreur ; **sur la prévisualisation** (`c3e0ee1`, par l'agent) : build « success », `/api/health` conforme, erreurs avec leur code, carte sans erreur, page de l'administration sans erreur sous la CSP.
+
+**Non vérifié :** la connexion à l'administration sur la prévisualisation (jeton de Preview connu de Dasco seulement).
+
+## Itération 85 — 09/10/2026 (branche `feat/EP010-US006-backend`, epic EP010)
+
+**Demande de Dasco :** phase 1 vérifiée sur la prévisualisation (« tout me paraît ok ») ; réponses aux 7 points de la phase 2 ; secret de contournement Vercel ajouté pour que l'agent vérifie lui-même.
+
+**Changements :**
+- phase 1 (US002 à US005 et corrections de la relecture) **fusionnée dans la branche d'epic** ;
+- **US006, étape A** : `server/` devient `backend/src/` (renommage pur, `db/` dedans) ; `api/index.ts`, `drizzle.config.ts`, scripts npm, Vitest (projet « back »), `check-boundaries`, base locale de dev dans `backend/data/` suivent ;
+- **étape B** : le `tsconfig.json` racine devient celui du back (NodeNext, sans DOM, types Node) ; `tsconfig.api.json` fusionné ; un import relatif sans `.js` (la cause du 500 de l'itération 80) est maintenant refusé dès la compilation ; tests : petit utilitaire `json()` ;
+- **étape C** : `tsconfig.vercel-check.json` et les cinq `/// <reference types="node" />` supprimés ; `noEmitOnError` ; `check-api-esm` refuse un `api/tsconfig.json` ;
+- décisions D7 à D12 dans l'epic ; `~/.zshrc` de Dasco réparé (guillemet fermant manquant sur la ligne du secret, copie gardée dans `~/.zshrc.avant-claude`).
+
+**Vérifié :** à chaque étape, `npm run build` et `npm test` (60 tests), `drizzle-kit generate` (« No schema changes »), `npm run api:dev` sur la base déplacée ; **sur la prévisualisation, par l'agent** (en-tête de contournement) après chaque étape A, B, C : build Vercel « success », `/api/health` à la bonne version (`d4652cd`, `124e4d8`, `3f90df9`) avec la base connectée et l'admin configurée, 404 de l'API sur une route inconnue, 401 sur `/api/admin/status` sans jeton, retouches publiées, carte, admin, service worker et données en 200, en-têtes de sécurité de l'admin ; carte ouverte dans Chrome : rendu, retouches reçues, aucune erreur.
+
+**Non vérifié :** la connexion à l'admin sur la prévisualisation (le jeton de Preview n'est connu que de Dasco) ; le journal de build Vercel (non accessible à l'agent ; le statut « success » et les réponses ont été vérifiés).
+
+## Itération 84 — 09/10/2026 (branches `feat/EP010-US003-admin-react`, `feat/EP010-US004-admin-parite`, `feat/EP010-US005-frontieres`, `fix/EP010-phase1-revue`, epic EP010)
+
+**Demande de Dasco :** feu vert pour la prévisualisation d'US002 et la suite d'EP010 (« mutualiser tous les agents nécessaires ») ; l'autre session Claude est suspendue jusqu'à la fin de ce travail, puis relira le code et l'analyse.
+
+**Changements :**
+- **US003** : `frontend/admin/`, l'administration en **React 19** (wouter avec adresses en `#/…`, TanStack Query, React Hook Form), construite après la carte dans `dist/admin/` (hors du service worker de la carte) ; client API unique (`src/api.ts`) : jeton de session, erreurs traduites, retour à la connexion si le jeton est refusé ; connexion et tableau de bord ; CSP en en-tête Vercel (`frame-ancestors 'none'`) ; scripts `dev:admin`, `typecheck`, `build:carte`, `build:admin` ; Vitest en projets (API sous Node, admin sous happy-dom). **Sans `@vitejs/plugin-react`** (conflit de Babel avec `vite-plugin-pwa`) : Vite compile le JSX, seul le Fast Refresh manque en dev ;
+- **US004** : page « Parkings », parité avec l'ancienne admin (recherche, retouche avec source obligatoire, ajout, liste avec « Retirer », journal), mêmes appels à l'API ; `frontend/carte/public/admin/` supprimé ;
+- **US005** : `scripts/check-boundaries.mjs`, lancé par `npm run build` : la carte et l'admin ne s'importent pas, le front n'importe jamais l'API, une liste de paquets par partie, pas de HTML brut dans l'admin ;
+- **relecture indépendante de la phase 1** (agent, [ep010-phase1-revue.md](../tasks/ep010-phase1-revue.md)) : 2 défauts moyens, 7 faibles, aucun grave, **tous corrigés** : formulaire de retouche qui revenait à l'ancienne valeur pendant la relecture (M1) ; contrôle des frontières qui laissait passer certains imports (M2 : imports désormais lus par TypeScript) ; réponse 200 non JSON prise pour un succès (F1) ; CSP absente hors Vercel et admin construite dans l'image du Pi (F2 : balise meta au build, `npm run build:pi` dans le Dockerfile) ; état demandé deux fois (F3) ; re-choisir un parking (F4) ; liste des parkings non relue après un échec (F5) ; README, context.md et getting-started (F6, F7) ; messages 5xx et réseau, alerte en double, motifs de HTML brut, commentaire du script `nature` (I1, I2, I4, I8). I3 (champs vidés après « Retirer la retouche », l'ancienne admin les gardait) laissé tel quel : plus fidèle à l'état publié ;
+- **plan détaillé de la phase 2** (agent, [ep010-phase2-plan.md](../tasks/ep010-phase2-plan.md)) : `backend/`, `contrat/`, session par cookie, Docker ; 7 points à valider par Dasco.
+
+**Vérifié :** `npm run build` (types des quatre configs, frontières, chargement de l'API, carte, admin) et `npm test` : **60 tests** (28 API, 17 admin, 15 outillage) ; les tests de M1, F4 et F5 échouent sur l'ancien code ; parcours réels dans Chrome headless contre l'API locale (PGlite) sur le `dist/` construit, **sous la CSP** : mauvais jeton refusé, tableau de bord, rechargement, page inconnue, déconnexion, retouche d'un parking (149 places, note, source), ajout, liste, journal, route publique lue par la carte, retrait, sans erreur ni violation de CSP ; admin : 83 Ko gzip ; service worker de la carte sans fichier de l'admin ; `npm run build:pi` ne produit que la carte ; la carte reste identique à l'octet près (vérifié par le relecteur) ; Vercel a construit les prévisualisations d'US002 et de la phase 1 (statut « success »).
+
+**Vérifié par Dasco** (prévisualisation `preview/front-back`, commit `ef4448d`) : « tout me paraît ok, je ne vois rien d'anormal » ; phase 1 fusionnée dans la branche d'epic.
+
+**Non vérifié :** l'image Docker (Docker absent de ce Mac) ; l'admin avec un service worker de la carte déjà installé (lu dans la config seulement).
+
+## Itération 83 — 09/10/2026 (branches `feat/EP010-US001-adr` et `feat/EP010-US002-frontend-carte`, epic EP010)
+
+**Demande de Dasco :** séparer nettement le front (carte + admin) et le back (API) ; décisions D1 à D6 tranchées ; créer la branche d'epic, mettre EP008 de côté et commencer les deux premières US.
+
+**Changements :**
+- branche d'epic `feat/EP010-front-back` (partie de `feat/EP008-back-end`) ; EP008 en pause : les réponses de Dasco du 09/10 et les plans « admin par tables » et « progression » (fichiers non commités de l'autre session) sont dans `git stash` (« EP008 en attente d'EP010 ») ;
+- **US001** : [ADR-002](../architecture/decisions/ADR002-separer-front-et-back.md) « Séparer le front et le back ; administration en React » ;
+- **US002** : la carte et tout son pipeline de données passent dans `frontend/carte/` (`src/`, `content/` sorti de `src/`, `public/`, `scripts/` de données, `diorama.config.json`, `assets-src/`, `index.html`, `vite.config.ts`, cache `data/raw/`) ; Vite construit toujours dans `dist/` à la racine ; tsconfig propre à la carte ; le tsconfig racine garde ses options (Vercel compile `api/` avec) jusqu'à EP010-US006 ; scripts npm, Docker, `.gitignore` et `refresh-data.sh` suivent ; README et CLAUDE.md à jour ;
+- correctif lié : `npm run api:dev` créait sa base locale dans `data/dev-db` sans créer `data/` (qui n'existe plus d'office) → dossier créé au besoin.
+
+**Vérifié :** `npm run build` et `npm test` (28 tests) ; **`dist/` identique octet pour octet** à celui d'avant le déplacement (mêmes fichiers, mêmes empreintes, même `sw.js`, donc même `?v=` des données) ; `npm run data -- --offline` donne un `city.json` identique hors `generatedAt` (comparé à l'ancien script sur le même cache) ; `npm run check:streets` ; carte en dev dans Chrome headless (GPU) : rendu, HUD, lobby, `?debug` (30 img/s au repos, 2 409 appels), aucune erreur ; avec `npm run api:dev` : retouches de parkings reçues par le proxy ; `/admin/` servi ; outil de placement : écrit bien `frontend/carte/content/pois.json`.
+
+**Non vérifié :** déploiement Vercel (prévisualisation `preview/front-back` pas encore poussée) ; image Docker (Docker absent de ce Mac) ; `REFRESH_DATA=true` (chemins de `refresh-data.sh` relus, pas exécutés).
+
+## Itération 82 — 08/10/2026 (branche `feat/EP008-US006-retouches-parkings`, epic EP008)
+
+**Demande de Dasco :** suite de l'epic (base Neon prête et migrée sur `main` et `preview` ; administration accessible).
+
+**Changements (US006, parkings) :**
+- base : tables `parking_edits` (une ligne par retouche ou ajout, champs en JSON, **source obligatoire**) et `edit_log` (journal) ; migration `0001` ;
+- `server/parkings.ts` : validation **Zod stricte** (champ inconnu refusé, source non vide, places entières de 1 à 10 000, type parmi quatre, position bornée, identifiants `way|node|relation/…` ou `custom/…`) et accès à la base ;
+- API : `GET /api/parkings/edits` (public, cache 60 s) ; administration : `GET /api/admin/parkings/edits` (+ journal), `PUT /api/admin/parkings/overrides/:id`, `POST /api/admin/parkings/added`, `DELETE /api/admin/parkings/edits/:id` ; sans base : 503 avec code ;
+- site : retouches publiées demandées **en même temps que la ville** (1,5 s au plus, jamais bloquant), fusionnées avec `parkings.json` (l'administration l'emporte) ; la fiche cite « Source de la retouche » ;
+- administration : recherche d'un parking, formulaire de retouche, ajout d'un parking, liste des retouches avec « Retirer », journal ; aucun HTML construit à partir de données ;
+- `npm run api:dev` sans `DATABASE_URL` : **base PostgreSQL locale (PGlite)** avec les migrations, pour tester sans Neon.
+
+**Vérifié :** `npm test` : 27 tests (dont 7 sur les retouches, sur PGlite : publication avec source, remplacement, refus sans source ou avec champ inconnu ou valeur absurde, ajout, doublon 409, retrait, journal, jeton exigé, base absente) ; `npm run build` ; parcours complet en local (API + base locale + site) : recherche « europe », retouche (149 places, note, source « BNLS 2024 »), ajout d'un parking, liste, journal ; le site charge la retouche (149 places, note, source) et l'ajout ; aucune erreur console.
+
+**Correction (signalée par Dasco : `POST /api/admin/parkings/added` → 500 « erreur interne » sur Vercel) :** cause la plus probable, la base de prévisualisation n'avait pas reçu la migration `0001` (table `parking_edits` absente). Désormais une table absente (code PostgreSQL `42P01`) répond **503 `migrations-manquantes`** avec un message clair, et l'administration affiche « Migrations : à jour » ou la liste des tables absentes (comparaison avec le schéma du code). Test ajouté (28).
+
+**Correction (signalée par Dasco : deux parkings ajoutés, absents de la carte) :** deux causes possibles, corrigées toutes les deux : (1) un parking **ajouté sans nom ni capacité** n'avait pas de panneau (le filtre exigeait un nom, une capacité ou une surface, qu'un ajout n'a pas) : un ajout a toujours son panneau ; (2) le site n'attendait les retouches que **1,5 s** : la base Neon, en veille après 5 minutes, met du temps à se réveiller : délai porté à **4 s** (demandé en même temps que la ville, qui en prend elle-même plus d'une seconde). En `?debug`, la console dit maintenant « retouches publiées : N retouche(s), M ajout(s), en … ms » ou pourquoi elles n'ont pas été reçues. Vérifié en local : un ajout sans nom a son panneau.
+
+**Non vérifié :** sur Vercel (la migration `0001` doit être appliquée sur `preview` et `main` par Dasco) ; le délai réel de 60 s du cache de Vercel ; les retouches des **lieux d'histoire** (reste de l'US006) ; la carte de position dans l'administration (US007).
+
+## Itération 81 — 08/10/2026 (branche `feat/EP008-US005-admin-acces`, epic EP008)
+
+**Demande de Dasco :** passer à l'étape suivante (accès à l'administration).
+
+**Changements (US005) :**
+- `server/auth.ts` : jeton secret `ADMIN_TOKEN` (variable Vercel) dans `Authorization: Bearer …` ; **administration fermée (404) sans jeton configuré** ; comparaison **en temps constant** (empreintes SHA-256 de même taille) ; **5 essais ratés par minute et par adresse, puis 429** (limite en mémoire, donc par instance de fonction : un limiteur partagé viendra avec US008) ;
+- `/api/admin/ping` et `/api/admin/status` (version, environnement, Node, région, état de la base, taille, nombre de lignes par table via `server/db/stats.ts`, indépendant du pilote) ; `/api/health` reste publique ;
+- `public/admin/` : page d'administration sans framework (HTML, CSS, JS), politique de contenu stricte, **aucun HTML construit à partir de données** (`textContent` partout), jeton gardé le temps de l'onglet ; sortie des caches du service worker (`globIgnores`, `navigateFallbackDenylist`) ; en-têtes `X-Robots-Tag: noindex` et `Referrer-Policy: no-referrer` sur `/admin` et `/api`.
+
+**Vérifié :** `npm test` : 19 tests (fermeture sans jeton, 401 sans jeton, mauvais jeton ou schéma, accès avec le bon jeton, blocage après 5 échecs sans gêner une autre adresse, jeton jamais renvoyé, `/api/health` publique, statistiques de la base sur PGlite) ; `npm run build` (dont le chargement de l'API comme sur Vercel) ; navigateur en local : mauvais jeton refusé avec message, bon jeton → tableau, session gardée au rechargement, déconnexion ; en version de production (`vite preview`), `/admin/` sert la page d'administration.
+
+**Correction après déploiement (signalée par Dasco, build Vercel en erreur `TS2591: Cannot find name 'process'`) :** Vercel vérifie les types de la fonction avec le `tsconfig.json` **racine** (types du navigateur seulement), pas avec `tsconfig.api.json` : le déploiement échouait, d'où `/admin` et `/api/admin` vides. **Reproduit en local** avec `tsconfig.vercel-check.json` (racine + `api/`), désormais lancé par `npm run build`. Correction : les fichiers de `server/` qui utilisent Node le déclarent eux-mêmes (`/// <reference types="node" />`), sans toucher aux types du site.
+
+**Correction (signalée par Dasco : « Sending form data … violates form-action 'none' ») :** sur Vercel la page s'ouvre aussi à l'adresse `/admin` (sans barre finale) ; les chemins relatifs `admin.css` et `admin.js` pointaient alors vers `/admin.js` (introuvable) : le script ne tournait pas et le formulaire était envoyé tel quel, bloqué par la politique de contenu. Chemins absolus (`/admin/admin.js`). Espaces et retours à la ligne ignorés autour du jeton (variable collée depuis le terminal).
+
+**Correction (diagnostiquée avec Dasco : `/api/health` voit le jeton, `/api/admin/ping` renvoie un 404 de Vercel) :** le fichier `api/[...path].ts` ne captait qu'**un** niveau de chemin (`/api/health`), pas `/api/admin/ping`. Remplacé par `api/index.ts` et une réécriture `/api/:path*` → `/api` dans `vercel.json` (une seule fonction pour toute l'API ; la requête garde son adresse d'origine pour Hono). Diagnostic ajouté : `/api/health` indique `admin: configure | absent` (jamais la valeur) ; jeton absent = 503 avec code dédié ; la page distingue jeton absent, route introuvable et 404 de la plateforme.
+
+**Non vérifié :** déploiement sur Vercel (jeton à saisir par Dasco) ; le blocage d'essais sur Vercel (instances multiples : au mieux) ; l'adresse client derrière le réseau de Vercel (`x-forwarded-for`) ; usage, quotas et alertes (US008) ; connexion GitHub à la place du jeton (plus tard).
+
+## Itération 80 — 08/10/2026 (branche `feat/EP008-US001-socle-api`, epic EP008)
+
+**Demande de Dasco :** commencer le back-end (pile validée : TypeScript, Hono, Zod, Drizzle, Neon, fonctions Vercel).
+
+**Changements (US001, socle) :**
+- `api/[...path].ts` : fonction Vercel (Node.js, format `fetch` standard) qui sert toutes les routes `/api/*` par l'application Hono de `server/app.ts` ;
+- `GET /api/health` : version courte du commit, environnement, état de la base (`ok`, `non-configuree`, `desactivee-en-previsualisation`, `erreur`) ; **jamais d'adresse ni de mot de passe** dans la réponse ; `Cache-Control: no-store` ; 404 et erreurs en JSON ;
+- `server/env.ts` : **une prévisualisation n'utilise jamais `DATABASE_URL`** (base de production) : seulement `DATABASE_URL_PREVIEW`, sinon la base est désactivée ; la production ignore `DATABASE_URL_PREVIEW` ;
+- `server/db/` : schéma Drizzle (table `app_meta`), migration `0000` générée, connexion paresseuse avec le **pilote PostgreSQL standard** `postgres` (pas de pilote propre à Neon : ADR-001), `migrate.ts` (affiche l'hôte, jamais le mot de passe, rejouable) ;
+- `npm run build` vérifie aussi les types de l'API (`tsconfig.api.json`) ; `npm test` (Vitest, 9 tests) ; `npm run api:dev` ; `npm run db:generate` / `db:migrate` ; proxy `/api` dans le serveur de développement ; le service worker ne sert jamais `/api` depuis son cache ;
+- README : section « API et base de données ».
+
+**Vérifié :** `npm test` (9 tests : choix de la base par environnement, prévisualisation isolée, aucune fuite de secret, 404) ; `npm run build` (types du site et de l'API) ; serveur local : `/api/health` répond 200 en JSON, route inconnue 404.
+
+**Complément (même itération, 08/10/2026) :**
+- **Déploiements Vercel** (`vercel.json` → `git.deploymentEnabled`) : seuls `main` (production), `release` (recette) et `preview/**` (essai à la demande) déploient ; `feat/…`, `fix/…`, `docs/…`, `exp/…` ne publient plus. Branche `release` créée. Pour tester : `git push origin feat/x:preview/x`. Les builds annulés comptent au quota, d'où `deploymentEnabled` plutôt qu'une commande d'ignore ;
+- **tests de la base en local, sans Neon** : `server/db/migrations.test.ts` rejoue les migrations sur PGlite (PostgreSQL embarqué) : schéma créé, migrations rejouables, requêtes ; 10 tests au total ;
+- **bug trouvé par ce test** : `db:migrate` calculait le dossier des migrations avec `URL.pathname`, qui encode les accents (« chambéry » → `chambe%CC%81ry`) : corrigé avec `fileURLToPath` ;
+- migrations sur la connexion directe `DATABASE_URL_UNPOOLED`.
+
+**Correction après le premier déploiement d'essai (500 `FUNCTION_INVOCATION_FAILED`, signalée par Dasco) :** le projet est en ES modules (`"type": "module"`) : Node y exige l'extension dans les imports relatifs, et mes imports n'en avaient pas (`../server/app`). `tsc` et les tests passaient, la fonction Vercel plantait (`ERR_MODULE_NOT_FOUND`, **reproduit en local** en compilant l'API et en la chargeant avec Node). Imports corrigés (`./app.js`…). **Nouveau contrôle `scripts/check-api-esm.mjs`**, lancé par `npm run build` (et `npm run check:api`) : il compile l'API dans un dossier temporaire, la charge comme Vercel et interroge `/api/health` ; un import sans extension fait maintenant échouer le build, pas la production.
+
+**Non vérifié :** le déploiement sur Vercel (route en `[...path]`, format `fetch`) ; la connexion à une vraie base Neon (la base n'est pas encore créée) ; le temps de réveil de la base ; les migrations sur une vraie base.
+
 ## Itération 79 — 06/10/2026 (branche `feat/routes-matieres`)
 
 **Demande de Dasco :** distinguer à l'écran les voies piétonnes (56 % des tracés) et celles pour les voitures ; accord pour commencer par les routes avant les monuments.

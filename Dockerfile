@@ -1,10 +1,10 @@
-# Diorama de Chambéry — image de production (site statique servi par nginx)
+# Diorama de Chambéry — image de production (la carte, site statique servi par nginx)
 #
-# Étape 1 : construire le site avec Node (npm run build → dist/)
+# Étape 1 : construire la carte avec Node (npm run build:pi → dist/) : ni API ni administration sur le Pi (EP010, D4)
 # Étape 2 : servir dist/ avec nginx (image finale légère, sans Node)
 # Images multi-architecture : fonctionne sur le Raspberry Pi 5 (arm64) comme sur un PC (amd64).
 #
-# Données : par défaut, celles du dépôt (public/data/city.json, public/models/) sont utilisées telles quelles.
+# Données : par défaut, celles du dépôt (frontend/carte/public/data/city.json, frontend/carte/public/models/) sont utilisées telles quelles.
 # Avec REFRESH_DATA=true (réglé dans docker-compose.yml), le build lance aussi `npm run data`
 # (OpenStreetMap + IGN) et `npm run nature`, avec retour aux données du dépôt si un service échoue
 # (voir deploy/refresh-data.sh).
@@ -17,7 +17,7 @@ RUN npm ci --no-audit --no-fund
 COPY . .
 ARG REFRESH_DATA=false
 RUN if [ "$REFRESH_DATA" = "true" ]; then sh deploy/refresh-data.sh; else echo "Données du dépôt utilisées (REFRESH_DATA=false)"; fi
-RUN npm run build
+RUN npm run build:pi
 
 FROM nginx:1.27-alpine
 COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf

@@ -33,7 +33,7 @@ c'est assez plaisant pour que mes amis y passent 10 minutes et en redemandent.*
 - Web desktop et mobile, mode hors-ligne (PWA)
 
 ### Hors scope (pour l'instant)
-- Back-end, comptes, progression partagée entre appareils ou entre amis (voir la section « Architecture » du backlog)
+- Comptes de joueurs, progression partagée entre appareils ou entre amis : prévus par EP008 (back-end léger et administration), en pause pendant EP010
 - Autres quartiers que le centre historique
 - Mode histoire / parcours thématiques, curseur d'époques (backlog P3)
 
@@ -43,16 +43,16 @@ c'est assez plaisant pour que mes amis y passent 10 minutes et en redemandent.*
 
 | Couche | Technologie |
 |--------|-------------|
-| Frontend | Vite 8 + TypeScript 5.9 + Three.js 0.186 ; PWA via vite-plugin-pwa |
-| Backend | Aucun — site 100 % statique |
-| Données | Pipeline Node (`scripts/`) : Overpass (OSM) + IGN BD TOPO + RGE ALTI + straight-skeleton → `public/data/city.json` ; contenu éditorial dans `src/content/*.json` |
+| Frontend | **Carte** (`frontend/carte/`) : Vite 8 + TypeScript 5.9 + Three.js 0.186, sans framework ; PWA via vite-plugin-pwa. **Administration** (`frontend/admin/`) : React 19, wouter, TanStack Query, React Hook Form ([ADR-002](architecture/decisions/ADR002-separer-front-et-back.md)) |
+| Backend | API (`backend/src/`) : Hono + Zod + Drizzle sur fonctions Vercel, base PostgreSQL Neon ([ADR-001](architecture/decisions/ADR001-back-end-typescript-vercel-neon.md)) ; facultative : la carte marche sans elle |
+| Données | Pipeline Node (`frontend/carte/scripts/`) : Overpass (OSM) + IGN BD TOPO + RGE ALTI + straight-skeleton → `frontend/carte/public/data/city.json` ; contenu éditorial dans `frontend/carte/content/*.json` |
 | Stockage côté client | localStorage (progression, points, éléphants ramenés) |
 | Modèles 3D | Pack nature Quaternius (CC0) et éléphant de jeremy (CC BY 3.0), convertis en .glb (glTF-Transform, meshoptimizer) |
-| Infrastructure | Image Docker Node → nginx ; cible Coolify sur Raspberry Pi 5 (pas encore déployé) ; Vercel en test |
+| Infrastructure | **Vercel** : la carte, l'administration et l'API (prévisualisations `preview/**`, protégées) ; base PostgreSQL Neon. **Raspberry Pi 5 / Coolify** (pas encore déployé, gardé par principe) : image Docker Node → nginx avec **la carte seule** (`npm run build:pi`) |
 
 ### Contraintes
 - Licences : ODbL (OSM), Licence Ouverte Etalab 2.0 (IGN), CC BY 3.0 (éléphant) → attributions affichées dans l'app
-- Pas de tests automatisés : la vérification passe par `npm run build` (types) et le navigateur (`?debug`)
+- Tests Vitest (`npm test`) pour l'API, l'administration et les contrôles du dépôt ; la carte se vérifie par `npm run build` (types, frontières) et le navigateur (`?debug`)
 - Fluidité mobile : voir [PERF-AUDIT.md](architecture/PERF-AUDIT.md)
 
 ---
@@ -66,6 +66,8 @@ c'est assez plaisant pour que mes amis y passent 10 minutes et en redemandent.*
 ## État actuel
 
 - [x] POC diorama, exploration et mini-jeu (itérations 1 à 37)
+- [ ] EP008 — Back-end léger et administration (retouches des parkings livrées ; reprise après EP010 : admin « par tables », progression)
+- [x] EP010 — Séparer le front et le back, administration React, contrat, session par cookie (terminée le 09/10/2026)
 - [ ] P1 — Fiabiliser le POC (position des lieux, relecture des fiches, « la ville vit »)
 - [ ] P1 — Fluidité (arbres par quartier, moins d'images à l'arrêt)
 - [ ] Déploiement sur le Pi (Coolify) puis session de test avec les amis
@@ -90,10 +92,10 @@ Détail et priorités : [BACKLOG.md](versions/backlog/BACKLOG.md).
 | `tasks/` | Plans produits par les sub-agents | Écrits par les agents, lus avant d'implémenter |
 | [onboarding/getting-started.md](onboarding/getting-started.md) | Installer, lancer, régénérer les données | Quand une commande change |
 
-`api/` : inutilisé tant qu'il n'y a pas de back-end.
+`api/` (de ce dossier de docs) : inutilisé ; les formats de l'API sont dans `contrat/` à la racine du dépôt.
 
 Légende des états : ✅ livré · 🟡 partiel / à améliorer · ⬜ à faire · ❓ question ouverte · ⏸ en attente
 
 ---
 
-*Dernière mise à jour : 30/09/2026 (itération 37)*
+*Dernière mise à jour : 09/10/2026 (EP010, itération 87)*

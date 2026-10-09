@@ -91,6 +91,11 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ✅ *itération 70* En balade, l'éléphant ramené à la fontaine : la caméra le suit puis revient à l'avatar
 - ⬜ Idée liée, hors EP005 : bouton « Voir d'ici » (caméra à hauteur d'homme sur un lieu, sans marcher) — environ une demi-session
 
+## Mis de côté : EP009 « La météo en direct » (étude du 08/10/2026)
+[Epic EP009](../../specs/epics/EP009-meteo-en-direct/epic.md) · [plan front](../../tasks/meteo-front-plan.md) · [plan back](../../tasks/meteo-back-plan.md) : météo réelle de Chambéry (Open-Meteo, modèle AROME) via une route `/api/weather` en cache, rendue en 3D (couvert, pluie, brouillard, neige, orage, vent, nuages). **0 €** tant que le projet reste non commercial ; lots Démo ≈ 6 j (sans back), MVP ≈ 12 j, Complet ≈ 23,5 à 25 j ; principal risque : fluidité mobile. Mis de côté par Dasco le 08/10 ; décisions D1 à D6 ouvertes dans l'epic.
+- ⬜ Reprendre EP009 : choisir le lot et trancher D1 à D6 — *Dasco*
+- Lien : la neige d'hiver demandée plus bas (« Hiver : reprendre les arbres ») recoupe EP009-US007
+
 ## P2 — Fluidité mobile
 Détail dans [PERF-AUDIT.md](../../architecture/PERF-AUDIT.md).
 Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par image. Après (ombres à la demande, arbres simplifiés) : ≈ 2 400 appels et ≈ 1,5 M triangles par image la plupart du temps.
@@ -112,6 +117,8 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 
 ## Architecture — à trancher avant d'ouvrir le diorama aux amis
 - ❓ **Back-end : pas nécessaire aujourd'hui.** Il le devient seulement pour : progression partagée entre appareils ou entre amis (comptes, classement), ajout de lieux par d'autres que Dasco sans redéployer, données qui changent souvent (événements, horaires). Pistes légères si besoin : PocketBase ou Supabase auto-hébergé sur le Pi (Coolify) ; pour les événements des bars, consommer l'API d'ACME plutôt que créer un back-end dédié
+- ✅ **EP010 « Séparer le front et le back, et poser l'administration en React »** (terminée le 09/10, mise en production avec la partie faite d'EP008) : [epic](../../specs/epics/EP010-front-back-et-admin-react/epic.md). **Phase 1 (front) faite le 09/10** (itérations 83-84 : carte dans `frontend/carte`, admin React dans `frontend/admin`, frontières vérifiées au build, relecture corrigée) : **vérifiée par Dasco sur la prévisualisation et fusionnée dans la branche d'epic**. Phase 2 (back) : **US006 faite le 09/10** (`backend/src/`, tsconfig racine = back, vérifiée sur la prévisualisation) ; **US007 faite le 09/10** (`contrat/` en zod/mini, vérifié) ; **US008 et US009 faites le 09/10** (session glissante, nginx, docs ; relecture de la phase 2 corrigée) : image Docker et connexion vérifiées par Dasco. **Reprise d'EP008** : repartir de `main` ; les réponses de Dasco du 09/10 et les plans « admin par tables » et « progression » sont dans `git stash` (« EP008 en attente d'EP010 ») ([plan](../../tasks/ep010-phase2-plan.md))
+- ⬜ **CSP de la carte** avant EP008-US007 (la carte dans un cadre de l'administration) : une page de la même adresse peut se servir de la session d'administration ; la carte construit encore du HTML par `innerHTML` (avec échappement) — relecture de la phase 2, I4
 - ✅ **Cache HTTP** : fait dans `deploy/nginx.conf` (itération 28) — `assets/` en cache 1 an, `index.html` / `city.json` / `.glb` revalidés (ETag, 304), gzip. Brotli : pas dans l'image nginx standard, à voir si besoin
 - ✅ **Données versionnées** (itération 30) : empreinte des données calculée au build (`city.json?v=…`, `.glb?v=…`) ; nginx garde ces adresses en cache 1 an ; une modification des données change l'adresse
 - ✅ **Mode hors-ligne / rechargement instantané** (itération 30) : service worker (vite-plugin-pwa) qui garde site + `city.json` + modèles (2,4 Mo) dès la 1re visite ; bandeau « Mettre à jour » quand une nouvelle version est publiée ; carte installable (icône, manifeste). **Nécessite HTTPS** (domaine Coolify) : inactif sur `http://<ip>:3000`

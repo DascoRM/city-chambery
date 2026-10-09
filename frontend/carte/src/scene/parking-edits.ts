@@ -1,0 +1,128 @@
+import type { CityData, Parking, ParkingKind, Pt } from '../types';
+import { customId, osmId, parkingKind, publishedAdded, publishedOverride, type PublishedEdits } from '../../../../contrat/parkings.js';
+
+/**
+ * Retouches manuelles des parkings (EP006) : `content/parkings.json` → `overrides` (par identifiant OpenStreetMap)
+ * et `added` (parkings absents d'OSM). Appliquées au chargement sur les données de `city.json` : on corrige ou on
+ * complète sans relancer le script de données (recharger la page suffit). Rien n'est inventé : ce qu'on ajoute ici
+ * doit venir d'une source (la note de la fiche peut la citer).
+ */
+export interface ParkingOverride {
+  /** Retirer ce parking (n'existe pas, doublon…) */
+  hide?: boolean;
+  name?: string;
+  fee?: boolean;
+  capacity?: number;
+  kind?: ParkingKind;
+  /** Nouvelle position (m) du panneau */
+  pos?: Pt;
+  /** Phrase affichée dans la fiche (source à citer) */
+  note?: string;
+  /** Source de la retouche (obligatoire depuis l'administration, EP008) */
+  source?: string;
+}
+export interface ParkingEdits {
+  overrides?: Record<string, ParkingOverride>;
+  added?: (Partial<Parking> & { id: string; kind: ParkingKind; pos: Pt; note?: string; source?: string })[];
+}
+
+/**
+ * Fusionne les retouches du fichier (`parkings.json`) et celles publiées par l'administration (base, EP008-US006) :
+ * pour un même parking, l'administration l'emporte ; les ajouts sont réunis (l'administration l'emporte à identifiant égal).
+ */
+export function mergeParkingEdits(file: ParkingEdits, published: PublishedEdits | null): ParkingEdits {
+  if (!published) return file;
+  const added = new Map((file.added ?? []).map((a) => [a.id, a]));
+  for (const a of published.added ?? []) added.set(a.id, a);
+  return { overrides: { ...(file.overrides ?? {}), ...(published.overrides ?? {}) }, added: [...added.values()] };
+}
+
+/** Résultat de la demande des retouches publiées : les retouches, ou la raison de leur absence (affichée en `?debug`) */
+export type PublishedResult = { edits: PublishedEdits; ms: number } | { edits: null; ms: number; reason: string };
+
+/**
+ * Garde les retouches publiées conformes au contrat partagé avec l'API (`contrat/parkings.ts`, EP010-US007), **une par une** :
+ * une retouche hors contrat est ignorée (et signalée dans la console) sans jeter les autres ; le site ne plante jamais à cause
+ * d'une réponse inattendue (API d'une autre version, page de repli…). Null si la réponse n'a pas la forme attendue.
+ */
+export function validPublishedEdits(body: unknown): PublishedEdits | null {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return null;
+  const raw = body as { overrides?: unknown; added?: unknown; updatedAt?: unknown };
+  const out: PublishedEdits = { overrides: {}, added: [], updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : null };
+  if (raw.overrides && typeof raw.overrides === 'object') {
+    for (const [id, o] of Object.entries(raw.overrides)) {
+      const checked = publishedOverride.safeParse(o);
+      if (checked.success && osmId.safeParse(id).success) out.overrides[id] = checked.data;
+      else bad(`retouche publiée « ${id} » hors contrat`);
+    }
+  }
+  if (Array.isArray(raw.added)) {
+    for (const a of raw.added) {
+      const checked = publishedAdded.safeParse(a);
+      if (checked.success && customId.safeParse(checked.data.id).success) out.added.push(checked.data);
+      else bad(`ajout publié hors contrat (${JSON.stringify(a)?.slice(0, 80)})`);
+    }
+  }
+  return out;
+}
+
+/**
+ * Retouches publiées par l'administration (`/api/parkings/edits`). Demandées en même temps que la ville (qui met elle-même
+ * plus d'une seconde à arriver) ; on attend au plus `timeoutMs` : la base Neon se met en veille après 5 minutes et met un
+ * moment à se réveiller (le premier appel est plus lent), d'où 4 s et non 1,5 s. Au-delà, le site part sans.
+ */
+export async function fetchPublishedEdits(timeoutMs = 4000): Promise<PublishedResult> {
+  const ctrl = new AbortController();
+  const t0 = performance.now();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  const ms = () => Math.round(performance.now() - t0);
+  try {
+    const res = await fetch('/api/parkings/edits', { signal: ctrl.signal });
+    if (!res.ok) return { edits: null, ms: ms(), reason: `réponse ${res.status}` };
+    const edits = validPublishedEdits(await res.json());
+    return edits ? { edits, ms: ms() } : { edits: null, ms: ms(), reason: 'réponse vide ou hors contrat' };
+  } catch (e) {
+    // hors ligne, API absente (développement sans `npm run api:dev`), délai dépassé
+    return { edits: null, ms: ms(), reason: (e as Error).name === 'AbortError' ? `délai de ${timeoutMs} ms dépassé` : 'API injoignable' };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const KINDS = new Set<string>(parkingKind.options); // une seule liste des types : celle du contrat
+const isPt = (p: unknown): p is Pt => Array.isArray(p) && p.length === 2 && p.every((v) => typeof v === 'number' && Number.isFinite(v));
+
+/** Retouche invalide : on l'ignore et on le dit dans la console, le site ne plante jamais à cause de ce fichier */
+const bad = (what: string) => console.warn(`[parkings] retouche ignorée : ${what}`);
+
+export function applyParkingEdits(data: CityData, edits: ParkingEdits): void {
+  const over = edits.overrides ?? {};
+  const known = new Set((data.parkings ?? []).map((p) => p.id));
+  for (const id of Object.keys(over)) if (!known.has(id)) bad(`« ${id} » n'existe pas dans les données`);
+  const list = (data.parkings ?? []).filter((p) => !over[p.id]?.hide).map((p) => {
+    const o = over[p.id];
+    if (!o) return p;
+    const out: Parking = { ...p };
+    const edited: string[] = [];
+    if (typeof o.name === 'string') { out.name = o.name; edited.push('name'); }
+    if (typeof o.fee === 'boolean') { out.fee = o.fee; edited.push('fee'); }
+    if (typeof o.capacity === 'number' && o.capacity > 0) { out.capacity = o.capacity; delete out.est; edited.push('capacity'); } // remplace l'estimation
+    if (o.kind) {
+      if (KINDS.has(o.kind)) { out.kind = o.kind; edited.push('kind'); if (o.kind !== 'surface') delete out.est; } else bad(`type « ${o.kind} » inconnu (${p.id})`);
+    }
+    if (o.pos !== undefined) {
+      if (isPt(o.pos)) { out.pos = o.pos; out.posFixed = true; edited.push('pos'); } else bad(`pos invalide (${p.id})`);
+    }
+    if (typeof o.note === 'string') out.note = o.note;
+    if (typeof o.source === 'string' && o.source.trim()) out.editSource = o.source.trim();
+    if (edited.length) out.edited = edited;
+    return out;
+  });
+  for (const a of edits.added ?? []) {
+    if (!a || typeof a.id !== 'string' || !KINDS.has(a.kind) || !isPt(a.pos)) { bad(`ajout sans identifiant, type ou position valide (${JSON.stringify(a)?.slice(0, 80)})`); continue; }
+    if (known.has(a.id)) { bad(`ajout « ${a.id} » : identifiant déjà pris`); continue; }
+    const { source, ...rest } = a;
+    list.push({ access: 'public', ...rest, added: true, posFixed: true, ...(source?.trim() ? { editSource: source.trim() } : {}) } as Parking);
+  }
+  data.parkings = list;
+}

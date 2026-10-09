@@ -1,17 +1,27 @@
 {
+  "//": "Config TypeScript du back (EP010-US006) : api/, backend/src/, contrat/. Vercel compile api/index.ts avec le tsconfig.json le plus proche en remontant depuis api/ : celui-ci (n'en créer aucun dans api/). Pas de paths ni de références de projet (non gérés par Vercel). La carte (frontend/carte) et l'administration (frontend/admin) ont le leur. noEmitOnError : une erreur de types fait échouer le déploiement Vercel (sans effet en local, noEmit).",
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "node"
+    ],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "resolveJsonModule": true,
     "isolatedModules": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["vite/client"]
+    "noEmitOnError": true
   },
-  "include": ["src"]
+  "include": [
+    "api",
+    "backend/src",
+    "contrat",
+    "drizzle.config.ts"
+  ]
 }

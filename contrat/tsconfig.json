@@ -1,0 +1,18 @@
+{
+  "//": "contrat/ : ni DOM ni Node, seulement zod/mini (EP010-US007). Un `document`, un `process` ou un `node:fs` ici est une erreur de compilation. Les tests (Vitest) sont vérifiés par le tsconfig racine.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "types": [],
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["."],
+  "exclude": ["**/*.test.ts"]
+}

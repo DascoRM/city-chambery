@@ -35,7 +35,7 @@ point par point, c'est assez plaisant pour que mes amis y passent 10 minutes et 
 ## Démarrer
 
 Prérequis : **Node.js 20+** (développement) et/ou **Docker** (production). Les données
-(`public/data/city.json`, `public/models/`) sont déjà dans le dépôt : pas besoin de les
+(`frontend/carte/public/data/city.json`, `frontend/carte/public/models/`) sont déjà dans le dépôt : pas besoin de les
 télécharger pour lancer le projet.
 
 ### 1. Lancer en développement
@@ -68,7 +68,7 @@ Sur le Pi avec Coolify : voir [Déployer (Docker, Coolify)](#déployer-docker-co
 
 ```bash
 npm run data                     # télécharge OSM + hauteurs BD TOPO + relief RGE ALTI (1 à 2 min)
-npm run data -- --offline        # reconstruit depuis data/raw/, sans réseau (≈ 10 s)
+npm run data -- --offline        # reconstruit depuis frontend/carte/data/raw/, sans réseau (≈ 10 s)
 npm run nature                   # reconvertit les arbres du pack nature (après modification de nature.json)
 ```
 
@@ -77,20 +77,29 @@ npm run nature                   # reconvertit les arbres du pack nature (après
 | Commande | Rôle |
 |---|---|
 | `npm install` | Installe les dépendances. Après un changement de dépendances, commiter `package-lock.json` (sinon le build Docker échoue sur `npm ci`) |
-| `npm run dev` | Serveur de développement (avec l'outil de placement et les fiches brouillons) |
-| `npm run build` | Build statique de production dans `dist/` (sans outil de placement ni brouillons) |
+| `npm run dev` | Carte : serveur de développement, http://localhost:5173 (avec l'outil de placement et les fiches brouillons) |
+| `npm run dev:admin` | Administration (React) en développement : http://localhost:5174/admin/ ; lancer aussi `npm run api:dev` (l'API) et `npm run dev` (la carte, qui sert `/data/city.json`) |
+| `npm run build` | Contrôles (types de chaque partie, chargement de l'API comme sur Vercel), puis build de la carte dans `dist/` (sans outil de placement ni brouillons) et de l'administration dans `dist/admin/` |
+| `npm run check:boundaries` | Contrôle des frontières du dépôt (ADR-002) : la carte et l'administration ne s'importent pas, le front n'importe jamais le code de l'API, chaque partie a sa liste de paquets, pas de HTML brut dans l'administration (lancé par `npm run build`) |
+| `npm run typecheck` | Types seulement : carte, administration, back (le `tsconfig.json` racine, celui que Vercel utilise) et contrat |
+| `npm run build:pi` | Contrôles de la carte puis build de la carte seule : c'est ce que fait l'image Docker du Pi (ni API ni administration sur le Pi) |
+| `npm run build:carte` / `npm run build:admin` | Build d'une seule partie (la carte vide `dist/` : construire l'administration après) |
 | `npm run preview` | Sert le build de production en local |
+| `npm run api:dev` | API en local (http://localhost:8787/api/health) ; `npm run dev` lui renvoie `/api` par un proxy |
+| `npm test` | Tests (Vitest), un projet par partie : back (Node, base PGlite), administration (React, DOM simulé par happy-dom), contrat, carte (fonctions sans navigateur), outillage (contrôles du dépôt) |
+| `npm run db:generate` | Génère une migration SQL depuis `backend/src/db/schema.ts` (sans base) |
+| `npm run db:migrate` | Applique les migrations : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (jamais automatique au déploiement ; le nom d'hôte est affiché avant d'agir) |
 | `npm run docker:up` | Construit l'image Docker et lance le conteneur en arrière-plan (http://localhost:3000) |
 | `npm run docker:logs` | Affiche les journaux du conteneur en continu |
 | `npm run docker:down` | Arrête et supprime le conteneur |
-| `npm run data` | Télécharge tout (OpenStreetMap, hauteurs BD TOPO, relief RGE ALTI) et écrit `public/data/city.json`. Les réponses brutes sont gardées dans `data/raw/` |
-| `npm run data -- --offline` | Reconstruit `city.json` depuis `data/raw/`, sans réseau (≈ 10 s). À lancer après une modification des scripts ou de `diorama.config.json` |
+| `npm run data` | Télécharge tout (OpenStreetMap, hauteurs BD TOPO, relief RGE ALTI) et écrit `frontend/carte/public/data/city.json`. Les réponses brutes sont gardées dans `frontend/carte/data/raw/` |
+| `npm run data -- --offline` | Reconstruit `city.json` depuis `frontend/carte/data/raw/`, sans réseau (≈ 10 s). À lancer après une modification des scripts ou de `frontend/carte/diorama.config.json` |
 | `npm run data -- --offline --bdtopo` | Idem, mais retélécharge seulement les hauteurs BD TOPO |
 | `npm run data -- --offline --relief` | Idem, mais retélécharge seulement le relief RGE ALTI |
-| `npm run nature` | Convertit et simplifie les arbres du pack Quaternius (`assets-src/` → `public/models/nature/`) selon `src/content/nature.json` |
-| `npm run mascot` | Convertit l'éléphant mascotte (`assets-src/Elephant by jeremy - 9J-cG39KYFC.glb` → `public/models/mascotte/elephant.glb`) : mètres, 4,5 m de haut, trompe vers +X |
+| `npm run nature` | Convertit et simplifie les arbres du pack Quaternius (`frontend/carte/assets-src/` → `frontend/carte/public/models/nature/`) selon `frontend/carte/content/nature.json` |
+| `npm run mascot` | Convertit l'éléphant mascotte (`frontend/carte/assets-src/Elephant by jeremy - 9J-cG39KYFC.glb` → `frontend/carte/public/models/mascotte/elephant.glb`) : mètres, 4,5 m de haut, trompe vers +X |
 | `npm run check:streets` | Contrôle les noms de rues de `city.json` (texte identique à OSM, sur une voie du même nom, lisibles, un seul par rue, fichier à jour) ; sans modification, sortie 1 si une règle est violée |
-| `npm run buildings` | Convertit les 2 pièces d'auvent du pack de bâtiments (`assets-src/buildings` → `public/models/buildings/details.glb`) selon `src/content/buildings.json` : couleurs de la palette lues et écrites en couleurs de sommet, échelle en mètres |
+| `npm run buildings` | Convertit les 2 pièces d'auvent du pack de bâtiments (`frontend/carte/assets-src/buildings` → `frontend/carte/public/models/buildings/details.glb`) selon `frontend/carte/content/buildings.json` : couleurs de la palette lues et écrites en couleurs de sommet, échelle en mètres |
 
 Variables d'environnement utiles :
 
@@ -120,7 +129,7 @@ source et dénivelé du relief, types de toits, et quels lieux d'histoire ont é
 | Fermer une fiche | Échap, ✕ ou clic dans le vide | ✕ ou toucher dans le vide |
 | Ramener un éléphant à la fontaine | le survoler le fait trotter plus vite ; clic = il sprinte quelques secondes ; **reclic pendant le sprint** = il file sur la fontaine (ça rate parfois) | le toucher le fait sprinter ; le retoucher pendant le sprint pour l'attraper |
 
-Zoom maximum : 70 m du point visé (120 m avant). De près, la caméra reste à au moins 30 m au-dessus du sol pour ne pas entrer dans les toits ni dans les collines. Gestes à deux doigts : `src/scene/touch.ts` ; réglages de la caméra : `src/scene/stage.ts`.
+Zoom maximum : 70 m du point visé (120 m avant). De près, la caméra reste à au moins 30 m au-dessus du sol pour ne pas entrer dans les toits ni dans les collines. Gestes à deux doigts : `frontend/carte/src/scene/touch.ts` ; réglages de la caméra : `frontend/carte/src/scene/stage.ts`.
 
 En bas à gauche :
 - **📜 Journal** : les lieux découverts (clic pour y voler) et les lieux mystère restants ;
@@ -135,8 +144,8 @@ dans le navigateur (pas de compte) ; « Recommencer l'exploration » dans le jou
 
 ## D'où viennent les données
 
-Tout est calculé par `npm run data` (script `scripts/fetch-osm.mjs`), puis figé dans
-`public/data/city.json` : l'application ne fait aucun appel réseau vers ces services.
+Tout est calculé par `npm run data` (script `frontend/carte/scripts/fetch-osm.mjs`), puis figé dans
+`frontend/carte/public/data/city.json` : l'application ne fait aucun appel réseau vers ces services.
 
 | Donnée | Source | Détail |
 |---|---|---|
@@ -144,16 +153,16 @@ Tout est calculé par `npm run data` (script `scripts/fetch-osm.mjs`), puis fig�
 | Hauteur des bâtiments | **IGN BD TOPO** (couche `BDTOPO_V3:batiment`, service WFS de la Géoplateforme) | Chaque bâtiment OSM est associé au bâtiment BD TOPO qui recouvre le plus son emprise (36 points testés, au moins un tiers). On prend la hauteur à la gouttière (`hauteur`) et la hauteur du toit (`altitude_maximale_toit − altitude_minimale_sol`). ≈ 1 960 bâtiments sur 2 067 ; les autres gardent la hauteur OSM ou une estimation (3 à 5 niveaux) |
 | Relief du terrain | **IGN RGE ALTI** (service de calcul altimétrique, ressource `ign_rge_alti_wld`) | Grille d'altitudes au pas de 10 m (≈ 15 500 points, par lots de 150, moins de 4 requêtes/s). **Repli** si le service est injoignable : interpolation des altitudes de sol des bâtiments BD TOPO (moins précis : jusqu’à ≈ 40 m d’écart sur les collines). ≈ 92 m de dénivelé sur l’emprise |
 | Forme des toits | Tag OSM `roof:shape` quand il existe (≈ 3 %), sinon calculée | Voir [Rendu](#rendu--ce-qui-se-passe-à-lécran) |
-| Textes des lieux | Rédigés à la main (`src/content/pois.json`) | Chaque fiche cite ses sources |
+| Textes des lieux | Rédigés à la main (`frontend/carte/content/pois.json`) | Chaque fiche cite ses sources |
 
-Caches dans `data/raw/` (non versionnés) : `overpass.json`, `bdtopo.json`, `terrain.json`.
+Caches dans `frontend/carte/data/raw/` (non versionnés) : `overpass.json`, `bdtopo.json`, `terrain.json`.
 Supprimer un fichier force son retéléchargement au prochain `npm run data`.
 
 ---
 
 ## Réglages du diorama
 
-`diorama.config.json` (relancer `npm run data -- --offline` après modification ; si l'emprise
+`frontend/carte/diorama.config.json` (relancer `npm run data -- --offline` après modification ; si l'emprise
 change, relancer `npm run data` complet) :
 
 | Clé | Rôle |
@@ -169,7 +178,7 @@ change, relancer `npm run data` complet) :
 
 ## Gérer les lieux d'histoire
 
-Les fiches sont dans `src/content/pois.json` :
+Les fiches sont dans `frontend/carte/content/pois.json` :
 
 ```json
 {
@@ -199,7 +208,7 @@ masquée en production). Chaque fait d'une fiche doit venir d'une source citée 
 
 ## Monuments modélisés
 
-Déclarés dans `src/content/models.json` :
+Déclarés dans `frontend/carte/content/models.json` :
 
 ```json
 { "id": "fontaine-elephants", "poi": "elephants", "source": "procedural:fontaine-elephants", "rotation": 37, "scale": 1.3, "hideOsm": [] }
@@ -207,7 +216,7 @@ Déclarés dans `src/content/models.json` :
 
 | Clé | Rôle |
 |---|---|
-| `source` | `procedural:<nom>` (formes générées en code, `src/scene/models/`) ou `models/<fichier>.glb` (export Blender dans `public/models/`, voir le README de ce dossier) |
+| `source` | `procedural:<nom>` (formes générées en code, `frontend/carte/src/scene/models/`) ou `models/<fichier>.glb` (export Blender dans `frontend/carte/public/models/`, voir le README de ce dossier) |
 | `poi` / `pos` | Position : celle du lieu `poi`, ou `pos` [x, y] en mètres. `pos [0, 0]` = modèle construit en coordonnées absolues (sur des contours OSM) |
 | `rotation`, `scale` | Degrés (0 = vers l'est) ; 1 = taille réelle |
 | `hideOsm` | Identifiants OSM des bâtiments masqués sous le monument |
@@ -219,7 +228,7 @@ Déclarés dans `src/content/models.json` :
 | Château des ducs de Savoie | 7 contours OSM nommés (3 tours, Sainte-Chapelle, Porterie, aile du Midi, Conseil départemental) ; côté esplanade, clôture sur le bord du jardin du château (OSM), portail là où l'allée de service entre (OSM), escalier sur son tracé OSM (`chateau-grille.ts`) | Hauteurs et toits (`CHATEAU_PARTS` dans `chateau.ts`) ; tour Yolande absente ; tracé exact, hauteurs et dessin de la grille et du portail, marches (le relief au pas de 10 m ne montre pas la montée de l'escalier) |
 | Carré Curial (+ médiathèque accolée) | Contours OSM (Carré avec sa cour, médiathèque way 209429258) ; gouttière 16,7 m et toit 5,4 m (BD TOPO) ; caserne de 1801-1805 autour d'une cour (Wikipédia) ; médiathèque : gouttière 18,3 m, toit plat (BD TOPO) | Étages, fenêtres, couleurs, aspect de la médiathèque |
 
-Tous les monuments suivent le relief et sont mis en lumière la nuit (`src/scene/models/lighting.ts`).
+Tous les monuments suivent le relief et sont mis en lumière la nuit (`frontend/carte/src/scene/models/lighting.ts`).
 
 ---
 
@@ -239,7 +248,7 @@ simples.** Si un modèle ne se charge pas, la zone garde ses arbres simples.
 Environ 880 arbres modélisés, avec 18 modèles. Le mélange d'essences est un choix de style, pas
 l'inventaire réel : dans OSM, seuls 2 arbres sur 1 575 ont une espèce et 197 un type de feuillage.
 
-Tout se règle dans `src/content/nature.json` :
+Tout se règle dans `frontend/carte/content/nature.json` :
 
 ```json
 {
@@ -263,18 +272,18 @@ Tout se règle dans `src/content/nature.json` :
 
 **Ajouter un modèle ou un parc :**
 
-1. Ajouter la zone, le mélange ou le modèle dans `src/content/nature.json`.
-2. `npm run nature` : convertit les `.obj` cités dans les mélanges, avec leurs variantes d'automne (`_Autumn_n`) et d'hiver (`_Dead_n`) pour les familles listées dans `seasons` (rangés dans `assets-src/quaternius-nature/obj/<catégorie>/`) en `.glb` dans `public/models/nature/` (≈ 10 à 25 Ko par arbre).
+1. Ajouter la zone, le mélange ou le modèle dans `frontend/carte/content/nature.json`.
+2. `npm run nature` : convertit les `.obj` cités dans les mélanges, avec leurs variantes d'automne (`_Autumn_n`) et d'hiver (`_Dead_n`) pour les familles listées dans `seasons` (rangés dans `frontend/carte/assets-src/quaternius-nature/obj/<catégorie>/`) en `.glb` dans `frontend/carte/public/models/nature/` (≈ 10 à 25 Ko par arbre).
 3. Recharger la page.
 
 La conversion remplace les couleurs du pack, plus sombres, par la palette du diorama (`RECOLOR` dans
-`scripts/convert-nature.mjs`) et ne garde qu'un maillage à facettes avec une couleur par sommet.
+`frontend/carte/scripts/convert-nature.mjs`) et ne garde qu'un maillage à facettes avec une couleur par sommet.
 Elle **simplifie** aussi les modèles (meshoptimizer), réglé par `simplify` dans `nature.json` :
 `ratio` = part des triangles gardés (0,5 = la moitié), `error` = écart de forme toléré. Pour
 revenir aux modèles complets, retirer `simplify` puis relancer `npm run nature`. Après la mise à
 jour, lancer `npm install` une fois (nouvelles dépendances de conversion).
 
-Sources du pack : `assets-src/quaternius-nature/` (`obj/`, rangés en `arbres`, `rochers`,
+Sources du pack : `frontend/carte/assets-src/quaternius-nature/` (`obj/`, rangés en `arbres`, `rochers`,
 `vegetation`, `bois`). Cactus, palmiers, maïs et blé ont été retirés (hors sujet pour Chambéry).
 Les `.blend` d'origine ont été supprimés (pack retéléchargeable sur quaternius.com).
 
@@ -283,7 +292,7 @@ Les `.blend` d'origine ont été supprimés (pack retéléchargeable sur quatern
 ## Mascottes (les éléphants qui se promènent)
 
 Quatre éléphants se promènent dans le diorama, **uniquement sur les rues et chemins** d'OpenStreetMap. Réglages dans
-`src/content/mascot.json`, code dans `src/scene/mascot.ts`.
+`frontend/carte/content/mascot.json`, code dans `frontend/carte/src/scene/mascot.ts`.
 
 - **Chemin** : les voies OSM forment un graphe (les voies qui se croisent partagent leurs points). L'éléphant
   va de point en point le long des segments ; il ne coupe jamais à travers un bâtiment ou un parc.
@@ -299,7 +308,7 @@ Quatre éléphants se promènent dans le diorama, **uniquement sur les rues et c
   Les seuils sont ceux du modèle converti ; un autre modèle demanderait de les reprendre (`WALK_GLSL`).
 - **Ombre** : une tache sombre sous lui (les ombres de la scène ne sont recalculées que quand le soleil bouge).
 - **Modèle** : « Elephant » par jeremy, [Poly Pizza](https://poly.pizza/m/9J-cG39KYFC), CC BY 3.0. Source dans
-  `assets-src/` (le `.glb` et l'`.obj` d'origine), converti par `npm run mascot`.
+  `frontend/carte/assets-src/` (le `.glb` et l'`.obj` d'origine), converti par `npm run mascot`.
 
 ### Mini-jeu « Ramène les éléphants à la fontaine »
 
@@ -318,12 +327,12 @@ et quatre éléphants se promènent dans les rues (entre 80 et 300 m de la fonta
   éléphant, plus `bonus` (20) quand la fontaine est complète, avec un grand feu d'artifice.
 - **Nouvelle partie** : `restartSeconds` (45 s) après la fontaine complète, les éléphants s'échappent de
   nouveau.
-- **Sauvegarde** : éléphants ramenés (`src/state/herd.ts`) et points (`src/state/points.ts`) gardés dans
+- **Sauvegarde** : éléphants ramenés (`frontend/carte/src/state/herd.ts`) et points (`frontend/carte/src/state/points.ts`) gardés dans
   le navigateur, comme les lieux découverts. « Recommencer l'exploration » ne touche ni l'un ni l'autre.
 - **Compteur** : « 🐘 N points · ⛲ n / 4 » sous la progression.
-- Code : `src/game/hunt.ts` (règles, bulle, score), `src/scene/mascot.ts` (troupeau, états, animations),
-  `src/scene/particles.ts` (fumée, étincelles, feux d'artifice), places sur la fontaine :
-  `elephant-0` à `elephant-3` dans `src/scene/models/elephants.ts`.
+- Code : `frontend/carte/src/game/hunt.ts` (règles, bulle, score), `frontend/carte/src/scene/mascot.ts` (troupeau, états, animations),
+  `frontend/carte/src/scene/particles.ts` (fumée, étincelles, feux d'artifice), places sur la fontaine :
+  `elephant-0` à `elephant-3` dans `frontend/carte/src/scene/models/elephants.ts`.
 
 ## Outil de placement (mode dev)
 
@@ -342,21 +351,21 @@ En production, ni le code de l'outil ni l'endpoint `/__dev/poi` du serveur Vite 
 
 ## Rendu : ce qui se passe à l'écran
 
-- **Socle** : sol en relief (maillage suivant la grille d'altitudes), bords qui épousent le profil du terrain (bande d'herbe + strates de terre), plinthe en bois. Parcs, places et plans d'eau sont peints sur une texture du sol ; rues, berges, rivière et ponts sont des rubans drapés sur le relief : un ruban est découpé le long des arêtes du sol là où il s'en écarterait de plus de 6 cm (`ribbons()` dans `src/scene/city.ts`), si bien que le terrain ne traverse pas les chaussées.
+- **Socle** : sol en relief (maillage suivant la grille d'altitudes), bords qui épousent le profil du terrain (bande d'herbe + strates de terre), plinthe en bois. Parcs, places et plans d'eau sont peints sur une texture du sol ; rues, berges, rivière et ponts sont des rubans drapés sur le relief : un ruban est découpé le long des arêtes du sol là où il s'en écarterait de plus de 6 cm (`ribbons()` dans `frontend/carte/src/scene/city.ts`), si bien que le terrain ne traverse pas les chaussées.
 - **Bâtiments** : contours OSM extrudés, posés sur le point le plus bas du terrain sous leur emprise. Couleurs pastel stables (dérivées de l'identifiant OSM).
-- **Toits** (décidés par `scripts/roofs.mjs`) : emprise quasi rectangulaire → deux pans, quatre pans ou pyramide ; forme irrégulière, en L, avec cour → toit à pans par *squelette droit* (librairie `straight-skeleton`) ; plats pour garages, abris, très grandes surfaces sans toit mesuré par BD TOPO. La hauteur du toit vient de BD TOPO quand elle existe.
+- **Toits** (décidés par `frontend/carte/scripts/roofs.mjs`) : emprise quasi rectangulaire → deux pans, quatre pans ou pyramide ; forme irrégulière, en L, avec cour → toit à pans par *squelette droit* (librairie `straight-skeleton`) ; plats pour garages, abris, très grandes surfaces sans toit mesuré par BD TOPO. La hauteur du toit vient de BD TOPO quand elle existe.
 - **Eau** : matériau brillant animé, berges en pierre.
 - **Arbres** : ceux d'OSM + quelques-uns semés dans les parcs ; arbres modélisés (pack Quaternius) dans les parcs et le long de la Leysse (`nature.json`) ; les rues gardent les arbres simples.
 - **Ombres** : calculées une fois au chargement, puis seulement quand le soleil bouge (curseur d'heure, lecture ▶), pas à chaque image. Les gemmes et les épingles, qui bougent, ne projettent pas d'ombre.
-- **Fenêtres et portes** : la façade de chaque bâtiment porte une grille de fenêtres (3 m × 3,2 m), vitre bleu ciel avec encadrement crème le jour, allumées en partie la nuit selon l'heure (`windows.litCurve` de `life.json` : la ville rentre le soir, s'endort, se réveille vers 7 h ; les éteintes redeviennent sombres) ; des portes brunes au rez-de-chaussée des murs côté rue (à moins de 9 m d'une voie, jamais sur un mur mitoyen). Tout est calculé dans le shader des façades (`src/scene/city.ts`) : décor, pas un relevé des vraies fenêtres.
+- **Fenêtres et portes** : la façade de chaque bâtiment porte une grille de fenêtres (3 m × 3,2 m), vitre bleu ciel avec encadrement crème le jour, allumées en partie la nuit selon l'heure (`windows.litCurve` de `life.json` : la ville rentre le soir, s'endort, se réveille vers 7 h ; les éteintes redeviennent sombres) ; des portes brunes au rez-de-chaussée des murs côté rue (à moins de 9 m d'une voie, jamais sur un mur mitoyen). Tout est calculé dans le shader des façades (`frontend/carte/src/scene/city.ts`) : décor, pas un relevé des vraies fenêtres.
 - **Jour / nuit** : soleil (lever 6 h, coucher 18 h), crépuscule, lune ; la nuit, fenêtres éclairées (calculées dans le shader), lueur des rues, bars/clubs/restaurants mis en avant par un halo.
-- **Bars, cafés, restaurants** : une épingle 3D (pointeur de carte) par lieu OSM, colorée par catégorie : violet = bar (bar, pub, biergarten, boîte de nuit), bleu = café (café, glacier), orange = restaurant (`PLACE_CATEGORIES` dans `src/scene/palette.ts`). L'épingle est posée sur le toit du bâtiment qui contient le point OSM (161 lieux sur 169 sont à l'intérieur d'un bâtiment), sinon au sol. Au survol, l'épingle rebondit et grossit, et une fiche apparaît à côté (catégorie, nom avec un petit rebond, cuisine, horaires OSM avec les jours en français). La fiche suit l'épingle quand la caméra bouge ; sur mobile, elle s'ouvre au toucher, au-dessus de l'épingle.
-- **Noms de rues** : peints à plat sur la chaussée, dans le sens de la rue, en majuscules (Inter) ; un nom par rue, sur sa partie la plus droite (`scripts/street-names.mjs`, 182 noms). Invisibles en vue d'ensemble, ils apparaissent en fondu entre 320 m et 200 m de la caméra (`src/content/streets.json`), rien n'est construit ni dessiné au-delà. Lettres en champ de distance (un atlas de 33 lettres, 2 Mo) : nettes à tous les zooms, toujours à l'endroit quel que soit le cap de la caméra (le nom se retourne de 180°), posées sur la chaussée ; un seul maillage : +1 appel de rendu. Cachés par les bâtiments comme tout objet du sol : dans une rue étroite, on les voit sous un angle oblique le long de la rue.
-- **Écran initial et lobby** : `index.html` affiche tout de suite un écran de chargement (sans ressource externe), puis le lobby apparaît pendant que la ville charge (barre à étapes réelles : `src/ui/loading.ts`, appelée dans `main()`). Il présente les lieux d'histoire, le mini-jeu et les ambiances ; « Explorer la carte » s'active quand la ville est prête. Le diorama vivant tourne doucement derrière un voile (cadence au repos). Textes dans `src/content/lobby.json` (`{lieux}` et `{elephants}` sont remplacés par les nombres des données). Case « Ne plus afficher cet écran » mémorisée dans le navigateur ; le bouton « ? » de la carte le rouvre. Adresse : `?lobby=0` saute le lobby, `?lobby=1` le force, `?debug` le saute.
-- **Effet maquette** : flou tilt-shift en post-traitement, toujours actif (plus d'interrupteur), bande nette sur le point visé ; les noms restent nets. Le flou est calculé en demi-résolution (`src/scene/tiltshift.ts`).
-- **Résolution** : densité de pixels plafonnée à 1,5, puis baissée automatiquement si les images/s chutent sous 40 pendant les mouvements (`src/scene/quality.ts`).
-- **Cadence** : 30 images/s quand rien ne bouge ; pleine vitesse quand la caméra bouge (et 0,5 s après), quand la souris bouge sur la carte, pendant la lecture ▶ et les animations du mini-jeu. Un module de la boucle le signale par `moving()` (`Ticker`, `src/types.ts`).
-- **Dire où se trouve quelque chose** : avec `?debug`, le bouton **📍 Position** (ou la touche P) permet de cliquer sur la carte : la position (mètres du diorama), le bâtiment OSM, le parking et la rue les plus proches s'affichent et un extrait `{ "pos": [x, y] }` est copié, à coller dans la conversation ou dans `pois.json` / `parkings.json` (code : `src/dev/position-picker.ts`, présent en production avec `?debug` ; le grand outil de placement `placement.ts` reste réservé à `npm run dev`).
+- **Bars, cafés, restaurants** : une épingle 3D (pointeur de carte) par lieu OSM, colorée par catégorie : violet = bar (bar, pub, biergarten, boîte de nuit), bleu = café (café, glacier), orange = restaurant (`PLACE_CATEGORIES` dans `frontend/carte/src/scene/palette.ts`). L'épingle est posée sur le toit du bâtiment qui contient le point OSM (161 lieux sur 169 sont à l'intérieur d'un bâtiment), sinon au sol. Au survol, l'épingle rebondit et grossit, et une fiche apparaît à côté (catégorie, nom avec un petit rebond, cuisine, horaires OSM avec les jours en français). La fiche suit l'épingle quand la caméra bouge ; sur mobile, elle s'ouvre au toucher, au-dessus de l'épingle.
+- **Noms de rues** : peints à plat sur la chaussée, dans le sens de la rue, en majuscules (Inter) ; un nom par rue, sur sa partie la plus droite (`frontend/carte/scripts/street-names.mjs`, 182 noms). Invisibles en vue d'ensemble, ils apparaissent en fondu entre 320 m et 200 m de la caméra (`frontend/carte/content/streets.json`), rien n'est construit ni dessiné au-delà. Lettres en champ de distance (un atlas de 33 lettres, 2 Mo) : nettes à tous les zooms, toujours à l'endroit quel que soit le cap de la caméra (le nom se retourne de 180°), posées sur la chaussée ; un seul maillage : +1 appel de rendu. Cachés par les bâtiments comme tout objet du sol : dans une rue étroite, on les voit sous un angle oblique le long de la rue.
+- **Écran initial et lobby** : `index.html` affiche tout de suite un écran de chargement (sans ressource externe), puis le lobby apparaît pendant que la ville charge (barre à étapes réelles : `frontend/carte/src/ui/loading.ts`, appelée dans `main()`). Il présente les lieux d'histoire, le mini-jeu et les ambiances ; « Explorer la carte » s'active quand la ville est prête. Le diorama vivant tourne doucement derrière un voile (cadence au repos). Textes dans `frontend/carte/content/lobby.json` (`{lieux}` et `{elephants}` sont remplacés par les nombres des données). Case « Ne plus afficher cet écran » mémorisée dans le navigateur ; le bouton « ? » de la carte le rouvre. Adresse : `?lobby=0` saute le lobby, `?lobby=1` le force, `?debug` le saute.
+- **Effet maquette** : flou tilt-shift en post-traitement, toujours actif (plus d'interrupteur), bande nette sur le point visé ; les noms restent nets. Le flou est calculé en demi-résolution (`frontend/carte/src/scene/tiltshift.ts`).
+- **Résolution** : densité de pixels plafonnée à 1,5, puis baissée automatiquement si les images/s chutent sous 40 pendant les mouvements (`frontend/carte/src/scene/quality.ts`).
+- **Cadence** : 30 images/s quand rien ne bouge ; pleine vitesse quand la caméra bouge (et 0,5 s après), quand la souris bouge sur la carte, pendant la lecture ▶ et les animations du mini-jeu. Un module de la boucle le signale par `moving()` (`Ticker`, `frontend/carte/src/types.ts`).
+- **Dire où se trouve quelque chose** : avec `?debug`, le bouton **📍 Position** (ou la touche P) permet de cliquer sur la carte : la position (mètres du diorama), le bâtiment OSM, le parking et la rue les plus proches s'affichent et un extrait `{ "pos": [x, y] }` est copié, à coller dans la conversation ou dans `pois.json` / `parkings.json` (code : `frontend/carte/src/dev/position-picker.ts`, présent en production avec `?debug` ; le grand outil de placement `placement.ts` reste réservé à `npm run dev`).
 - **Mesurer la fluidité** : ajouter `?debug` à l'adresse (ex. `http://localhost:3000/?debug`) affiche images/s, pire image, mode (« repos (30 max) » ou « mouvement »), appels de rendu, triangles et densité, ainsi que le **debug des éléphants** : un faisceau coloré au-dessus de chacun (bleu : se promène, jaune : épuisé ; visible à travers les bâtiments) et un panneau avec leur état, leurs fuites restantes et leur distance à la fontaine ; « Voir » y amène la caméra, « Épuiser » le fait réapparaître épuisé. Le code de ce debug n'est téléchargé qu'avec `?debug`. Dans la console, `window.diorama` (scène, caméra, horloge, troupeau…) existe en dev et avec `?debug`, pas en production.
 
 ---
@@ -364,102 +373,171 @@ En production, ni le code de l'outil ni l'endpoint `/__dev/poi` du serveur Vite 
 ## Structure du code
 
 ```
-diorama.config.json        Emprise, hauteur d'étage, pas et exagération du relief
-vite.config.ts             Config Vite + endpoint dev /__dev/poi (écriture de pois.json)
+frontend/
+  carte/                   LA CARTE : diorama Three.js + OSM / IGN, avec tout son pipeline de données (chemins ci-dessous
+                           relatifs à frontend/carte/ ; le reste du README les cite en entier)
+    index.html             Page de la carte (écran de chargement sans ressource externe)
+    vite.config.ts         Config Vite : racine = ce dossier, sortie dans dist/ à la racine du dépôt ; endpoint dev /__dev/poi (écrit content/pois.json)
+    tsconfig.json          Config TypeScript de la carte (npm run build)
+    diorama.config.json    Emprise, hauteur d'étage, pas et exagération du relief
 
-scripts/
-  fetch-osm.mjs            Pipeline : OSM → projection → découpage → BD TOPO → relief → toits → city.json
-  bdtopo.mjs               Hauteurs IGN BD TOPO (téléchargement WFS + association aux bâtiments OSM)
-  terrain.mjs              Relief RGE ALTI (ou interpolation BD TOPO)
-  roofs.mjs                Choix du toit de chaque bâtiment
-  geo.mjs                  Géométrie 2D des scripts (point dans un polygone, distance à un segment)
-  street-names.mjs         Emplacement du nom de chaque rue (partie la plus droite) → `streetLabels` de city.json
-  check-street-labels.mjs  Contrôle des noms de rues (npm run check:streets)
-  convert-nature.mjs       Pack nature : .obj → .glb (npm run nature)
-  convert-mascot.mjs       Éléphant mascotte : mise à l'échelle et orientation (npm run mascot)
-  convert-buildings.mjs    Auvents du pack de bâtiments → public/models/buildings/details.glb (npm run buildings)
-  lib/kenney-obj.mjs       Lecture des .obj du pack (palette PNG lue par les UV) et de sa texture
+    scripts/
+      fetch-osm.mjs            Pipeline : OSM → projection → découpage → BD TOPO → relief → toits → city.json
+      bdtopo.mjs               Hauteurs IGN BD TOPO (téléchargement WFS + association aux bâtiments OSM)
+      terrain.mjs              Relief RGE ALTI (ou interpolation BD TOPO)
+      roofs.mjs                Choix du toit de chaque bâtiment
+      geo.mjs                  Géométrie 2D des scripts (point dans un polygone, distance à un segment)
+      street-names.mjs         Emplacement du nom de chaque rue (partie la plus droite) → `streetLabels` de city.json
+      check-street-labels.mjs  Contrôle des noms de rues (npm run check:streets)
+      convert-nature.mjs       Pack nature : .obj → .glb (npm run nature)
+      convert-mascot.mjs       Éléphant mascotte : mise à l'échelle et orientation (npm run mascot)
+      convert-buildings.mjs    Auvents du pack de bâtiments → public/models/buildings/details.glb (npm run buildings)
+      lib/kenney-obj.mjs       Lecture des .obj du pack (palette PNG lue par les UV) et de sa texture
 
-src/
-  main.ts                  Assemblage : scène, calques, fiches, boucle de rendu (liste de modules)
-  interaction.ts           Clic, survol, double toucher, gestes à deux doigts
-  types.ts                 Types des données (city.json, lieux, monuments)
-  content/pois.json        Fiches d'histoire
-  content/models.json      Monuments modélisés
-  content/nature.json      Arbres modélisés : mélanges et zones
-  content/mascot.json      Mascotte : modèle, vitesse, voies autorisées, zones interdites
-  content/avatar.json      Balade avec un avatar (EP005) : réglages du chemin (distance d'accrochage, dernier mètre, arrondi des angles)
-  content/parkings.json    Parkings (EP006) : textes des fiches et retouches manuelles (overrides, added), appliquées au chargement
-  content/life.json        La ville vit : passants (nombre, rayon, taille, vitesse, pauses, voies, courbe horaire, groupes) et fenêtres allumées selon l'heure
-  content/buildings.json   Auvents : pièces du pack, échelle, décalages, réglages de pose
-  content/place-hours.json Horaires PROVISOIRES (fictifs) des bars, pubs et boîtes de nuit, pour l'éclairage de nuit
-  scene/stage.ts           Renderer, caméra « maquette », lumières, contrôles, boussole (cap, retour au nord)
-  scene/touch.ts           Gestes tactiles à deux doigts (pincer, tourner, incliner)
-  scene/terrain.ts         Relief : maillage du sol, altitude en tout point, bords du socle
-  scene/city.ts            Rues, eau, bâtiments, arbres (posés sur le relief)
-  scene/geo.ts             Géométrie 2D commune + rayon depuis un point de l'écran (screenRay)
-  scene/roads.ts           Voies piétonnes et hauteur des rubans de voies (partagées)
-  scene/walkways.ts        Réseau des voies où l'on marche (éléphants, passants, avatar)
-  scene/parkings.ts        Panneaux « P » de la couche Parkings (EP006), posés au sol ou sur le toit (souterrains, silos)
-  scene/parking-edits.ts   Retouches manuelles des parkings (parkings.json), validées et appliquées au chargement
-  scene/avatar.ts          Avatar de la balade (EP005) : silhouette des passants ×2, tache au sol, anneau d'arrivée, marche le long du chemin
-  scene/cutaway.ts         Effacement des bâtiments et monuments qui masquent l'avatar (balade) : test caméra → avatar, texture de facteurs, tramage
-  scene/avatar-path.ts     Chemin de l'avatar (EP005) : accrochage au réseau, A*, angles arrondis, dernier mètre
-  scene/roofs.ts           Dessin des toits
-  scene/markers.ts         Gemmes des lieux + épingles 3D et halos des bars, cafés, restaurants
-  scene/labels.ts          Noms des parcs et cours d'eau
-  scene/street-names.ts    Noms de rues peints au sol (un maillage, une texture), visibles seulement en zoomant
-  ui/lobby.ts              Lobby de démarrage : accueil posé sur la ville vivante (textes dans content/lobby.json)
-  ui/parking-card.ts       Contenu de la fiche d'un parking : chaque chiffre dit d'où il vient (OSM, estimé, inconnu)
-  ui/loading.ts            Progression du chargement : écran initial de index.html, puis barre du lobby
-  state/lobby.ts           Case « Ne plus afficher cet écran » (localStorage)
-  scene/daynight.ts        Cycle jour/nuit
-  scene/tiltshift.ts       Effet maquette (flou en demi-résolution)
-  scene/quality.ts         Résolution adaptative (densité de pixels selon les images/s)
-  ui/perfhud.ts            Compteur de performance (?debug)
-  dev/position-picker.ts   Outil de position (?debug) : clic = position copiée, bâtiment, parking et rue proches
-  dev/herd-debug.ts        Debug des éléphants : faisceaux et panneau (?debug)
-  pwa.ts                   Mode hors-ligne : service worker, bandeau « nouvelle version »
-  dataurl.ts               Adresses des données avec leur version (?v=)
-  scene/models.ts          Chargement et placement des monuments
-  scene/nature.ts          Arbres modélisés dans les parcs
-  scene/mascot.ts          Mascotte : promenade sur le réseau des voies, marche dans le shader
-  scene/flags.ts           Drapeaux de la Savoie sur le château et l'hôtel de ville, qui ondulent au vent
-  scene/chimneys.ts        Cheminées sur les toits et fumée selon la saison (rien l'été), qui dérive avec le vent
-  scene/birds.ts           Pigeons sur les places et oiseaux au-dessus des monuments (de jour), faits en code
-  scene/people.ts          Passants : silhouettes instanciées qui marchent sur les voies, autour du point regardé
-  scene/facades.ts         Auvents des bars, cafés et restaurants (pièces du pack de bâtiments, couleur de la catégorie)
-  scene/models/            Monuments générés en code + éclairage de nuit et mesh() partagés
-  ui/ui.ts                 HUD, fiche, journal, toasts, contrôles
-  state/progress.ts        Progression et préférences (localStorage)
-  state/points.ts          Points du mini-jeu (localStorage)
-  state/herd.ts            Éléphants ramenés sur la fontaine (localStorage)
-  game/balade.ts           Mode balade (EP005) : entrée / sortie, caméra qui suit, limites de zoom, ordres de marche
-  game/hunt.ts             Mini-jeu « Ramène les éléphants » : cache-cache, bulle, retour, score
-  game/setup.ts            Mise en place du mini-jeu : sauvegarde, places sur la fontaine, particules
-  scene/particles.ts       Fumée, étincelles, feux d'artifice
-  dev/placement.ts         Outil de placement (chargé seulement en dev)
+    content/
+      pois.json            Fiches d'histoire
+      models.json          Monuments modélisés
+      nature.json          Arbres modélisés : mélanges et zones
+      mascot.json          Mascotte : modèle, vitesse, voies autorisées, zones interdites
+      avatar.json          Balade avec un avatar (EP005) : réglages du chemin (distance d'accrochage, dernier mètre, arrondi des angles)
+      parkings.json        Parkings (EP006) : textes des fiches et retouches manuelles (overrides, added), appliquées au chargement
+      life.json            La ville vit : passants (nombre, rayon, taille, vitesse, pauses, voies, courbe horaire, groupes) et fenêtres allumées selon l'heure
+      buildings.json       Auvents : pièces du pack, échelle, décalages, réglages de pose
+      place-hours.json     Horaires PROVISOIRES (fictifs) des bars, pubs et boîtes de nuit, pour l'éclairage de nuit
 
-public/data/city.json      Données générées (ne pas modifier à la main)
-public/models/             Fichiers glTF des monuments (export Blender)
-public/models/nature/      Arbres du pack nature convertis (.glb)
-public/models/mascotte/    Éléphant mascotte converti (.glb)
-public/icons/              Icônes de l'appli (mode hors-ligne, écran d'accueil)
-assets-src/                Sources des modèles (pack Quaternius en .obj), pas servies par le site
-data/raw/                  Caches des téléchargements (non versionnés)
+    src/
+      main.ts              Assemblage : scène, calques, fiches, boucle de rendu (liste de modules)
+      interaction.ts       Clic, survol, double toucher, gestes à deux doigts
+      types.ts             Types des données (city.json, lieux, monuments)
+      scene/stage.ts       Renderer, caméra « maquette », lumières, contrôles, boussole (cap, retour au nord)
+      scene/touch.ts       Gestes tactiles à deux doigts (pincer, tourner, incliner)
+      scene/terrain.ts     Relief : maillage du sol, altitude en tout point, bords du socle
+      scene/city.ts        Rues, eau, bâtiments, arbres (posés sur le relief)
+      scene/geo.ts         Géométrie 2D commune + rayon depuis un point de l'écran (screenRay)
+      scene/roads.ts       Voies piétonnes et hauteur des rubans de voies (partagées)
+      scene/walkways.ts    Réseau des voies où l'on marche (éléphants, passants, avatar)
+      scene/parkings.ts    Panneaux « P » de la couche Parkings (EP006), posés au sol ou sur le toit (souterrains, silos)
+      scene/parking-edits.tsRetouches manuelles des parkings (parkings.json), validées et appliquées au chargement
+      scene/avatar.ts      Avatar de la balade (EP005) : silhouette des passants ×2, tache au sol, anneau d'arrivée, marche le long du chemin
+      scene/cutaway.ts     Effacement des bâtiments et monuments qui masquent l'avatar (balade) : test caméra → avatar, texture de facteurs, tramage
+      scene/avatar-path.ts Chemin de l'avatar (EP005) : accrochage au réseau, A*, angles arrondis, dernier mètre
+      scene/roofs.ts       Dessin des toits
+      scene/markers.ts     Gemmes des lieux + épingles 3D et halos des bars, cafés, restaurants
+      scene/labels.ts      Noms des parcs et cours d'eau
+      scene/street-names.tsNoms de rues peints au sol (un maillage, une texture), visibles seulement en zoomant
+      ui/lobby.ts          Lobby de démarrage : accueil posé sur la ville vivante (textes dans content/lobby.json)
+      ui/parking-card.ts   Contenu de la fiche d'un parking : chaque chiffre dit d'où il vient (OSM, estimé, inconnu)
+      ui/loading.ts        Progression du chargement : écran initial de index.html, puis barre du lobby
+      state/lobby.ts       Case « Ne plus afficher cet écran » (localStorage)
+      scene/daynight.ts    Cycle jour/nuit
+      scene/tiltshift.ts   Effet maquette (flou en demi-résolution)
+      scene/quality.ts     Résolution adaptative (densité de pixels selon les images/s)
+      ui/perfhud.ts        Compteur de performance (?debug)
+      dev/position-picker.tsOutil de position (?debug) : clic = position copiée, bâtiment, parking et rue proches
+      dev/herd-debug.ts    Debug des éléphants : faisceaux et panneau (?debug)
+      pwa.ts               Mode hors-ligne : service worker, bandeau « nouvelle version »
+      dataurl.ts           Adresses des données avec leur version (?v=)
+      scene/models.ts      Chargement et placement des monuments
+      scene/nature.ts      Arbres modélisés dans les parcs
+      scene/mascot.ts      Mascotte : promenade sur le réseau des voies, marche dans le shader
+      scene/flags.ts       Drapeaux de la Savoie sur le château et l'hôtel de ville, qui ondulent au vent
+      scene/chimneys.ts    Cheminées sur les toits et fumée selon la saison (rien l'été), qui dérive avec le vent
+      scene/birds.ts       Pigeons sur les places et oiseaux au-dessus des monuments (de jour), faits en code
+      scene/people.ts      Passants : silhouettes instanciées qui marchent sur les voies, autour du point regardé
+      scene/facades.ts     Auvents des bars, cafés et restaurants (pièces du pack de bâtiments, couleur de la catégorie)
+      scene/models/        Monuments générés en code + éclairage de nuit et mesh() partagés
+      ui/ui.ts             HUD, fiche, journal, toasts, contrôles
+      state/progress.ts    Progression et préférences (localStorage)
+      state/points.ts      Points du mini-jeu (localStorage)
+      state/herd.ts        Éléphants ramenés sur la fontaine (localStorage)
+      game/balade.ts       Mode balade (EP005) : entrée / sortie, caméra qui suit, limites de zoom, ordres de marche
+      game/hunt.ts         Mini-jeu « Ramène les éléphants » : cache-cache, bulle, retour, score
+      game/setup.ts        Mise en place du mini-jeu : sauvegarde, places sur la fontaine, particules
+      scene/particles.ts   Fumée, étincelles, feux d'artifice
+      dev/placement.ts     Outil de placement (chargé seulement en dev)
+
+    public/data/city.json  Données générées (ne pas modifier à la main)
+    public/models/         Fichiers glTF des monuments (export Blender)
+    public/models/nature/  Arbres du pack nature convertis (.glb)
+    public/models/mascotte/Éléphant mascotte converti (.glb)
+    public/icons/          Icônes de l'appli (mode hors-ligne, écran d'accueil)
+    assets-src/            Sources des modèles (pack Quaternius en .obj), pas servies par le site
+    data/raw/              Caches des téléchargements (non versionnés)
+
+  admin/                   L'ADMINISTRATION : React 19, wouter (adresses en #/…), TanStack Query, React Hook Form ; servie sous /admin/
+    index.html             Page de l'administration
+    vite.config.ts         Base /admin/, sortie dans dist/admin/ (construite après la carte : hors de son service worker)
+    tsconfig.json          Config TypeScript de l'administration (JSX)
+    src/api.ts             Seul accès à l'API : cookie de session envoyé par le navigateur, réponses vérifiées par le contrat, erreurs en français
+    src/auth.tsx           Session : vérifiée au démarrage, connexion par le jeton, déconnexion, retour à la connexion si elle expire
+    src/pages/             Login, Dashboard (état de l'application et de la base), Parkings (retouches, ajouts, journal)
+    src/types.ts           Format de city.json lu par l'administration (ceux de l'API sont dans contrat/)
+    src/**/*.test.ts(x)    Tests de l'administration (npm test)
+
+contrat/                   Ce que se disent le front et le back (EP010-US007) : schémas zod/mini des requêtes et réponses de l'API,
+                           lus par le back (validation, types), l'administration (réponses, formulaires) et la carte (retouches publiées)
+  erreurs.ts               Codes d'erreur et corps d'une erreur
+  sante.ts                 /api/health, /api/admin/status
+  parkings.ts              Retouches des parkings : requêtes, réponses publiées, journal
+  session.ts               Connexion à l'administration et informations de session
+  tsconfig.json            Ni DOM ni Node : seulement zod/mini
+
+api/index.ts               Point d'entrée imposé par Vercel (EP008) : /api/* y est réécrit (vercel.json), routé par backend/src/app.ts
+backend/
+  src/                     L'API (Hono, Zod, Drizzle) : app.ts (routes), env.ts (base et environnement), auth.ts (vérification du jeton, limite d'essais), session.ts (session d'administration : cookie, renouvellement, contrôle d'origine), errors.ts (corps d'erreur), parkings.ts (retouches), db/ (schéma, migrations, connexion, statistiques), dev.ts (serveur local)
+  data/dev-db/             Base locale de l'API en dev (PGlite, non versionnée)
+scripts/check-api-esm.mjs  Contrôle du dépôt : l'API se charge comme sur Vercel (lancé par npm run build)
+scripts/check-boundaries.mjs  Contrôle du dépôt : frontières entre carte, administration et API (lancé par npm run build)
+deploy/                    Docker / nginx ; refresh-data.sh régénère les données pendant le build Docker
+dist/                      Sortie du build : la carte, et l'administration dans dist/admin/ (Vercel) ; l'image du Pi ne contient que la carte
 .claude/                   Consignes pour Claude (CLAUDE.md) et suivi du projet (docs/)
 ```
 
 Choix techniques : **Three.js** plutôt qu'une librairie de cartographie (rendu diorama plus
-simple à maîtriser en scène 3D pure) ; **pas de backend** : tout est statique, hébergeable
-n'importe où (Coolify sur le Pi, Netlify, GitHub Pages…) avec `npm run build`.
+simple à maîtriser en scène 3D pure) ; **le front et le back séparés** ([ADR-002](.claude/docs/architecture/decisions/ADR002-separer-front-et-back.md)) :
+la carte reste un site statique, hébergeable n'importe où (Coolify sur le Pi, Netlify…) avec `npm run build:pi` ; l'API
+(facultative : la carte marche sans elle) et l'administration React tournent sur Vercel ; le front ne parle au back que
+par HTTP, avec les formats écrits une fois dans `contrat/`.
 Le détail des choix est dans [`.claude/docs/architecture/decisions/DECISIONS.md`](.claude/docs/architecture/decisions/DECISIONS.md).
+
+---
+
+## Branches et déploiements Vercel
+
+Pour ne pas publier à chaque branche (quota Vercel Hobby : 100 déploiements par jour, canceled compris) et garder une production sûre, `vercel.json` (`git.deploymentEnabled`) n'autorise que trois familles de branches :
+
+| Branche | Rôle | Déploiement |
+|---|---|---|
+| `main` | **Production** | automatique, sur le domaine de production |
+| `release` | **Recette** (staging) : on y regroupe ce qui est prêt à tester avant la production ; adresse stable ; utilise la base de recette (`DATABASE_URL_PREVIEW`) | automatique |
+| `preview/<sujet>` | **Essai à la demande** d'une fonctionnalité | automatique, sur adresse propre à la branche |
+| toute autre (`feat/…`, `fix/…`, `docs/…`, `exp/…`) | travail en cours | **aucun** |
+
+Pour faire tester une branche : `git push origin feat/mon-sujet:preview/mon-sujet` (la branche locale garde son nom). On supprime ensuite la branche `preview/…` distante. Flux normal : `feat/…` → `release` (recette) → `main` (production, fusion seulement après accord).
+Les prévisualisations sont protégées par l'authentification Vercel : seul un compte connecté les ouvre. Réglage manuel conseillé dans Vercel (Settings > Security > Deployment Retention) : durée de conservation des anciens déploiements.
+
+Tests en local : `npm test` (API et administration) tourne **sans Neon, sans Docker, sans réseau** : les migrations sont rejouées sur PGlite, un vrai PostgreSQL embarqué (`backend/src/db/migrations.test.ts`).
+
+---
+
+## API et base de données (EP008)
+
+Un petit back-end **facultatif** : le site marche sans lui. TypeScript dans le même dépôt : **Hono** (routes), **Zod** (validation), **Drizzle** (base et migrations), PostgreSQL chez **Neon**, fonctions **Vercel** (`api/index.ts` → `backend/src/app.ts`, `/api/:path*` réécrit vers `/api` dans `vercel.json`). Décision et alternatives écartées : [ADR-001](.claude/docs/architecture/decisions/ADR001-back-end-typescript-vercel-neon.md). Seul point de santé pour l'instant : `GET /api/health` (version, environnement, état de la base ; jamais d'adresse ni de mot de passe).
+
+- **Variables d'environnement** (à saisir dans Vercel, Settings > Environment Variables ; jamais dans le dépôt) : `DATABASE_URL` (production et développement), `DATABASE_URL_PREVIEW` (prévisualisations). **Une prévisualisation n'utilise jamais `DATABASE_URL`** : sans `DATABASE_URL_PREVIEW`, la base y est désactivée. Le code ne lit que ces adresses PostgreSQL ordinaires : Neon reste remplaçable en changeant `DATABASE_URL`.
+- **Variables posées par l'intégration Neon** : `DATABASE_URL` (connexion avec répartiteur, celle de l'API), `DATABASE_URL_UNPOOLED` (connexion directe, utilisée par les migrations) ; les autres (`PG*`, `POSTGRES_*`) ne sont pas lues par le code.
+- **Administration (US005)** : page `/admin/` (application React de `frontend/admin/`, adresses en `#/…` ; non référencée, `noindex`, politique de contenu stricte en en-tête HTTP dans `vercel.json`) et routes `/api/admin/*`, protégées par le jeton **`ADMIN_TOKEN`** (variable Vercel, à définir pour Production **et** Preview ; jamais dans le dépôt). Le jeton doit être **aléatoire et long** : `openssl rand -base64 32` (un cookie volé permettrait sinon d'essayer des jetons hors ligne) ; un jeton différent pour Production et Preview. Sans `ADMIN_TOKEN`, l'administration est **fermée** (l'API répond 503, code `admin-non-configuree`). **Session (EP010-US008)** : le jeton ne sert qu'à se connecter (`POST /api/admin/login`) ; le navigateur reçoit un cookie `diorama_admin` (`HttpOnly`, `Secure`, `SameSite=Strict`, limité à `/api/admin`) que la page ne peut pas lire, et rien n'est gardé dans la page. La session se prolonge à chaque action (2 h sans activité) et dure au plus 8 h depuis la connexion ; « Se déconnecter » efface le cookie et pose un témoin qui fait refuser toute session ouverte avant (une réponse lente revenue après la déconnexion ne la rouvre pas) ; changer `ADMIN_TOKEN` ferme toutes les sessions, et une session de prévisualisation ne vaut pas en production. Les écritures doivent venir de l'administration elle-même (même origine) et être en JSON. 5 essais de jeton ratés par minute et par adresse, puis blocage (limite par instance de fonction : un limiteur partagé viendra avec EP008-US008). En développement : `ADMIN_TOKEN=… npm run api:dev`, `npm run dev` (la carte) et `npm run dev:admin`, puis http://localhost:5174/admin/. Aujourd'hui : état de l'application, de la base, taille et lignes par table.
+- **Retouches des parkings depuis l'administration (US006)** : chercher un parking, le masquer, changer nom, tarif, places, type, position, note, **avec une source obligatoire** ; ajouter un parking absent d'OSM ; liste des retouches et journal. Enregistrées dans la base (tables `parking_edits`, `edit_log`), publiées par `GET /api/parkings/edits` (mise en cache 60 s par Vercel) ; le site les demande au chargement (4 s au plus, la base Neon pouvant se réveiller ; sinon il part sans), les vérifie une par une avec le contrat et les fusionne avec celles de `frontend/carte/content/parkings.json` (l'administration l'emporte). La fiche du parking cite la source de la retouche.
+- **Base locale de développement** : sans `DATABASE_URL`, `npm run api:dev` utilise un PostgreSQL embarqué (PGlite, dossier `backend/data/dev-db/`, ignoré par Git) avec les migrations du dépôt : on teste l'administration sans Neon (dans ce mode, la carte « Base de données » de l'administration indique « non configurée », c'est normal).
+- **Créer ou mettre à jour la base** : `DATABASE_URL_UNPOOLED=postgres://… npm run db:migrate` (rejouable ; l'adresse se copie depuis la console Neon, sans la coller ailleurs). Les migrations sont dans `backend/src/db/migrations/`.
+- **Développer** : `npm run api:dev` dans un terminal, `npm run dev` (la carte) dans un autre ; pour l'administration, `npm run dev:admin` en plus (http://localhost:5174/admin/ ; en local, `ADMIN_TOKEN=… npm run api:dev` pour s'y connecter).
+- **Contrôle** : `npm run build` vérifie aussi les types de l'administration et de l'API (`tsconfig.json` racine : la config du back, celle que Vercel utilise) et **la charge comme Vercel** (`scripts/check-api-esm.mjs` : projet en ES modules, extension `.js` obligatoire dans les imports relatifs de `api/` et `backend/src/`) ; `npm test` lance les tests.
 
 ---
 
 ## Déployer (Docker, Coolify, Vercel)
 
-Le site est **statique** : `npm run build` produit `dist/`, servi par nginx dans une image Docker.
+Le site est **statique** : `npm run build:pi` produit la carte dans `dist/`, servie par nginx dans une image Docker (l'API et l'administration ne tournent que sur Vercel).
 
 **Régénération des données au build** : l'argument `REFRESH_DATA` (dans `docker-compose.yml`,
 `"true"` par défaut) fait lancer au build `npm run data` (OpenStreetMap, BD TOPO, RGE ALTI) puis
@@ -478,16 +556,16 @@ dans Coolify, ou `docker compose build --no-cache`).
 
 | Fichier | Rôle |
 |---|---|
-| `Dockerfile` | Étape 1 : Node construit le site. Étape 2 : nginx sert `dist/` (image finale sans Node). Images arm64 et amd64, donc compatible avec le Raspberry Pi 5 |
-| `deploy/nginx.conf` | Compression gzip ; cache 1 an pour `assets/` et pour les données appelées avec `?v=` ; `index.html`, `sw.js` et le manifeste revérifiés à chaque visite (réponse 304 s'ils n'ont pas changé) |
+| `Dockerfile` | Étape 1 : Node construit la carte (`npm run build:pi`). Étape 2 : nginx sert `dist/` (image finale sans Node). Images arm64 et amd64, donc compatible avec le Raspberry Pi 5 |
+| `deploy/nginx.conf` | Compression gzip ; cache 1 an pour `assets/` et pour les données appelées avec `?v=` ; 404 sur `/api/` (en JSON) et `/admin` (ni API ni administration sur le Pi) ; `index.html`, `sw.js` et le manifeste revérifiés à chaque visite (réponse 304 s'ils n'ont pas changé) |
 | `docker-compose.yml` | Un service `web` (conteneur `city-chambery`) ; nginx écoute sur le port 80 du conteneur, publié sur le port **3000** de l'hôte (`'3000:80'`) ; argument `REFRESH_DATA` |
 | `deploy/refresh-data.sh` | Au build, si `REFRESH_DATA=true` : `npm run data` + `npm run nature`, avec retour aux données du dépôt en cas d'échec ou de données incomplètes |
-| `.dockerignore` | Exclut `node_modules`, `data/raw`, `.claude/`, les `.fbx` du pack nature… (garde les `.obj` pour `npm run nature`) : contexte de build d'environ 4 Mo |
+| `.dockerignore` | Exclut `node_modules`, `frontend/carte/data/raw`, `.claude/`, les `.fbx` du pack nature… (garde les `.obj` pour `npm run nature`) : contexte de build d'environ 4 Mo |
 
 **Cache et mode hors-ligne :**
 
-- **Code :** les fichiers `assets/` ont une empreinte dans leur nom ; nginx les garde en cache 1 an. three.js est dans son propre fichier (`three-….js`, réglage `codeSplitting` de `vite.config.ts`) : une mise à jour de l'appli ne change que `index-….js` (≈ 45 Ko gzip), three.js (≈ 172 Ko gzip) reste en cache tant que la version de la librairie ne change pas.
-- **Données et modèles :** ils sont chargés avec la version des données dans l'adresse (`city.json?v=…`, empreinte calculée au build par `vite.config.ts`), donc gardés en cache 1 an, et rechargés dès que les données changent.
+- **Code :** les fichiers `assets/` ont une empreinte dans leur nom ; nginx les garde en cache 1 an. three.js est dans son propre fichier (`three-….js`, réglage `codeSplitting` de `frontend/carte/vite.config.ts`) : une mise à jour de l'appli ne change que `index-….js` (≈ 45 Ko gzip), three.js (≈ 172 Ko gzip) reste en cache tant que la version de la librairie ne change pas.
+- **Données et modèles :** ils sont chargés avec la version des données dans l'adresse (`city.json?v=…`, empreinte calculée au build par `frontend/carte/vite.config.ts`), donc gardés en cache 1 an, et rechargés dès que les données changent.
 - **Hors-ligne (PWA) :** un service worker garde le site, les données et les modèles (≈ 2,4 Mo) dès la première visite. La carte s'ouvre ensuite sans réseau et peut s'installer sur l'écran d'accueil. Quand une nouvelle version est publiée, un bandeau propose « Mettre à jour ».
 - **HTTPS obligatoire** pour le hors-ligne : le service worker ne fonctionne qu'en HTTPS (domaine Coolify) ou sur localhost, pas sur `http://<ip-du-pi>:3000`. Il n'existe pas non plus en `npm run dev` ; pour le tester en local, lancer `npm run build && npm run preview`.
 
@@ -513,7 +591,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 | `⚠ BD TOPO indisponible` | Service IGN injoignable : le cache est utilisé s'il existe, sinon hauteurs OSM/estimées. Réessayer avec `npm run data -- --offline --bdtopo` |
 | `relief interpolé depuis … altitudes de sol BD TOPO` | Service RGE ALTI injoignable : réessayer avec `npm run data -- --offline --relief` |
 | Un lieu d'histoire est mal placé | Outil de placement (touche P en dev) ou `osm.match` / `osm.prefer` plus précis |
-| Un monument a disparu | Vérifier que son contour OSM existe encore (identifiants dans `src/scene/models/*.ts`) |
+| Un monument a disparu | Vérifier que son contour OSM existe encore (identifiants dans `frontend/carte/src/scene/models/*.ts`) |
 | Ça rame sur mobile | L'effet maquette est permanent (plus de bouton) : s'il pèse trop, voir le ticket « Tilt-shift » du backlog (l'alléger sur petits écrans) |
 
 ---
@@ -531,7 +609,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 - **Cheminées** : du décor (OpenStreetMap ne les donne pas), sur 40 % des toits en pente « rectangle » ; fumée selon la saison seulement, rien l'été.
 - **Pigeons et oiseaux** : du décor (pas un relevé d'oiseaux réels), de jour seulement, agrandis ×2,5 pour être vus.
 - **Passants** : du décor, jamais dans l'eau (sauf sur les ponts) ; leur nombre suit une courbe horaire, et la nuit des groupes se tiennent devant les lieux ouverts d'après leurs horaires (y compris les horaires provisoires) ; ils ne se tiennent que dans un rayon de 250 m autour du point regardé (pour qu'il y ait du monde à l'écran sans en dessiner partout), et réapparaissent hors du champ quand on se déplace.
-- **Horaires provisoires** : 23 bars, pubs et boîtes de nuit sans horaires dans OSM reçoivent des horaires fictifs (`src/content/place-hours.json`), utilisés seulement pour leur éclairage de nuit ; ils ne sont jamais affichés. À remplacer par les vraies données (voir le backlog).
+- **Horaires provisoires** : 23 bars, pubs et boîtes de nuit sans horaires dans OSM reçoivent des horaires fictifs (`frontend/carte/content/place-hours.json`), utilisés seulement pour leur éclairage de nuit ; ils ne sont jamais affichés. À remplacer par les vraies données (voir le backlog).
 - **Auvents** : 148 lieux sur 169 en ont un, posé sur la façade côté rue d'après les contours OSM et les voies ; c'est du décor, pas un relevé des commerces. Les 12 lieux dans un bâtiment remplacé par un monument et les 8 lieux hors bâtiment n'en ont pas.
 - **Soleil** : lever 6 h, coucher 18 h toute l'année (pas de saisons).
 - **Leysse** : dessinée à l'air libre sur toute sa longueur, y compris là où elle est couverte en réalité (sous les boulevards du centre ; un tronçon a été découvert en 2013 près du Palais de justice). Choix de lisibilité, réglable avec `showCoveredWater`.
@@ -545,7 +623,7 @@ dans Coolify, ou `docker compose build --no-cache`).
 - Textes : reformulés, sources citées dans chaque fiche. Recopier des passages de Wikipédia imposerait la licence **CC BY-SA**.
 - Modèles nature : Ultimate Nature Pack by Quaternius, **CC0 1.0** (domaine public, aucune obligation ; crédit volontaire).
 - Mascotte : « Elephant » par jeremy ([Poly Pizza](https://poly.pizza/m/9J-cG39KYFC)), **CC BY 3.0** — attribution obligatoire, affichée en bas à droite de l'application. Modifié : mis à l'échelle, réorienté, animé.
-- Pièces de bâtiments (auvents…) : « Building Kit » de Kenney ([kenney.nl](https://kenney.nl/assets/building-kit)), **CC0 1.0** (domaine public, crédit non obligatoire ; confirmé sur la page du pack le 30/09/2026). Seules les 2 pièces d'auvent et la palette du pack sont gardées dans `assets-src/buildings` (le reste a été écarté), converties par `npm run buildings`.
+- Pièces de bâtiments (auvents…) : « Building Kit » de Kenney ([kenney.nl](https://kenney.nl/assets/building-kit)), **CC0 1.0** (domaine public, crédit non obligatoire ; confirmé sur la page du pack le 30/09/2026). Seules les 2 pièces d'auvent et la palette du pack sont gardées dans `frontend/carte/assets-src/buildings` (le reste a été écarté), converties par `npm run buildings`.
 - Librairies : Three.js (MIT), straight-skeleton (MIT), glTF-Transform (MIT, conversion uniquement).
 
 ---
