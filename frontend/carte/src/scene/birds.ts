@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import type { CityData, HeightFn, Pt, Ticker } from '../types';
 import { pointInPoly } from './geo';
 import type { NightUniforms } from './city';
+import { qualityLevel } from './quality';
 
 /**
  * Pigeons et oiseaux (EP001-US004). Décor : ce n'est pas un relevé d'oiseaux réels.
@@ -77,7 +78,7 @@ export function buildBirds(
       return { poly: a, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, area: area(a.outer), x0, y0, x1, y1 };
     })
     .filter((p) => p.area >= cfg.minPlazaArea);
-  const mobile = typeof matchMedia === 'function' && (matchMedia('(pointer: coarse)').matches || innerWidth < 700);
+  const mobile = qualityLevel() !== 'high'; // une seule détection de l'appareil (scene/quality.ts, EP009-US001)
   const f = mobile ? cfg.mobileFactor : 1;
   const nPigeons = plazas.length ? Math.round(cfg.pigeons * f) : 0;
   const circleAnchors = cfg.circlingAnchors.flatMap((n) => (data.anchors[n] ? [data.anchors[n].pos] : []));
