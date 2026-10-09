@@ -10,7 +10,7 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** `?weather=fog`, **Then** le devant de la ville reste lisible *(de nuit oui ; de jour, l'intensité type 0,8 noie presque tout : épaisseur à régler avec Dasco)* et le fond se fond dans la couleur du fond de page, de jour comme de nuit, **sans liseré clair** autour du socle
+- [x] **Given** `?weather=fog`, **Then** le devant de la ville reste lisible *(intensité type ramenée de 0,8 à 0,6 par Dasco le 09/10 : 0,8 noyait la ville de jour)* et le fond se fond dans la couleur du fond de page, de jour comme de nuit, **sans liseré clair** autour du socle
 - [x] **Given** la caméra qui s'approche ou s'éloigne, **Then** le brouillard reste proportionné (léger de près)
 - [x] **Given** la nuit, **Then** les halos des bars, les gemmes ✦ et les épingles percent le brouillard (D12)
 - [x] **Given** les étiquettes et l'interface, **Then** elles restent nettes et lisibles (contraste des boutons vérifié sur fond gris)
@@ -49,7 +49,7 @@ Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 4.
 - [x] Fluidité : compteur `?debug` avant / après, aucun programme nouveau
 - [x] Le site marche sans la météo
 - [x] FEATURES, CHANGELOG, DECISIONS
-- [ ] Validé par Dasco
+- [x] Validé par Dasco (09/10 : « le brouillard fonctionne », 0,6)
 
 ---
 
