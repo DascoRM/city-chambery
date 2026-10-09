@@ -1,5 +1,5 @@
 {
-  "//": "Config TypeScript du back (EP010-US006) : api/, backend/src/, contrat/. Vercel compile api/index.ts avec le tsconfig.json le plus proche en remontant depuis api/ : celui-ci (n'en créer aucun dans api/). Pas de paths ni de références de projet (non gérés par Vercel). La carte (frontend/carte) et l'administration (frontend/admin) ont le leur.",
+  "//": "Config TypeScript du back (EP010-US006) : api/, backend/src/, contrat/. Vercel compile api/index.ts avec le tsconfig.json le plus proche en remontant depuis api/ : celui-ci (n'en créer aucun dans api/). Pas de paths ni de références de projet (non gérés par Vercel). La carte (frontend/carte) et l'administration (frontend/admin) ont le leur. noEmitOnError : une erreur de types fait échouer le déploiement Vercel (sans effet en local, noEmit).",
   "compilerOptions": {
     "target": "ES2022",
     "module": "NodeNext",
@@ -15,7 +15,8 @@
     "noUnusedParameters": true,
     "isolatedModules": true,
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "noEmitOnError": true
   },
   "include": [
     "api",

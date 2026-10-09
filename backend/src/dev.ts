@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { serve } from '@hono/node-server';
 import { createApp } from './app.js';
 import type { Db } from './parkings.js';
