@@ -30,6 +30,11 @@ const hoursFr = (h: string) => h.replace(/\b(Mo|Tu|We|Th|Fr|Sa|Su|PH|off)\b/g, (
 
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
+/** Puce météo de la barre d'heure (EP009) : icône, texte court (masqué sous 720 px), libellé complet (lecteur d'écran, info-bulle) */
+export interface WeatherChip { icon: string; text: string; label: string; off?: boolean; expanded?: boolean }
+/** Météo désactivée par le visiteur : le module météo n'est pas chargé, la puce propose de la réactiver */
+export const WEATHER_OFF: WeatherChip = { icon: '⛅', text: 'Sans météo', label: 'Météo désactivée : toucher pour la réactiver', off: true };
+
 export interface UiHandlers {
   onJournalPick(id: string): void;
   /** Affiche / masque une catégorie de lieux (bar, cafe, restaurant). */
@@ -54,6 +59,8 @@ export interface UiHandlers {
   onRecenter?(): void;
   /** Bouton « 🅿️ Parkings » (EP006) */
   onParkings?(): void;
+  /** Puce météo (EP009) : ouvre son panneau, ou réactive la météo */
+  onWeather?(): void;
 }
 
 export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: string, h: UiHandlers) {
@@ -83,6 +90,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
         <span class="sun-times" aria-label="Lever et coucher du soleil"></span>
         <button class="live" data-action="live" aria-pressed="true" title="Suivre l'heure réelle de Chambéry">Direct</button>
         <button class="season" data-action="season" title="Saison : automatique (date du jour) ou choisie"></button>
+        <button class="weather" data-action="weather" aria-expanded="false" hidden><span class="w-icon" aria-hidden="true"></span><span class="w-text"></span></button>
       </div>
     </nav>
 
@@ -324,6 +332,7 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
     if (action === 'balade') h.onBalade?.();
     if (action === 'recenter') h.onRecenter?.();
     if (action === 'parkings') h.onParkings?.();
+    if (action === 'weather') h.onWeather?.();
   });
   const hourIn = root.querySelector<HTMLInputElement>('[data-action="hour"]')!;
   const playBtn = root.querySelector<HTMLButtonElement>('[data-action="play"]')!;
@@ -332,6 +341,8 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
   const timeLabel = root.querySelector<HTMLElement>('.time-label')!;
   const sunTimesEl = root.querySelector<HTMLElement>('.sun-times')!;
   const timeBox = root.querySelector<HTMLElement>('.time')!;
+  const weatherBtn = root.querySelector<HTMLButtonElement>('[data-action="weather"]')!;
+  let lastWeather = '';
   let playing = false;
   hourIn.addEventListener('input', () => h.onHour(Number(hourIn.value)));
   playBtn.addEventListener('click', () => h.onPlay(!playing));
@@ -387,6 +398,20 @@ export function createUi(root: HTMLElement, pois: PlacedPoi[], attribution: stri
       parkingLegend.hidden = !on;
     },
     showParkingsButton: () => { parkingsBtn.hidden = false; },
+    /** Puce météo (EP009) : null = masquée (pas d'API, première lecture en cours) */
+    setWeatherChip: (c: WeatherChip | null) => {
+      const key = c ? `${c.icon}|${c.text}|${c.label}|${!!c.off}|${!!c.expanded}` : '';
+      if (key === lastWeather) return; // pas d'écriture si rien ne change
+      lastWeather = key;
+      weatherBtn.hidden = !c;
+      if (!c) return;
+      weatherBtn.querySelector('.w-icon')!.textContent = c.icon;
+      weatherBtn.querySelector('.w-text')!.textContent = c.text;
+      weatherBtn.setAttribute('aria-label', c.label);
+      weatherBtn.title = c.label;
+      weatherBtn.classList.toggle('off', !!c.off);
+      weatherBtn.setAttribute('aria-expanded', String(!!c.expanded));
+    },
     panelOpen: () => !panel.hidden,
     setFound, showPoi, flash, flushFlash, showTooltip, hideHint, showHint, setClock, hidePanel: () => (panel.hidden = true),
     showPlaceCard, showParkingCard, hidePlaceCard, movePlaceCard, setPlaceStatus,

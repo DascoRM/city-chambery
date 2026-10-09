@@ -15,6 +15,7 @@ import { buildLabels } from './scene/labels';
 import { createLoading } from './ui/loading';
 import { createLobby, type LobbyContent } from './ui/lobby';
 import { loadLobbySkip } from './state/lobby';
+import { loadWeatherPref, saveWeatherPref } from './state/weather-pref';
 import { buildStreetNames, type StreetNamesConfig } from './scene/street-names';
 import { buildAwnings, type AwningConfig } from './scene/facades';
 import { createTiltShift } from './scene/tiltshift';
@@ -45,15 +46,18 @@ import { placeCategory } from './scene/palette';
 import { createAdaptiveResolution, qualityLevel } from './scene/quality';
 import { dataUrl } from './dataurl';
 import { setupPwa } from './pwa';
-import { createUi, showFatal } from './ui/ui';
+import { createUi, showFatal, WEATHER_OFF } from './ui/ui';
 import { loadDiscovered, resetDiscovered, saveDiscovered } from './state/progress';
 import { setupGame } from './game/setup';
 import { installInteraction, type PlacementTool } from './interaction';
 import type { RainProto } from './dev/rain-proto';
+import type { WeatherModule } from './weather/index';
 
 const app = document.getElementById('app')!;
 /** Mode debug : ajouter ?debug à l'adresse (compteur de perf, debug des éléphants, window.diorama) */
 const DEBUG = new URLSearchParams(location.search).has('debug');
+/** Module météo (EP009) : chargé à la demande, jamais attendu ; s'il ne se charge pas, la carte reste sans météo */
+const loadWeatherModule = () => import('./weather/index').catch((e) => { console.warn('[météo] module non chargé', e); return null; });
 
 async function loadCity(): Promise<CityData | null> {
   try {
@@ -66,6 +70,8 @@ async function loadCity(): Promise<CityData | null> {
 }
 
 async function main() {
+  // Météo (EP009) : module demandé tout de suite, en parallèle de la ville, sauf préférence « météo désactivée »
+  const weatherChunk = loadWeatherPref().enabled ? loadWeatherModule() : null;
   // Écran initial (index.html) → lobby (EP004) : le lobby apparaît tout de suite et la ville charge derrière.
   // ?lobby=0 : pas de lobby ; ?lobby=1 : toujours ; en mode ?debug : pas de lobby, sauf ?lobby=1
   const loading = createLoading();
@@ -248,6 +254,7 @@ async function main() {
   const groundNode = () => city.group.getObjectByName('terrain');
   let discovered = loadDiscovered();
   let placeIdx: number | null = null; // fiche de lieu ouverte
+  let weather: WeatherModule | null = null; // module météo, branché quand il arrive (EP009)
   // Modèle de la mascotte sous licence CC BY 3.0 : crédit obligatoire, affiché avec les autres
   const ui = createUi(app, pois, `${data.attribution} · Éléphant : jeremy (Poly Pizza), CC BY 3.0`, {
     onJournalPick: (id) => openPoi(id),
@@ -284,6 +291,14 @@ async function main() {
     onPlay: (p) => clock.setPlaying(p),
     onLive: () => clock.live(),
     onSeason: () => clock.nextSeason(),
+    onWeather: () => {
+      if (weather) weather.togglePanel();
+      else if (!loadWeatherPref().enabled) {
+        // Météo désactivée par le visiteur : la puce la réactive (le module se charge maintenant)
+        saveWeatherPref({ ...loadWeatherPref(), enabled: true });
+        startWeatherModule(loadWeatherModule());
+      }
+    },
     onReset: () => {
       resetDiscovered();
       discovered = new Set();
@@ -335,6 +350,7 @@ async function main() {
       renderer.shadowMap.needsUpdate = true;
       nature?.setFoliage(foliage).then(() => { renderer.shadowMap.needsUpdate = true; });
     }
+    weather?.onClock(c); // Direct ou simulée (EP009)
   });
 
   // --- Mini-jeu « Ramène les éléphants à la fontaine » (itération 35) --------
@@ -570,6 +586,27 @@ async function main() {
       })
       .catch((e) => console.warn('[pluie prototype] non chargée', e));
   }
+
+  // Météo (EP009) : branchée quand son module est arrivé, après la scène (le fondu depuis le beau temps se fait derrière le
+  // lobby) ; la boucle ne l'attend jamais. Préférence « météo désactivée » : rien n'est chargé, la puce propose de la réactiver
+  function startWeatherModule(chunk: ReturnType<typeof loadWeatherModule>) {
+    void chunk.then((m) => {
+      if (!m || weather) return;
+      try {
+        const w = m.startWeather({
+          root: app, scene, camera, focus: () => controls.target, quality: qualityLevel(), wind,
+          sky: (m) => dayNight.setWeather(m), night: () => dayNight.getNight(), clock: () => clock.state(),
+          backToLive: () => { clock.setSeason('auto'); clock.live(); }, chip: ui.setWeatherChip,
+        });
+        weather = w;
+        tickers.push(w);
+      } catch (e) {
+        console.warn('[météo] non démarrée', e);
+      }
+    });
+  }
+  if (weatherChunk) startWeatherModule(weatherChunk);
+  else ui.setWeatherChip(WEATHER_OFF);
 
   // La ville est prête : « Explorer la carte » s'active (ou la carte s'ouvre directement sans lobby)
   await loading.set(100, '');
