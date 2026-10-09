@@ -119,7 +119,7 @@ Branche d'epic : `feat/EP010-front-back`, partie de `feat/EP008-back-end`, une b
 | D9 | Durée de la session | ✅ **Prolongée à chaque action** (renouvellement silencieux) : expire après 2 h sans activité ; **8 h au plus depuis la connexion** (confirmé par Dasco) |
 | D10 | Clé qui signe la session | ✅ **Pas de nouvelle variable pour l'instant** : tirée d'`ADMIN_TOKEN` (changer le jeton ferme toutes les sessions) ; à reprendre plus tard |
 | D11 | Hébergement sur le Raspberry Pi 5 (Coolify) | ✅ **On part du principe qu'il reste prévu** (Dasco se pose encore la question) : nginx répond 404 sur `/api` et `/admin` au lieu de la page de la carte (US009) |
-| D12 | Zod dans la carte | ✅ **Confirmé par Dasco : tout `contrat/` en `zod/mini`** (≈ 7 Ko gzip au lieu de 26) ; le back et l'admin s'en servent pour valider et typer, la carte pour vérifier les réponses de l'API (retouches publiées, puis la connexion front-back à venir). Mesuré : carte +8 Ko gzip, administration +24 Ko (plus de types de schémas ; 108 Ko, sous l'objectif de 150) |
+| D12 | Zod dans la carte | ✅ **Confirmé par Dasco : tout `contrat/` en `zod/mini`** (≈ 7 Ko gzip au lieu de 26) ; le back et l'admin s'en servent pour valider et typer, la carte pour vérifier les réponses de l'API (retouches publiées, puis la connexion front-back à venir). Mesuré : carte +8 Ko gzip, administration +11 Ko (97,8 → 108,7 Ko, sous l'objectif de 150) |
 
 ---
 

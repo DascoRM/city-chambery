@@ -108,7 +108,7 @@ docs/
 │   ├── _TEMPLATE-USER-STORY.md
 │   └── epics/                     Un sous-dossier par epic
 ├── tasks/                         Plans des sub-agents
-└── api/                           Inutilisé (pas de back-end)
+└── api/                           Inutilisé (les formats de l'API sont dans contrat/, à la racine du dépôt)
 ```
 
 Le code, lui, est décrit dans le README (section « Structure du code »).

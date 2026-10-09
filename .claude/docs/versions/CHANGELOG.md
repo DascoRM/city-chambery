@@ -11,7 +11,7 @@
 - carte : retouches publiées vérifiées par le contrat une par une (une retouche hors contrat est ignorée sans jeter les autres) ; types de parkings tirés du contrat ; premiers tests de la carte ;
 - Vitest : 5 projets (back, admin, contrat, carte, outillage) ; README (structure avec `contrat/`, commandes).
 
-**Vérifié :** `npm run build` (types des 4 configurations, frontières, API conforme au contrat) et `npm test` : **72 tests** ; poids mesurés : carte 77,2 → 85,5 Ko gzip, administration 83,0 → 108,4 Ko (dont 1,2 Ko de messages français) ; en local sur le `dist/` (Chrome, API sur PGlite) : parcours complet de l'administration, carte qui reçoit et accepte une retouche publiée, sans erreur ; **sur la prévisualisation** (`c3e0ee1`, par l'agent) : build « success », `/api/health` conforme, erreurs avec leur code, carte sans erreur, page de l'administration sans erreur sous la CSP.
+**Vérifié :** `npm run build` (types des 4 configurations, frontières, API conforme au contrat) et `npm test` : **72 tests** ; poids mesurés : carte 77,2 → 85,5 Ko gzip, administration 97,8 → 108,7 Ko, soit +11 Ko (dont 1,2 Ko de messages français ; chiffre corrigé après la relecture de la phase 2, qui avait relevé un « +24 Ko » mesuré contre une version trop ancienne) ; en local sur le `dist/` (Chrome, API sur PGlite) : parcours complet de l'administration, carte qui reçoit et accepte une retouche publiée, sans erreur ; **sur la prévisualisation** (`c3e0ee1`, par l'agent) : build « success », `/api/health` conforme, erreurs avec leur code, carte sans erreur, page de l'administration sans erreur sous la CSP.
 
 **Non vérifié :** la connexion à l'administration sur la prévisualisation (jeton de Preview connu de Dasco seulement).
 
