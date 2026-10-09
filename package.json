@@ -23,9 +23,9 @@
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f web",
     "test": "vitest run",
-    "api:dev": "tsx server/dev.ts",
+    "api:dev": "tsx backend/src/dev.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "tsx server/db/migrate.ts",
+    "db:migrate": "tsx backend/src/db/migrate.ts",
     "check:api": "node scripts/check-api-esm.mjs"
   },
   "dependencies": {

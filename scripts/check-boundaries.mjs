@@ -3,7 +3,7 @@
  *
  * Chaque partie n'importe que ce qui lui est permis :
  *  - la carte (frontend/carte) et l'administration (frontend/admin) ne s'importent pas l'une l'autre ;
- *  - le front ne parle au back que par HTTP : il n'importe jamais le code de l'API (server/, api/) ;
+ *  - le front ne parle au back que par HTTP : il n'importe jamais le code de l'API (backend/, api/) ;
  *  - le back n'importe jamais le front ;
  *  - chaque partie a sa liste de paquets npm : une nouvelle dépendance s'ajoute ici, en connaissance de cause.
  * L'administration ne construit jamais de HTML à partir de données (`dangerouslySetInnerHTML`, `innerHTML`… refusés).
@@ -47,7 +47,7 @@ const PARTS = {
     noRawHtml: true,
   },
   back: {
-    dirs: ['server', 'api'],
+    dirs: ['backend/src', 'api'],
     parts: ['back', 'contrat'],
     packages: ['hono', '@hono/node-server', 'zod', 'drizzle-orm', 'postgres', '@electric-sql/pglite', 'vitest'],
     node: true,

@@ -1,6 +1,6 @@
 /**
  * Formats des réponses de l'API lus par l'administration. Provisoire : ils passeront dans `contrat/` (EP010-US007),
- * partagés avec le back qui les produit (aujourd'hui `server/app.ts`, `server/db/stats.ts`, `server/parkings.ts`).
+ * partagés avec le back qui les produit (aujourd'hui `backend/src/app.ts`, `backend/src/db/stats.ts`, `backend/src/parkings.ts`).
  */
 
 export type DbState = 'ok' | 'non-configuree' | 'desactivee-en-previsualisation' | 'erreur';

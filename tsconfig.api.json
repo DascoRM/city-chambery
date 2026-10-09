@@ -12,5 +12,5 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["api", "server", "drizzle.config.ts"]
+  "include": ["api", "backend/src", "drizzle.config.ts"]
 }

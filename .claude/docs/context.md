@@ -44,7 +44,7 @@ c'est assez plaisant pour que mes amis y passent 10 minutes et en redemandent.*
 | Couche | Technologie |
 |--------|-------------|
 | Frontend | **Carte** (`frontend/carte/`) : Vite 8 + TypeScript 5.9 + Three.js 0.186, sans framework ; PWA via vite-plugin-pwa. **Administration** (`frontend/admin/`) : React 19, wouter, TanStack Query, React Hook Form ([ADR-002](architecture/decisions/ADR002-separer-front-et-back.md)) |
-| Backend | API (`server/`, futur `backend/`) : Hono + Zod + Drizzle sur fonctions Vercel, base PostgreSQL Neon ([ADR-001](architecture/decisions/ADR001-back-end-typescript-vercel-neon.md)) ; facultative : la carte marche sans elle |
+| Backend | API (`backend/src/`) : Hono + Zod + Drizzle sur fonctions Vercel, base PostgreSQL Neon ([ADR-001](architecture/decisions/ADR001-back-end-typescript-vercel-neon.md)) ; facultative : la carte marche sans elle |
 | Données | Pipeline Node (`frontend/carte/scripts/`) : Overpass (OSM) + IGN BD TOPO + RGE ALTI + straight-skeleton → `frontend/carte/public/data/city.json` ; contenu éditorial dans `frontend/carte/content/*.json` |
 | Stockage côté client | localStorage (progression, points, éléphants ramenés) |
 | Modèles 3D | Pack nature Quaternius (CC0) et éléphant de jeremy (CC BY 3.0), convertis en .glb (glTF-Transform, meshoptimizer) |
