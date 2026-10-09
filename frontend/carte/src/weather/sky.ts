@@ -24,7 +24,12 @@ export function overcastOf(w: SkyLook): number {
 }
 
 /** Valeurs du cycle jour/nuit que la météo modifie (couleurs modifiées en place) */
-export interface SkyValues { hemiI: number; keyI: number; exposure: number; sky: THREE.Color; key: THREE.Color; bg: THREE.Color[] }
+export interface SkyValues {
+  hemiI: number; keyI: number; exposure: number;
+  /** Gain des lueurs de nuit (halos des bars, lueur des rues) : 1 par défaut, plus fort sous la pluie (US005) */
+  glow: number;
+  sky: THREE.Color; key: THREE.Color; bg: THREE.Color[];
+}
 
 const GREY_SKY = new THREE.Color('#c9ccd2'), GREY_KEY = new THREE.Color('#dfe2e6');
 const grey = new THREE.Color();

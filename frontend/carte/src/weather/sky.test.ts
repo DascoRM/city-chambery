@@ -4,7 +4,7 @@ import { CLEAR_SKY, applyWeatherSky, overcastOf, type SkyValues } from './sky';
 
 /** Valeurs de plein jour de daynight.ts (DAY) : ce que la scène affiche aujourd'hui */
 const day = (): SkyValues => ({
-  hemiI: 1.1, keyI: 2.4, exposure: 1.05,
+  hemiI: 1.1, keyI: 2.4, exposure: 1.05, glow: 1,
   sky: new THREE.Color('#fff4e0'), key: new THREE.Color('#ffe2b8'),
   bg: ['#fdf3e1', '#f0dfc4', '#d9c3a3'].map((c) => new THREE.Color(c)),
 });

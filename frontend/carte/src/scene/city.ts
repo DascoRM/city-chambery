@@ -7,6 +7,7 @@ import { buildGround, type Terrain } from './terrain';
 import { pointInRing } from './geo';
 import { DITHER_GLSL, createFade, type FadeUniforms } from './cutaway';
 import { FOOT_KINDS, LIFT, roadDistanceIndex } from './roads';
+import { weatherSurface } from './weather-surface';
 import type { Foliage } from '../time/seasons';
 
 /**
@@ -238,7 +239,7 @@ function roadMaterial(color: string, kind: 'paving' | 'asphalt'): THREE.MeshStan
         diffuseColor.rgb *= 1.0 + (roadHash(floor(ac)) - 0.5) * 0.07 * afade;`}`);
   };
   mat.customProgramCacheKey = () => `road-${kind}`;
-  return mat;
+  return weatherSurface(mat); // rue mouillée sous la pluie (EP009-US005), posé avant la première compilation
 }
 
 /** Tirets blancs au milieu des grandes rues (largeur 8 m et plus), hors des abords des carrefours */
@@ -512,7 +513,7 @@ function windowsMaterial(night: NightUniforms, fade: FadeUniforms): THREE.MeshSt
         }`,
       );
   };
-  return mat;
+  return weatherSurface(mat); // toits et murs mouillés sous la pluie (EP009-US005), posé avant la première compilation
 }
 
 // ---------------------------------------------------------------------------

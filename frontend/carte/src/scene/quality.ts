@@ -60,6 +60,7 @@ export function createAdaptiveResolution(renderer: THREE.WebGLRenderer, onChange
   let pr = max;
   renderer.setPixelRatio(pr);
   let acc = 0, frames = 0, good = 0, fps = 60;
+  let onSample: ((fps: number, atMin: boolean) => void) | null = null;
 
   const set = (v: number) => {
     v = Math.round(Math.min(max, Math.max(min, v)) * 4) / 4;
@@ -79,10 +80,13 @@ export function createAdaptiveResolution(renderer: THREE.WebGLRenderer, onChange
       fps = frames / acc;
       acc = 0;
       frames = 0;
+      onSample?.(fps, pr <= min); // densité de pixels déjà au minimum ? (règle 8 d'EP009 : dégradation de la pluie)
       if (fps < 40) { good = 0; set(pr - 0.25); }
       else if (fps > 56) { if (++good >= 3) { good = 0; set(pr + 0.25); } }
       else good = 0;
     },
+    /** Chaque mesure de 2 s en mouvement : images/s, et densité de pixels déjà au minimum (EP009-US005) */
+    onSample(f: (fps: number, atMin: boolean) => void) { onSample = f; },
     get pixelRatio() { return pr; },
     get max() { return max; },
     get fps() { return fps; },
