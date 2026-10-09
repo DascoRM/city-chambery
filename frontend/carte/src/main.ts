@@ -600,6 +600,8 @@ async function main() {
         });
         weather = w;
         tickers.push(w);
+        // Sélecteur de météo (?debug) : chargé à la demande, absent du fichier principal
+        if (DEBUG) import('./dev/weather-debug').then(({ installWeatherDebug }) => installWeatherDebug(app, w)).catch((e) => console.warn('[météo] sélecteur non chargé', e));
       } catch (e) {
         console.warn('[météo] non démarrée', e);
       }
@@ -614,8 +616,9 @@ async function main() {
   if (!lobbyAtStart) loading.hideBoot();
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  // perf : mesures du compteur (scripts de mesure) ; rain : pluie prototype (?debug&rain=N), arrivée après le démarrage
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, parkingSigns, birds, chimneys, flags, clock, herd, hunt, slots, renderer, stage, perf: perfHud, get rain() { return rainProto; } } });
+  // perf : mesures du compteur (scripts de mesure) ; rain : pluie prototype (?debug&rain=N) ; weather : météo (set, live, state),
+  // arrivées après le démarrage
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, parkingSigns, birds, chimneys, flags, clock, herd, hunt, slots, renderer, stage, perf: perfHud, get rain() { return rainProto; }, get weather() { return weather; } } });
 }
 
 main();

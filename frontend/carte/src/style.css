@@ -187,7 +187,7 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
 .time .live.on::before { opacity: 1; animation: live-pulse 2s ease-in-out infinite; }
 .time .season.on { background: var(--gold); color: var(--ink); }
 @keyframes live-pulse { 50% { opacity: 0.25; } }
-/* Météo (EP009) : puce après la saison (icône seule sous 720 px), panneau au-dessus d'elle */
+/* Météo (EP009) : puce après la saison (icône seule sous 720 px), panneau au-dessus d'elle, sélecteur ?debug */
 .time .weather { border: 0; border-radius: 99px; padding: 4px 10px; font: inherit; font-size: 12px; font-weight: 700; background: rgba(45, 38, 34, 0.07); color: var(--muted); cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
 .time .weather[hidden] { display: none; }
 .time .weather.off .w-icon { opacity: 0.45; filter: grayscale(1); }
@@ -203,6 +203,10 @@ h1, h2 { font-family: Fraunces, Georgia, serif; font-weight: 700; margin: 0; lin
 .wp-toggle { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
 .wp-toggle[hidden] { display: none; }
 .wp-toggle input { accent-color: var(--teal); margin: 0; }
+.weather-debug { position: absolute; z-index: 4; left: 16px; top: 200px; padding: 8px 12px; font-size: 12px; }
+.weather-debug summary { cursor: pointer; font-weight: 700; }
+.weather-debug select { display: block; margin-top: 6px; font: inherit; }
+.weather-debug label { display: grid; grid-template-columns: 92px 120px 36px; align-items: center; gap: 6px; margin-top: 4px; }
 /* Avec la puce météo, la barre d'heure passerait sous la boussole entre 721 et 1365 px : lever et coucher du soleil
    masqués (ils restent dans l'info-bulle de la barre) */
 @media (max-width: 1365px) { .time:has(.weather:not([hidden])) .sun-times { display: none; } }
