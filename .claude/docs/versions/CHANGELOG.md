@@ -1,5 +1,27 @@
 # Journal des itérations
 
+## Itération 87 — 09/10/2026 (branches `feat/EP010-US008-session`, `feat/EP010-US009-docker-doc`, `fix/EP010-phase2-revue`, epic EP010)
+
+**Demande de Dasco :** session glissante limitée à 8 h (US008) ; le Pi reste prévu par principe (D11) ; « mutualiser tous les agents nécessaires ».
+
+**Changements :**
+- **US008, session d'administration** : le jeton ne sert qu'à `POST /api/admin/login` ; ensuite un cookie `diorama_admin` (`HttpOnly`, `Secure` hors dev http, `SameSite=Strict`, `Path=/api/admin`) portant un jeton signé HMAC-SHA256 sans état ; prolongée à chaque requête (2 h sans activité), 8 h au plus depuis la connexion ; `Authorization: Bearer` refusé ailleurs ; écritures de la même origine et en JSON seulement ; `GET /api/admin/session`, `POST /api/admin/logout` ; limite d'essais réservée à la connexion ; administration React sans jeton dans le navigateur (session vérifiée au démarrage, retour à la connexion si elle expire) ;
+- **US009** : nginx répond 404 sur `/api` (JSON) et `/admin` sur le Pi ; README, CLAUDE.md (règle 7 : le front ne parle au back que par HTTP), context.md, getting-started, schéma d'EP008 ;
+- **incident** : la première prévisualisation d'US008 a échoué au build, à cause du contrôle `check-api-esm` (il supposait `ADMIN_TOKEN` absent ; Vercel l'injecte pendant le build) ; corrigé et reproduit en local avec les variables de Vercel ;
+- **relecture indépendante de la phase 2** (agent, [ep010-phase2-revue.md](../tasks/ep010-phase2-revue.md)) : 2 défauts moyens, 7 faibles, aucun grave, **tous corrigés** :
+  - M1 : une lecture lente revenue après « Se déconnecter » rouvrait la session (cookie prolongé) → témoin de déconnexion `diorama_admin_sortie` qui fait refuser toute session ouverte avant ;
+  - F1 : le proxy de Vite réécrivait l'hôte (connexion refusée hors `localhost`) → `changeOrigin: false` ;
+  - F2, F3, I2 : clé = empreinte de l'environnement et du jeton (une clé contenant « PUBLIC » ou « PRIVATE » cassait la session ; une session de prévisualisation ne vaut plus en production) ; `ADMIN_SESSION_SECRET` retirée ;
+  - F4 : le cookie vit jusqu'au plafond de 8 h, pour que « Session expirée » s'affiche vraiment ;
+  - F5 : `check-api-esm` ouvre et relit une vraie session ; F6, F7 : documentation, poids de l'administration corrigé (+11 Ko et non +24) ;
+  - infos traitées : limite d'essais par /64 en IPv6 sans grossir sans fin, API de dev sur `127.0.0.1`, retouche hors contrat écartée par le back au lieu de bloquer la page Parkings, corps d'erreur communs.
+
+**Vérifié :** `npm run build` (aussi avec `ADMIN_TOKEN` et `VERCEL_ENV=preview`, comme sur Vercel) et `npm test` : **90 tests** (back 41, admin 24, contrat 6, carte 4, outillage 15) ; dans Chrome sur le `dist/` avec l'API locale : connexion, cookie `HttpOnly`/`SameSite=Strict`/`/api/admin`/8 h, rien dans le stockage de la page, rechargement, déconnexion qui efface le cookie, retouche, ajout et retrait de parking ; en dev, connexion et écritures par le proxy de l'admin ; **sur la prévisualisation** (`e41422d`, par l'agent) : build « success », `/api/health`, session sans cookie 401, mauvais jeton 401 (l'hôte public est bien reçu par la fonction), connexion depuis un autre site 403, déconnexion 204 avec le témoin (`Secure`, 8 h), carte sans erreur.
+
+**Vérifié par Dasco :** `docker compose build` : la carte s'affiche, `/admin` et `/api` répondent 404 (ni API ni administration sur le Pi).
+
+**Non vérifié :** la connexion avec le vrai jeton de Preview et une écriture réelle sur Vercel (jeton connu de Dasco seulement) ; Safari et Firefox.
+
 ## Itération 86 — 09/10/2026 (branche `feat/EP010-US007-contrat`, epic EP010)
 
 **Demande de Dasco :** US007 validée avec `zod/mini` (« Zod m'intéresse surtout sur le back pour le typage » ; la carte se connectera bientôt à l'API) ; session glissante limitée à 8 h (US008).
@@ -11,7 +33,7 @@
 - carte : retouches publiées vérifiées par le contrat une par une (une retouche hors contrat est ignorée sans jeter les autres) ; types de parkings tirés du contrat ; premiers tests de la carte ;
 - Vitest : 5 projets (back, admin, contrat, carte, outillage) ; README (structure avec `contrat/`, commandes).
 
-**Vérifié :** `npm run build` (types des 4 configurations, frontières, API conforme au contrat) et `npm test` : **72 tests** ; poids mesurés : carte 77,2 → 85,5 Ko gzip, administration 83,0 → 108,4 Ko (dont 1,2 Ko de messages français) ; en local sur le `dist/` (Chrome, API sur PGlite) : parcours complet de l'administration, carte qui reçoit et accepte une retouche publiée, sans erreur ; **sur la prévisualisation** (`c3e0ee1`, par l'agent) : build « success », `/api/health` conforme, erreurs avec leur code, carte sans erreur, page de l'administration sans erreur sous la CSP.
+**Vérifié :** `npm run build` (types des 4 configurations, frontières, API conforme au contrat) et `npm test` : **72 tests** ; poids mesurés : carte 77,2 → 85,5 Ko gzip, administration 97,8 → 108,7 Ko, soit +11 Ko (dont 1,2 Ko de messages français ; chiffre corrigé après la relecture de la phase 2, qui avait relevé un « +24 Ko » mesuré contre une version trop ancienne) ; en local sur le `dist/` (Chrome, API sur PGlite) : parcours complet de l'administration, carte qui reçoit et accepte une retouche publiée, sans erreur ; **sur la prévisualisation** (`c3e0ee1`, par l'agent) : build « success », `/api/health` conforme, erreurs avec leur code, carte sans erreur, page de l'administration sans erreur sous la CSP.
 
 **Non vérifié :** la connexion à l'administration sur la prévisualisation (jeton de Preview connu de Dasco seulement).
 

@@ -22,10 +22,10 @@ function setup(env: Record<string, string> = { ADMIN_TOKEN: TOKEN }) {
   return { app, login, get, at };
 }
 /** « diorama_admin=… » tiré de l'en-tête Set-Cookie, à renvoyer tel quel */
-const cookieOf = (res: Response) => (res.headers.get('set-cookie') ?? '').split(';')[0];
+const cookieOf = (res: Response) => res.headers.getSetCookie().find((c) => c.startsWith('diorama_admin='))?.split(';')[0] ?? '';
 
 describe('session d’administration : connexion', () => {
-  it('le bon jeton ouvre une session : cookie HttpOnly, SameSite=Strict, limité à /api/admin, 2 h ; jamais le jeton en retour', async () => {
+  it('le bon jeton ouvre une session : cookie HttpOnly, SameSite=Strict, limité à /api/admin ; 2 h sans activité, 8 h au plus ; jamais le jeton en retour', async () => {
     const { login } = setup({ ADMIN_TOKEN: TOKEN, VERCEL_ENV: 'preview' });
     const res = await login(`  ${TOKEN}\n`); // espaces et retour à la ligne collés depuis le terminal : ignorés
     expect(res.status).toBe(200);
@@ -33,7 +33,8 @@ describe('session d’administration : connexion', () => {
     expect(body).toMatchObject({ sub: 'admin', method: 'token', expiresAt: new Date(T0 + 2 * HOUR).toISOString(), maxExpiresAt: new Date(T0 + 8 * HOUR).toISOString() });
     expect(JSON.stringify(body)).not.toContain(TOKEN);
     const cookie = res.headers.get('set-cookie') ?? '';
-    for (const part of ['diorama_admin=', 'Max-Age=7200', 'Path=/api/admin', 'HttpOnly', 'Secure', 'SameSite=Strict']) expect(cookie).toContain(part);
+    // le cookie vit jusqu'au plafond de 8 h ; la session qu'il porte expire après 2 h sans activité (l'API peut dire « expirée »)
+    for (const part of ['diorama_admin=', 'Max-Age=28800', 'Path=/api/admin', 'HttpOnly', 'Secure', 'SameSite=Strict']) expect(cookie).toContain(part);
   });
 
   it('en développement sur http, le cookie n’a pas Secure (sinon Safari le refuse sur localhost)', async () => {
@@ -85,7 +86,7 @@ describe('session d’administration : accès aux routes', () => {
     at(2 * HOUR - 1000);
     const res = await get('/api/admin/session', first);
     expect(res.status).toBe(200);
-    expect(res.headers.get('set-cookie')).toContain('Max-Age=7200'); // renouvelé
+    expect(sessionInfo.parse(await json(res)).expiresAt).toBe(new Date(T0 + 4 * HOUR - 1000).toISOString()); // renouvelée
     const renewed = cookieOf(res);
     at(2 * HOUR + 1000);
     const old = await get('/api/admin/session', first);
@@ -114,6 +115,22 @@ describe('session d’administration : accès aux routes', () => {
     const over = await get('/api/admin/session', cookie);
     expect(over.status).toBe(401);
     expect((await json(over)).code).toBe('session-expiree');
+  });
+
+  it('marche avec un jeton qui contient « PUBLIC » ou « PRIVATE » (la clé de signature est une empreinte)', async () => {
+    for (const token of ['MON-JETON-PUBLIC-0123456789', 'MON-JETON-PRIVATE-0123456789']) {
+      const { login, get } = setup({ ADMIN_TOKEN: token });
+      const res = await login(token);
+      expect(res.status).toBe(200);
+      expect((await get('/api/admin/session', cookieOf(res))).status).toBe(200);
+    }
+  });
+
+  it('une session de prévisualisation ne vaut pas en production, même avec le même jeton', async () => {
+    const preview = setup({ ADMIN_TOKEN: TOKEN, VERCEL_ENV: 'preview' });
+    const cookie = cookieOf(await preview.login());
+    expect((await preview.get('/api/admin/session', cookie)).status).toBe(200);
+    expect((await setup({ ADMIN_TOKEN: TOKEN, VERCEL_ENV: 'production' }).get('/api/admin/session', cookie)).status).toBe(401);
   });
 
   it('refuse un cookie falsifié ou signé avec un autre jeton (changer ADMIN_TOKEN ferme les sessions)', async () => {
@@ -161,5 +178,24 @@ describe('session d’administration : écritures et déconnexion', () => {
     expect(res.status).toBe(204);
     expect(res.headers.get('set-cookie')).toContain('Max-Age=0');
     expect((await out()).status).toBe(204);
+  });
+
+  it('une réponse partie avant la déconnexion ne rouvre pas la session (témoin de déconnexion)', async () => {
+    const { app, login, get, at } = setup();
+    const opened = cookieOf(await login());
+    at(60_000);
+    const late = cookieOf(await get('/api/admin/session', opened)); // réponse lente, qui revient avec la session prolongée…
+    at(61_000);
+    const out = await app.request('/api/admin/logout', { method: 'POST', headers: { origin: ORIGIN, cookie: opened } });
+    const marker = out.headers.getSetCookie().find((c) => c.startsWith('diorama_admin_sortie='))!.split(';')[0];
+    expect(marker).toBe(`diorama_admin_sortie=${Math.floor((T0 + 61_000) / 1000)}`);
+    // … et que le navigateur enregistre après la déconnexion : le témoin la fait refuser
+    const refused = await get('/api/admin/session', `${late}; ${marker}`);
+    expect(refused.status).toBe(401);
+    expect(refused.headers.get('set-cookie')).toContain('diorama_admin=; Max-Age=0');
+    // une nouvelle connexion efface le témoin et ouvre une session qui marche
+    const again = await login(TOKEN, { cookie: marker });
+    expect(again.headers.getSetCookie().some((c) => c.startsWith('diorama_admin_sortie=;') && c.includes('Max-Age=0'))).toBe(true);
+    expect((await get('/api/admin/session', cookieOf(again))).status).toBe(200);
   });
 });

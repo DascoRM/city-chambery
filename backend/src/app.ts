@@ -6,11 +6,11 @@ import * as schema from './db/schema.js';
 import { appEnv, appVersion, resolveDatabase, type Env } from './env.js';
 import { database } from './db/client.js';
 import { clientKey, createRateLimiter, tokenMatches } from './auth.js';
-import { closeSession, requireSession, sameOriginWrites, sessionKey, writeSession, type SessionVariables } from './session.js';
+import { closeSession, openSession, requireSession, sameOriginWrites, sessionKey, type SessionVariables } from './session.js';
+import { errorBody } from './errors.js';
 import { dbStats } from './db/stats.js';
 import * as z from 'zod/mini';
 import { fr } from 'zod/locales';
-import type { ErrorCode } from '../../contrat/erreurs.js';
 import { addedInput, customId, osmId, overrideInput, type AdminParkingEdits } from '../../contrat/parkings.js';
 import type { AdminStatusResponse, DbStatus, HealthResponse } from '../../contrat/sante.js';
 import { loginRequest, type SessionInfo } from '../../contrat/session.js';
@@ -34,9 +34,6 @@ function pgCode(err: unknown): string | undefined {
   }
   return undefined;
 }
-
-/** Corps d'une réponse d'erreur (format du contrat : `contrat/erreurs.ts`) */
-const errorBody = (error: string, code: ErrorCode, issues?: unknown) => (issues ? { error, code, issues } : { error, code });
 
 /** Vérifie la base avec une requête triviale, sans jamais faire échouer la réponse de santé */
 export async function checkDatabase(env: Env): Promise<{ status: DbStatus; ms?: number }> {
@@ -108,11 +105,10 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
       limiter.fail(ip);
       return c.json(errorBody('non autorisé', 'non-autorise'), 401);
     }
-    const nowS = Math.floor(now() / 1000);
-    return c.json((await writeSession(c, env, sessionKey(env)!, { sub: 'admin', method: 'token', auth: nowS }, nowS)) satisfies SessionInfo);
+    return c.json((await openSession(c, env, sessionKey(env)!, Math.floor(now() / 1000))) satisfies SessionInfo);
   });
   admin.post('/logout', (c) => {
-    closeSession(c, env);
+    closeSession(c, env, Math.floor(now() / 1000)); // et le témoin : une réponse tardive ne rouvre pas la session
     return c.body(null, 204);
   });
   admin.get('/session', (c) => c.json(c.get('session') satisfies SessionInfo));

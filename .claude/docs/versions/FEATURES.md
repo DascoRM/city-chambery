@@ -1,12 +1,13 @@
 # Fonctionnalités
 
-État au 09/10/2026 — itération 84 (la section Carte n'a pas changé depuis l'itération 74).
+État au 09/10/2026 — itération 87 (la section Carte n'a pas changé depuis l'itération 74, hormis les retouches publiées vérifiées par le contrat).
 
 ## Administration (EP008, EP010)
 
 | Fonctionnalité | État | Détail |
 |---|---|---|
-| Administration en React (`/admin/`) | ✅ Vérifié par Dasco (prévisualisation, 09/10) | Application séparée de la carte (`frontend/admin/`, React 19), adresses en `#/…` ; connexion par le jeton `ADMIN_TOKEN` (gardé le temps de l'onglet ; un jeton refusé ramène à la connexion) ; messages d'erreur en français (jeton refusé, trop d'essais, administration non configurée, base non migrée ou absente) |
+| Administration en React (`/admin/`) | ✅ Vérifié par Dasco (prévisualisation, 09/10) | Application séparée de la carte (`frontend/admin/`, React 19), adresses en `#/…` ; messages d'erreur en français ; réponses de l'API vérifiées par le contrat |
+| Session d'administration (EP010-US008) | 🟡 À vérifier par Dasco avec le jeton de Preview | Le jeton ne sert qu'à se connecter ; ensuite un cookie `HttpOnly` que la page ne peut pas lire ; prolongée à chaque action (2 h sans activité), 8 h au plus ; « Se déconnecter » ferme la session même si une réponse lente revient après ; changer `ADMIN_TOKEN` ferme toutes les sessions |
 | Tableau de bord | ✅ Vérifié par Dasco (prévisualisation, 09/10) | Version, environnement, Node.js, région ; base : état, taille, migrations à appliquer, lignes par table. Pas encore : usage et quotas (EP008-US005 / US008) |
 | Retouches des parkings depuis l'administration | ✅ Vérifié par Dasco (prévisualisation, 09/10) | Page « Parkings » : chercher un parking de la carte, le masquer ou changer nom, tarif, places, type, position, note **avec une source obligatoire** ; ajouter un parking absent d'OSM ; liste des retouches avec « Retirer » ; journal. Publiées tout de suite pour la carte (au plus 1 minute de délai). Pas encore : lieux d'histoire, carte de position (EP008-US006 et US007) |
 

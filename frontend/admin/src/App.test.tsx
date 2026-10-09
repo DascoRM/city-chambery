@@ -95,6 +95,13 @@ describe('administration : session et tableau de bord', () => {
     expect(screen.getByLabelText("Jeton d'administration")).toBeTruthy();
   });
 
+  it('session terminée en cours de route (cookie absent ou fermé) : retour à la connexion, avec le message', async () => {
+    signedIn = true;
+    statusResponse = () => json({ error: 'non autorisé', code: 'non-autorise' }, 401);
+    render(<App />);
+    expect(await screen.findByText('Session terminée : reconnecte-toi.')).toBeTruthy();
+  });
+
   it('la déconnexion prévient l’API (le cookie est effacé) et revient à la connexion', async () => {
     signedIn = true;
     render(<App />);
