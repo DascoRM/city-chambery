@@ -1,5 +1,22 @@
 # Journal des itérations
 
+## Itération 90 — 09/10/2026 (branche `feat/EP009-US002-socle-meteo`, epic EP009)
+
+**Demande de Dasco :** lot MVP de la météo ; US002 : le socle de la météo sur la carte (couvert, puce, `?weather=`), sans rien changer quand il n'y a pas de météo.
+
+**Changements :**
+- **réglages posés au démarrage, tous inactifs** (image identique) : objet brouillard qui commence « à un million de km », correction des couleurs prémultipliées, voile et éclair dans la passe finale, `fog: false` sur les repères de jeu (gemmes, épingles, éléphants), les halos des bars et la lueur de la fontaine, un seul objet « vent » pour la fumée et les drapeaux ; les créer plus tard figerait l'image (4,4 s mesurées pour le brouillard au plan v2) ;
+- **état météo de la carte** (`weather/state.ts`, logique pure testée) : `?weather=` avec les valeurs types du contrat (et `&intensity=`, `&wind=`, `&windfrom=`, `&temp=`), règle « Direct ou simulée », priorités (préférence › adresse › debug › administration › direct), fondu indépendant de la cadence ;
+- **ciel couvert** (`weather/sky.ts`) : soleil voilé (ombres effacées sans les couper), lumière grise, fond désaturé ; jusqu'à 20 % de nuages, rien ne change ;
+- **module météo chargé à la demande**, jamais attendu ; **puce** après la saison et son **panneau** (DOM et `textContent` seulement) ; préférences « Afficher la météo » (désactivée : rien n'est chargé) et « Effets réduits » ; sélecteur `?debug` et `diorama.weather.set / live / state` ;
+- mise en page : à 1280-1365 px, lever et coucher masqués quand la puce est là (sinon la barre passe sous la boussole) ; sous 720 px, l'heure ne se fait plus recouvrir ;
+- Vite : `treeshake.manualPureFunctions: ['z']` (sinon + 1,3 Ko de schémas inutiles dans le chunk principal) ;
+- README (puce, `?weather=`, sélecteur, structure du code) ; spec US001 et US002 précisée d'après le plan.
+
+**Vérifié :** `npm run build` et `npm test` (**138 tests**) ; chunk principal + 1,07 Ko gzip (85,56 → 86,63 Ko), module météo 3,98 Ko et sélecteur 0,78 Ko à part ; dans Chrome avec la puce graphique du Mac, build de production comparé au build d'avant (22 contrôles, tous verts) : sans météo, à 12 h et 22 h, mêmes lumières, exposition, fond et appels de rendu (2 programmes de plus) ; `?weather=clear` identique ; fondu vers « couvert » sans image de plus de 26 ms ni recompilation ; sélecteur, relevé simulé, « Simulée », « Revenir au direct », Échap ; préférence désactivée sans aucune requête météo, puis réactivée ; réduit-mouvement ; 375 et 320 px ; captures regardées (couvert, panneau de nuit, tiroir sur téléphone).
+
+**Non vérifié :** le rendu du couvert et la mise en page par Dasco ; Safari et Firefox (dont `:has()` du CSS) ; un vrai téléphone ; le service worker (bloqué pendant les essais).
+
 ## Itération 89 — 09/10/2026 (branche `feat/EP009-US001-qualite-et-mesure`, epic EP009)
 
 **Demande de Dasco :** lot MVP de la météo (spec v2 validée) ; US001 : connaître la puissance de l'appareil et mesurer une pluie prototype sur un vrai téléphone avant d'engager la pluie.

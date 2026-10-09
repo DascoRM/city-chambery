@@ -12,7 +12,7 @@
 
 - [ ] **Given** un téléphone, **When** le diorama démarre, **Then** `qualityLevel` vaut `medium` (`low` si `deviceMemory` vaut 3 Go ou moins), `?quality=low|medium|high` le force, et le compteur `?debug` l'affiche *(règle testée, `?quality=` vérifié dans Chrome ; à constater sur l'iPhone)*
 - [x] **Given** un ordinateur, **Then** `qualityLevel` vaut `high`
-- [ ] **Given** `?debug` dans Chrome (Mac, Android), **Then** le compteur affiche « GPU x,x ms » ; dans Safari, « GPU n/d » (extension de mesure absente) *(Chrome du Mac vérifié ; Android et Safari non)*
+- [ ] **Given** `?debug` dans Chrome (Mac, Android), **Then** le compteur affiche « GPU x.x ms » si le navigateur propose l'extension de mesure, sinon « GPU n/d » (Safari) *(Chrome du Mac vérifié ; Android et Safari non)*
 - [x] **Given** `?debug&rain=2500`, **Then** la pluie prototype est dessinée en 1 appel de rendu (+1 au compteur), sans à-coup à son apparition
 - [ ] **Given** la mesure de Dasco sur son iPhone (protocole ci-dessous), **Then** une ligne dans DECISIONS : budget retenu (ex. « pluie : palier de cadence inchangé, pire image + 5 ms au plus, 2 appels au plus ») et nombre de gouttes par niveau
 
@@ -23,7 +23,8 @@ Voir l'[epic](epic.md), règles 8 et 9.
 
 | Règle | Description |
 |-------|-------------|
-| R1 | Une seule détection de l'appareil : `scene/quality.ts` remplace la règle recopiée dans `people.ts` (l. 140) et `birds.ts` (l. 80) |
+| R1 | Une seule détection de l'appareil : `scene/quality.ts` remplace la règle recopiée dans `people.ts` (l. 140) et `birds.ts` (l. 80) : pointeur tactile **ou** fenêtre de moins de 700 px (une tablette est `medium`, une fenêtre étroite d'ordinateur aussi) ; `?quality=` change aussi le nombre de passants et d'oiseaux (voulu : c'est ce qu'on veut simuler) |
+| R3 | Le compteur `?debug` est chargé à la demande, comme la pluie de mesure : il sort du chunk principal |
 | R2 | Le prototype de pluie n'existe que derrière `?debug&rain=N`, chargé à la demande |
 
 ### Niveaux proposés (à confirmer par la mesure)

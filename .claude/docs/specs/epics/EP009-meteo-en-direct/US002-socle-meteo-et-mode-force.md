@@ -10,16 +10,17 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** aucune météo (ni `?weather=`, ni API), **When** la carte s'ouvre, **Then** la scène est identique à aujourd'hui (captures à 12 h et 22 h, mêmes appels de rendu) et rien n'attend
-- [ ] **Given** `?weather=cloudy`, **Then** en 3 s environ la lumière devient plus douce et grise, les ombres s'effacent, le fond se grise, **sans** image de plus de 50 ms (aucune bascule d'ombre)
-- [ ] **Given** `?weather=clear`, **Then** identique à aujourd'hui
-- [ ] **Given** `?weather=<condition>` (avec `&intensity=`, `&wind=`, `&windfrom=` facultatifs), **Then** les valeurs types du contrat (`WEATHER_PRESETS`) s'appliquent, sans requête réseau ; une valeur inconnue est ignorée
-- [ ] **Given** `?debug`, **Then** le sélecteur (9 conditions, curseurs nuages, pluie, neige, brouillard, orage, vent) et `window.diorama.weather.set({…})` forcent une météo
-- [ ] **Given** la puce à côté de la puce Saison, **When** on l'ouvre, **Then** condition, température si connue, heure du modèle et état (Direct, Simulée, Forcée, Non disponible) ; « Simulée » dès que l'heure ou la saison quitte le direct, avec « Revenir au direct »
-- [ ] **Given** la préférence « météo désactivée », **Then** aucun chunk météo téléchargé ni aucune requête `/api/weather` ; la puce propose de la réactiver
-- [ ] **Given** `prefers-reduced-motion`, **Then** la règle 10 de l'epic s'applique (même effet que l'interrupteur « Effets réduits » du panneau)
-- [ ] **Given** la correction de la passe finale (couleurs prémultipliées), **Then** bords du socle et particules sur le fond inchangés à l'œil, de jour, de nuit et avec l'effet maquette (captures avant / après)
-- [ ] **Given** `npm run build` et `npm test`, **Then** ils passent ; la météo est dans un chunk à part ; le chunk principal prend 2,5 Ko gzip au plus
+- [x] **Given** aucune météo (ni `?weather=`, ni API), **When** la carte s'ouvre, **Then** la scène est identique à aujourd'hui (lumières, exposition et fond à 12 h et 22 h, mêmes appels de rendu, au plus 2 programmes de plus : les repères sans brouillard) et rien n'attend
+- [x] **Given** `?weather=cloudy`, **Then** la lumière devient plus douce et grise, les ombres s'effacent, le fond se grise (moitié du chemin en 2 s environ, fini en 10 s), **sans** image de plus de 50 ms (aucune bascule d'ombre)
+- [x] **Given** `?weather=clear`, **Then** identique à aujourd'hui
+- [x] **Given** `?weather=<condition>` (avec `&intensity=`, `&wind=`, `&windfrom=`, `&temp=` facultatifs), **Then** les valeurs types du contrat (`WEATHER_PRESETS`) s'appliquent, sans requête réseau ; une valeur inconnue est ignorée
+- [x] **Given** `?debug`, **Then** le sélecteur (9 conditions, curseurs nuages, pluie, neige, brouillard, orage, vent) et `window.diorama.weather.set({…})` forcent une météo
+- [x] **Given** la puce à côté de la puce Saison, **When** on l'ouvre, **Then** condition, température si connue, heure du modèle et état (Direct, Simulée, Forcée, Non disponible) ; « Simulée » dès que l'heure ou la saison quitte le direct, avec « Revenir au direct » ; une météo forcée (adresse, démo) reste à toute heure (question 1 posée à Dasco le 09/10)
+- [x] **Given** la préférence « météo désactivée », **Then** le module météo n'est ni chargé ni exécuté par la page (le service worker, lui, pré-cache tout le code à son installation) et aucune requête `/api/weather` ; la puce propose de la réactiver
+- [x] **Given** `prefers-reduced-motion`, **Then** la règle 10 de l'epic s'applique (même effet que l'interrupteur « Effets réduits » du panneau ; sans effet visible avant US005, US008 et US009)
+- [x] **Given** les réglages posés au démarrage (correction des couleurs prémultipliées, voile, éclair), **Then** inactifs : image identique à aujourd'hui. *La correction ne peut pas rester active par beau temps : elle éteint les halos des bars posés sur le fond, la nuit ; elle s'active avec le brouillard (US006, qui reprend les captures avant / après)*
+- [x] **Given** un écran de 1280 à 1365 px, **Then** la barre d'heure avec la puce ne passe pas sous la boussole (lever et coucher masqués, gardés dans l'info-bulle : question 3 posée à Dasco) ; à 375 et 320 px, la puce tient dans la barre (icône seule)
+- [x] **Given** `npm run build` et `npm test`, **Then** ils passent ; la météo est dans un chunk à part ; le chunk principal prend 2,5 Ko gzip au plus (+ 1,2 Ko depuis le début d'EP009)
 
 ---
 
@@ -28,8 +29,8 @@ Voir l'[epic](epic.md), règles 1, 2, 7, 9, 10, 12 et 13.
 
 | Règle | Description |
 |-------|-------------|
-| R1 | Posés au démarrage, inactifs : l'objet brouillard (`scene.fog`, `near` immense), les uniformes de la passe finale (voile, éclair), `fog: false` sur les repères de jeu, l'objet `wind` partagé par la fumée et les drapeaux |
-| R2 | Le modificateur du ciel est une fonction pure (`scene/weather-sky.ts`) : par beau temps, il rend exactement les valeurs d'aujourd'hui (test Vitest) |
+| R1 | Posés au démarrage, inactifs : l'objet brouillard (`scene.fog`, `near` immense), les uniformes de la passe finale (correction prémultipliée, voile, éclair), `fog: false` sur les repères de jeu, les halos des bars et la lueur au sol de la fontaine (les panneaux de parkings et les ombres « taches » restent dans le brouillard), l'objet `wind` partagé par la fumée et les drapeaux |
+| R2 | Le modificateur du ciel est une fonction pure (`weather/sky.ts`, dans le module météo pour le poids) : par beau temps, il rend exactement les valeurs d'aujourd'hui (test Vitest) ; jusqu'à 20 % de nuages, rien ne change |
 | R3 | Fondu indépendant de la cadence (τ = 3 s pour le ciel, 6 s pour le vent), sans dépassement ; aucun travail par image quand la météo est stable |
 | R4 | `?weather=` reprend les valeurs types du contrat : même rendu que le forçage de l'admin (US012) |
 | R5 | Le modificateur s'applique après le calcul de l'heure dans `daynight.apply()` : la relecture de l'horloge chaque minute ne défait jamais la météo |
@@ -47,6 +48,7 @@ Voir l'[epic](epic.md), règles 1, 2, 7, 9, 10, 12 et 13.
 | Simulée | Beau temps hors Direct, bouton « Revenir au direct » |
 | Forcée (adresse) | `?weather=` dans l'adresse |
 | Non disponible | Ciel par défaut, sans message bloquant |
+| Debug | Sélecteur `?debug` ; avec US002 seule, « Direct », « Non disponible » et « Simulée » ne s'obtiennent qu'avec `diorama.weather.live(…)` (la puce reste masquée sans API ni `?weather=`) |
 | Désactivée | Préférence du visiteur : rien n'est chargé |
 
 À vérifier à 375 et 320 px de large : la barre d'heure est déjà serrée.
@@ -57,7 +59,7 @@ Voir l'[epic](epic.md), règles 1, 2, 7, 9, 10, 12 et 13.
 
 | Critère | Valeur |
 |---------|--------|
-| Jours | 3 |
+| Jours | 3 (+ 0,25 pour la mise en page de la barre d'heure) |
 | Complexité | Medium |
 | Dépend de | contrat (1er commit d'US003) ; US001 conseillée avant |
 
@@ -66,14 +68,14 @@ Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 2.
 ---
 
 ## Checklist dev
-- [ ] Branche `feat/EP009-US002-socle-meteo` depuis `feat/EP009-meteo`
-- [ ] `npm run build` et `npm test` ; vérifié dans le navigateur avec `?weather=` et `?debug`
-- [ ] Fluidité : compteur `?debug` avant / après, aucune image de plus de 50 ms quand la météo change (rendu logiciel non représentatif : mesure GPU sur le Mac notée à part)
-- [ ] Le site marche sans la météo
-- [ ] FEATURES, CHANGELOG, DECISIONS, README (puce, `?weather=`)
+- [x] Branche `feat/EP009-US002-socle-meteo` depuis `feat/EP009-meteo`
+- [x] `npm run build` et `npm test` ; vérifié dans le navigateur avec `?weather=` et `?debug`
+- [x] Fluidité : compteur `?debug` avant / après, aucune image de plus de 50 ms quand la météo change (rendu logiciel non représentatif : mesure GPU sur le Mac notée à part)
+- [x] Le site marche sans la météo
+- [x] FEATURES, CHANGELOG, DECISIONS, README (puce, `?weather=`)
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : ✅ Done (09/10/2026, itération 90) ; rendu du couvert et mise en page à juger par Dasco

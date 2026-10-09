@@ -227,6 +227,7 @@ export async function buildHerd(cfg: MascotConfig, data: CityData, heightAt: Hei
       mesh.frustumCulled = false; // les sommets bougent dans le shader
       const mat = (mesh.material as THREE.MeshStandardMaterial).clone();
       mat.flatShading = true;
+      mat.fog = false; // repère de jeu : il perce le brouillard (D12 d'EP009), réglé avant la première image
       mat.onBeforeCompile = (shader) => {
         Object.assign(shader.uniforms, uniforms);
         shader.vertexShader = shader.vertexShader

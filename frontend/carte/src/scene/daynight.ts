@@ -3,6 +3,7 @@ import { curveAt } from './curve';
 import type { NightUniforms } from './city';
 import { CHAMBERY, chamberyInstant, type LocalDate } from '../time/chambery';
 import { sunPosition } from '../time/sun';
+import type { SkyValues } from '../weather/sky';
 
 /**
  * Cycle jour/nuit : position et couleur du soleil (puis de la lune), ambiance du ciel,
@@ -62,6 +63,9 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
   });
 
   let day = initial.day, hour = initial.hour, night = 0;
+  // Météo (EP009) : modificateur fourni par le module météo (chargé à la demande), appliqué après l'heure ; sans lui, rien ne change
+  let weather: ((v: SkyValues, dayF: number) => void) | null = null;
+  const sv: SkyValues = { hemiI: 0, keyI: 0, exposure: 0, sky, key: keyCol, bg };
   let lastBg = '';
   const lastSun = new THREE.Vector3(NaN, NaN, NaN);
   const listeners: ((h: number, night: number) => void)[] = [];
@@ -81,9 +85,11 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
     ground.lerpColors(NIGHT_C.ground, DAY_C.ground, dayF);
     keyCol.lerpColors(NIGHT_C.key, DAY_C.key, dayF).lerp(DUSK_C.key, duskMix * dayF);
     bg.forEach((c, i) => c.lerpColors(NIGHT_C.bg[i], DAY_C.bg[i], dayF).lerp(DUSK_C.bg[i], duskMix));
-    const hemiI = lerp(lerp(NIGHT.hemi, DAY.hemi, dayF), DUSK.hemi, duskMix * dayF);
-    const keyI = lerp(NIGHT.keyI, DAY.keyI, dayF);
-    const exposure = lerp(NIGHT.exposure, DAY.exposure, dayF);
+    sv.hemiI = lerp(lerp(NIGHT.hemi, DAY.hemi, dayF), DUSK.hemi, duskMix * dayF);
+    sv.keyI = lerp(NIGHT.keyI, DAY.keyI, dayF);
+    sv.exposure = lerp(NIGHT.exposure, DAY.exposure, dayF);
+    weather?.(sv, dayF); // météo (EP009) : ciel voilé, lumière grise, fond désaturé
+    const { hemiI, keyI, exposure } = sv;
 
     // Soleil le jour (repère : x = est, −z = nord, y = haut), lune la nuit (fixe, haute, un peu à l'ouest)
     const { sun, hemi, fill } = d.lights;
@@ -143,6 +149,14 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
     set(newDay: LocalDate, h: number) {
       day = newDay;
       hour = ((h % 24) + 24) % 24;
+      apply();
+    },
+    /**
+     * Météo (EP009) : pose le modificateur (weather/sky.ts) et recalcule lumières et fond. Le soleil ne bouge pas, donc la carte
+     * des ombres n'est pas recalculée ; appelé seulement pendant un fondu, jamais par temps stable.
+     */
+    setWeather(m: ((v: SkyValues, dayF: number) => void) | null) {
+      weather = m;
       apply();
     },
     onChange(f: (h: number, night: number) => void) {

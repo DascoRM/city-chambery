@@ -21,6 +21,10 @@ export function createStage(container: HTMLElement, bounds: CityData['bounds'], 
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
+  // Brouillard posé dès le démarrage mais inactif (il commencerait à un million de km) : tous les matériaux sont compilés
+  // avec lui une fois pour toutes ; l'activer (EP009-US006) ne change que near, far et la couleur, sans recompilation.
+  // Le créer plus tard figerait l'image 4,4 s la première fois (31 programmes recompilés, mesuré)
+  scene.fog = new THREE.Fog(0xffffff, 1e9, 2e9);
   const W = bounds.maxX - bounds.minX;
   const D = bounds.maxY - bounds.minY;
   const size = Math.max(W, D);
