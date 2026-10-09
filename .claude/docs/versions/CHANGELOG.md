@@ -1,5 +1,20 @@
 # Journal des itérations
 
+## Itération 89 — 09/10/2026 (branche `feat/EP009-US001-qualite-et-mesure`, epic EP009)
+
+**Demande de Dasco :** lot MVP de la météo (spec v2 validée) ; US001 : connaître la puissance de l'appareil et mesurer une pluie prototype sur un vrai téléphone avant d'engager la pluie.
+
+**Changements :**
+- `scene/quality.ts` : un seul niveau de qualité (`high` sur ordinateur, `medium` sur téléphone ou tablette, `low` avec 3 Go de mémoire ou moins) et `?quality=` ; les passants et les oiseaux l'utilisent (même règle qu'avant, réunie en un seul endroit) ;
+- compteur `?debug` chargé à la demande (il sort du chunk principal) : niveau de qualité et temps du processeur graphique par image (`EXT_disjoint_timer_query_webgl2` ; « GPU n/d » sur Safari) ; `window.diorama.perf.sample()` pour les scripts de mesure ;
+- pluie prototype `?debug&rain=N` : chargée à la demande, au-dessus du socle, 1 appel de rendu, visible 2 s après l'ouverture ;
+- plan prêt à coder d'US001, US002 et US004 par l'agent du front ([ep009-us001-us002-us004-plan.md](../tasks/ep009-us001-us002-us004-plan.md)), relu avant chaque commit ;
+- README (compteur, `?quality=`, `?debug&rain=`, structure du code).
+
+**Vérifié :** `npm run build` et `npm test` (**114 tests**) ; chunk principal + 0,1 Ko gzip (85,46 → 85,56 Ko ; compteur 0,94 Ko et pluie 1,59 Ko à part) ; dans Chrome avec la puce graphique du Mac, build de production : « qualité high · GPU 10 ms » ; `?quality=medium` et `low` → 150 passants au lieu de 300 ; pluie de 2 500 et 5 000 traînées : + 1 appel de rendu (2 407 → 2 408) et + 1 programme, apparition sans à-coup (pire intervalle 18 ms, aussi dans un navigateur neuf, 3 essais) ; capture : la pluie tombe sur le socle.
+
+**Non vérifié :** **aucune mesure sur téléphone** (à faire par Dasco, protocole dans la fiche US001), donc pas encore de budget de la pluie ; les mesures du Mac ont été faites alors que d'autres applications chargeaient la machine (un premier passage à 41 ms ne s'est pas reproduit) ; à noter pour US005 : vue de côté, les gouttes au-dessus du bord arrière du socle se dessinent sur le fond beige, la vraie pluie devra les limiter pour tenir D11.
+
 ## Itération 88 — 09/10/2026 (branche `feat/EP009-US003-contrat-et-route`, epic EP009)
 
 **Demande de Dasco :** « je veux que la météo soit gérée par le back et affichée sur le front », en planifiant les US avec les agents ; relevé à la demande plutôt que planifié (réponse de l'agent du back acceptée) ; spec v2 validée (« Ok, tu peux attaquer les travaux ») : lot MVP, contrat et route d'abord.

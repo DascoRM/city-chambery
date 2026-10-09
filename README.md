@@ -366,7 +366,8 @@ En production, ni le code de l'outil ni l'endpoint `/__dev/poi` du serveur Vite 
 - **Résolution** : densité de pixels plafonnée à 1,5, puis baissée automatiquement si les images/s chutent sous 40 pendant les mouvements (`frontend/carte/src/scene/quality.ts`).
 - **Cadence** : 30 images/s quand rien ne bouge ; pleine vitesse quand la caméra bouge (et 0,5 s après), quand la souris bouge sur la carte, pendant la lecture ▶ et les animations du mini-jeu. Un module de la boucle le signale par `moving()` (`Ticker`, `frontend/carte/src/types.ts`).
 - **Dire où se trouve quelque chose** : avec `?debug`, le bouton **📍 Position** (ou la touche P) permet de cliquer sur la carte : la position (mètres du diorama), le bâtiment OSM, le parking et la rue les plus proches s'affichent et un extrait `{ "pos": [x, y] }` est copié, à coller dans la conversation ou dans `pois.json` / `parkings.json` (code : `frontend/carte/src/dev/position-picker.ts`, présent en production avec `?debug` ; le grand outil de placement `placement.ts` reste réservé à `npm run dev`).
-- **Mesurer la fluidité** : ajouter `?debug` à l'adresse (ex. `http://localhost:3000/?debug`) affiche images/s, pire image, mode (« repos (30 max) » ou « mouvement »), appels de rendu, triangles et densité, ainsi que le **debug des éléphants** : un faisceau coloré au-dessus de chacun (bleu : se promène, jaune : épuisé ; visible à travers les bâtiments) et un panneau avec leur état, leurs fuites restantes et leur distance à la fontaine ; « Voir » y amène la caméra, « Épuiser » le fait réapparaître épuisé. Le code de ce debug n'est téléchargé qu'avec `?debug`. Dans la console, `window.diorama` (scène, caméra, horloge, troupeau…) existe en dev et avec `?debug`, pas en production.
+- **Mesurer la fluidité** : ajouter `?debug` à l'adresse (ex. `http://localhost:3000/?debug`) affiche images/s, pire image, mode (« repos (30 max) » ou « mouvement »), appels de rendu, triangles, densité, **niveau de qualité** et **temps du processeur graphique** par image (« GPU n/d » quand le navigateur ne le donne pas, comme Safari ; un ordre de grandeur : seuls les écarts dans la même page comptent), ainsi que le **debug des éléphants** : un faisceau coloré au-dessus de chacun (bleu : se promène, jaune : épuisé ; visible à travers les bâtiments) et un panneau avec leur état, leurs fuites restantes et leur distance à la fontaine ; « Voir » y amène la caméra, « Épuiser » le fait réapparaître épuisé. Le code de ce debug n'est téléchargé qu'avec `?debug`. Dans la console, `window.diorama` (scène, caméra, horloge, troupeau…) existe en dev et avec `?debug`, pas en production.
+- **Niveau de qualité (EP009-US001)** : `high` sur ordinateur, `medium` sur téléphone ou tablette (pointeur tactile, ou fenêtre de moins de 700 px), `low` si le navigateur annonce 3 Go de mémoire ou moins (Chrome Android) ; il règle le nombre de passants et d'oiseaux, et plus tard les effets météo (`frontend/carte/src/scene/quality.ts`). `?quality=low`, `medium` ou `high` le force. **Pluie de mesure** : `?debug&rain=2500` ajoute 2 500 traînées de pluie prototype au-dessus du socle, 2 s après l'ouverture (un appel de rendu ; code chargé seulement dans ce cas), pour mesurer son coût sur un téléphone.
 
 ---
 
@@ -431,8 +432,9 @@ frontend/
       state/lobby.ts       Case « Ne plus afficher cet écran » (localStorage)
       scene/daynight.ts    Cycle jour/nuit
       scene/tiltshift.ts   Effet maquette (flou en demi-résolution)
-      scene/quality.ts     Résolution adaptative (densité de pixels selon les images/s)
-      ui/perfhud.ts        Compteur de performance (?debug)
+      scene/quality.ts     Niveau de qualité de l'appareil (?quality=) et résolution adaptative (densité de pixels selon les images/s)
+      ui/perfhud.ts        Compteur de performance (?debug, chargé seulement dans ce cas) : qualité, temps GPU
+      dev/rain-proto.ts    Pluie prototype de mesure (?debug&rain=N, chargée seulement dans ce cas)
       dev/position-picker.tsOutil de position (?debug) : clic = position copiée, bâtiment, parking et rue proches
       dev/herd-debug.ts    Debug des éléphants : faisceaux et panneau (?debug)
       pwa.ts               Mode hors-ligne : service worker, bandeau « nouvelle version »

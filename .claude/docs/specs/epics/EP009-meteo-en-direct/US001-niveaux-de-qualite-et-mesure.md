@@ -10,10 +10,10 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** un téléphone, **When** le diorama démarre, **Then** `qualityLevel` vaut `medium` (`low` si `deviceMemory` vaut 3 Go ou moins), `?quality=low|medium|high` le force, et le compteur `?debug` l'affiche
-- [ ] **Given** un ordinateur, **Then** `qualityLevel` vaut `high`
-- [ ] **Given** `?debug` dans Chrome (Mac, Android), **Then** le compteur affiche « GPU x,x ms » ; dans Safari, « GPU n/d » (extension de mesure absente)
-- [ ] **Given** `?debug&rain=2500`, **Then** la pluie prototype est dessinée en 1 appel de rendu (+1 au compteur), sans à-coup à son apparition
+- [ ] **Given** un téléphone, **When** le diorama démarre, **Then** `qualityLevel` vaut `medium` (`low` si `deviceMemory` vaut 3 Go ou moins), `?quality=low|medium|high` le force, et le compteur `?debug` l'affiche *(règle testée, `?quality=` vérifié dans Chrome ; à constater sur l'iPhone)*
+- [x] **Given** un ordinateur, **Then** `qualityLevel` vaut `high`
+- [ ] **Given** `?debug` dans Chrome (Mac, Android), **Then** le compteur affiche « GPU x,x ms » ; dans Safari, « GPU n/d » (extension de mesure absente) *(Chrome du Mac vérifié ; Android et Safari non)*
+- [x] **Given** `?debug&rain=2500`, **Then** la pluie prototype est dessinée en 1 appel de rendu (+1 au compteur), sans à-coup à son apparition
 - [ ] **Given** la mesure de Dasco sur son iPhone (protocole ci-dessous), **Then** une ligne dans DECISIONS : budget retenu (ex. « pluie : palier de cadence inchangé, pire image + 5 ms au plus, 2 appels au plus ») et nombre de gouttes par niveau
 
 ---
@@ -56,14 +56,14 @@ Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 5.
 ---
 
 ## Checklist dev
-- [ ] Branche `feat/EP009-US001-qualite-et-mesure` depuis `feat/EP009-meteo`
-- [ ] `npm run build` et `npm test` (`scene/quality.test.ts`) ; vérifié dans le navigateur avec `?debug` et `?quality=`
-- [ ] Mesure sur le Mac avec la puce graphique (le navigateur de test fait un rendu logiciel : non représentatif)
+- [x] Branche `feat/EP009-US001-qualite-et-mesure` depuis `feat/EP009-meteo`
+- [x] `npm run build` et `npm test` (`scene/quality.test.ts`) ; vérifié dans le navigateur avec `?debug` et `?quality=`
+- [x] Mesure sur le Mac avec la puce graphique (le navigateur de test fait un rendu logiciel : non représentatif)
 - [ ] Mesure sur téléphone par Dasco, budget noté dans DECISIONS
-- [ ] FEATURES, CHANGELOG, DECISIONS
+- [x] FEATURES, CHANGELOG, DECISIONS
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : 🔄 Code livré le 09/10/2026 (itération 89) ; reste la mesure sur iPhone par Dasco et la ligne du budget dans DECISIONS
