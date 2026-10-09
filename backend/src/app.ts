@@ -15,6 +15,8 @@ import { addedInput, customId, osmId, overrideInput, type AdminParkingEdits } fr
 import type { AdminStatusResponse, DbStatus, HealthResponse } from '../../contrat/sante.js';
 import { loginRequest, type SessionInfo } from '../../contrat/session.js';
 import { addParking, listEdits, recentLog, removeEdit, saveOverride, type Db } from './parkings.js';
+import { createWeatherService, type WeatherDeps } from './meteo/service.js';
+import { weatherRoutes } from './meteo/routes.js';
 
 // Messages de validation en français : ils remontent jusqu'à l'administration (« source : Trop petit : … »)
 z.config(fr());
@@ -56,11 +58,14 @@ export interface AppDeps {
   db?: () => Db | null;
   /** Horloge en millisecondes (tests : expiration de la session) ; par défaut l'heure réelle */
   now?: () => number;
+  /** Météo (EP009) : accès à la source (tests et contrôle du build : source simulée, sans réseau) */
+  weather?: Pick<WeatherDeps, 'fetch'>;
 }
 
 export function createApp(env: Env = process.env, deps: AppDeps = {}) {
   const app = new Hono().basePath('/api');
   const getDb = deps.db ?? (() => { const c = database(env); return c.ok ? (c.db as unknown as Db) : null; });
+  const weather = createWeatherService({ fetch: deps.weather?.fetch, now: deps.now });
 
   app.use('*', async (c, next) => {
     await next();
@@ -80,6 +85,9 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
     c.header('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     return c.json(edits);
   });
+
+  // Météo de Chambéry (EP009) : la source est appelée au plus une fois par pas de 15 min et par instance ; mise en cache par Vercel
+  app.route('/weather', weatherRoutes(weather));
 
   app.get('/health', async (c) => {
     const db = await checkDatabase(env);

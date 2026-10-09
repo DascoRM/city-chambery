@@ -44,7 +44,17 @@ try {
   if (login.status !== 200 || !cookie) throw new Error(`/api/admin/login : ${login.status} ${await login.text()}`);
   const checked = await app.fetch(new Request('http://localhost/api/admin/session', { headers: { cookie } }));
   if (checked.status !== 200) throw new Error(`/api/admin/session avec la session : ${checked.status} ${await checked.text()}`);
-  console.log(`✓ API chargée comme sur Vercel (ESM) : /api/health répond 200, conforme au contrat ; session sans cookie refusée (${session.status}), session ouverte et relue`);
+  // Météo (EP009) : la route se charge et respecte le contrat, avec une source SIMULÉE et sans base (pendant le build, Vercel
+  // injecte les variables d'environnement : l'application réelle `mod.default` appellerait Open-Meteo)
+  const { weatherResponse } = await import(pathToFileURL(join(out, 'contrat/meteo.js')).href);
+  const step = Math.floor(Date.now() / 900_000) * 900;
+  const fakeSource = async () => Response.json({ latitude: 45.56, longitude: 5.92, elevation: 286, current: { time: step, interval: 900, temperature_2m: 12, weather_code: 3, cloud_cover: 90, precipitation: 0, snowfall: 0, wind_speed_10m: 10, wind_direction_10m: 270, wind_gusts_10m: 20, visibility: 20000, lightning_potential: 0 } });
+  const meteo = await createApp({}, { weather: { fetch: fakeSource } }).fetch(new Request('http://localhost/api/weather'));
+  const meteoBody = await meteo.json();
+  if (meteo.status !== 200 || !weatherResponse.safeParse(meteoBody).success || !/s-maxage=/.test(meteo.headers.get('cache-control') ?? '')) {
+    throw new Error(`/api/weather : ${meteo.status} ${meteo.headers.get('cache-control')} ${JSON.stringify(meteoBody)}`);
+  }
+  console.log(`✓ API chargée comme sur Vercel (ESM) : /api/health répond 200, conforme au contrat ; session sans cookie refusée (${session.status}), session ouverte et relue ; /api/weather conforme (source simulée)`);
 } catch (err) {
   console.error('✗ L\'API ne se charge pas comme sur Vercel :', err.code ?? '', err.message);
   process.exitCode = 1;

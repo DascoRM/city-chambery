@@ -11,6 +11,7 @@ export const errorCode = z.enum([
   'donnees-invalides', 'non-autorise', 'session-expiree', 'origine-refusee', 'type-de-contenu',
   'introuvable', 'deja-pris', 'trop-de-tentatives',
   'base-indisponible', 'migrations-manquantes', 'admin-non-configuree', 'erreur-interne',
+  'meteo-indisponible', 'meteo-desactivee', // EP009
 ]);
 export type ErrorCode = z.infer<typeof errorCode>;
 

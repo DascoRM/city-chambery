@@ -13,7 +13,7 @@
 **Back**
 - [ ] **Given** aucune session, **When** `GET /api/admin/weather` ou `PUT /api/admin/weather/override`, **Then** 401
 - [ ] **Given** une session, **When** `GET /api/admin/weather`, **Then** 200 conforme à `adminWeatherResponse` (réponse publique, relevé brut et point de grille, forçage, compteurs de l'instance présentés comme tels), `no-store`
-- [ ] **Given** une session, **When** `PUT { mode: 'forcee', condition: 'snow', intensity: 0.9, minutes: 30, note }`, **Then** la réponse publique devient `forced: true`, `source: 'admin'`, `condition: 'snow'`, `temperatureC: null`, `attribution: null` : tout de suite sur cette instance, au plus 30 min après sur une autre instance déjà démarrée, plus 60 s de cache du CDN
+- [ ] **Given** une session, **When** `PUT { mode: 'forcee', condition: 'snow', intensity: 0.9, minutes: 30, note }`, **Then** la réponse publique devient `forced: true`, `source: 'admin'`, `condition: 'snow'`, `temperatureC: null`, `attribution: null` : tout de suite sur cette instance, au plus 30 min après sur une autre instance déjà démarrée, plus 2 min au plus de cache du CDN
 - [ ] **Given** la durée écoulée, **Then** retour à la météo réelle, sans action ni écriture
 - [ ] **Given** `PUT { mode: 'coupee', minutes: 60 }`, **Then** `GET /api/weather` répond 503 `meteo-desactivee` (la carte garde son ciel par défaut)
 - [ ] **Given** `DELETE /api/admin/weather/override`, **Then** 204 et météo réelle ; sans forçage en cours, 404
