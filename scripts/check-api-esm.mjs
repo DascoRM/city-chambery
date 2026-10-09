@@ -30,11 +30,13 @@ try {
   const { healthResponse } = await import(pathToFileURL(join(out, 'contrat/sante.js')).href);
   const check = healthResponse.safeParse(body);
   if (!check.success) throw new Error(`/api/health ne respecte pas le contrat : ${JSON.stringify(check.error.issues)}`);
-  // Le module de session (hono/jwt, WebCrypto, cookies) se charge aussi : sans ADMIN_TOKEN, l'administration répond 503 en JSON
+  // Le module de session (hono/jwt, WebCrypto, cookies) se charge aussi. Réponse attendue sans cookie : 503 si ADMIN_TOKEN
+  // n'est pas posé (en local), 401 s'il l'est (Vercel injecte les variables d'environnement pendant le build)
   const session = await mod.default.fetch(new Request('http://localhost/api/admin/session'));
   const sessionBody = await session.json();
-  if (session.status !== 503 || sessionBody.code !== 'admin-non-configuree') throw new Error(`/api/admin/session : ${session.status} ${JSON.stringify(sessionBody)}`);
-  console.log('✓ API chargée comme sur Vercel (ESM) : /api/health répond 200, conforme au contrat ; administration fermée sans jeton (503)');
+  const expected = { 503: 'admin-non-configuree', 401: 'non-autorise' };
+  if (expected[session.status] !== sessionBody.code) throw new Error(`/api/admin/session : ${session.status} ${JSON.stringify(sessionBody)}`);
+  console.log(`✓ API chargée comme sur Vercel (ESM) : /api/health répond 200, conforme au contrat ; session sans cookie refusée (${session.status})`);
 } catch (err) {
   console.error('✗ L\'API ne se charge pas comme sur Vercel :', err.code ?? '', err.message);
   process.exitCode = 1;
