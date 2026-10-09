@@ -1,12 +1,10 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import type { MiddlewareHandler } from 'hono';
-import type { Env } from './env.js';
 
 /**
- * Accès à l'administration (EP008-US005) : un jeton secret (`ADMIN_TOKEN`, variable Vercel, jamais dans le dépôt) envoyé dans
- * l'en-tête `Authorization: Bearer …`. Sans jeton configuré, l'administration est **fermée** (rien ne répond). Comparaison en
- * temps constant. Limite de tentatives par adresse : en mémoire, donc **par instance de fonction** (au mieux : un vrai
- * limiteur partagé viendra avec US008) ; il freine surtout les essais en rafale.
+ * Accès à l'administration (EP008-US005, EP010-US008) : le jeton secret `ADMIN_TOKEN` (variable Vercel, jamais dans le dépôt)
+ * n'est envoyé qu'à `POST /api/admin/login`, qui ouvre une session (cookie, `session.ts`). Sans jeton configuré,
+ * l'administration est **fermée**. Comparaison en temps constant. Limite de tentatives par adresse : en mémoire, donc
+ * **par instance de fonction** (un limiteur partagé en base viendra avec EP008-US008) ; elle freine surtout les rafales.
  */
 const sha = (s: string) => createHash('sha256').update(s).digest();
 
@@ -38,22 +36,5 @@ export function createRateLimiter(max = 5, windowMs = 60_000): RateLimiter {
   };
 }
 
-const clientKey = (headers: Headers) => headers.get('x-forwarded-for')?.split(',')[0].trim() || headers.get('x-real-ip') || 'inconnu';
-
-export function adminAuth(env: Env, limiter: RateLimiter = createRateLimiter()): MiddlewareHandler {
-  return async (c, next) => {
-    // Espaces et retours à la ligne ignorés aux deux bouts : un jeton collé depuis le terminal (`openssl rand …`) en garde souvent un
-    const expected = env.ADMIN_TOKEN?.trim();
-    // Administration non configurée : fermée ; réponse distincte d'une route inconnue pour pouvoir diagnostiquer
-    if (!expected) return c.json({ error: 'administration non configurée', code: 'admin-non-configuree' }, 503);
-    const key = clientKey(c.req.raw.headers);
-    if (limiter.blocked(key)) return c.json({ error: 'trop de tentatives, réessaie dans une minute', code: 'trop-de-tentatives' }, 429);
-    const header = c.req.header('authorization') ?? '';
-    const given = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
-    if (!given || !tokenMatches(expected, given)) {
-      limiter.fail(key);
-      return c.json({ error: 'non autorisé', code: 'non-autorise' }, 401);
-    }
-    await next();
-  };
-}
+/** Adresse du client (Vercel réécrit `x-forwarded-for` : il n'est pas falsifiable là-bas) */
+export const clientKey = (headers: Headers) => headers.get('x-forwarded-for')?.split(',')[0].trim() || headers.get('x-real-ip') || 'inconnu';

@@ -22,8 +22,15 @@ beforeEach(async () => {
 });
 
 const app = (withDb = true) => createApp({ ADMIN_TOKEN: TOKEN }, { db: () => (withDb ? db : null) });
-const auth = { authorization: `Bearer ${TOKEN}`, 'content-type': 'application/json' };
-const send = (method: string, path: string, body?: unknown, headers: Record<string, string> = auth) =>
+const ORIGIN = 'http://localhost';
+let cookie = '';
+beforeEach(async () => {
+  // une session ouverte par le jeton (le cookie est valable pour toute application qui a le même jeton)
+  const res = await app().request('/api/admin/login', { method: 'POST', headers: { origin: ORIGIN, 'content-type': 'application/json' }, body: JSON.stringify({ token: TOKEN }) });
+  cookie = (res.headers.get('set-cookie') ?? '').split(';')[0];
+});
+const auth = () => ({ cookie, origin: ORIGIN, 'content-type': 'application/json' });
+const send = (method: string, path: string, body?: unknown, headers: Record<string, string> = auth()) =>
   app().request(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
 
 describe('retouches des parkings : écriture (administration)', () => {
@@ -73,8 +80,8 @@ describe('retouches des parkings : écriture (administration)', () => {
     expect(body.log.map((l) => l.action)).toEqual(['remove', 'override']);
   });
 
-  it('les écritures exigent le jeton', async () => {
-    const open = { 'content-type': 'application/json' };
+  it('les écritures exigent la session', async () => {
+    const open = { origin: ORIGIN, 'content-type': 'application/json' };
     expect((await send('PUT', '/api/admin/parkings/overrides/way/1', { hide: true, source: 'x' }, open)).status).toBe(401);
     expect((await send('POST', '/api/admin/parkings/added', {}, open)).status).toBe(401);
     expect((await send('DELETE', '/api/admin/parkings/edits/way/1', undefined, open)).status).toBe(401);
@@ -83,7 +90,7 @@ describe('retouches des parkings : écriture (administration)', () => {
   it('base sans les dernières migrations : 503 « migrations-manquantes » au lieu d’une erreur interne', async () => {
     const bare = new PGlite();
     const old = createApp({ ADMIN_TOKEN: TOKEN }, { db: () => drizzle(bare, { schema }) as unknown as Db });
-    const res = await old.request('/api/admin/parkings/added', { method: 'POST', headers: auth, body: JSON.stringify({ id: 'custom/essai', kind: 'surface', pos: [1, 2], source: 'x' }) });
+    const res = await old.request('/api/admin/parkings/added', { method: 'POST', headers: auth(), body: JSON.stringify({ id: 'custom/essai', kind: 'surface', pos: [1, 2], source: 'x' }) });
     expect(res.status).toBe(503);
     expect((await json(res)).code).toBe('migrations-manquantes');
     await bare.close();

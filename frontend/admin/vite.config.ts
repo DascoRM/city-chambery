@@ -36,6 +36,7 @@ export default defineConfig({
   server: {
     port: 5174,
     strictPort: true,
+    // changeOrigin reste à false (par défaut) : l'API compare l'Origin des écritures à l'hôte reçu (EP010-US008)
     proxy: { '/api': 'http://localhost:8787', '/data': 'http://localhost:5173' },
   },
   build: {

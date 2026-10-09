@@ -12,55 +12,31 @@ import { adminStatusResponse } from '../../contrat/sante.js';
 /** Corps JSON d'une réponse (sans les types du navigateur, `Response.json()` rend `unknown`) */
 const json = (res: Response): Promise<any> => res.json();
 const TOKEN = 'jeton-de-test-0123456789';
-const call = (env: Record<string, string>, path: string, headers: Record<string, string> = {}) => createApp(env).request(path, { headers });
-const bearer = (t: string) => ({ authorization: `Bearer ${t}` });
 
-describe('accès à l’administration', () => {
-  it('est fermée (503, code dédié) tant qu’aucun jeton n’est configuré', async () => {
-    const res = await call({}, '/api/admin/ping', bearer(TOKEN));
-    expect(res.status).toBe(503);
-    expect((await json(res)).code).toBe('admin-non-configuree');
-    expect((await json(await call({}, '/api/health'))).admin).toBe('absent');
-    expect((await json(await call({ ADMIN_TOKEN: TOKEN }, '/api/health'))).admin).toBe('configure');
-  });
+/** Ouvre une session (connexion par le jeton) et rend le cookie à renvoyer */
+async function session(app: ReturnType<typeof createApp>) {
+  const res = await app.request('/api/admin/login', { method: 'POST', headers: { origin: 'http://localhost', 'content-type': 'application/json' }, body: JSON.stringify({ token: TOKEN }) });
+  return (res.headers.get('set-cookie') ?? '').split(';')[0];
+}
 
-  it('refuse sans jeton, avec un mauvais jeton ou un schéma inconnu', async () => {
-    const env = { ADMIN_TOKEN: TOKEN };
-    expect((await call(env, '/api/admin/ping')).status).toBe(401);
-    expect((await call(env, '/api/admin/ping', bearer('mauvais'))).status).toBe(401);
-    expect((await call(env, '/api/admin/ping', { authorization: `Basic ${TOKEN}` })).status).toBe(401);
-    expect((await call(env, '/api/admin/status')).status).toBe(401);
-  });
-
-  it('ignore les espaces et retours à la ligne autour du jeton (variable collée depuis le terminal)', async () => {
-    const res = await call({ ADMIN_TOKEN: `  ${TOKEN}\n` }, '/api/admin/ping', bearer(`${TOKEN} `));
-    expect(res.status).toBe(200);
-  });
-
-  it('accepte le bon jeton', async () => {
-    const res = await call({ ADMIN_TOKEN: TOKEN }, '/api/admin/ping', bearer(TOKEN));
-    expect(res.status).toBe(200);
-    expect(await json(res)).toEqual({ ok: true });
+describe('administration : état (avec une session)', () => {
+  it('santé publique : dit seulement si un jeton est configuré', async () => {
+    expect((await json(await createApp({}).request('/api/health'))).admin).toBe('absent');
+    expect((await json(await createApp({ ADMIN_TOKEN: TOKEN }).request('/api/health'))).admin).toBe('configure');
   });
 
   it('status : sans base configurée, le dit sans échouer ni rien divulguer', async () => {
-    const res = await call({ ADMIN_TOKEN: TOKEN }, '/api/admin/status', bearer(TOKEN));
+    const app = createApp({ ADMIN_TOKEN: TOKEN });
+    const res = await app.request('/api/admin/status', { headers: { cookie: await session(app) } });
     const body = adminStatusResponse.parse(await json(res)); // conforme au contrat
     expect(res.status).toBe(200);
     expect(body.db.status).toBe('non-configuree');
     expect(JSON.stringify(body)).not.toContain(TOKEN);
   });
 
-  it('bloque après 5 échecs, même avec le bon jeton ensuite (par adresse)', async () => {
+  it('ping avec la session', async () => {
     const app = createApp({ ADMIN_TOKEN: TOKEN });
-    const hit = (t: string, ip = '203.0.113.7') => app.request('/api/admin/ping', { headers: { ...bearer(t), 'x-forwarded-for': ip } });
-    for (let i = 0; i < 5; i++) expect((await hit('mauvais')).status).toBe(401);
-    expect((await hit(TOKEN)).status).toBe(429);
-    expect((await hit(TOKEN, '198.51.100.9')).status).toBe(200); // une autre adresse n'est pas touchée
-  });
-
-  it('ne mélange pas les routes : /api/health reste publique', async () => {
-    expect((await call({ ADMIN_TOKEN: TOKEN }, '/api/health')).status).toBe(200);
+    expect(await json(await app.request('/api/admin/ping', { headers: { cookie: await session(app) } }))).toEqual({ ok: true });
   });
 });
 

@@ -24,6 +24,7 @@ const fakeServer = vi.fn(async (url: string, init?: RequestInit) => {
   const method = init?.method ?? 'GET';
   const body = init?.body ? JSON.parse(String(init.body)) : undefined;
   calls.push({ method, url, body });
+  if (url === '/api/admin/session') return json({ sub: 'admin', method: 'token', expiresAt: '2026-10-09T10:00:00.000Z', maxExpiresAt: '2026-10-09T16:00:00.000Z' });
   if (url === '/data/city.json') {
     if (cityFailures > 0) { cityFailures--; return new Response('Bad Gateway', { status: 502 }); }
     return json(CITY);
@@ -56,8 +57,7 @@ async function choose(query: string) {
 }
 
 beforeEach(() => {
-  sessionStorage.setItem('diorama-admin-token', 'bon');
-  window.location.hash = '#/parkings';
+  window.location.hash = '#/parkings'; // session déjà ouverte (la fausse API répond à /api/admin/session)
   edits = {
     overrides: { 'way/2': { capacity: 25, source: 'relevé sur place' } },
     added: [],
@@ -74,7 +74,6 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
-  sessionStorage.clear();
   window.location.hash = '';
 });
 

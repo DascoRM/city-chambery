@@ -36,10 +36,12 @@ export function App() {
 }
 
 function Shell() {
-  const { signedIn } = useAuth();
+  const { signedIn, checking } = useAuth();
   return (
     <Layout>
-      {signedIn ? (
+      {checking ? (
+        <p className="card">Vérification de la session…</p>
+      ) : signedIn ? (
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/parkings" component={Parkings} />

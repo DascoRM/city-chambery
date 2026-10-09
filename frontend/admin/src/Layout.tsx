@@ -22,7 +22,7 @@ export function Layout({ children }: { children: ReactNode }) {
               {p.label}
             </Link>
           ))}
-          <button type="button" className="ghost" onClick={() => logout()}>Se déconnecter</button>
+          <button type="button" className="ghost" onClick={() => void logout()}>Se déconnecter</button>
         </nav>
       )}
       {children}
