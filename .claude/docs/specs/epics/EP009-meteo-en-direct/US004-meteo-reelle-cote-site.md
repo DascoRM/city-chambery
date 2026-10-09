@@ -1,25 +1,49 @@
-# EP009 - US004 - Météo réelle côté site : récupération, relances, crédits
+# EP009 - US004 - Météo réelle côté carte : lecture, relances, états, crédits
 
 ## User Story
 
 **En tant que** visiteur,
 **je veux** que la météo affichée soit celle de Chambéry en ce moment,
-**afin de** que le diorama reflète la ville réelle.
+**afin que** le diorama reflète la ville réelle.
 
 ---
 
 ## Critères d'acceptation
 
-- [ ] **Given** l'API disponible, **When** le diorama démarre, **Then** la météo arrive après le chargement (délai max 3 s) et s'installe en fondu
-- [ ] **Given** l'onglet visible, **Then** la météo est relue toutes les 15 minutes ; rien n'est demandé quand l'onglet est caché
-- [ ] **Given** hors ligne ou API en panne, **Then** ciel par défaut, puce « Météo non disponible », nouvel essai au retour du réseau
-- [ ] **Given** la neige annoncée avec une température > 2 °C, **Then** la scène montre de la pluie
-- [ ] **Given** les crédits de l'app, **Then** « Météo : Open-Meteo.com (CC BY 4.0) » y figure avec un lien, et le README (section Licences) est à jour
+- [ ] **Given** l'API disponible, **When** le diorama démarre, **Then** la météo arrive après la scène (jamais devant l'écran de chargement) et s'installe en fondu depuis le beau temps ; la puce dit « modèle ICON, 10 h 00 (il y a 6 min) »
+- [ ] **Given** 503 `meteo-indisponible`, un délai de 8 s dépassé ou hors ligne, **Then** ciel par défaut, « Météo non disponible », nouvel essai à 60 s, puis 2, 4 et 8 min (au plus 15), et au retour du réseau
+- [ ] **Given** 404 (carte du Pi, sans API), **Then** ciel par défaut, puce masquée, aucune relance
+- [ ] **Given** 503 `meteo-desactivee`, **Then** ciel par défaut, « Météo désactivée », relue dans 15 min
+- [ ] **Given** une réponse hors contrat (`v: 2`, intensité supérieure à 1, condition inconnue, page HTML), **Then** ciel par défaut et relance, sans exception
+- [ ] **Given** l'onglet caché, ou aucune interaction depuis 30 min, **Then** aucune requête ; au retour, relecture si le relevé a plus de 15 min
+- [ ] **Given** une météo forcée par l'admin, **Then** « Météo forcée (démo) », sans température ; **Given** `stale`, **Then** « Ancien relevé (il y a 1 h 10) » ; **Given** un relevé de plus de 3 h (horloge du visiteur), **Then** ciel par défaut
+- [ ] **Given** de la neige annoncée à plus de 2 °C, **Then** de la pluie
+- [ ] **Given** les crédits, **Then** « Météo : Open-Meteo.com » avec lien et CC BY 4.0 en bas à droite (visible sur mobile) et dans l'écran d'accueil ; le panneau de la puce montre `attribution` (texte, lien, licence)
 
 ---
 
 ## Règles métier
-Voir l'[epic](epic.md) : règles 1 à 10.
+Voir l'[epic](epic.md), règles 1, 2, 6, 7, 11 et 13.
+
+| Règle | Description |
+|-------|-------------|
+| R1 | Réponse vérifiée par `weatherResponse.safeParse`, comme les retouches des parkings ; le code ne lève jamais d'exception vers `main()` (tout passe par `{ ok: false, reason }`) |
+| R2 | La météo est gardée en mémoire seulement : ni `localStorage`, ni service worker (`/api` n'est pas mis en cache : rien à changer dans `vite.config.ts`) |
+| R3 | Priorité : `?weather=`, puis forçage de l'admin, puis direct |
+
+---
+
+## UI
+
+### États de la puce
+| État | Description |
+|------|-------------|
+| Direct | « Pluie, 13 °C · modèle ICON, 10 h 00 (il y a 6 min) » |
+| Ancien relevé | `stale` : « Ancien relevé (il y a 1 h 10) » |
+| Forcée (démo) | Forçage de l'admin : sans température, sans crédit |
+| Non disponible | Ciel par défaut, relances en arrière-plan |
+| Désactivée | Coupée depuis l'admin, relue dans 15 min |
+| Masquée | Carte du Pi (404) |
 
 ---
 
@@ -27,19 +51,20 @@ Voir l'[epic](epic.md) : règles 1 à 10.
 
 | Critère | Valeur |
 |---------|--------|
-| Jours | 1,5 |
+| Jours | 1 à 1,5 |
 | Complexité | Medium |
-| Dépend de | US002, US003 |
+| Dépend de | US002, US003 (fusionnée, ou `npm run api:dev` en local) |
 
-Détail technique : [plan front](../../../tasks/meteo-front-plan.md) § 6 et [plan back](../../../tasks/meteo-back-plan.md) § 3 (le service worker ne met pas la météo en cache).
+Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 3 (client, réponses tolérées, rafraîchissement, fondu, puce) et § 2.6 (crédits) ; [plan back v2](../../../tasks/ep009-back-plan-v2.md) § 5.7 et § 14.7 (délai de 8 s, nouvel essai à 60 s).
 
 ---
 
 ## Checklist dev
-- [ ] Code ; `npm run build` ; vérifié dans le navigateur avec `?weather=` et `?debug`
-- [ ] Fluidité : compteur `?debug` avant / après (rendu logiciel non représentatif : mesure GPU ou téléphone notée à part)
+- [ ] Branche `feat/EP009-US004-meteo-reelle-carte` depuis `feat/EP009-meteo`
+- [ ] `npm run build` et `npm test` (`weather/client.test.ts`) ; vérifié dans le navigateur avec l'API locale, sans API, hors ligne et avec le build du Pi
+- [ ] Prévisualisation : la carte reçoit la météo réelle
 - [ ] Le site marche sans la météo
-- [ ] FEATURES, CHANGELOG, DECISIONS, README si besoin
+- [ ] FEATURES, CHANGELOG, DECISIONS, README (Licences)
 - [ ] Validé par Dasco
 
 ---

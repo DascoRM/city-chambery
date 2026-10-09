@@ -4,20 +4,27 @@
 
 **En tant que** visiteur,
 **je veux** voir la fumée des cheminées, les drapeaux et les arbres suivre le vent réel,
-**afin de** de sentir le vent sur la maquette.
+**afin de** sentir le vent sur la maquette.
 
 ---
 
 ## Critères d'acceptation
 
-- [ ] **Given** un vent réel, **Then** fumées et drapeaux s'orientent selon sa direction et sa force (aujourd'hui figés à la construction)
-- [ ] **Given** un vent fort et `qualityLevel` ≥ `medium`, **Then** les arbres se balancent ; coupé en qualité basse (les arbres font 80 % des triangles)
-- [ ] **Given** l'automne, **Then** quelques feuilles volent (optionnel)
+- [ ] **Given** un vent réel (ou `?weather=rain&wind=60&windfrom=200`), **Then** fumées et drapeaux tournent et se couchent en 6 s environ selon la direction et la force (aujourd'hui figés à la construction)
+- [ ] **Given** un vent de plus de 25 km/h et `qualityLevel` au moins `medium`, **Then** les arbres se balancent ; coût mesuré avant / après (Mac, puis téléphone) et noté ; rien en `low` ni en réduit-mouvement
+- [ ] **Given** l'automne, **Then** quelques feuilles volent (facultatif)
 
 ---
 
 ## Règles métier
-Voir l'[epic](epic.md) : règles 1 à 10.
+Voir l'[epic](epic.md), règles 9 et 10.
+
+| Règle | Description |
+|-------|-------------|
+| R1 | Un objet `wind` partagé, créé dans `main.ts`, passé à la fumée et aux drapeaux, modifié par le module météo (posé dès US002) |
+| R2 | Conversion : la météo donne d'où vient le vent (0 = nord), `life.json` attend où il va (0 = est, 90 = nord) : `(−90 − from) mod 360` (testé au prototype) ; vitesse réelle convertie en vitesse « de maquette » (constante à calibrer) |
+| R3 | Balancement des arbres par un uniforme `uSway` posé au démarrage ; les arbres font environ 80 % des triangles, d'où la mesure obligatoire |
+| R4 | Ombres figées : le balancement ne se voit pas dans l'ombre (accepté) |
 
 ---
 
@@ -25,19 +32,20 @@ Voir l'[epic](epic.md) : règles 1 à 10.
 
 | Critère | Valeur |
 |---------|--------|
-| Jours | 2,5 |
+| Jours | 2 à 2,5 |
 | Complexité | Medium |
 | Dépend de | US001, US002 |
 
-Détail technique : [plan front](../../../tasks/meteo-front-plan.md) § 2.7.
+Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 4.6 et § 2.5 (`main.ts` l. 187-197, `chimneys.ts` l. 93-109, `flags.ts` l. 82 et 111).
 
 ---
 
 ## Checklist dev
-- [ ] Code ; `npm run build` ; vérifié dans le navigateur avec `?weather=` et `?debug`
-- [ ] Fluidité : compteur `?debug` avant / après (rendu logiciel non représentatif : mesure GPU ou téléphone notée à part)
+- [ ] Branche `feat/EP009-US009-vent` depuis `feat/EP009-meteo`
+- [ ] `npm run build` et `npm test` ; vérifié dans le navigateur avec `?weather=…&wind=…&windfrom=…` et `?debug`
+- [ ] Fluidité : mesure avant / après le balancement des arbres (Mac avec la puce graphique, puis téléphone)
 - [ ] Le site marche sans la météo
-- [ ] FEATURES, CHANGELOG, DECISIONS, README si besoin
+- [ ] FEATURES, CHANGELOG, DECISIONS
 - [ ] Validé par Dasco
 
 ---

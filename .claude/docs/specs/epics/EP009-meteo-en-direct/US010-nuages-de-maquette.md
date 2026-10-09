@@ -4,20 +4,25 @@
 
 **En tant que** visiteur,
 **je veux** voir de petits nuages de maquette flotter autour du socle,
-**afin de** que le ciel couvert se voie aussi en volume.
+**afin que** le ciel couvert se voie aussi en volume.
 
 ---
 
 ## Critères d'acceptation
 
-- [ ] **Given** une couverture nuageuse, **Then** des nuages instanciés (un appel de rendu) flottent en anneau, en nombre proportionnel
-- [ ] **Given** la caméra qui s'approche, **Then** les nuages s'effacent en fondu pour ne pas masquer la ville
-- [ ] **Given** `qualityLevel` = `low`, **Then** pas de nuages
+- [ ] **Given** une couverture nuageuse, **Then** des nuages instanciés (1 appel de rendu) flottent, en nombre proportionnel, et dérivent avec le vent
+- [ ] **Given** la caméra qui s'approche, **Then** ils s'effacent en fondu pour ne pas masquer la ville
+- [ ] **Given** `qualityLevel` = `low`, **Then** aucun nuage
 
 ---
 
 ## Règles métier
-Voir l'[epic](epic.md) : règles 1 à 10.
+Voir l'[epic](epic.md), règle 9.
+
+| Règle | Description |
+|-------|-------------|
+| R1 | 6 à 12 « boules de coton » (icosaèdres aplatis fusionnés) en un seul `InstancedMesh` ; `ShaderMaterial` éclairé à la main (compilation rapide, sans brouillard), sans ombre |
+| R2 | Hors périmètre : ombres de nuages qui défilent sur la ville (1,5 j, modifications invasives des shaders) |
 
 ---
 
@@ -29,15 +34,16 @@ Voir l'[epic](epic.md) : règles 1 à 10.
 | Complexité | Medium |
 | Dépend de | US002 |
 
-Détail technique : [plan front](../../../tasks/meteo-front-plan.md) § 2.2.
+Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 4.7. Risque : lisibilité de la ville.
 
 ---
 
 ## Checklist dev
-- [ ] Code ; `npm run build` ; vérifié dans le navigateur avec `?weather=` et `?debug`
-- [ ] Fluidité : compteur `?debug` avant / après (rendu logiciel non représentatif : mesure GPU ou téléphone notée à part)
+- [ ] Branche `feat/EP009-US010-nuages` depuis `feat/EP009-meteo`
+- [ ] `npm run build` et `npm test` ; vérifié dans le navigateur avec `?weather=partly`, `?weather=cloudy` et `?debug`
+- [ ] Fluidité : compteur `?debug` avant / après
 - [ ] Le site marche sans la météo
-- [ ] FEATURES, CHANGELOG, DECISIONS, README si besoin
+- [ ] FEATURES, CHANGELOG, DECISIONS
 - [ ] Validé par Dasco
 
 ---
