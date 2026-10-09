@@ -12,17 +12,18 @@ import {
 } from './state';
 import { createWeatherClient, fetchWeather, type WeatherFetch } from './client';
 import { createWeatherPanel } from './panel';
+import { createEffects, type EffectsCtx } from './effects';
 
 /**
  * Module météo de la carte (EP009), chargé à la demande par main.ts : rien ne l'attend, il ne bloque rien.
  * Il branche l'état météo (?weather=, outil de debug, puis relevé du back avec US004, règle « Direct ou simulée ») sur la
  * scène (ciel lissé par un fondu), la puce de la barre d'heure et son panneau. Par temps stable : aucun travail par image.
  */
-export interface WeatherCtx {
+export interface WeatherCtx extends EffectsCtx {
   root: HTMLElement;
   scene: THREE.Scene;
   camera: THREE.Camera;
-  /** Point regardé (précipitations, US005) */
+  /** Point regardé (brouillard, précipitations) */
   focus(): THREE.Vector3;
   quality: QualityLevel;
   /** Vent de beau temps (content/life.json) : objet partagé par la fumée et les drapeaux (US009 le fera varier) */
@@ -76,8 +77,12 @@ const sameLook = (a: WeatherLook, b: WeatherLook) =>
 
 export function startWeather(ctx: WeatherCtx): WeatherModule {
   const clear = clearLook(ctx.wind);
-  /** Le ciel suit la météo lissée `cur` (lue à chaque recalcul du cycle jour/nuit) */
-  const skyModifier = (v: SkyValues, dayF: number) => applyWeatherSky(v, cur, dayF);
+  const effects = createEffects(ctx);
+  /** Le ciel suit la météo lissée `cur` (lue à chaque recalcul du cycle jour/nuit) ; les effets lisent le fond qui en résulte */
+  const skyModifier = (v: SkyValues, dayF: number) => {
+    applyWeatherSky(v, cur, dayF);
+    effects.readSky(v.bg, v.exposure);
+  };
   const pref = loadWeatherPref();
   const mq = matchMedia('(prefers-reduced-motion: reduce)');
   const inputs: WeatherInputs = { enabled: pref.enabled, url: weatherFromUrl(location.search), debug: null, api: 'none', reading: null, live: isLive(ctx.clock()) };
@@ -166,11 +171,13 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
 
   return {
     update(dt) {
-      if (!blending) return; // temps stable : rien à faire
-      const { cloud, rain, snow, fog, storm } = cur;
-      blending = blendLook(cur, target, dt);
-      // Le ciel ne lit que les nuages et les précipitations : le fondu du vent (plus long) ne recalcule pas l'ambiance
-      if (cur.cloud !== cloud || cur.rain !== rain || cur.snow !== snow || cur.fog !== fog || cur.storm !== storm) ctx.sky(skyModifier);
+      if (blending) {
+        const { cloud, rain, snow, fog, storm } = cur;
+        blending = blendLook(cur, target, dt);
+        // Le ciel ne lit que les nuages et les précipitations : le fondu du vent (plus long) ne recalcule pas l'ambiance
+        if (cur.cloud !== cloud || cur.rain !== rain || cur.snow !== snow || cur.fog !== fog || cur.storm !== storm) ctx.sky(skyModifier);
+      }
+      effects.update(cur); // brouillard : suit la caméra ; sans effet, rien
     },
     onClock(c) {
       const live = isLive(c);
