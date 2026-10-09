@@ -23,5 +23,6 @@ if (!process.env.DATABASE_URL) {
   db = d as unknown as Db;
   console.log(`Base locale PGlite : ${dir} (migrations appliquées)`);
 }
-serve({ fetch: createApp(process.env, db ? { db: () => db! } : {}).fetch, port });
+// En local seulement : hors de Vercel, `x-forwarded-for` est libre ; les proxys de Vite (carte, admin) passent par localhost
+serve({ fetch: createApp(process.env, db ? { db: () => db! } : {}).fetch, port, hostname: '127.0.0.1' });
 console.log(`API : http://localhost:${port}/api/health`);

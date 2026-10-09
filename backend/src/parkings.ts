@@ -1,6 +1,6 @@
 import { asc, desc, eq } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
-import type { AddedInput, OverrideInput, PublishedEdits } from '../../contrat/parkings.js';
+import { publishedAdded, publishedOverride, type AddedInput, type OverrideInput, type PublishedEdits } from '../../contrat/parkings.js';
 import * as schema from './db/schema.js';
 import { editLog, parkingEdits } from './db/schema.js';
 
@@ -16,9 +16,16 @@ export async function listEdits(db: Db): Promise<PublishedEdits> {
   const rows = await db.select().from(parkingEdits).orderBy(asc(parkingEdits.id));
   const out: PublishedEdits = { overrides: {}, added: [], updatedAt: null };
   for (const r of rows) {
+    // Une ligne hors contrat (écrite à la main en SQL, schéma futur) est écartée et signalée : elle ne casse ni la carte ni
+    // la page Parkings de l'administration, qui sert justement à corriger les retouches
     const data = { ...(r.data as Record<string, unknown>), source: r.source };
-    if (r.type === 'override') out.overrides[r.id] = data as PublishedEdits['overrides'][string];
-    else out.added.push({ ...(data as AddedInput), id: r.id });
+    const checked = r.type === 'override' ? publishedOverride.safeParse(data) : publishedAdded.safeParse({ ...data, id: r.id });
+    if (!checked.success) {
+      console.warn(`[parkings] retouche « ${r.id} » hors contrat, écartée`);
+      continue;
+    }
+    if (r.type === 'override') out.overrides[r.id] = checked.data as PublishedEdits['overrides'][string];
+    else out.added.push(checked.data as PublishedEdits['added'][number]);
     const at = r.updatedAt.toISOString();
     if (!out.updatedAt || at > out.updatedAt) out.updatedAt = at;
   }

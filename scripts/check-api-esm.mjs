@@ -36,7 +36,15 @@ try {
   const sessionBody = await session.json();
   const expected = { 503: 'admin-non-configuree', 401: 'non-autorise' };
   if (expected[session.status] !== sessionBody.code) throw new Error(`/api/admin/session : ${session.status} ${JSON.stringify(sessionBody)}`);
-  console.log(`✓ API chargée comme sur Vercel (ESM) : /api/health répond 200, conforme au contrat ; session sans cookie refusée (${session.status})`);
+  // Une vraie session sur le code compilé (hono/jwt, WebCrypto) : connexion avec un jeton de contrôle, puis /session avec le cookie
+  const { createApp } = await import(pathToFileURL(join(out, 'backend/src/app.js')).href);
+  const app = createApp({ ADMIN_TOKEN: 'jeton-de-controle-du-build-0123456789' });
+  const login = await app.fetch(new Request('http://localhost/api/admin/login', { method: 'POST', headers: { origin: 'http://localhost', 'content-type': 'application/json' }, body: JSON.stringify({ token: 'jeton-de-controle-du-build-0123456789' }) }));
+  const cookie = login.headers.getSetCookie().find((c) => c.startsWith('diorama_admin='))?.split(';')[0];
+  if (login.status !== 200 || !cookie) throw new Error(`/api/admin/login : ${login.status} ${await login.text()}`);
+  const checked = await app.fetch(new Request('http://localhost/api/admin/session', { headers: { cookie } }));
+  if (checked.status !== 200) throw new Error(`/api/admin/session avec la session : ${checked.status} ${await checked.text()}`);
+  console.log(`✓ API chargée comme sur Vercel (ESM) : /api/health répond 200, conforme au contrat ; session sans cookie refusée (${session.status}), session ouverte et relue`);
 } catch (err) {
   console.error('✗ L\'API ne se charge pas comme sur Vercel :', err.code ?? '', err.message);
   process.exitCode = 1;

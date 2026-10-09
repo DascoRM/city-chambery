@@ -98,7 +98,8 @@ export default defineConfig({
   },
   define: { __DATA_VERSION__: JSON.stringify(dataVersion()) },
   // En développement, /api est renvoyé au serveur de l'API (`npm run api:dev`, port 8787)
-  server: { proxy: { '/api': 'http://localhost:8787' } },
+  // changeOrigin: false en toutes lettres (la forme courte le met à true) : l'API compare l'Origin des écritures à l'hôte reçu
+  server: { proxy: { '/api': { target: 'http://localhost:8787', changeOrigin: false } } },
   plugins: [
     poiPlacementApi(),
     // Mode hors-ligne (PWA) : un service worker garde le site, city.json et les modèles sur l'appareil.

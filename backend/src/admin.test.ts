@@ -4,7 +4,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { createApp } from './app.js';
-import { createRateLimiter, tokenMatches } from './auth.js';
+import { createRateLimiter, ipKey, tokenMatches } from './auth.js';
 import { dbStats } from './db/stats.js';
 import { appMeta } from './db/schema.js';
 import { adminStatusResponse } from '../../contrat/sante.js';
@@ -16,7 +16,7 @@ const TOKEN = 'jeton-de-test-0123456789';
 /** Ouvre une session (connexion par le jeton) et rend le cookie à renvoyer */
 async function session(app: ReturnType<typeof createApp>) {
   const res = await app.request('/api/admin/login', { method: 'POST', headers: { origin: 'http://localhost', 'content-type': 'application/json' }, body: JSON.stringify({ token: TOKEN }) });
-  return (res.headers.get('set-cookie') ?? '').split(';')[0];
+  return res.headers.getSetCookie().find((c) => c.startsWith('diorama_admin='))?.split(';')[0] ?? '';
 }
 
 describe('administration : état (avec une session)', () => {
@@ -46,6 +46,25 @@ describe('outils de l’accès', () => {
     expect(tokenMatches('abc', 'abd')).toBe(false);
     expect(tokenMatches('abc', 'abcdefghijklmnop')).toBe(false);
     expect(tokenMatches('abc', '')).toBe(false);
+  });
+
+  it('une adresse IPv6 compte pour son /64 ; l’IPv4 reste l’IPv4 (même écrite en IPv6)', () => {
+    expect(ipKey('203.0.113.7')).toBe('203.0.113.7');
+    expect(ipKey('::ffff:192.0.2.1')).toBe('192.0.2.1');
+    expect(ipKey('2001:db8:85a3:8d3:1319:8a2e:370:7348')).toBe('2001:db8:85a3:8d3::/64');
+    expect(ipKey('2001:0DB8:0000:0001::abcd')).toBe('2001:db8:0:1::/64');
+    expect(ipKey('2001:db8::1')).toBe('2001:db8:0:0::/64');
+    expect(ipKey('2001:db8::1')).toBe(ipKey('2001:db8:0:0:ffff::2'));
+  });
+
+  it('la limite d’essais ne garde pas en mémoire les adresses sans échec récent', () => {
+    const l = createRateLimiter(3, 1000);
+    for (let i = 0; i < 100; i++) l.blocked(`198.51.100.${i}`, 0);
+    expect(l.size()).toBe(0);
+    l.fail('a', 0);
+    expect(l.size()).toBe(1);
+    l.blocked('a', 5000);
+    expect(l.size()).toBe(0);
   });
 
   it('le limiteur oublie les échecs après la fenêtre', () => {

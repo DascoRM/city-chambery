@@ -27,7 +27,7 @@ let cookie = '';
 beforeEach(async () => {
   // une session ouverte par le jeton (le cookie est valable pour toute application qui a le même jeton)
   const res = await app().request('/api/admin/login', { method: 'POST', headers: { origin: ORIGIN, 'content-type': 'application/json' }, body: JSON.stringify({ token: TOKEN }) });
-  cookie = (res.headers.get('set-cookie') ?? '').split(';')[0];
+  cookie = res.headers.getSetCookie().find((c) => c.startsWith('diorama_admin='))?.split(';')[0] ?? '';
 });
 const auth = () => ({ cookie, origin: ORIGIN, 'content-type': 'application/json' });
 const send = (method: string, path: string, body?: unknown, headers: Record<string, string> = auth()) =>

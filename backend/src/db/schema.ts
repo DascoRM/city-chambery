@@ -15,7 +15,7 @@ export const appMeta = pgTable('app_meta', {
 /**
  * Retouches des parkings faites depuis l'administration (EP008-US006). Une ligne par parking retouché (`override`, clé =
  * identifiant OSM) ou ajouté (`added`, clé = `custom/…`). `data` : les champs de la retouche, validés par Zod
- * (backend/src/parkings.ts) avant écriture. `source` : obligatoire (règle du projet : rien d'inventé).
+ * (contrat/parkings.ts) avant écriture. `source` : obligatoire (règle du projet : rien d'inventé).
  */
 export const parkingEdits = pgTable('parking_edits', {
   id: text('id').primaryKey(),
