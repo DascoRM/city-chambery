@@ -47,12 +47,12 @@ export function adminAuth(env: Env, limiter: RateLimiter = createRateLimiter()):
     // Administration non configurée : fermée ; réponse distincte d'une route inconnue pour pouvoir diagnostiquer
     if (!expected) return c.json({ error: 'administration non configurée', code: 'admin-non-configuree' }, 503);
     const key = clientKey(c.req.raw.headers);
-    if (limiter.blocked(key)) return c.json({ error: 'trop de tentatives, réessaie dans une minute' }, 429);
+    if (limiter.blocked(key)) return c.json({ error: 'trop de tentatives, réessaie dans une minute', code: 'trop-de-tentatives' }, 429);
     const header = c.req.header('authorization') ?? '';
     const given = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
     if (!given || !tokenMatches(expected, given)) {
       limiter.fail(key);
-      return c.json({ error: 'non autorisé' }, 401);
+      return c.json({ error: 'non autorisé', code: 'non-autorise' }, 401);
     }
     await next();
   };

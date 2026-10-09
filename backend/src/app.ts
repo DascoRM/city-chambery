@@ -5,7 +5,15 @@ import { appEnv, appVersion, resolveDatabase, type Env } from './env.js';
 import { database } from './db/client.js';
 import { adminAuth, createRateLimiter } from './auth.js';
 import { dbStats } from './db/stats.js';
-import { addParking, addedInput, customId, listEdits, osmId, overrideInput, recentLog, removeEdit, saveOverride, type Db } from './parkings.js';
+import * as z from 'zod/mini';
+import { fr } from 'zod/locales';
+import type { ErrorCode } from '../../contrat/erreurs.js';
+import { addedInput, customId, osmId, overrideInput, type AdminParkingEdits } from '../../contrat/parkings.js';
+import type { AdminStatusResponse, DbStatus, HealthResponse } from '../../contrat/sante.js';
+import { addParking, listEdits, recentLog, removeEdit, saveOverride, type Db } from './parkings.js';
+
+// Messages de validation en français : ils remontent jusqu'à l'administration (« source : Trop petit : … »)
+z.config(fr());
 
 /**
  * API du diorama (EP008). Hono, fonctions Vercel du même dépôt. Le site fonctionne sans elle : si elle est en panne
@@ -23,7 +31,8 @@ function pgCode(err: unknown): string | undefined {
   return undefined;
 }
 
-export type DbStatus = 'ok' | 'non-configuree' | 'desactivee-en-previsualisation' | 'erreur';
+/** Corps d'une réponse d'erreur (format du contrat : `contrat/erreurs.ts`) */
+const errorBody = (error: string, code: ErrorCode, issues?: unknown) => (issues ? { error, code, issues } : { error, code });
 
 /** Vérifie la base avec une requête triviale, sans jamais faire échouer la réponse de santé */
 export async function checkDatabase(env: Env): Promise<{ status: DbStatus; ms?: number }> {
@@ -56,7 +65,7 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
   });
 
   /** Réponse quand la base n'est pas disponible : le site continue avec ses retouches locales */
-  const noDb = (c: { json: (b: unknown, s: 503) => Response }) => c.json({ error: 'base indisponible', code: 'base-indisponible' }, 503);
+  const noDb = (c: { json: (b: unknown, s: 503) => Response }) => c.json(errorBody('base indisponible', 'base-indisponible'), 503);
 
   // Retouches des parkings publiées (US006) : lues par le site au chargement ; mises en cache 60 s par Vercel
   app.get('/parkings/edits', async (c) => {
@@ -70,7 +79,7 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
   app.get('/health', async (c) => {
     const db = await checkDatabase(env);
     // `admin` dit seulement si un jeton est configuré (jamais sa valeur) : aide à diagnostiquer une variable mal posée
-    return c.json({ ok: true, service: 'chambery-diorama-api', version: appVersion(env), env: appEnv(env), db, admin: env.ADMIN_TOKEN?.trim() ? 'configure' : 'absent' });
+    return c.json({ ok: true, service: 'chambery-diorama-api', version: appVersion(env), env: appEnv(env), db, admin: env.ADMIN_TOKEN?.trim() ? 'configure' : 'absent' } satisfies HealthResponse);
   });
 
   // Administration (US005) : fermée sans ADMIN_TOKEN, protégée par jeton sinon
@@ -80,23 +89,24 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
   admin.get('/status', async (c) => {
     const base = { version: appVersion(env), env: appEnv(env), node: process.version, region: env.VERCEL_REGION ?? null };
     const target = resolveDatabase(env);
-    if (target.url === null) return c.json({ ...base, db: { status: target.reason } });
+    if (target.url === null) return c.json({ ...base, db: { status: target.reason } } satisfies AdminStatusResponse);
     try {
       const conn = database(env);
-      if (!conn.ok) return c.json({ ...base, db: { status: conn.reason } });
+      if (!conn.ok) return c.json({ ...base, db: { status: conn.reason } } satisfies AdminStatusResponse);
       const stats = await dbStats(async (text) => [...(await conn.sql.unsafe(text))] as Record<string, unknown>[], EXPECTED_TABLES);
-      return c.json({ ...base, db: { status: 'ok', ...stats } });
+      return c.json({ ...base, db: { status: 'ok' as const, ...stats } } satisfies AdminStatusResponse);
     } catch {
-      return c.json({ ...base, db: { status: 'erreur' } });
+      return c.json({ ...base, db: { status: 'erreur' as const } } satisfies AdminStatusResponse);
     }
   });
 
   // Retouches des parkings (US006). Toute écriture est validée (Zod) et porte une source.
-  const invalid = (c: { json: (b: unknown, s: 400) => Response }, issues: unknown) => c.json({ error: 'données invalides', issues }, 400);
+  const invalid = (c: { json: (b: unknown, s: 400) => Response }, issues: unknown) => c.json(errorBody('données invalides', 'donnees-invalides', issues), 400);
   admin.get('/parkings/edits', async (c) => {
     const db = getDb();
     if (!db) return noDb(c);
-    return c.json({ ...(await listEdits(db)), log: await recentLog(db) });
+    const log = (await recentLog(db)).map((l) => ({ ...l, at: l.at.toISOString() })); // dates en texte ISO, comme dans le JSON
+    return c.json({ ...(await listEdits(db)), log } satisfies AdminParkingEdits);
   });
   admin.put('/parkings/overrides/:id{.+}', async (c) => {
     const id = osmId.safeParse(c.req.param('id'));
@@ -113,7 +123,7 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
     if (!body.success) return invalid(c, body.error.issues);
     const db = getDb();
     if (!db) return noDb(c);
-    if (!(await addParking(db, body.data))) return c.json({ error: 'identifiant déjà pris' }, 409);
+    if (!(await addParking(db, body.data))) return c.json(errorBody('identifiant déjà pris', 'deja-pris'), 409);
     return c.json({ ok: true }, 201);
   });
   admin.delete('/parkings/edits/:id{.+}', async (c) => {
@@ -121,17 +131,17 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
     if (!osmId.safeParse(raw).success && !customId.safeParse(raw).success) return invalid(c, [{ path: ['id'], message: 'identifiant inconnu' }]);
     const db = getDb();
     if (!db) return noDb(c);
-    if (!(await removeEdit(db, raw))) return c.json({ error: 'introuvable' }, 404);
+    if (!(await removeEdit(db, raw))) return c.json(errorBody('introuvable', 'introuvable'), 404);
     return c.json({ ok: true });
   });
   app.route('/admin', admin);
 
-  app.notFound((c) => c.json({ error: 'introuvable' }, 404));
+  app.notFound((c) => c.json(errorBody('introuvable', 'introuvable'), 404));
   app.onError((err, c) => {
     console.error('[api]', err);
     // Table absente (code PostgreSQL 42P01) : la base n'a pas reçu les dernières migrations
-    if (pgCode(err) === '42P01') return c.json({ error: 'base non migrée : appliquer les migrations (npm run db:migrate)', code: 'migrations-manquantes' }, 503);
-    return c.json({ error: 'erreur interne' }, 500);
+    if (pgCode(err) === '42P01') return c.json(errorBody('base non migrée : appliquer les migrations (npm run db:migrate)', 'migrations-manquantes'), 503);
+    return c.json(errorBody('erreur interne', 'erreur-interne'), 500);
   });
 
   return app;

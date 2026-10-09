@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createApp } from './app.js';
 import { appEnv, resolveDatabase } from './env.js';
-
+import { apiError } from '../../contrat/erreurs.js';
+import { healthResponse } from '../../contrat/sante.js';
 
 /** Corps JSON d'une réponse (sans les types du navigateur, `Response.json()` rend `unknown`) */
 const json = (res: Response): Promise<any> => res.json();
@@ -35,7 +36,8 @@ describe('GET /api/health', () => {
   it('répond sans base configurée (le site fonctionne sans l’API)', async () => {
     const res = await get({});
     expect(res.status).toBe(200);
-    expect(await json(res)).toMatchObject({ ok: true, service: 'chambery-diorama-api', env: 'development', db: { status: 'non-configuree' } });
+    // la réponse réelle respecte le contrat partagé avec le front (contrat/sante.ts)
+    expect(healthResponse.parse(await json(res))).toMatchObject({ ok: true, service: 'chambery-diorama-api', env: 'development', db: { status: 'non-configuree' } });
   });
 
   it('dit que la base est désactivée en prévisualisation', async () => {
@@ -63,6 +65,6 @@ describe('routes inconnues', () => {
   it('répondent 404 en JSON', async () => {
     const res = await get({}, '/api/nimporte-quoi');
     expect(res.status).toBe(404);
-    expect(await json(res)).toEqual({ error: 'introuvable' });
+    expect(apiError.parse(await json(res))).toEqual({ error: 'introuvable', code: 'introuvable' });
   });
 });
