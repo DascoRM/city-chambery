@@ -74,13 +74,15 @@ Estimations à ± 30 %, développement + vérification navigateur ; **le test su
 | **Admin** | MVP + US012 | ≈ 11,25 à 13,25 | Voir ce que reçoivent les visiteurs ; forcer la neige pour une démo à plusieurs ; couper la météo |
 | **Complet** | Admin + US007 à US011 | ≈ 21 à 25 | Neige, orage, vent, nuages, finitions |
 
-**Ordre conseillé**
-1. Le contrat seul (`contrat/meteo.ts`, 1er commit d'US003, 0,25 j) : la carte code `?weather=` avec ses valeurs types sans attendre la route
-2. US001 tôt : la mesure sur le téléphone de Dasco dit combien de gouttes on peut se permettre
-3. US002 puis US006 : démontrable (lot Démo)
-4. Route (US003), puis US004 et US005 : MVP. La route ne dépend pas du rendu : elle peut passer à tout moment, même avant EP008
+**Ordre conseillé** (une US à la fois, un seul développeur)
+1. Contrat et route (US003) : le back gère la météo dès le départ, sans risque pour la fluidité, et peut passer avant EP008 ; son premier commit (le contrat seul) suffit à la carte pour coder `?weather=`
+2. US001 : Dasco mesure sur son téléphone pendant la suite ; le budget sert à la pluie (US005)
+3. US002 (socle), puis US004 (météo réelle sur la carte) : la météo du back s'affiche de bout en bout
+4. US006 (brouillard), puis US005 (pluie) : fin du MVP
 5. US012 : de préférence après EP008-US013 (journal avec auteur, `audit_log`) ; sinon avec le journal actuel (`edit_log`), en prévenant EP008 de la correspondance
 6. Le reste selon l'envie et la saison (neige avant l'hiver pour l'effet démo) ; US011 en dernier
+
+Pour montrer le rendu avant d'avoir la route, la Démo reste possible : contrat, US001, US002, US006.
 
 Branche d'epic : `feat/EP009-meteo` (partie de `main` après EP010), une branche par US fusionnée dedans (`feat/EP009-US003-contrat-et-route`…). L'API se vérifie sur une prévisualisation `preview/EP009-meteo`.
 
@@ -117,7 +119,7 @@ Démarrage du diorama (rien n'attend la météo)
 ## Décisions
 | # | Question | Décision ou recommandation | Statut |
 |---|----------|----------------------------|--------|
-| D1 | Quel lot engager ? | Démo puis MVP ; la suite selon la mesure sur téléphone (US001) | **À trancher** |
+| D1 | Quel lot engager ? | Le MVP, dans l'ordre conseillé (contrat et route d'abord) ; la suite selon la mesure sur téléphone (US001) | **À trancher** |
 | D2 | Le projet reste-t-il non commercial ? (Open-Meteo gratuit et Vercel Hobby l'exigent tous les deux) | Oui ; sinon MET Norway (commercial permis, +0,5 j) ou Open-Meteo payant (≈ 29 €/mois, non vérifié) + Vercel Pro | **À reconfirmer** |
 | D3 | Source | Open-Meteo avec le **modèle ICON** (`icon_seamless`), pas AROME : AROME ne donne ni la visibilité ni l'orage à Chambéry (0 h de brouillard et d'orage sur 1 434 h d'historique). Pas de source de secours au départ | Retenu (09/10) |
 | D4 | Hors de l'heure « Direct » | Météo « simulée » (beau temps) ; prévisions heure par heure plus tard (US013) | Retenu (09/10) |
