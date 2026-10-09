@@ -4,6 +4,7 @@ import type { CityData, Pt } from '../../types';
 import { skeletonRoofGeometry } from '../roofs';
 import { alongWalls, walls } from './chateau';
 import { glowAtNight, uplight } from './lighting';
+import { weatherSurface } from '../weather-surface';
 
 /**
  * Carré Curial — version « formes simples » générée en code (itération 15).
@@ -51,6 +52,8 @@ export function buildCarreCurial(ctx: { night: { value: number }; data?: CityDat
     uplight(roofMat, ctx.night, 0.35, 26, ground);
     uplight(flatRoof, ctx.night, 0.35, 26, ground);
     glowAtNight(opening, ctx.night, 0.5);
+    weatherSurface(roofMat, { wet: 0 }); // neige (EP009-US007), après uplight qui remplace onBeforeCompile
+    weatherSurface(flatRoof, { wet: 0 });
     lit = true;
   }
 

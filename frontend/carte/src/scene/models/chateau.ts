@@ -4,6 +4,7 @@ import type { Building, CityData, HeightFn, Pt } from '../../types';
 import { roofGeometry, skeletonRoofGeometry } from '../roofs';
 import { frameOf } from './cathedrale';
 import { glowAtNight, uplight } from './lighting';
+import { weatherSurface } from '../weather-surface';
 import { buildGrille } from './chateau-grille';
 
 /**
@@ -123,6 +124,7 @@ export function buildChateau(ctx: { night: { value: number }; data?: CityData; m
     uplight(stoneDark, ctx.night, 1.0, 32, lowest);
     uplight(roofMat, ctx.night, 0.4, 32, lowest);
     glowAtNight(opening, ctx.night, 0.55);
+    weatherSurface(roofMat, { wet: 0 }); // neige (EP009-US007), après uplight qui remplace onBeforeCompile
     lit = true;
   }
 

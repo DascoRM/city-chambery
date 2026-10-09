@@ -5,6 +5,7 @@ import { planRoof } from './roofs';
 import { createParticles, type EmitOptions } from './particles';
 import type { NightUniforms } from './city';
 import type { Season } from '../time/seasons';
+import { weatherSurface } from './weather-surface';
 
 /**
  * Cheminées et fumée (EP001-US005). Décor, pas un relevé : OpenStreetMap ne donne pas les cheminées. Elles sont
@@ -60,7 +61,7 @@ export function buildChimneys(
     .filter((b) => hash(b.id) < cfg.share);
   if (!candidates.length) return null;
   const geo = chimneyGeometry();
-  const mesh = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }), candidates.length);
+  const mesh = new THREE.InstancedMesh(geo, weatherSurface(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }), { wet: 0 }), candidates.length); // neige (EP009-US007)
   mesh.name = 'chimneys';
   mesh.castShadow = mesh.receiveShadow = true;
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), one = new THREE.Vector3(1, 1, 1);
