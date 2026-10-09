@@ -89,6 +89,7 @@ export default defineConfig({
     outDir: OUT_DIR,
     emptyOutDir: true, // dist/ est hors de la racine de la carte : Vite ne le vide pas sans cette option
     rolldownOptions: {
+      treeshake: { manualPureFunctions: ['z'] },
       output: {
         // three.js (≈ 90 % du poids du code) dans son propre fichier : il ne change qu'avec la version de
         // la librairie, donc une mise à jour de l'appli ne le fait pas retélécharger (nom à empreinte, cache 1 an)
