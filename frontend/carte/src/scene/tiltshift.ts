@@ -62,7 +62,16 @@ const blurMaterial = (dir: THREE.Vector2) =>
     depthWrite: false,
   });
 
-/** Passe finale : net ↔ flou selon la bande, puis rendu des tons + conversion sRGB (vers l'écran). */
+/**
+ * Passe finale : net ↔ flou selon la bande, puis rendu des tons + conversion sRGB (vers l'écran).
+ * Météo (EP009), posé dès le démarrage et inactif par défaut (image identique au bit près) ; le régler ensuite ne recompile rien :
+ *  - `uUnpremult` (0..1) : correction des couleurs prémultipliées par l'alpha (bords anticrénelés du socle, particules sur le fond
+ *    transparent) : division par l'alpha avant le rendu des tons et la conversion sRGB, qui ne sont pas linéaires, puis
+ *    multiplication après. Sans elle, avec le brouillard, les bords sont plus clairs que le fond (liseré clair autour du socle). À
+ *    n'activer qu'avec le brouillard (US006) : elle éteint en partie les halos des bars posés sur le fond, la nuit (lueur
+ *    additive : son alpha n'est pas une couverture) ;
+ *  - `uVeil` (voile, couleur d'écran `uVeilColor`) et `uFlash` (éclair), pondérés par la couverture : le fond de page n'est pas touché.
+ */
 const compositeMaterial = () =>
   new THREE.ShaderMaterial({
     uniforms: {
@@ -72,21 +81,29 @@ const compositeMaterial = () =>
       uBand: { value: 0.1 },
       uFalloff: { value: 0.35 },
       uMix: { value: 1.0 }, // 0 = tout net (effet coupé), 1 = effet complet
+      uUnpremult: { value: 0 }, // correction des couleurs prémultipliées : 0 = aucune (par défaut), 1 = complète
+      uVeil: { value: 0 }, // 0 = pas de voile, 1 = couleur du voile partout
+      uVeilColor: { value: new THREE.Vector3() }, // couleur d'écran (sRGB 0..1) : celle du fond de page
+      uFlash: { value: 0 }, // éclair : 0 = aucun
     },
     vertexShader: /* glsl */ `
       varying vec2 vUv;
       void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
     fragmentShader: /* glsl */ `
       uniform sampler2D tSharp, tBlur;
-      uniform float uMix;
+      uniform float uMix, uUnpremult, uVeil, uFlash;
+      uniform vec3 uVeilColor;
       varying vec2 vUv;
       ${WEIGHT_GLSL}
       void main() {
         // Le flou « prend le dessus » vite hors de la bande (comme l'ancien flou à rayon variable)
         float w = clamp(blurWeight(vUv.y) * 4.0, 0.0, 1.0) * uMix;
         gl_FragColor = mix(texture2D(tSharp, vUv), texture2D(tBlur, vUv), w);
+        float a = min(gl_FragColor.a, 1.0), k = a > 0.0 ? mix(1.0, a, uUnpremult) : 1.0;
+        gl_FragColor.rgb /= k;
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
+        gl_FragColor.rgb = mix(gl_FragColor.rgb * k, uVeilColor * a, uVeil) + uFlash * a * vec3(0.85, 0.9, 1.0);
       }`,
     depthTest: false,
     depthWrite: false,
@@ -175,6 +192,14 @@ export function createTiltShift(
     update,
     setSize,
     setEnabled: (v: boolean) => (enabled = v),
+    /** Météo (EP009) : correction prémultipliée (US006), voile (couleur d'écran sRGB 0..1) et éclair (US008), de 0 à 1 ; tout à 0 : image inchangée */
+    setWeather: (w: { unpremult?: number; veil?: number; veilColor?: readonly [number, number, number]; flash?: number }) => {
+      const u = composite.uniforms;
+      if (w.unpremult !== undefined) u.uUnpremult.value = w.unpremult;
+      if (w.veil !== undefined) u.uVeil.value = w.veil;
+      if (w.veilColor) u.uVeilColor.value.set(...w.veilColor);
+      if (w.flash !== undefined) u.uFlash.value = w.flash;
+    },
     isEnabled: () => enabled,
   };
 }

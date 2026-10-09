@@ -31,13 +31,14 @@ export function buildPoiMarkers(pois: PlacedPoi[], heightAt: HeightFn = () => 0)
   const markers = pois.map((poi) => {
     const group = new THREE.Group();
     group.position.set(poi.position[0], heightAt(poi.position[0], poi.position[1]), -poi.position[1]);
-    const gemMat = new THREE.MeshStandardMaterial({ color: PALETTE.poi, emissive: PALETTE.poi, emissiveIntensity: 0.45, roughness: 0.3, metalness: 0.2, flatShading: true });
+    // Repères de jeu : ils percent le brouillard (D12 d'EP009), réglé à la création (sinon recompilation)
+    const gemMat = new THREE.MeshStandardMaterial({ color: PALETTE.poi, emissive: PALETTE.poi, emissiveIntensity: 0.45, roughness: 0.3, metalness: 0.2, flatShading: true, fog: false });
     const gem = new THREE.Mesh(gemGeo, gemMat);
     gem.position.y = GEM_HEIGHT;
     gem.castShadow = false; // flotte : son ombre ne serait pas recalculée (ombres à la demande)
-    const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: PALETTE.poi, transparent: true, opacity: 0.85, depthWrite: false }));
+    const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: PALETTE.poi, transparent: true, opacity: 0.85, depthWrite: false, fog: false }));
     ring.position.y = 0.4;
-    const beam = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({ color: PALETTE.poi, transparent: true, opacity: 0.35, depthWrite: false }));
+    const beam = new THREE.Mesh(beamGeo, new THREE.MeshBasicMaterial({ color: PALETTE.poi, transparent: true, opacity: 0.35, depthWrite: false, fog: false }));
     const hit = new THREE.Mesh(hitGeo, new THREE.MeshBasicMaterial({ visible: false }));
     hit.userData.poiId = poi.id;
     group.add(gem, ring, beam, hit);
@@ -147,7 +148,8 @@ export function buildPlaceMarkers(places: Place[], heightAt: HeightFn = () => 0,
   // La nuit, les épingles s'allument dans leur propre couleur (uGlow piloté par le cycle jour/nuit),
   // sauf les lieux fermés à cette heure (attribut aLit par épingle : 1 allumé, 0 éteint)
   const glowUniform = { value: 0 };
-  const pinMat = new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.05, flatShading: true });
+  // fog: false : les épingles et leurs halos percent le brouillard (D12 d'EP009), réglé à la création (sinon recompilation)
+  const pinMat = new THREE.MeshStandardMaterial({ roughness: 0.35, metalness: 0.05, flatShading: true, fog: false });
   pinMat.onBeforeCompile = (shader) => {
     shader.uniforms.uGlow = glowUniform;
     shader.vertexShader = shader.vertexShader
@@ -216,7 +218,7 @@ export function buildPlaceMarkers(places: Place[], heightAt: HeightFn = () => 0,
     haloSets.push({ attr: colAttr, ids });
     const mat = new THREE.PointsMaterial({
       size: tier.size, map: tex, vertexColors: true, transparent: true, opacity: 0,
-      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true, fog: false,
     });
     halos.add(new THREE.Points(g, mat));
   }

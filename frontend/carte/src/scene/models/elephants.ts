@@ -153,7 +153,8 @@ function groundHalo(night: { value: number }): THREE.Mesh {
   ctx.fillRect(0, 0, 128, 128);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
-  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0 });
+  // fog: false : une lueur additive serait éclaircie par le brouillard (EP009) ; réglé à la création (sinon recompilation)
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0, fog: false });
   const geo = new THREE.PlaneGeometry(BASIN_R * 4.2, BASIN_R * 4.2);
   geo.rotateX(-Math.PI / 2);
   const m = new THREE.Mesh(geo, mat);

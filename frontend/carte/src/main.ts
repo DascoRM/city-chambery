@@ -180,11 +180,13 @@ async function main() {
   } catch (e) {
     console.warn('[oiseaux] non créés', e);
   }
+  // Vent de beau temps (content/life.json) : un seul objet pour la fumée et les drapeaux, que la météo fera varier (EP009-US009)
+  const wind = { ...lifeContent.smoke.wind };
   // Cheminées et fumée (EP001-US005) : la fumée suit la saison de l'horloge
   await loading.set(80, 'cheminées');
   let chimneys: ReturnType<typeof buildChimneys> = null;
   try {
-    chimneys = buildChimneys(lifeContent.smoke as unknown as SmokeConfig, data, {
+    chimneys = buildChimneys({ ...(lifeContent.smoke as unknown as SmokeConfig), wind }, data, {
       minUnder: terrain.minUnder, hidden, night: city.night, season: () => clock.state().current, focus: () => controls.target,
     });
     if (chimneys) scene.add(chimneys.group);
@@ -194,7 +196,7 @@ async function main() {
   // Drapeaux de la Savoie sur le château et l'hôtel de ville (EP001-US006), posés sur le point le plus haut du toit
   let flags: ReturnType<typeof buildFlags> = null;
   try {
-    flags = buildFlags(lifeContent.flags.list as FlagSpec[], data, { targets: [modelsRoot, city.group], wind: lifeContent.smoke.wind });
+    flags = buildFlags(lifeContent.flags.list as FlagSpec[], data, { targets: [modelsRoot, city.group], wind });
     if (flags) {
       scene.add(flags.group);
       if (DEBUG) console.info('[drapeaux]', flags.placed.map((f) => `${f.id} à ${f.top.toFixed(1)} m`).join(', '));
