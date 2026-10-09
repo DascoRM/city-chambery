@@ -76,7 +76,7 @@ React 19 · wouter (routage par « # », sans réécriture serveur) · TanStack 
 | [US006](US006-backend.md) | `backend/` : l'API dans son dossier, sa propre config TypeScript | 0,5 à 1 | ✅ Fait (09/10), trois étapes vérifiées sur la prévisualisation |
 | [US007](US007-contrat-front-back.md) | `contrat/` : schémas partagés entre front et back | 0,5 | ✅ Fait (09/10), vérifié sur la prévisualisation |
 | [US008](US008-session-admin-par-cookie.md) | Session d'administration par cookie `HttpOnly` | 0,75 | 🟡 Fait (09/10), relu et corrigé ; vérifié par l'agent sur la prévisualisation ; reste la connexion avec le vrai jeton (Dasco) |
-| [US009](US009-docker-et-documentation.md) | Docker / Coolify et documentation | 0,5 | 🟡 Fait (09/10) ; reste `docker compose build` (Dasco, Docker absent du Mac de dev) |
+| [US009](US009-docker-et-documentation.md) | Docker / Coolify et documentation | 0,5 | ✅ Fait (09/10) ; image Docker vérifiée par Dasco (la carte s'affiche, 404 sur `/admin` et `/api`) |
 
 **Total : ≈ 6,5 à 8 jours** (± 30 %, rien n'est mesuré). Phase 1 ≈ 4,25 à 5,25 j ; phase 2 ≈ 2,25 à 2,75 j.
 

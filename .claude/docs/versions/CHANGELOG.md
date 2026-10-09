@@ -18,7 +18,9 @@
 
 **Vérifié :** `npm run build` (aussi avec `ADMIN_TOKEN` et `VERCEL_ENV=preview`, comme sur Vercel) et `npm test` : **90 tests** (back 41, admin 24, contrat 6, carte 4, outillage 15) ; dans Chrome sur le `dist/` avec l'API locale : connexion, cookie `HttpOnly`/`SameSite=Strict`/`/api/admin`/8 h, rien dans le stockage de la page, rechargement, déconnexion qui efface le cookie, retouche, ajout et retrait de parking ; en dev, connexion et écritures par le proxy de l'admin ; **sur la prévisualisation** (`e41422d`, par l'agent) : build « success », `/api/health`, session sans cookie 401, mauvais jeton 401 (l'hôte public est bien reçu par la fonction), connexion depuis un autre site 403, déconnexion 204 avec le témoin (`Secure`, 8 h), carte sans erreur.
 
-**Non vérifié :** la connexion avec le vrai jeton de Preview et une écriture réelle sur Vercel (jeton connu de Dasco seulement) ; l'image Docker et nginx (Docker absent de ce Mac) ; Safari et Firefox.
+**Vérifié par Dasco :** `docker compose build` : la carte s'affiche, `/admin` et `/api` répondent 404 (ni API ni administration sur le Pi).
+
+**Non vérifié :** la connexion avec le vrai jeton de Preview et une écriture réelle sur Vercel (jeton connu de Dasco seulement) ; Safari et Firefox.
 
 ## Itération 86 — 09/10/2026 (branche `feat/EP010-US007-contrat`, epic EP010)
 
