@@ -1,5 +1,17 @@
 # Journal des itérations
 
+## Itération 93 — 09/10/2026 (branche `feat/EP009-US006-brouillard`, epic EP009)
+
+**Demande de Dasco :** lot MVP de la météo ; US006 : le brouillard, d'après le plan prêt à coder de l'agent du front ([ep009-us006-us005-plan.md](../tasks/ep009-us006-us005-plan.md)), relu avant d'être appliqué.
+
+**Changements :**
+- `weather/fog.ts` (pur, testé) : début et fin du brouillard linéaire calés sur la distance entre la caméra et le point regardé (le fond de la ville se noie à tous les zooms ; sous une intensité de 0,35, la fin s'éloigne jusqu'à l'infini : il s'efface sans saut) ; couleur du fond de page passée dans l'inverse du rendu des tons ACES (à moins de 1/255) ;
+- `weather/effects.ts` : réglage à chaque image tant qu'il y a du brouillard (rien sinon) ; voile léger ; correction des couleurs prémultipliées de la passe finale activée avec le brouillard (sinon liseré clair autour du socle) ; halos des bars en mélange « par-dessus » pendant le brouillard (la correction les éteignait au-dessus du fond) ; aucune recompilation (tout a été posé au démarrage par US002).
+
+**Vérifié :** `npm run build` et `npm test` (**174 tests**) ; chunk principal inchangé (87,57 Ko gzip), module météo 6,76 Ko ; dans Chrome avec la puce graphique du Mac : brouillard activé puis coupé 10 fois à heure fixe, **aucun programme nouveau** (44 → 44), pire image 36 ms ; captures de jour et de nuit regardées : de nuit, le bout de la ville se fond dans le fond, lumières, épingles et halos visibles ; de jour, à l'intensité type (0,8), le brouillard noie presque toute la ville (épaisseur à régler avec Dasco).
+
+**Non vérifié :** l'épaisseur et le rendu par Dasco ; un vrai téléphone ; brouillard et pluie ensemble.
+
 ## Itération 92 — 09/10/2026 (branche `fix/EP009-carte-revue`, epic EP009)
 
 **Demande de Dasco :** « Pourquoi aucun agent ne tourne ? » : relecture indépendante du code de la carte d'US001, US002 et US004 par un agent, en parallèle des plans d'US006, US005 et US012.

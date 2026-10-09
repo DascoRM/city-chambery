@@ -99,6 +99,8 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ US001 : mesure de la pluie prototype sur l'iPhone (protocole dans la fiche US001) — *Dasco*
 - ✅ *itération 90* US002 : socle météo (réglages inactifs posés au démarrage, ciel couvert, puce et panneau, `?weather=`, préférences, sélecteur `?debug`)
 - ⬜ Juger le rendu du couvert (`?weather=cloudy`, `?weather=partly`, de jour et de nuit) et la puce dans la barre d'heure, sur ordinateur et téléphone — *Dasco*
+- ✅ *itération 93* US006 : brouillard (portée selon la caméra, couleur du fond, voile, halos par-dessus), sans recompilation
+- ⬜ Régler l'épaisseur du brouillard type (`?weather=fog`, 0,8 : de jour, il noie presque toute la ville ; comparer avec `&intensity=0.5`) et juger les halos des bars, plus pâles dans le brouillard la nuit — *Dasco*
 - ✅ *itération 92* Relecture du code de la carte (US001, US002, US004) : 2 défauts importants et 7 mineurs corrigés
 - ⬜ Météo : une horloge du visiteur en avance de plus de 3 h fait refuser tous les relevés (« Indisponible ») ; piste : âge calculé avec l'heure du serveur — à décider (relecture M8)
 - ⬜ Météo : tester le câblage de `weather/index.ts` (vieillissement du relevé, crédit, réactivation) avec un DOM simulé — *petit*

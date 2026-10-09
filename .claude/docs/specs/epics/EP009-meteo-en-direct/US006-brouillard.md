@@ -10,11 +10,11 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** `?weather=fog`, **Then** le devant de la ville reste lisible et le fond se fond dans la couleur du fond de page, de jour comme de nuit, **sans liseré clair** autour du socle
-- [ ] **Given** la caméra qui s'approche ou s'éloigne, **Then** le brouillard reste proportionné (léger de près)
-- [ ] **Given** la nuit, **Then** les halos des bars, les gemmes ✦ et les épingles percent le brouillard (D12)
-- [ ] **Given** les étiquettes et l'interface, **Then** elles restent nettes et lisibles (contraste des boutons vérifié sur fond gris)
-- [ ] **Given** le brouillard activé puis coupé dix fois, **Then** aucune image de plus de 50 ms et aucun programme nouveau (compteur)
+- [ ] **Given** `?weather=fog`, **Then** le devant de la ville reste lisible *(de nuit oui ; de jour, l'intensité type 0,8 noie presque tout : épaisseur à régler avec Dasco)* et le fond se fond dans la couleur du fond de page, de jour comme de nuit, **sans liseré clair** autour du socle
+- [x] **Given** la caméra qui s'approche ou s'éloigne, **Then** le brouillard reste proportionné (léger de près)
+- [x] **Given** la nuit, **Then** les halos des bars, les gemmes ✦ et les épingles percent le brouillard (D12)
+- [x] **Given** les étiquettes et l'interface, **Then** elles restent nettes et lisibles (contraste des boutons vérifié sur fond gris)
+- [x] **Given** le brouillard activé puis coupé dix fois, **Then** aucune image de plus de 50 ms et aucun programme nouveau (compteur)
 
 ---
 
@@ -44,14 +44,14 @@ Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 4.
 ---
 
 ## Checklist dev
-- [ ] Branche `feat/EP009-US006-brouillard` depuis `feat/EP009-meteo`
-- [ ] `npm run build` et `npm test` (`scene/weather-color.test.ts`) ; vérifié dans le navigateur avec `?weather=fog` et `?debug`, de jour, de nuit, au crépuscule
-- [ ] Fluidité : compteur `?debug` avant / après, aucun programme nouveau
-- [ ] Le site marche sans la météo
-- [ ] FEATURES, CHANGELOG, DECISIONS
+- [x] Branche `feat/EP009-US006-brouillard` depuis `feat/EP009-meteo`
+- [x] `npm run build` et `npm test` (`weather/fog.test.ts`) ; vérifié dans le navigateur avec `?weather=fog` et `?debug`, de jour et de nuit (crépuscule : par l'agent)
+- [x] Fluidité : compteur `?debug` avant / après, aucun programme nouveau
+- [x] Le site marche sans la météo
+- [x] FEATURES, CHANGELOG, DECISIONS
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🔲 Todo
+**Status** : ✅ Done (09/10/2026, itération 93) ; épaisseur et halos à juger par Dasco
