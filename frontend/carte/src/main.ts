@@ -49,6 +49,7 @@ import { createUi, showFatal } from './ui/ui';
 import { loadDiscovered, resetDiscovered, saveDiscovered } from './state/progress';
 import { setupGame } from './game/setup';
 import { installInteraction, type PlacementTool } from './interaction';
+import type { RainProto } from './dev/rain-proto';
 
 const app = document.getElementById('app')!;
 /** Mode debug : ajouter ?debug à l'adresse (compteur de perf, debug des éléphants, window.diorama) */
@@ -555,14 +556,27 @@ async function main() {
     perfHud?.end(raw, busy);
   });
 
+  // Pluie prototype pour la mesure sur téléphone (EP009-US001) : ?debug&rain=2500 ; code chargé à la demande, ajouté
+  // après le démarrage (comme la météo le sera) : le compteur montre son coût et l'éventuel à-coup de son apparition
+  const rainCount = DEBUG ? Number(new URLSearchParams(location.search).get('rain')) : 0;
+  let rainProto: RainProto | null = null;
+  if (rainCount > 0) {
+    import('./dev/rain-proto')
+      .then(({ installRainProto }) => {
+        rainProto = installRainProto({ scene, camera, focus: () => controls.target, bounds: data.bounds, count: rainCount });
+        tickers.push(rainProto);
+      })
+      .catch((e) => console.warn('[pluie prototype] non chargée', e));
+  }
+
   // La ville est prête : « Explorer la carte » s'active (ou la carte s'ouvre directement sans lobby)
   await loading.set(100, '');
   lobby.setReady();
   if (!lobbyAtStart) loading.hideBoot();
 
   // Accès debug depuis la console : window.diorama (en dev ou avec ?debug seulement)
-  // perf : mesures du compteur (scripts de mesure)
-  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, parkingSigns, birds, chimneys, flags, clock, herd, hunt, slots, renderer, stage, perf: perfHud } });
+  // perf : mesures du compteur (scripts de mesure) ; rain : pluie prototype (?debug&rain=N), arrivée après le démarrage
+  if (import.meta.env.DEV || DEBUG) Object.assign(window, { diorama: { lobby, loading, scene, camera, controls, data, pois, placeLayer, awnings, people, pathfinder, avatar, balade, cutaway, parkingSigns, birds, chimneys, flags, clock, herd, hunt, slots, renderer, stage, perf: perfHud, get rain() { return rainProto; } } });
 }
 
 main();
