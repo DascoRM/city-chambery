@@ -30,7 +30,11 @@ try {
   const { healthResponse } = await import(pathToFileURL(join(out, 'contrat/sante.js')).href);
   const check = healthResponse.safeParse(body);
   if (!check.success) throw new Error(`/api/health ne respecte pas le contrat : ${JSON.stringify(check.error.issues)}`);
-  console.log('✓ API chargée comme sur Vercel (ESM) : /api/health répond 200, conforme au contrat');
+  // Le module de session (hono/jwt, WebCrypto, cookies) se charge aussi : sans ADMIN_TOKEN, l'administration répond 503 en JSON
+  const session = await mod.default.fetch(new Request('http://localhost/api/admin/session'));
+  const sessionBody = await session.json();
+  if (session.status !== 503 || sessionBody.code !== 'admin-non-configuree') throw new Error(`/api/admin/session : ${session.status} ${JSON.stringify(sessionBody)}`);
+  console.log('✓ API chargée comme sur Vercel (ESM) : /api/health répond 200, conforme au contrat ; administration fermée sans jeton (503)');
 } catch (err) {
   console.error('✗ L\'API ne se charge pas comme sur Vercel :', err.code ?? '', err.message);
   process.exitCode = 1;

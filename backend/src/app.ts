@@ -1,15 +1,19 @@
 import { Hono } from 'hono';
+import { except } from 'hono/combine';
+import { HTTPException } from 'hono/http-exception';
 import { getTableName, isTable } from 'drizzle-orm';
 import * as schema from './db/schema.js';
 import { appEnv, appVersion, resolveDatabase, type Env } from './env.js';
 import { database } from './db/client.js';
-import { adminAuth, createRateLimiter } from './auth.js';
+import { clientKey, createRateLimiter, tokenMatches } from './auth.js';
+import { closeSession, requireSession, sameOriginWrites, sessionKey, writeSession, type SessionVariables } from './session.js';
 import { dbStats } from './db/stats.js';
 import * as z from 'zod/mini';
 import { fr } from 'zod/locales';
 import type { ErrorCode } from '../../contrat/erreurs.js';
 import { addedInput, customId, osmId, overrideInput, type AdminParkingEdits } from '../../contrat/parkings.js';
 import type { AdminStatusResponse, DbStatus, HealthResponse } from '../../contrat/sante.js';
+import { loginRequest, type SessionInfo } from '../../contrat/session.js';
 import { addParking, listEdits, recentLog, removeEdit, saveOverride, type Db } from './parkings.js';
 
 // Messages de validation en français : ils remontent jusqu'à l'administration (« source : Trop petit : … »)
@@ -53,6 +57,8 @@ export async function checkDatabase(env: Env): Promise<{ status: DbStatus; ms?: 
 export interface AppDeps {
   /** Base à utiliser ; par défaut celle de l'environnement (null si aucune) */
   db?: () => Db | null;
+  /** Horloge en millisecondes (tests : expiration de la session) ; par défaut l'heure réelle */
+  now?: () => number;
 }
 
 export function createApp(env: Env = process.env, deps: AppDeps = {}) {
@@ -66,6 +72,8 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
 
   /** Réponse quand la base n'est pas disponible : le site continue avec ses retouches locales */
   const noDb = (c: { json: (b: unknown, s: 503) => Response }) => c.json(errorBody('base indisponible', 'base-indisponible'), 503);
+  /** Données refusées par la validation (Zod) : le détail de chaque champ */
+  const invalid = (c: { json: (b: unknown, s: 400) => Response }, issues: unknown) => c.json(errorBody('données invalides', 'donnees-invalides', issues), 400);
 
   // Retouches des parkings publiées (US006) : lues par le site au chargement ; mises en cache 60 s par Vercel
   app.get('/parkings/edits', async (c) => {
@@ -82,9 +90,32 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
     return c.json({ ok: true, service: 'chambery-diorama-api', version: appVersion(env), env: appEnv(env), db, admin: env.ADMIN_TOKEN?.trim() ? 'configure' : 'absent' } satisfies HealthResponse);
   });
 
-  // Administration (US005) : fermée sans ADMIN_TOKEN, protégée par jeton sinon
-  const admin = new Hono();
-  admin.use('*', adminAuth(env, createRateLimiter()));
+  // Administration : fermée sans ADMIN_TOKEN. Le jeton ouvre une session (cookie HttpOnly, glissante : 2 h sans activité,
+  // 8 h au plus), seule acceptée ensuite ; écritures de la même origine et en JSON seulement (EP010-US008, session.ts)
+  const now = deps.now ?? Date.now;
+  const limiter = createRateLimiter(); // 5 essais de jeton ratés par minute et par adresse, puis 429 (connexion seulement)
+  const PUBLIC = new Set(['/api/admin/login', '/api/admin/logout']);
+  const admin = new Hono<{ Variables: SessionVariables }>();
+  admin.use('*', async (c, next) => (sessionKey(env) ? next() : c.json(errorBody('administration non configurée', 'admin-non-configuree'), 503)));
+  admin.use('*', sameOriginWrites());
+  admin.use('*', except((c) => PUBLIC.has(c.req.path), requireSession(env, now)));
+  admin.post('/login', async (c) => {
+    const ip = clientKey(c.req.raw.headers);
+    if (limiter.blocked(ip)) return c.json(errorBody('trop de tentatives, réessaie dans une minute', 'trop-de-tentatives'), 429);
+    const body = loginRequest.safeParse(await c.req.json().catch(() => null)); // jeton « trimé » : un retour à la ligne collé est ignoré
+    if (!body.success) return invalid(c, body.error.issues);
+    if (!tokenMatches(env.ADMIN_TOKEN!.trim(), body.data.token)) {
+      limiter.fail(ip);
+      return c.json(errorBody('non autorisé', 'non-autorise'), 401);
+    }
+    const nowS = Math.floor(now() / 1000);
+    return c.json((await writeSession(c, env, sessionKey(env)!, { sub: 'admin', method: 'token', auth: nowS }, nowS)) satisfies SessionInfo);
+  });
+  admin.post('/logout', (c) => {
+    closeSession(c, env);
+    return c.body(null, 204);
+  });
+  admin.get('/session', (c) => c.json(c.get('session') satisfies SessionInfo));
   admin.get('/ping', (c) => c.json({ ok: true }));
   admin.get('/status', async (c) => {
     const base = { version: appVersion(env), env: appEnv(env), node: process.version, region: env.VERCEL_REGION ?? null };
@@ -101,7 +132,6 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
   });
 
   // Retouches des parkings (US006). Toute écriture est validée (Zod) et porte une source.
-  const invalid = (c: { json: (b: unknown, s: 400) => Response }, issues: unknown) => c.json(errorBody('données invalides', 'donnees-invalides', issues), 400);
   admin.get('/parkings/edits', async (c) => {
     const db = getDb();
     if (!db) return noDb(c);
@@ -138,6 +168,7 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
 
   app.notFound((c) => c.json(errorBody('introuvable', 'introuvable'), 404));
   app.onError((err, c) => {
+    if (err instanceof HTTPException) return err.getResponse(); // erreur voulue (400, 401…) : pas un 500
     console.error('[api]', err);
     // Table absente (code PostgreSQL 42P01) : la base n'a pas reçu les dernières migrations
     if (pgCode(err) === '42P01') return c.json(errorBody('base non migrée : appliquer les migrations (npm run db:migrate)', 'migrations-manquantes'), 503);
