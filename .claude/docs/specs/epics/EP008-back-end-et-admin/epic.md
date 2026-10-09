@@ -17,7 +17,7 @@ Ajouter au site statique un **petit back-end gratuit** (fonctions du même dép�
 ```
 Navigateur ──► Vercel (site statique, plan Hobby)
           └──► /api/* (fonctions Vercel, même dépôt)  ──► Neon Postgres (gratuit, veille automatique)
-Administration : /admin (page statique) ──► /api/admin/* (jeton secret, puis comptes d'administration en base)
+Administration : /admin (React, EP010) ──► /api/admin/* (le jeton ouvre une session : cookie HttpOnly glissant, 2 h / 8 h ; plus tard des comptes en base)
 Sauvegarde : export hebdomadaire des retouches en JSON dans le dépôt (historique Git)
 ```
 - **Aucun compte** au départ : un identifiant aléatoire et un code personnel pour changer d'appareil ; pas d'adresse électronique, donc très peu de données personnelles.

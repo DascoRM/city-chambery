@@ -31,7 +31,7 @@ Voir l'[epic](epic.md) : règles 1 à 10.
 | Complexité | Medium |
 | Dépend de | EP008-US001 (socle API) |
 
-Détail technique : [plan back](../../../tasks/meteo-back-plan.md) § 2 à § 4 ; retirer le `no-store` global de `server/app.ts` pour cette route.
+Détail technique : [plan back](../../../tasks/meteo-back-plan.md) § 2 à § 4 ; retirer le `no-store` global de `backend/src/app.ts` pour cette route.
 
 ---
 
