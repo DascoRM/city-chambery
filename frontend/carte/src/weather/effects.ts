@@ -4,18 +4,20 @@ import type { CityData } from '../types';
 import { weatherUniforms } from '../scene/weather-surface';
 import { fogColorFor, fogRange } from './fog';
 import { FULL_BUDGET, nextBudget, type RainBudget } from './budget';
-import { RAIN_COUNT, createRain, type Rain } from './rain';
+import { RAIN_COUNT, SNOW_COUNT, createRain, type PrecipKind, type Rain } from './rain';
 import { approach, type WeatherLook } from './state';
 
 /**
  * Effets de la météo sur la scène (EP009), dans le module chargé à la demande. Tout ce qui touche aux matériaux standards a été
  * posé au démarrage (règle 9) : ici on ne règle que des valeurs (brouillard, uniformes de la passe finale et du sol mouillé, mélange
- * des halos), sans aucune recompilation ; seuls les deux maillages de la pluie (un programme) arrivent avec la première pluie.
+ * des halos), sans aucune recompilation ; seuls les maillages de la pluie et de la neige (un programme pour les deux) arrivent avec
+ * la première précipitation.
  * Par temps sans effet : aucun travail par image.
  *  - Brouillard (US006) : `THREE.Fog` linéaire, réglé à chaque image selon la distance caméra – point regardé ; sa couleur est celle
  *    du fond de page au bord du socle, passée dans l'inverse du rendu des tons ; voile léger ; correction des couleurs prémultipliées
  *    de la passe finale (sinon liseré clair autour du socle).
  *  - Pluie (US005) : deux nappes de traînées (weather/rain.ts), sol mouillé, lueurs de nuit un peu plus fortes, règle de dégradation.
+ *  - Neige (US007) : deux nappes de flocons (même système), neige au sol qui s'accumule et fond, même règle de dégradation.
  */
 export interface EffectsCtx {
   scene: THREE.Scene;
@@ -42,6 +44,8 @@ export const UNPREMULT_FULL = 0.15;
 export const WET = { perRain: 1.6, tauUp: 20, tauDown: 120 };
 /** Lueurs de nuit (halos des bars, lueur des rues) en plus quand tout est mouillé */
 export const WET_GLOW = 0.25;
+/** Neige au sol : cible selon la neige qui tombe, temps pour couvrir (s) et pour fondre */
+export const SNOW_COVER = { perSnow: 1.6, tauUp: 30, tauDown: 300 };
 
 export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
   const fog = ctx.scene.fog as THREE.Fog | null; // posé inactif au démarrage (stage.ts)
@@ -65,13 +69,17 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
     }
   };
 
-  // Pluie : créée à la première pluie ; nombre de traînées selon le niveau de qualité (`?debug&rainmax=N` pour essayer)
-  let rain: Rain | null = null;
-  const q = new URLSearchParams(location.search), max = Number(q.get('rainmax'));
-  const count = q.has('debug') && max > 0 ? Math.min(50000, Math.round(max)) : RAIN_COUNT[ctx.quality];
+  // Pluie et neige : créées à la première précipitation ; nombre par niveau de qualité (`?debug&rainmax=N`, `&snowmax=N` pour essayer)
+  const precip: Record<PrecipKind, Rain | null> = { rain: null, snow: null };
+  const q = new URLSearchParams(location.search);
+  const countOf = (kind: PrecipKind, table: Record<QualityLevel, number>) => {
+    const max = Number(q.get(`${kind}max`));
+    return q.has('debug') && max > 0 ? Math.min(50000, Math.round(max)) : table[ctx.quality];
+  };
+  const count = { rain: countOf('rain', RAIN_COUNT), snow: countOf('snow', SNOW_COUNT) };
   let budget: RainBudget = { ...FULL_BUDGET };
-  ctx.onFpsSample((fps, atMin) => { if (rain?.visible()) budget = nextBudget(budget, fps, atMin); });
-  let wet = 0, glow = 1;
+  ctx.onFpsSample((fps, atMin) => { if (precip.rain?.visible() || precip.snow?.visible()) budget = nextBudget(budget, fps, atMin); });
+  let wet = 0, glow = 1, lying = 0;
 
   return {
     /** Appelé par le modificateur du ciel (daynight.ts), une fois la météo appliquée : fond de page et exposition finals */
@@ -101,13 +109,22 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
         ctx.post({ unpremult: u, veil: FOG_VEIL * k, veilColor: edge });
         if (u > 0 !== cover) { cover = u > 0; halos(cover); }
       }
-      // Pluie : deux nappes autour du point regardé et sur tout le socle (ralenties avec le réduit-mouvement)
-      const r = look.rain * budget.level;
-      if (r > 0.002) {
-        rain ??= createRain(ctx.scene, count, ctx.bounds);
-        const f = ctx.focus();
-        rain.update(dt, f, ctx.camera.position.distanceTo(f), r, look.rain, { speed: look.windSpeed, towards: look.windTowards }, ctx.night(), reduced() ? 0.3 : 1);
-      } else if (rain?.visible()) rain.hide();
+      // Pluie et neige : deux nappes chacune, autour du point regardé et sur tout le socle (ralenties avec le réduit-mouvement)
+      for (const kind of ['rain', 'snow'] as const) {
+        const raw = look[kind], r = raw * budget.level, p = precip[kind];
+        if (r > 0.002) {
+          const f = ctx.focus();
+          (precip[kind] ??= createRain(ctx.scene, count[kind], ctx.bounds, kind))
+            .update(dt, f, ctx.camera.position.distanceTo(f), r, raw, { speed: look.windSpeed, towards: look.windTowards }, ctx.night(), reduced() ? 0.3 : 1);
+        } else if (p?.visible()) p.hide();
+      }
+      // Neige au sol : s'accumule en une minute environ, fond en quelques minutes
+      const lyingTarget = Math.min(1, look.snow * SNOW_COVER.perSnow);
+      if (lying !== lyingTarget) {
+        lying = approach(lying, lyingTarget, dt, lyingTarget > lying ? SNOW_COVER.tauUp : SNOW_COVER.tauDown);
+        if (Math.abs(lying - lyingTarget) < 1e-3) lying = lyingTarget;
+        weatherUniforms.uSnow.value = lying;
+      }
       // Sol mouillé : vite à l'humidification, lentement au séchage ; lueurs de nuit un peu plus fortes
       const target = Math.min(1, look.rain * WET.perRain);
       if (wet === target) return false;

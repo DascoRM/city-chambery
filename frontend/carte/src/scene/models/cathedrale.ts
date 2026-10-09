@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mesh } from './mesh';
 import type { CityData, Pt } from '../../types';
 import { glowAtNight, uplight } from './lighting';
+import { weatherSurface } from '../weather-surface';
 
 /**
  * Cathédrale Saint-François-de-Sales — version « formes simples » générée en code (itération 11).
@@ -82,6 +83,7 @@ export function buildCathedrale(ctx: { night: { value: number }; data?: CityData
     uplight(molasseDark, ctx.night, 1.0, 40, ground);
     uplight(slate, ctx.night, 0.5, 40, ground);
     glowAtNight(opening, ctx.night, 0.6); // baies éclairées de l'intérieur
+    weatherSurface(slate, { wet: 0 }); // neige (EP009-US007), après uplight qui remplace onBeforeCompile
     lit = true;
   }
 

@@ -5,6 +5,7 @@ import { rand } from './palette';
 import { distToSegment, pointInPoly } from './geo';
 import { dataUrl } from '../dataurl';
 import type { Foliage } from '../time/seasons';
+import { weatherSurface } from './weather-surface';
 
 /**
  * Arbres modélisés (pack Quaternius, CC0) à certains endroits de la ville.
@@ -31,7 +32,7 @@ export function seasonalName(name: string, foliage: Foliage, seasons?: NatureSea
   return `${m[1]}_${foliage === 'autumn' ? seasons.autumn : seasons.bare}_${m[2]}`;
 }
 
-const material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 });
+const material = weatherSurface(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }), { wet: 0 }); // neige sur les arbres (EP009-US007)
 
 /** Test « cet emplacement est dans la zone » ; null si la zone ne correspond à rien dans city.json. */
 function zoneTest(zone: NatureZone, data: CityData): ((p: Pt) => boolean) | null {

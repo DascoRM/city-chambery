@@ -5,6 +5,7 @@ import { pointInPoly, segDist2 } from './geo';
 import { PLACE_CATEGORIES, placeCategory } from './palette';
 import { dataUrl } from '../dataurl';
 import { roadDistanceIndex } from './roads';
+import { weatherSurface } from './weather-surface';
 
 /**
  * Détails de façade tirés du pack de bâtiments (public/models/buildings/details.glb, voir
@@ -123,7 +124,7 @@ export async function buildAwnings(o: {
   });
 
   // Blanc cassé au départ (gris clair de la pièce) × couleur de la catégorie
-  const material = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.85 });
+  const material = weatherSurface(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.85 }), { wet: 0 }); // neige (EP009-US007)
   // Couleur de la catégorie éclaircie d'un tiers : plus lisible que la couleur pleine des épingles
   const colorOf = new Map(PLACE_CATEGORIES.map((c) => [c.id, new THREE.Color(c.color).lerp(new THREE.Color('#ffffff'), 0.3)]));
   for (const [key, list] of placed) {

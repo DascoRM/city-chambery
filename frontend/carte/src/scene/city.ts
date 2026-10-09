@@ -239,7 +239,8 @@ function roadMaterial(color: string, kind: 'paving' | 'asphalt'): THREE.MeshStan
         diffuseColor.rgb *= 1.0 + (roadHash(floor(ac)) - 0.5) * 0.07 * afade;`}`);
   };
   mat.customProgramCacheKey = () => `road-${kind}`;
-  return weatherSurface(mat); // rue mouillée sous la pluie (EP009-US005), posé avant la première compilation
+  // Rue mouillée sous la pluie (EP009-US005) ; sous la neige (US007), à moitié dégagée (chaussées) ou presque blanche (voies piétonnes)
+  return weatherSurface(mat, { snow: kind === 'asphalt' ? 0.55 : 0.8 }); // posé avant la première compilation
 }
 
 /** Tirets blancs au milieu des grandes rues (largeur 8 m et plus), hors des abords des carrefours */
@@ -538,7 +539,7 @@ function buildTrees(data: CityData, terrain: Terrain): CityTrees & { group: THRE
   canopyGeo.translate(0, 7.5, 0);
   const trunkGeo = new THREE.CylinderGeometry(0.5, 0.7, 5, 5);
   trunkGeo.translate(0, 2.5, 0);
-  const canopy = new THREE.InstancedMesh(canopyGeo, new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), spots.length);
+  const canopy = new THREE.InstancedMesh(canopyGeo, weatherSurface(new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), { wet: 0 }), spots.length); // neige (EP009-US007)
   const trunk = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: PALETTE.trunk, roughness: 1 }), spots.length);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), c = new THREE.Color();
   const base: THREE.Matrix4[] = [];
