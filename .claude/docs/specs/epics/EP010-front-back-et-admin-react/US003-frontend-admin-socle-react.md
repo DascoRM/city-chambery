@@ -10,13 +10,13 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** `frontend/admin` (Vite, `base: '/admin/'`, sortie `dist/admin/` construite **après** la carte), **Then** le service worker de la carte ne connaît pas l'admin
-- [ ] **Given** la pile (React 19, wouter, TanStack Query, React Hook Form), **Then** un client `api()` unique ajoute l'authentification et traduit les erreurs (401, 429, 503, 404)
+- [x] **Given** `frontend/admin` (Vite, `base: '/admin/'`, sortie `dist/admin/` construite **après** la carte), **Then** le service worker de la carte ne connaît pas l'admin
+- [x] **Given** la pile (React 19, wouter, TanStack Query, React Hook Form), **Then** un client `api()` unique ajoute l'authentification et traduit les erreurs (401, 429, 503, 404)
 - [x] **Given** une adresse profonde, **Then** elle s'ouvre directement : routage par « # » (`/admin/#/parkings`), donc aucune réécriture côté Vercel ou nginx (décision du 09/10, DECISIONS)
-- [ ] **Given** la CSP, **Then** elle passe en en-tête HTTP sur `/admin/` (avec `frame-ancestors 'none'`)
-- [ ] **Given** le build, **Then** `dangerouslySetInnerHTML` est refusé et l'admin pèse moins de 150 Ko gzip au chargement
-- [ ] **Given** `npm run dev:admin` (proxy `/api` vers l'API locale), **Then** l'admin se développe en local
-- [ ] **Given** Vitest + Testing Library, **Then** un premier test de composant passe
+- [x] **Given** la CSP, **Then** elle passe en en-tête HTTP sur `/admin/` (avec `frame-ancestors 'none'`)
+- [x] **Given** le build, **Then** `dangerouslySetInnerHTML` est refusé et l'admin pèse moins de 150 Ko gzip au chargement
+- [x] **Given** `npm run dev:admin` (proxy `/api` vers l'API locale), **Then** l'admin se développe en local
+- [x] **Given** Vitest + Testing Library, **Then** un premier test de composant passe
 
 ---
 
@@ -39,13 +39,13 @@ Détail : [plan de l'admin React](../../../tasks/admin-react-plan.md) § 2 à §
 ---
 
 ## Checklist dev
-- [ ] `npm run build` et `npm test` passent
-- [ ] Prévisualisation `preview/front-back` : `/`, `/admin/`, `/api/health` répondent ; service worker sans fichier de l'admin
-- [ ] Lock commité si les dépendances changent
-- [ ] README, DECISIONS, CHANGELOG si besoin
-- [ ] Validé par Dasco
+- [x] `npm run build` et `npm test` passent
+- [x] Prévisualisation `preview/front-back` : `/`, `/admin/`, `/api/health` répondent ; service worker sans fichier de l'admin
+- [x] Lock commité si les dépendances changent
+- [x] README, DECISIONS, CHANGELOG si besoin
+- [x] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🟡 Fait le 09/10/2026 (itération 84) ; à vérifier sur `preview/front-back`. Sans `@vitejs/plugin-react` (voir DECISIONS)
+**Status** : ✅ Done (09/10/2026), vérifié par Dasco sur `preview/front-back`

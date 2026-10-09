@@ -13,7 +13,9 @@
 
 **Vérifié :** `npm run build` (types des quatre configs, frontières, chargement de l'API, carte, admin) et `npm test` : **60 tests** (28 API, 17 admin, 15 outillage) ; les tests de M1, F4 et F5 échouent sur l'ancien code ; parcours réels dans Chrome headless contre l'API locale (PGlite) sur le `dist/` construit, **sous la CSP** : mauvais jeton refusé, tableau de bord, rechargement, page inconnue, déconnexion, retouche d'un parking (149 places, note, source), ajout, liste, journal, route publique lue par la carte, retrait, sans erreur ni violation de CSP ; admin : 83 Ko gzip ; service worker de la carte sans fichier de l'admin ; `npm run build:pi` ne produit que la carte ; la carte reste identique à l'octet près (vérifié par le relecteur) ; Vercel a construit les prévisualisations d'US002 et de la phase 1 (statut « success »).
 
-**Non vérifié :** la prévisualisation elle-même (protégée par l'authentification Vercel : à ouvrir par Dasco) ; l'image Docker (Docker absent de ce Mac) ; l'admin avec un service worker de la carte déjà installé (lu dans la config seulement).
+**Vérifié par Dasco** (prévisualisation `preview/front-back`, commit `ef4448d`) : « tout me paraît ok, je ne vois rien d'anormal » ; phase 1 fusionnée dans la branche d'epic.
+
+**Non vérifié :** l'image Docker (Docker absent de ce Mac) ; l'admin avec un service worker de la carte déjà installé (lu dans la config seulement).
 
 ## Itération 83 — 09/10/2026 (branches `feat/EP010-US001-adr` et `feat/EP010-US002-frontend-carte`, epic EP010)
 

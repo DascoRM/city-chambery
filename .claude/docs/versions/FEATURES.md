@@ -6,9 +6,9 @@
 
 | Fonctionnalité | État | Détail |
 |---|---|---|
-| Administration en React (`/admin/`) | 🟡 À vérifier sur la prévisualisation | Application séparée de la carte (`frontend/admin/`, React 19), adresses en `#/…` ; connexion par le jeton `ADMIN_TOKEN` (gardé le temps de l'onglet ; un jeton refusé ramène à la connexion) ; messages d'erreur en français (jeton refusé, trop d'essais, administration non configurée, base non migrée ou absente) |
-| Tableau de bord | 🟡 À vérifier sur la prévisualisation | Version, environnement, Node.js, région ; base : état, taille, migrations à appliquer, lignes par table. Pas encore : usage et quotas (EP008-US005 / US008) |
-| Retouches des parkings depuis l'administration | 🟡 À vérifier sur la prévisualisation | Page « Parkings » : chercher un parking de la carte, le masquer ou changer nom, tarif, places, type, position, note **avec une source obligatoire** ; ajouter un parking absent d'OSM ; liste des retouches avec « Retirer » ; journal. Publiées tout de suite pour la carte (au plus 1 minute de délai). Pas encore : lieux d'histoire, carte de position (EP008-US006 et US007) |
+| Administration en React (`/admin/`) | ✅ Vérifié par Dasco (prévisualisation, 09/10) | Application séparée de la carte (`frontend/admin/`, React 19), adresses en `#/…` ; connexion par le jeton `ADMIN_TOKEN` (gardé le temps de l'onglet ; un jeton refusé ramène à la connexion) ; messages d'erreur en français (jeton refusé, trop d'essais, administration non configurée, base non migrée ou absente) |
+| Tableau de bord | ✅ Vérifié par Dasco (prévisualisation, 09/10) | Version, environnement, Node.js, région ; base : état, taille, migrations à appliquer, lignes par table. Pas encore : usage et quotas (EP008-US005 / US008) |
+| Retouches des parkings depuis l'administration | ✅ Vérifié par Dasco (prévisualisation, 09/10) | Page « Parkings » : chercher un parking de la carte, le masquer ou changer nom, tarif, places, type, position, note **avec une source obligatoire** ; ajouter un parking absent d'OSM ; liste des retouches avec « Retirer » ; journal. Publiées tout de suite pour la carte (au plus 1 minute de délai). Pas encore : lieux d'histoire, carte de position (EP008-US006 et US007) |
 
 ## Carte / diorama
 

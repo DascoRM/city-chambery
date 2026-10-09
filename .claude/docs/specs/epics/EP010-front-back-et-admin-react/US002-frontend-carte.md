@@ -10,12 +10,12 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** les déplacements (`src/` → `frontend/carte/src`, `index.html`, `vite.config.ts`, `src/content` → `frontend/carte/content`, `public/` → `frontend/carte/public`, `scripts/` de données → `frontend/carte/scripts`, décision D2 : tout le pipeline va avec la carte), **Then** `npm run build` produit le même `dist/` qu'avant
-- [ ] **Given** `npm run data -- --offline`, **Then** `city.json` est identique
-- [ ] **Given** l'empreinte `?v=` des données, **Then** elle est identique avant et après
-- [ ] **Given** la PWA, **Then** `sw.js` et le manifeste restent à la racine de `dist/`, l'installation marche
-- [ ] **Given** l'outil de placement en dev, `deploy/refresh-data.sh` et le Dockerfile, **Then** ils pointent vers les nouveaux chemins
-- [ ] **Given** la carte, **Then** elle a son propre tsconfig (DOM, Vite)
+- [x] **Given** les déplacements (`src/` → `frontend/carte/src`, `index.html`, `vite.config.ts`, `src/content` → `frontend/carte/content`, `public/` → `frontend/carte/public`, `scripts/` de données → `frontend/carte/scripts`, décision D2 : tout le pipeline va avec la carte), **Then** `npm run build` produit le même `dist/` qu'avant
+- [x] **Given** `npm run data -- --offline`, **Then** `city.json` est identique
+- [x] **Given** l'empreinte `?v=` des données, **Then** elle est identique avant et après
+- [x] **Given** la PWA, **Then** `sw.js` et le manifeste restent à la racine de `dist/`, l'installation marche
+- [x] **Given** l'outil de placement en dev, `deploy/refresh-data.sh` et le Dockerfile, **Then** ils pointent vers les nouveaux chemins
+- [x] **Given** la carte, **Then** elle a son propre tsconfig (DOM, Vite)
 
 ---
 
@@ -38,13 +38,13 @@ Détail : [plan de cloisonnement](../../../tasks/cloisonnement-depot-plan.md) §
 ---
 
 ## Checklist dev
-- [ ] `npm run build` et `npm test` passent
-- [ ] Prévisualisation `preview/front-back` : `/`, `/admin/`, `/api/health` répondent ; service worker sans fichier de l'admin ; `city.json` identique ; La carte se comporte comme avant (vérification navigateur, `?debug`)
-- [ ] Lock commité si les dépendances changent
-- [ ] README, DECISIONS, CHANGELOG si besoin
-- [ ] Validé par Dasco
+- [x] `npm run build` et `npm test` passent
+- [x] Prévisualisation `preview/front-back` : `/`, `/admin/`, `/api/health` répondent ; service worker sans fichier de l'admin ; `city.json` identique ; La carte se comporte comme avant (vérification navigateur, `?debug`)
+- [x] Lock commité si les dépendances changent
+- [x] README, DECISIONS, CHANGELOG si besoin
+- [x] Validé par Dasco
 
 ---
 
 **Priorité** : High
-**Status** : 🟡 Fait le 09/10/2026 (itération 83) ; reste la vérification sur `preview/front-back` et Docker
+**Status** : ✅ Done (09/10/2026), vérifié par Dasco sur `preview/front-back`

@@ -1,6 +1,6 @@
 # Epic EP010 - Séparer le front et le back, et poser l'administration en React
 
-**Statut (09/10/2026) : décisions D1 à D6 tranchées par Dasco ; rien n'est codé.** v2 : réécrite après le retour de Dasco (« bien différencier front et back ; d'abord le front avec l'admin React, puis le back »). Prérequis des écrans d'[EP008](../EP008-back-end-et-admin/epic.md). Études : [plan de cloisonnement](../../../tasks/cloisonnement-depot-plan.md), [plan de l'admin React](../../../tasks/admin-react-plan.md) (08/10/2026).
+**Statut (09/10/2026) : phase 1 (front) livrée et vérifiée par Dasco sur la prévisualisation, fusionnée dans la branche d'epic ; phase 2 (back) planifiée ([plan](../../../tasks/ep010-phase2-plan.md)), en attente de 7 réponses de Dasco.** v2 : réécrite après le retour de Dasco (« bien différencier front et back ; d'abord le front avec l'admin React, puis le back »). Prérequis des écrans d'[EP008](../EP008-back-end-et-admin/epic.md). Études : [plan de cloisonnement](../../../tasks/cloisonnement-depot-plan.md), [plan de l'admin React](../../../tasks/admin-react-plan.md) (08/10/2026).
 
 ## Résumé
 Ranger le dépôt en **deux parties nettes** :
@@ -65,9 +65,9 @@ React 19 · wouter (routage par « # », sans réécriture serveur) · TanStack 
 | ID | User Story | Jours | Status |
 |----|------------|-------|--------|
 | [US001](US001-decision-et-adr.md) | ADR-002 « Séparer front et back » (décisions prises le 09/10) | 0,25 | ✅ [ADR-002](../../../architecture/decisions/ADR002-separer-front-et-back.md) (09/10) |
-| [US002](US002-frontend-carte.md) | `frontend/carte` : la carte dans son dossier (avec contenu, données et scripts) | 1 à 1,5 | 🟡 Fait (09/10), à vérifier sur `preview/front-back` avant fusion |
-| [US003](US003-frontend-admin-socle-react.md) | `frontend/admin` : socle React | 1,5 | 🟡 Fait (09/10), à vérifier sur `preview/front-back` |
-| [US004](US004-admin-parite-et-bascule.md) | Admin : parité avec l'actuelle (état, retouches de parkings), puis suppression de `public/admin` | 1 à 1,5 | 🟡 Fait (09/10), à vérifier sur `preview/front-back` |
+| [US002](US002-frontend-carte.md) | `frontend/carte` : la carte dans son dossier (avec contenu, données et scripts) | 1 à 1,5 | ✅ Fait et vérifié par Dasco (09/10) |
+| [US003](US003-frontend-admin-socle-react.md) | `frontend/admin` : socle React | 1,5 | ✅ Fait et vérifié par Dasco (09/10) |
+| [US004](US004-admin-parite-et-bascule.md) | Admin : parité avec l'actuelle (état, retouches de parkings), puis suppression de `public/admin` | 1 à 1,5 | ✅ Fait et vérifié par Dasco (09/10) |
 | [US005](US005-frontieres-du-front.md) | Frontières du front vérifiées au build | 0,5 | ✅ Fait (09/10) : `scripts/check-boundaries.mjs` |
 
 ### Phase 2 - Backend
