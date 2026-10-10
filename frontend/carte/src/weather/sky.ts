@@ -16,6 +16,8 @@ export const SKY_KEYS = ['cloud', 'rain', 'snow', 'fog', 'storm'] as const;
 
 /** Couverture nuageuse sans effet : jusqu'à 20 %, le ciel reste celui d'aujourd'hui (« ciel dégagé » vaut 5 %) */
 export const CLOUD_DEAD_ZONE = 0.2;
+/** Orage (US008) : plus sombre qu'une pluie, de jour ; lumières de la ville allumées au moins à cette part sous le ciel noir */
+export const STORM = { dark: 0.3, lights: 0.35 };
 
 /** Part de ciel couvert, de 0 à 1 : nuages au-delà de la zone morte, ou précipitations, brouillard, orage */
 export function overcastOf(w: SkyLook): number {
@@ -28,6 +30,8 @@ export interface SkyValues {
   hemiI: number; keyI: number; exposure: number;
   /** Gain des lueurs de nuit (halos des bars, lueur des rues) : 1 par défaut, plus fort sous la pluie (US005) */
   glow: number;
+  /** Lumières de la ville allumées au moins à cette part (0 à 1) : 0 par défaut, plus en plein jour sous l'orage (US008) */
+  lit: number;
   sky: THREE.Color; key: THREE.Color; bg: THREE.Color[];
 }
 
@@ -48,4 +52,11 @@ export function applyWeatherSky(v: SkyValues, w: SkyLook, dayF: number): void {
     c.lerp(grey.setRGB(l, l, l), 0.6 * o).multiplyScalar(1 - 0.06 * o * dayF);
   }
   v.exposure *= 1 - 0.07 * o * dayF;
+  if (w.storm > 0) { // orage : ciel noir, la ville allume ses lumières
+    const s = STORM.dark * w.storm * dayF;
+    v.hemiI *= 1 - s;
+    v.exposure *= 1 - 0.3 * s;
+    for (const c of v.bg) c.multiplyScalar(1 - 1.2 * s);
+    v.lit = STORM.lights * w.storm;
+  }
 }

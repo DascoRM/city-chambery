@@ -65,7 +65,7 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
   let day = initial.day, hour = initial.hour, night = 0;
   // Météo (EP009) : modificateur fourni par le module météo (chargé à la demande), appliqué après l'heure ; sans lui, rien ne change
   let weather: ((v: SkyValues, dayF: number) => void) | null = null;
-  const sv: SkyValues = { hemiI: 0, keyI: 0, exposure: 0, glow: 1, sky, key: keyCol, bg };
+  const sv: SkyValues = { hemiI: 0, keyI: 0, exposure: 0, glow: 1, lit: 0, sky, key: keyCol, bg };
   let lastBg = '';
   const lastSun = new THREE.Vector3(NaN, NaN, NaN);
   const listeners: ((h: number, night: number) => void)[] = [];
@@ -89,7 +89,8 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
     sv.keyI = lerp(NIGHT.keyI, DAY.keyI, dayF);
     sv.exposure = lerp(NIGHT.exposure, DAY.exposure, dayF);
     sv.glow = 1;
-    weather?.(sv, dayF); // météo (EP009) : ciel voilé, lumière grise, fond désaturé ; lueurs de nuit plus fortes sous la pluie
+    sv.lit = 0;
+    weather?.(sv, dayF); // météo (EP009) : ciel voilé, lumière grise, fond désaturé ; lueurs de nuit plus fortes sous la pluie, éclairs
     const { hemiI, keyI, exposure, glow: glowGain } = sv;
 
     // Soleil le jour (repère : x = est, −z = nord, y = haut), lune la nuit (fixe, haute, un peu à l'ouest)
@@ -114,7 +115,7 @@ export function createDayNight(d: DayNightDeps, initial: { day: LocalDate; hour:
     d.renderer.toneMappingExposure = exposure;
 
     // Lumières de la ville
-    d.night.uNight.value = THREE.MathUtils.smoothstep(night + dusk * 0.4, 0.25, 0.9);
+    d.night.uNight.value = Math.max(sv.lit, THREE.MathUtils.smoothstep(night + dusk * 0.4, 0.25, 0.9)); // orage de jour (EP009-US008)
     // Fenêtres (EP001-US003) : la part allumée suit l'heure (rentrée le soir, extinction dans la nuit, réveil le matin) ;
     // le shader allume une fenêtre si son hachage est sous uLit : quand uLit baisse, elles s'éteignent une à une, sans
     // clignoter, toujours dans le même ordre. On ne les voit que quand il fait sombre (uNight)
