@@ -16,7 +16,8 @@ import type { AdminStatusResponse, DbStatus, HealthResponse } from '../../contra
 import { loginRequest, type SessionInfo } from '../../contrat/session.js';
 import { addParking, listEdits, recentLog, removeEdit, saveOverride, type Db } from './parkings.js';
 import { createWeatherService, type WeatherDeps } from './meteo/service.js';
-import { weatherRoutes } from './meteo/routes.js';
+import { weatherAdminRoutes, weatherRoutes } from './meteo/routes.js';
+import { overrideStore } from './meteo/override-store.js';
 
 // Messages de validation en français : ils remontent jusqu'à l'administration (« source : Trop petit : … »)
 z.config(fr());
@@ -65,7 +66,9 @@ export interface AppDeps {
 export function createApp(env: Env = process.env, deps: AppDeps = {}) {
   const app = new Hono().basePath('/api');
   const getDb = deps.db ?? (() => { const c = database(env); return c.ok ? (c.db as unknown as Db) : null; });
-  const weather = createWeatherService({ fetch: deps.weather?.fetch, now: deps.now });
+  /** Forçage de la météo (EP009-US012) : rangé dans la base quand elle existe ; sans base, jamais de forçage */
+  const weatherStore = () => { const db = getDb(); return db ? overrideStore(db) : null; };
+  const weather = createWeatherService({ fetch: deps.weather?.fetch, now: deps.now, overrides: weatherStore });
 
   app.use('*', async (c, next) => {
     await next();
@@ -121,6 +124,7 @@ export function createApp(env: Env = process.env, deps: AppDeps = {}) {
   });
   admin.get('/session', (c) => c.json(c.get('session') satisfies SessionInfo));
   admin.get('/ping', (c) => c.json({ ok: true }));
+  admin.route('/weather', weatherAdminRoutes(weather, weatherStore)); // EP009-US012 : état, forçage pour les démos, coupure
   admin.get('/status', async (c) => {
     const base = { version: appVersion(env), env: appEnv(env), node: process.version, region: env.VERCEL_REGION ?? null };
     const target = resolveDatabase(env);

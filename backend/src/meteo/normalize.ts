@@ -1,4 +1,4 @@
-import type { WeatherAttribution, WeatherCondition, WeatherResponse } from '../../../contrat/meteo.js';
+import { WEATHER_PRESETS, type WeatherAttribution, type WeatherCondition, type WeatherOverride, type WeatherResponse } from '../../../contrat/meteo.js';
 import { WEATHER_MODEL, type Upstream } from './open-meteo.js';
 
 /**
@@ -34,6 +34,9 @@ const round = (x: number, d = 2) => Math.round(x * 10 ** d) / 10 ** d;
 export const intensity = (mmH: number, full: number) => clamp01(Math.log1p(Math.max(0, mmH)) / Math.log1p(full));
 /** 1 à 200 m ou moins, 0,5 à 1 000 m (définition du brouillard), 0 à 5 km ou plus */
 export const fogFromVisibility = (m: number) => clamp01(Math.log(FOG_CLEAR_M / Math.max(1, m)) / Math.log(FOG_CLEAR_M / FOG_FULL_M));
+/** Réciproques (météo forcée : des mm/h et une visibilité cohérents avec les intensités choisies) */
+const mmHForIntensity = (i: number, full: number) => Math.expm1(clamp01(i) * Math.log1p(full));
+const visibilityForFog = (f: number) => Math.round(FOG_CLEAR_M / (FOG_CLEAR_M / FOG_FULL_M) ** clamp01(f));
 
 /** Les 29 codes WMO documentés par Open-Meteo (page lue le 09/10/2026) ; un code absent n'a pas de condition */
 const WMO: Record<number, WeatherCondition> = {
@@ -99,5 +102,41 @@ export function normalize(u: Upstream, fetchedAtMs: number): WeatherResponse {
     fog,
     thunder,
     attribution: ATTRIBUTION,
+  };
+}
+
+/**
+ * Météo forcée depuis l'administration (US012) : les valeurs types du contrat (`WEATHER_PRESETS`) avec les MÊMES règles que
+ * `presetLook` de la carte (`?weather=`), donc le même rendu ; `intensity` remplace l'intensité principale (pluie seule, neige
+ * seule ou brouillard ; ignorée pour « pluie et neige » et le ciel sec) ; vent par défaut 10 km/h d'ouest. Rien d'inventé
+ * (règle 1) : ni température, ni modèle, ni crédit de la source.
+ */
+export function forcedResponse(o: WeatherOverride & { condition: WeatherCondition }): WeatherResponse {
+  const p = WEATHER_PRESETS[o.condition];
+  const rain = p.rainIntensity > 0 && p.snowIntensity === 0 ? (o.intensity ?? p.rainIntensity) : p.rainIntensity;
+  const snow = p.snowIntensity > 0 && p.rainIntensity === 0 ? (o.intensity ?? p.snowIntensity) : p.snowIntensity;
+  const fog = p.fog > 0 ? (o.intensity ?? p.fog) : 0;
+  return {
+    v: 1,
+    source: 'admin',
+    model: null,
+    observedAt: o.since,
+    fetchedAt: o.since,
+    stale: false,
+    forced: true,
+    forcedUntil: o.until,
+    condition: o.condition,
+    temperatureC: null,
+    cloudCover: p.cloudCover,
+    precipMmH: round(mmHForIntensity(rain, RAIN_FULL_MMH) + mmHForIntensity(snow, SNOW_FULL_MMH)),
+    rainIntensity: round(rain),
+    snowIntensity: round(snow),
+    windKmh: o.windKmh ?? 10,
+    windGustKmh: null,
+    windFromDeg: o.windFromDeg ?? 270,
+    visibilityM: fog > 0 ? visibilityForFog(fog) : null,
+    fog: round(fog),
+    thunder: p.thunder,
+    attribution: null,
   };
 }
