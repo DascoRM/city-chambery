@@ -10,9 +10,9 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** un vent réel (ou `?weather=rain&wind=60&windfrom=200`), **Then** fumées et drapeaux tournent et se couchent en 6 s environ selon la direction et la force (aujourd'hui figés à la construction)
-- [ ] **Given** un vent de plus de 25 km/h et `qualityLevel` au moins `medium`, **Then** les arbres se balancent ; coût mesuré avant / après (Mac, puis téléphone) et noté ; rien en `low` ni en réduit-mouvement
-- [ ] **Given** l'automne, **Then** quelques feuilles volent (facultatif)
+- [x] **Given** un vent réel (ou `?weather=rain&wind=60&windfrom=200`), **Then** fumées et drapeaux tournent et se couchent en 6 s environ selon la direction et la force (aujourd'hui figés à la construction) *(fondu τ = 6 s : 63 % en 6 s, 95 % en 18 s ; la météo écrit l'objet `wind` partagé, la fumée le relit toutes les 0,5 s, les drapeaux à chaque image)*
+- [x] **Given** un vent de plus de 25 km/h et `qualityLevel` au moins `medium`, **Then** les arbres se balancent ; coût mesuré avant / après (Mac, puis téléphone) et noté ; rien en `low` ni en réduit-mouvement *(progressif de 25 à 60 km/h, 0,6 m au plus en haut d'un arbre de 10 m ; arbres simples et modélisés en `medium` comme en `high` ; coût dans le bruit sur le Mac, téléphone non mesuré)*
+- [ ] **Given** l'automne, **Then** quelques feuilles volent (facultatif) *(non fait)*
 
 ---
 
@@ -41,14 +41,14 @@ Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 4.
 ---
 
 ## Checklist dev
-- [ ] Branche `feat/EP009-US009-vent` depuis `feat/EP009-meteo`
-- [ ] `npm run build` et `npm test` ; vérifié dans le navigateur avec `?weather=…&wind=…&windfrom=…` et `?debug`
-- [ ] Fluidité : mesure avant / après le balancement des arbres (Mac avec la puce graphique, puis téléphone)
-- [ ] Le site marche sans la météo
-- [ ] FEATURES, CHANGELOG, DECISIONS
+- [x] Branche `feat/EP009-US009-vent` depuis `feat/EP009-meteo`
+- [x] `npm run build` et `npm test` ; vérifié dans le navigateur avec `?weather=…&wind=…&windfrom=…` et `?debug`
+- [x] Fluidité : mesure avant / après le balancement des arbres (Mac avec la puce graphique, puis téléphone) *(Mac fait ; téléphone : Dasco)*
+- [x] Le site marche sans la météo
+- [x] FEATURES, CHANGELOG, DECISIONS
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : Low
-**Status** : 🔲 Todo
+**Status** : ✅ Done (10/10/2026, itération 97) ; rendu à juger par Dasco

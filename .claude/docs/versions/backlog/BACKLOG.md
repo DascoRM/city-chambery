@@ -106,7 +106,11 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ❓ Neige : ville déjà blanche à l'ouverture de la page quand il neige (aujourd'hui elle blanchit en ≈ 1 min devant le visiteur) ? — *Dasco*
 - ⬜ Neige : la carte ne connaît que la neige qui tombe ; la hauteur de neige au sol d'Open-Meteo (`snow_depth`, non vérifiée pour ICON à Chambéry) demanderait un champ de plus au contrat et au back — non étudié
 - ⬜ Neige : les têtes des passants ont maintenant leur propre programme (+1 au démarrage, 45 → 46) ; les crocheter avec `{ wet: 0, snow: 0 }` l'éviterait (≈ 40 o) — *petit, si le démarrage sur téléphone le justifie*
-- 🔄 *10/10* Orage (US008), vent (US009), nuages (US010) : engagés par Dasco, en planification
+- ✅ *itération 97* Orage (US008), vent (US009), nuages (US010), d'après le plan de l'agent du front
+- ⬜ Juger orage, vent et nuages (`?weather=thunder`, `?weather=cloudy&wind=60`, `?weather=partly`, de jour et de nuit, dans les quatre vues) : lumières de la ville à 35 % sous l'orage de jour, éclair sur le fond de page, nuages tramés pendant qu'ils apparaissent, fumée en chapelet par grand vent, drapeaux qui claquent 1,4 fois plus vite avec tout relevé — *Dasco*
+- ❓ Orage forcé (adresse, admin) avec un vent fort par défaut (50 km/h d'ouest) pour que les arbres bougent en démo ? Valeurs types du contrat, carte, back, tests — *Dasco*
+- ⬜ Vent : feuilles qui volent en automne (US009, facultatif, ≈ 0,5 j) — non fait
+- ⬜ Chunk principal : + 3,03 Ko sur 3,5 depuis le début d'EP009 ; module météo 12,9 Ko (règle 12 estimait 8 à 10 Ko, chargé à la demande)
 - ⬜ US011 (finitions) : à engager ou non — *Dasco*
 - ✅ *itération 96* US012 : la météo dans l'administration (écran, forçage pour les démos, coupure ; fin d'un forçage relue 5 s après par la carte)
 - ⬜ Essayer le forçage sur la prévisualisation (`/admin/#/meteo` : forcer la neige 15 min, couper, revenir au réel ; téléphone) — *Dasco*

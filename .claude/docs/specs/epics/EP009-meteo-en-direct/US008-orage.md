@@ -10,11 +10,11 @@
 
 ## Critères d'acceptation
 
-- [ ] **Given** `?weather=thunder`, **Then** forte pluie, ciel assombri, éclairs (passe finale et lumière d'ambiance), un trait d'éclair de temps en temps, loin de la caméra
-- [ ] **Given** les éclairs, **Then** jamais plus de 3 par seconde, 6 à 20 s entre deux salves, amplitude bornée (planificateur pur et testé sur 1 000 tirages)
-- [ ] **Given** `prefers-reduced-motion` ou « Effets réduits », **Then** aucun éclair ni flash
-- [ ] **Given** l'orage, **Then** soleil et ombres immobiles (aucun recalcul de la carte des ombres)
-- [ ] **Given** un orage de jour, **Then** les lumières de la ville peuvent s'allumer sous le ciel noir (à juger avec Dasco)
+- [x] **Given** `?weather=thunder`, **Then** forte pluie, ciel assombri, éclairs (passe finale et lumière d'ambiance), un trait d'éclair de temps en temps, loin de la caméra *(trait : 32 segments, 1 appel pendant 150 ms, même programme que les anneaux des gemmes ; aucun en qualité basse)*
+- [x] **Given** les éclairs, **Then** jamais plus de 3 par seconde, 6 à 20 s entre deux salves, amplitude bornée (planificateur pur et testé sur 1 000 tirages) *(6 à 20 s comptés de la fin d'une salve au début de la suivante ; première salve 2 à 6 s après l'arrivée de l'orage ; flash : passe finale × 0,35, ambiance × 0,9, ciel et fond de page éclairés aussi, R2 « 0,3 à 0,6 » délavait l'image)*
+- [x] **Given** `prefers-reduced-motion` ou « Effets réduits », **Then** aucun éclair ni flash
+- [x] **Given** l'orage, **Then** soleil et ombres immobiles (aucun recalcul de la carte des ombres)
+- [x] **Given** un orage de jour, **Then** les lumières de la ville peuvent s'allumer sous le ciel noir (à juger avec Dasco) *(35 %, `STORM.lights`)*
 
 ---
 
@@ -43,14 +43,14 @@ Détail technique : [plan front v2](../../../tasks/ep009-front-plan-v2.md) § 4.
 ---
 
 ## Checklist dev
-- [ ] Branche `feat/EP009-US008-orage` depuis `feat/EP009-meteo`
-- [ ] `npm run build` et `npm test` (`weather/lightning.test.ts`) ; vérifié dans le navigateur avec `?weather=thunder` et `?debug`
-- [ ] Fluidité : compteur `?debug` avant / après
-- [ ] Le site marche sans la météo
-- [ ] FEATURES, CHANGELOG, DECISIONS
+- [x] Branche `feat/EP009-US008-orage` depuis `feat/EP009-meteo`
+- [x] `npm run build` et `npm test` (`weather/lightning.test.ts`) ; vérifié dans le navigateur avec `?weather=thunder` et `?debug`
+- [x] Fluidité : compteur `?debug` avant / après
+- [x] Le site marche sans la météo
+- [x] FEATURES, CHANGELOG, DECISIONS
 - [ ] Validé par Dasco
 
 ---
 
 **Priorité** : Low
-**Status** : 🔲 Todo
+**Status** : ✅ Done (10/10/2026, itération 97) ; rendu à juger par Dasco
