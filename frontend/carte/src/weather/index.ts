@@ -25,8 +25,6 @@ export interface WeatherCtx extends EffectsCtx {
   camera: THREE.Camera;
   /** Point regardé (brouillard, précipitations) */
   focus(): THREE.Vector3;
-  /** Vent de beau temps (content/life.json) : objet partagé par la fumée et les drapeaux (US009 le fera varier) */
-  wind: { towards: number; speed: number };
   /** Pose le modificateur du ciel dans le cycle jour/nuit et le recalcule (dayNight.setWeather) */
   sky(modifier: (v: SkyValues, dayF: number) => void): void;
   clock(): ClockState;

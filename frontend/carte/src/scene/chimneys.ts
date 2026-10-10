@@ -91,8 +91,7 @@ export function buildChimneys(
   const group = new THREE.Group();
   group.name = 'chimneys-group';
   group.add(mesh, smoke.points);
-  const wa = (cfg.wind.towards * Math.PI) / 180;
-  const drift: [number, number, number] = [Math.cos(wa) * cfg.wind.speed, 0, -Math.sin(wa) * cfg.wind.speed];
+  const drift: [number, number, number] = [0, 0, 0];
   const DAY = ['#e9e6e1', '#dcd8d1', '#f1efea'], NIGHT = ['#55596a', '#4b4f5e', '#5f6373'];
   const puff: EmitOptions = { count: 1, speed: [0.05, 0.25], up: 1.1, life: [6, 9], size: 1.6, grow: 4, colors: DAY, drag: 0.04, spread: 0.15, drift };
   let emitters: number[] = [];
@@ -102,6 +101,10 @@ export function buildChimneys(
     check -= dt;
     if (check <= 0) {
       check = 0.5;
+      // Vent : objet partagé avec les drapeaux, que la météo fait varier (EP009-US009) ; les bouffées suivantes le suivent
+      const wa = (cfg.wind.towards * Math.PI) / 180;
+      drift[0] = Math.cos(wa) * cfg.wind.speed;
+      drift[2] = -Math.sin(wa) * cfg.wind.speed;
       density = cfg.density[ctx.season()] ?? 0;
       const f = ctx.focus(), d2 = cfg.distance * cfg.distance;
       emitters = tops.map((t, i) => ({ i, d: (t.x - f.x) ** 2 + (t.z - f.z) ** 2 })).filter((o) => o.d < d2).sort((a, b) => a.d - b.d).slice(0, cfg.maxEmitters).map((o) => o.i);

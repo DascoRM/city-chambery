@@ -32,7 +32,7 @@ export function seasonalName(name: string, foliage: Foliage, seasons?: NatureSea
   return `${m[1]}_${foliage === 'autumn' ? seasons.autumn : seasons.bare}_${m[2]}`;
 }
 
-const material = weatherSurface(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }), { wet: 0 }); // neige sur les arbres (EP009-US007)
+const material = weatherSurface(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.9 }), { wet: 0, sway: true }); // neige sur les arbres (EP009-US007), vent (US009)
 
 /** Test « cet emplacement est dans la zone » ; null si la zone ne correspond à rien dans city.json. */
 function zoneTest(zone: NatureZone, data: CityData): ((p: Pt) => boolean) | null {
