@@ -46,3 +46,11 @@ button:disabled { opacity: 0.6; cursor: progress; }
 .tab { padding: 7px 14px; border-radius: 99px; border: 1px solid var(--line); color: var(--ink); text-decoration: none; font-weight: 600; }
 .tab.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 .tabs button { margin: 0 0 0 auto; }
+/* Météo (EP009-US012) : pastille de ce que voient les visiteurs, choix forcer ou couper, forçage en cours, lien d'aperçu */
+.badge { display: inline-block; margin-left: 8px; padding: 1px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; vertical-align: 1px; color: #fff; background: var(--muted); }
+.badge.ok { background: var(--teal); }
+.badge.warn { background: var(--bad); }
+.radios { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.bar.current { align-items: center; justify-content: space-between; }
+.bar.current p { margin: 0; }
+.bar .preview { align-self: center; font-weight: 600; }

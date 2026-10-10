@@ -160,7 +160,10 @@ describe('réponse du back (US004) → relevé de la carte', () => {
     const s = resolveWeather(inputs({ reading: forced }), NOW, CLEAR);
     expect(chipOf(s, false)).toMatchObject({ text: 'Démo', label: 'Météo forcée (démo) : Pluie' });
     expect(panelOf(s, NOW)).toMatchObject({ title: 'Pluie', lines: ['Météo forcée (démo) par l’administration, jusqu’à 11 h 00.'] });
-    expect(resolveWeather(inputs({ reading: forced }), Date.parse('2026-10-09T09:00:01Z'), CLEAR).status).toBe('unavailable');
+    // Fini : ciel par défaut et puce masquée en attendant la relecture (5 s après la fin), pas « Indisponible » (US012)
+    const after = resolveWeather(inputs({ reading: forced }), Date.parse('2026-10-09T09:00:01Z'), CLEAR);
+    expect(after).toMatchObject({ status: 'waiting', target: CLEAR });
+    expect(chipOf(after, false)).toBeNull();
   });
   it('panneau en direct : relevé, vent en mots, crédit (texte, lien, licence)', () => {
     const p = panelOf(resolveWeather(inputs({ reading: readingFromResponse(body) }), NOW, CLEAR), NOW);

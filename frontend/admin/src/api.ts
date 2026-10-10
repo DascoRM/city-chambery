@@ -46,6 +46,7 @@ export function errorMessage(status: number, body: ApiErrorBody | null, notFound
 /** Noms français des champs de l'API, pour dire lequel est refusé */
 const FIELD: Record<string, string> = {
   id: 'identifiant', hide: 'masquer', name: 'nom', fee: 'tarif', capacity: 'places', kind: 'type', pos: 'position', note: 'note', source: 'source',
+  mode: 'mode', condition: 'condition', intensity: 'intensité', windKmh: 'vent', windFromDeg: 'direction du vent', minutes: 'durée', // météo (EP009-US012)
 };
 
 /** « places : Trop grand … ; source : Trop petit … » à partir des champs refusés (par le back ou par le contrat ici) */

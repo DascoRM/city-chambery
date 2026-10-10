@@ -147,14 +147,16 @@ export function resolveWeather(i: WeatherInputs, nowMs: number, clear: WeatherLo
   if (i.url) return out('url', i.url.look, i.url.condition);
   if (i.debug) return out('debug', i.debug.look, i.debug.condition);
   if (i.api === 'none') return out('none');
-  // Forçage terminé (le back reprend seul la météo réelle) : on ne le garde pas au-delà de sa fin
-  const r = i.reading?.forced && i.reading.forcedUntilMs !== null && nowMs > i.reading.forcedUntilMs ? null : i.reading;
+  // Forçage terminé (le back reprend seul la météo réelle) : on ne le garde pas au-delà de sa fin ; en attendant la relecture
+  // (5 s après la fin, client.ts), ciel par défaut sans puce, plutôt que « Indisponible »
+  const ended = !!i.reading?.forced && i.reading.forcedUntilMs !== null && nowMs > i.reading.forcedUntilMs;
+  const r = ended ? null : i.reading;
   if (r?.forced) return out('admin', r.look, r.condition, r);
   if (i.api === 'disabled') return out('disabled');
   if (!i.live) return out('simulated', clear, 'clear');
   const age = r ? nowMs - r.observedAtMs : Infinity;
   if (r && age <= WEATHER_MAX_AGE_S * 1000) return out(r.stale || age > OLD_AFTER_S * 1000 ? 'stale' : 'live', r.look, r.condition, r);
-  return out(i.api === 'waiting' ? 'waiting' : 'unavailable');
+  return out(i.api === 'waiting' || ended ? 'waiting' : 'unavailable');
 }
 
 // --- Textes de la puce et du panneau ---------------------------------------------------------------

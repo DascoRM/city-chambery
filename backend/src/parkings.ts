@@ -1,4 +1,4 @@
-import { asc, desc, eq } from 'drizzle-orm';
+import { asc, desc, eq, ne } from 'drizzle-orm';
 import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { publishedAdded, publishedOverride, type AddedInput, type OverrideInput, type PublishedEdits } from '../../contrat/parkings.js';
 import * as schema from './db/schema.js';
@@ -60,5 +60,6 @@ export async function removeEdit(db: Db, id: string): Promise<boolean> {
 }
 
 export async function recentLog(db: Db, limit = 30) {
-  return db.select().from(editLog).orderBy(desc(editLog.at), desc(editLog.id)).limit(limit);
+  // Le journal des forçages de la météo (EP009-US012, cible `meteo`) n'est pas une retouche de parking
+  return db.select().from(editLog).where(ne(editLog.target, 'meteo')).orderBy(desc(editLog.at), desc(editLog.id)).limit(limit);
 }
