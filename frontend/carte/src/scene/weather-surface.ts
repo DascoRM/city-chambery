@@ -6,8 +6,13 @@ import * as THREE from 'three';
  * le module météo ne règle que les uniformes. Comme `fadeMaterial` (cutaway.ts) : l'`onBeforeCompile` existant est enchaîné, la clé
  * du programme est étendue une fois pour toutes. Par beau temps (`uWet` et `uSnow` à 0), les branches ne sont pas prises : image
  * inchangée. Chaque matériau dit combien il se mouille et se couvre de neige (uniformes à lui : même programme pour tous).
+ * Arbres : balancement au vent (US009), dans le vertex shader, inactif tant que l'amplitude (`uSway.x`) vaut 0.
  */
-export const weatherUniforms = { uWet: { value: 0 }, uSnow: { value: 0 } };
+export const weatherUniforms = {
+  uWet: { value: 0 }, uSnow: { value: 0 },
+  /** Balancement : amplitude (m par m² de hauteur), temps (s), direction où va le vent (x, z) */
+  uSway: { value: new THREE.Vector4() },
+};
 
 // Mouillé : plus sombre et un peu satiné, surtout sur ce qui regarde vers le ciel (sols, rues, toits) ; pas de vrais reflets.
 // Neige : ce qui regarde vers le ciel (selon la pente, jamais les façades) passe à un blanc bleuté un peu cassé, par plaques (bruit
@@ -34,12 +39,19 @@ const COMMON = /* glsl */ `
     vec2 i = floor(p), f = fract(p), u = f * f * (3.0 - 2.0 * f);
     return mix(mix(wxHash(i), wxHash(i + vec2(1.0, 0.0)), u.x), mix(wxHash(i + vec2(0.0, 1.0)), wxHash(i + 1.0), u.x), u.y);
   }`;
+// Balancement (arbres instanciés seulement) : le houppier penche sous le vent et oscille, d'autant plus qu'il est haut (∝ hauteur²),
+// chaque arbre à son rythme ; déplacement calculé dans le monde puis ramené dans le repère de l'instance (rotation et échelle)
+const SWAY = /* glsl */ `#include <begin_vertex>
+  if (uSway.x > 0.0) {
+    float wxS = length(instanceMatrix[0].xyz), wxH = transformed.y * wxS, wxT = uSway.y + dot(instanceMatrix[3].xz, vec2(0.07, 0.05));
+    transformed += transpose(mat3(instanceMatrix)) * vec3(uSway.z, 0.0, uSway.w) * uSway.x * wxH * wxH * (0.6 + 0.4 * sin(wxT * 1.9)) / (wxS * wxS);
+  }`;
 
 /**
  * Ajoute les crochets « mouillé » et « neige » à un matériau standard, avant sa première compilation.
- * wet, snow : part de mouillé et de neige que prend ce matériau (0 à 1 ; 0 = jamais).
+ * wet, snow : part de mouillé et de neige que prend ce matériau (0 à 1 ; 0 = jamais) ; sway : arbres instanciés qui se balancent au vent.
  */
-export function weatherSurface<T extends THREE.MeshStandardMaterial>(mat: T, { wet = 1, snow = 1 } = {}): T {
+export function weatherSurface<T extends THREE.MeshStandardMaterial>(mat: T, { wet = 1, snow = 1, sway = false } = {}): T {
   const previous = mat.onBeforeCompile;
   const base = mat.customProgramCacheKey === THREE.Material.prototype.customProgramCacheKey ? previous.toString() : mat.customProgramCacheKey();
   mat.onBeforeCompile = (shader, renderer) => {
@@ -48,7 +60,8 @@ export function weatherSurface<T extends THREE.MeshStandardMaterial>(mat: T, { w
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>${COMMON}`)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>${GLSL}`);
+    if (sway) shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nuniform vec4 uSway;').replace('#include <begin_vertex>', SWAY);
   };
-  mat.customProgramCacheKey = () => `${base}|wet`;
+  mat.customProgramCacheKey = () => `${base}|wet${sway ? '|sway' : ''}`;
   return mat;
 }

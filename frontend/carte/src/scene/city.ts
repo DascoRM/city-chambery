@@ -539,7 +539,7 @@ function buildTrees(data: CityData, terrain: Terrain): CityTrees & { group: THRE
   canopyGeo.translate(0, 7.5, 0);
   const trunkGeo = new THREE.CylinderGeometry(0.5, 0.7, 5, 5);
   trunkGeo.translate(0, 2.5, 0);
-  const canopy = new THREE.InstancedMesh(canopyGeo, weatherSurface(new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), { wet: 0 }), spots.length); // neige (EP009-US007)
+  const canopy = new THREE.InstancedMesh(canopyGeo, weatherSurface(new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), { wet: 0, sway: true }), spots.length); // neige (EP009-US007), vent (US009)
   const trunk = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: PALETTE.trunk, roughness: 1 }), spots.length);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), c = new THREE.Color();
   const base: THREE.Matrix4[] = [];

@@ -5,7 +5,7 @@ import { weatherUniforms } from '../scene/weather-surface';
 import { fogColorFor, fogRange } from './fog';
 import { FULL_BUDGET, nextBudget, type RainBudget } from './budget';
 import { RAIN_COUNT, SNOW_COUNT, createRain, type PrecipKind, type Rain } from './rain';
-import { approach, type WeatherLook } from './state';
+import { approach, windVisual, type WeatherLook } from './state';
 
 /**
  * Effets de la météo sur la scène (EP009), dans le module chargé à la demande. Tout ce qui touche aux matériaux standards a été
@@ -18,12 +18,15 @@ import { approach, type WeatherLook } from './state';
  *    de la passe finale (sinon liseré clair autour du socle).
  *  - Pluie (US005) : deux nappes de traînées (weather/rain.ts), sol mouillé, lueurs de nuit un peu plus fortes, règle de dégradation.
  *  - Neige (US007) : deux nappes de flocons (même système), neige au sol qui s'accumule et fond, même règle de dégradation.
+ *  - Vent (US009) : l'objet partagé que lisent la fumée et les drapeaux suit la météo (fondu de 6 s) ; balancement des arbres.
  */
 export interface EffectsCtx {
   scene: THREE.Scene;
   camera: THREE.Camera;
   /** Point regardé */
   focus(): THREE.Vector3;
+  /** Vent partagé par la fumée et les drapeaux (main.ts ; content/life.json par beau temps), que la météo fait varier */
+  wind: { towards: number; speed: number };
   /** Taille du socle (m) et ses limites (données) */
   size: number;
   bounds: CityData['bounds'];
@@ -51,6 +54,13 @@ export const WINTER_SNOW = 0.8;
 
 /** Neige au sol visée : celle qui tombe, et au moins la neige d'ambiance en hiver choisi */
 export const lyingTarget = (snow: number, winter: boolean) => Math.max(winter ? WINTER_SNOW : 0, Math.min(1, snow * SNOW_COVER.perSnow));
+/** Balancement des arbres : à partir de 25 km/h, pleinement à 60 ; amplitude (m par m² de hauteur : 0,6 m en haut d'un arbre de 10 m) */
+export const SWAY = { fromKmh: 25, fullKmh: 60, amp: 0.006 };
+
+const smooth = (e0: number, e1: number, x: number) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
+/** Amplitude du balancement pour un vent « de maquette » (m/s) ; aucun en qualité basse ni avec le réduit-mouvement */
+export const swayAmount = (windSpeed: number, quality: QualityLevel, reduced: boolean) =>
+  quality === 'low' || reduced ? 0 : SWAY.amp * smooth(windVisual(SWAY.fromKmh), windVisual(SWAY.fullKmh), windSpeed);
 
 export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
   const fog = ctx.scene.fog as THREE.Fog | null; // posé inactif au démarrage (stage.ts)
@@ -84,7 +94,7 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
   const count = { rain: countOf('rain', RAIN_COUNT), snow: countOf('snow', SNOW_COUNT) };
   let budget: RainBudget = { ...FULL_BUDGET };
   ctx.onFpsSample((fps, atMin) => { if (precip.rain?.visible() || precip.snow?.visible()) budget = nextBudget(budget, fps, atMin); });
-  let wet = 0, glow = 1, lying = 0, winter = false;
+  let wet = 0, glow = 1, lying = 0, winter = false, swayT = 0;
 
   return {
     /** Saison « Hiver » choisie à la main : la neige d'ambiance arrive ou part d'un coup, comme le feuillage des arbres */
@@ -129,6 +139,15 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
           (precip[kind] ??= createRain(ctx.scene, count[kind], ctx.bounds, kind))
             .update(dt, f, ctx.camera.position.distanceTo(f), r, raw, { speed: look.windSpeed, towards: look.windTowards }, ctx.night(), reduced() ? 0.3 : 1);
         } else if (p?.visible()) p.hide();
+      }
+      // Vent : la fumée et les drapeaux lisent l'objet partagé ; les arbres se balancent (amplitude lissée, rien par vent faible)
+      ctx.wind.speed = look.windSpeed;
+      ctx.wind.towards = look.windTowards;
+      const sway = weatherUniforms.uSway.value, swayTarget = swayAmount(look.windSpeed, ctx.quality, reduced());
+      if (sway.x > 0 || swayTarget > 0) {
+        const amp = approach(sway.x, swayTarget, dt, 2), a = (look.windTowards * Math.PI) / 180;
+        swayT = (swayT + dt) % 1e5;
+        sway.set(swayTarget === 0 && amp < 1e-5 ? 0 : amp, swayT, Math.cos(a), -Math.sin(a));
       }
       // Neige au sol : s'accumule en une minute environ, fond en quelques minutes
       const lyingTo = lyingTarget(look.snow, winter);

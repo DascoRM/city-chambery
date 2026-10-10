@@ -79,7 +79,8 @@ export function buildFlags(
   };
   clothMat.customProgramCacheKey = () => 'flag-cloth';
   const poleMat = new THREE.MeshStandardMaterial({ color: '#e8e4dc', metalness: 0.4, roughness: 0.4 });
-  const windAngle = (ctx.wind.towards * Math.PI) / 180;
+  const cloths: THREE.Mesh[] = [];
+  const speed0 = ctx.wind.speed; // vent de beau temps (content/life.json) : le drapeau d'avant
 
   for (const s of specs) {
     let x: number, y: number, ring: { outer: Pt[]; holes: Pt[][] } | undefined;
@@ -108,8 +109,8 @@ export function buildFlags(
     mat.onBeforeCompile = (shader, r) => { clothMat.onBeforeCompile(shader, r); shader.vertexShader = shader.vertexShader.replace('FLAG_W', W.toFixed(2)); };
     mat.customProgramCacheKey = () => `flag-cloth-${W}`;
     const cloth = new THREE.Mesh(geo, mat);
-    cloth.rotation.y = windAngle; // Three.js : rotation autour de Y depuis +X vers -Z = vers le nord, comme l'angle du vent
     cloth.castShadow = false;
+    cloths.push(cloth);
     flag.add(pole, knob, cloth);
     group.add(flag);
     placed.push({ id: s.id, x: top.x, y: top.y, top: top.h });
@@ -120,10 +121,14 @@ export function buildFlags(
   return {
     group, placed,
     update(dt) {
-      t += dt;
+      // Vent de la météo (EP009-US009, objet partagé avec la fumée) : plus fort, le drapeau claque plus vite et plus loin
+      const w = Math.min(4, ctx.wind.speed / speed0);
+      t += dt * (0.5 + 0.5 * w);
       uniforms.uTime.value = t;
       // Vent qui varie lentement : le drapeau claque plus ou moins
-      uniforms.uStrength.value = 0.75 + 0.25 * Math.sin(t * 0.35) + 0.1 * Math.sin(t * 1.3);
+      uniforms.uStrength.value = (0.75 + 0.25 * Math.sin(t * 0.35) + 0.1 * Math.sin(t * 1.3)) * (0.8 + 0.2 * w);
+      // Three.js : rotation autour de Y depuis +X vers -Z = vers le nord, comme l'angle du vent
+      for (const c of cloths) c.rotation.y = (ctx.wind.towards * Math.PI) / 180;
     },
   };
 }

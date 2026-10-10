@@ -49,5 +49,22 @@ describe('crochets « sol mouillé » et « neige » posés au démarrage (EP009
   it('par beau temps, les uniformes valent 0 : les branches ne sont pas prises', () => {
     expect(weatherUniforms.uWet.value).toBe(0);
     expect(weatherUniforms.uSnow.value).toBe(0);
+    expect(weatherUniforms.uSway.value.x).toBe(0);
+  });
+  it('arbres : balancement au vent dans le vertex shader, seulement sur demande, avec sa propre clé de programme (EP009-US009)', () => {
+    const tree = weatherSurface(new THREE.MeshStandardMaterial(), { wet: 0, sway: true }), roof = weatherSurface(new THREE.MeshStandardMaterial(), { wet: 0 });
+    const vertexShader = '#include <common>\nvoid main() {\n#include <begin_vertex>\n#include <project_vertex>\n}';
+    const st = { ...shader(), vertexShader }, sr = { ...shader(), vertexShader };
+    tree.onBeforeCompile(st as never, {} as never);
+    roof.onBeforeCompile(sr as never, {} as never);
+    expect(st.uniforms.uSway).toBe(weatherUniforms.uSway);
+    expect(st.vertexShader).toMatch(/uniform vec4 uSway;/);
+    const begin = st.vertexShader.indexOf('#include <begin_vertex>'), branch = st.vertexShader.indexOf('if (uSway.x > 0.0)');
+    expect(begin).toBeGreaterThan(0);
+    expect(branch).toBeGreaterThan(begin);
+    expect(branch).toBeLessThan(st.vertexShader.indexOf('#include <project_vertex>'));
+    expect(sr.vertexShader).not.toMatch(/uSway/); // les toits ne bougent pas
+    expect(st.fragmentShader).toBe(sr.fragmentShader);
+    expect(tree.customProgramCacheKey()).toBe(`${roof.customProgramCacheKey()}|sway`);
   });
 });
