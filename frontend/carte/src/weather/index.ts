@@ -76,7 +76,7 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
   /** Le ciel suit la météo lissée `cur` (lue à chaque recalcul du cycle jour/nuit) ; les effets lisent le fond qui en résulte */
   const skyModifier = (v: SkyValues, dayF: number) => {
     applyWeatherSky(v, cur, dayF);
-    v.glow = effects.glow();
+    effects.light(v); // lueurs de nuit sous la pluie, éclairs de l'orage
     effects.readSky(v.bg, v.exposure);
   };
   const pref = loadWeatherPref();

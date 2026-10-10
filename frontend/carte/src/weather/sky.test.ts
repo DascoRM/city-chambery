@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { CLEAR_SKY, applyWeatherSky, overcastOf, type SkyValues } from './sky';
+import { CLEAR_SKY, STORM, applyWeatherSky, overcastOf, type SkyValues } from './sky';
 
 /** Valeurs de plein jour de daynight.ts (DAY) : ce que la scène affiche aujourd'hui */
 const day = (): SkyValues => ({
-  hemiI: 1.1, keyI: 2.4, exposure: 1.05, glow: 1,
+  hemiI: 1.1, keyI: 2.4, exposure: 1.05, glow: 1, lit: 0,
   sky: new THREE.Color('#fff4e0'), key: new THREE.Color('#ffe2b8'),
   bg: ['#fdf3e1', '#f0dfc4', '#d9c3a3'].map((c) => new THREE.Color(c)),
 });
@@ -47,5 +47,25 @@ describe('modificateur météo du ciel (EP009-US002)', () => {
     expect(overcastOf({ ...CLEAR_SKY, cloud: 0.45 })).toBeGreaterThan(0);
     expect(overcastOf({ ...CLEAR_SKY, cloud: 0.45 })).toBeLessThan(overcastOf({ ...CLEAR_SKY, cloud: 0.95 }));
     expect(overcastOf({ ...CLEAR_SKY, rain: 0.5 })).toBeCloseTo(0.45);
+  });
+});
+
+describe('orage (EP009-US008)', () => {
+  it('de jour, plus sombre qu’une forte pluie (ambiance, exposition, fond), et la ville allume ses lumières', () => {
+    const rain = day(), storm = day();
+    applyWeatherSky(rain, { ...CLEAR_SKY, cloud: 1, rain: 0.85 }, 1);
+    applyWeatherSky(storm, { ...CLEAR_SKY, cloud: 1, rain: 0.85, storm: 1 }, 1);
+    expect(storm.hemiI).toBeLessThan(rain.hemiI);
+    expect(storm.exposure).toBeLessThan(rain.exposure);
+    storm.bg.forEach((c, i) => expect(c.r + c.g + c.b).toBeLessThan(rain.bg[i].r + rain.bg[i].g + rain.bg[i].b));
+    expect(rain.lit).toBe(0);
+    expect(storm.lit).toBe(STORM.lights);
+    expect(storm.keyI).toBe(rain.keyI); // le soleil voilé pareil : pas d'ombre à recalculer
+  });
+  it('la nuit, seules les lumières de la ville sont concernées (déjà allumées)', () => {
+    const rain = day(), storm = day();
+    applyWeatherSky(rain, { ...CLEAR_SKY, cloud: 1, rain: 0.85 }, 0);
+    applyWeatherSky(storm, { ...CLEAR_SKY, cloud: 1, rain: 0.85, storm: 1 }, 0);
+    expect([storm.hemiI, storm.exposure, storm.bg.map((c) => c.toArray())]).toEqual([rain.hemiI, rain.exposure, rain.bg.map((c) => c.toArray())]);
   });
 });

@@ -5,6 +5,8 @@ import { weatherUniforms } from '../scene/weather-surface';
 import { fogColorFor, fogRange } from './fog';
 import { FULL_BUDGET, nextBudget, type RainBudget } from './budget';
 import { RAIN_COUNT, SNOW_COUNT, createRain, type PrecipKind, type Rain } from './rain';
+import { createBolt, createLightning } from './lightning';
+import type { SkyValues } from './sky';
 import { approach, windVisual, type WeatherLook } from './state';
 
 /**
@@ -19,6 +21,7 @@ import { approach, windVisual, type WeatherLook } from './state';
  *  - Pluie (US005) : deux nappes de traînées (weather/rain.ts), sol mouillé, lueurs de nuit un peu plus fortes, règle de dégradation.
  *  - Neige (US007) : deux nappes de flocons (même système), neige au sol qui s'accumule et fond, même règle de dégradation.
  *  - Vent (US009) : l'objet partagé que lisent la fumée et les drapeaux suit la météo (fondu de 6 s) ; balancement des arbres.
+ *  - Orage (US008) : éclairs (passe finale, lumière d'ambiance, ciel et fond de page) et trait d'éclair, aucun avec le réduit-mouvement.
  */
 export interface EffectsCtx {
   scene: THREE.Scene;
@@ -57,6 +60,13 @@ export const lyingTarget = (snow: number, winter: boolean) => Math.max(winter ? 
 /** Balancement des arbres : à partir de 25 km/h, pleinement à 60 ; amplitude (m par m² de hauteur : 0,6 m en haut d'un arbre de 10 m) */
 export const SWAY = { fromKmh: 25, fullKmh: 60, amp: 0.006 };
 
+/**
+ * Éclair, par unité d'intensité (0,3 à 0,6 par éclair, lightning.ts) : flash de la passe finale, lumière d'ambiance en plus, part de la
+ * couleur de l'éclair dans la lumière du ciel et dans le fond de page. Réglés à l'œil (captures) : plus fort, l'image est délavée
+ */
+export const FLASH = { post: 0.35, hemi: 0.9, sky: 0.5, bg: 0.35 };
+const FLASH_COLOR = new THREE.Color('#dfe6ff');
+
 const smooth = (e0: number, e1: number, x: number) => { const t = Math.min(1, Math.max(0, (x - e0) / (e1 - e0))); return t * t * (3 - 2 * t); };
 /** Amplitude du balancement pour un vent « de maquette » (m/s) ; aucun en qualité basse ni avec le réduit-mouvement */
 export const swayAmount = (windSpeed: number, quality: QualityLevel, reduced: boolean) =>
@@ -94,7 +104,10 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
   const count = { rain: countOf('rain', RAIN_COUNT), snow: countOf('snow', SNOW_COUNT) };
   let budget: RainBudget = { ...FULL_BUDGET };
   ctx.onFpsSample((fps, atMin) => { if (precip.rain?.visible() || precip.snow?.visible()) budget = nextBudget(budget, fps, atMin); });
-  let wet = 0, glow = 1, lying = 0, winter = false, swayT = 0;
+  let wet = 0, glow = 1, lying = 0, winter = false, swayT = 0, flash = 0;
+  // Orage : éclairs planifiés (au plus 3 par seconde), trait d'éclair créé au premier (pas en qualité basse)
+  const lightning = createLightning();
+  let bolt: ReturnType<typeof createBolt> | null = null;
 
   return {
     /** Saison « Hiver » choisie à la main : la neige d'ambiance arrive ou part d'un coup, comme le feuillage des arbres */
@@ -110,11 +123,18 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
       edge[0] = rgb.r; edge[1] = rgb.g; edge[2] = rgb.b;
       exposure = exp;
     },
-    /** Gain des lueurs de nuit, lu par le modificateur du ciel */
-    glow: () => glow,
+    /** Appelé par le modificateur du ciel : lueurs de nuit (plus fortes sous la pluie) et éclair (ambiance, ciel, fond de page) */
+    light(v: SkyValues) {
+      v.glow = glow;
+      if (flash > 0) {
+        v.hemiI += FLASH.hemi * flash;
+        v.sky.lerp(FLASH_COLOR, Math.min(1, FLASH.sky * flash));
+        for (const c of v.bg) c.lerp(FLASH_COLOR, FLASH.bg * flash);
+      }
+    },
     /** Part des gouttes gardée par la règle de dégradation (1, 0,5 ou 0) */
     budget: () => budget.level,
-    /** À chaque image ; renvoie vrai si le ciel doit être recalculé (lueurs de nuit) */
+    /** À chaque image ; renvoie vrai si le ciel doit être recalculé (lueurs de nuit, éclair) */
     update(look: WeatherLook, dt: number): boolean {
       // Brouillard : suit la caméra ; une dernière fois quand il s'en va, pour le remettre au repos
       const k = look.fog;
@@ -149,6 +169,12 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
         swayT = (swayT + dt) % 1e5;
         sway.set(swayTarget === 0 && amp < 1e-5 ? 0 : amp, swayT, Math.cos(a), -Math.sin(a));
       }
+      // Orage : éclairs (aucun avec le réduit-mouvement) ; le soleil ne bouge pas, la carte des ombres n'est pas recalculée
+      const strike = lightning.step(dt, look.storm > 0.5 && !reduced());
+      if (strike.start?.bolt && ctx.quality !== 'low') (bolt ??= createBolt(ctx.scene)).strike(ctx.camera, ctx.focus(), ctx.bounds, Math.random);
+      bolt?.update(dt);
+      const sky = strike.flash * look.storm !== flash;
+      if (sky) { flash = strike.flash * look.storm; ctx.post({ flash: FLASH.post * flash }); }
       // Neige au sol : s'accumule en une minute environ, fond en quelques minutes
       const lyingTo = lyingTarget(look.snow, winter);
       if (lying !== lyingTo) {
@@ -158,12 +184,12 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
       }
       // Sol mouillé : vite à l'humidification, lentement au séchage ; lueurs de nuit un peu plus fortes
       const target = Math.min(1, look.rain * WET.perRain);
-      if (wet === target) return false;
+      if (wet === target) return sky;
       wet = approach(wet, target, dt, target > wet ? WET.tauUp : WET.tauDown);
       if (Math.abs(wet - target) < 1e-3) wet = target;
       weatherUniforms.uWet.value = wet;
       const g = 1 + WET_GLOW * wet;
-      if (Math.abs(g - glow) < 0.01 && wet !== target) return false;
+      if (Math.abs(g - glow) < 0.01 && wet !== target) return sky;
       glow = g;
       return true;
     },
