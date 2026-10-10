@@ -114,6 +114,8 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
     const now = Date.now();
     res = resolveWeather(inputs, now, clear);
     if (!sameLook(res.target, target)) { target = res.target; blending = true; }
+    // Neige d'ambiance de l'hiver choisi à la main (jamais en Direct : la saison y est automatique)
+    effects.setWinter(inputs.enabled && ctx.clock().season === 'winter');
     showChip();
     const a = res.status === 'live' || res.status === 'stale' ? res.reading?.attribution ?? null : null;
     const key = a ? `${a.text}|${a.url}|${a.licence}|${a.licenceUrl}` : '';
@@ -184,6 +186,7 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
     },
     onClock(c) {
       const live = isLive(c);
+      effects.setWinter(inputs.enabled && c.season === 'winter');
       if (live !== inputs.live) { inputs.live = live; update(); }
       else if (ctx.night() > 0.5 !== night) showChip(); // icône de nuit (lune)
     },

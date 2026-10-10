@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SNOW_COVER, WET } from './effects';
+import { SNOW_COVER, WET, WINTER_SNOW, lyingTarget } from './effects';
 import { approach } from './state';
 
 /** Neige au sol après `s` secondes d'une neige constante (ou de fonte, si `snow` vaut 0), par pas d'une image à 60 img/s */
@@ -22,5 +22,11 @@ describe('neige au sol : s’accumule puis fond, comme le sol mouillé (EP009-US
     expect(lying(1, 0, 60)).toBeGreaterThan(0.8);
     expect(lying(1, 0, 900)).toBeLessThan(0.1);
     expect(SNOW_COVER.tauDown).toBeGreaterThan(WET.tauDown);
+  });
+  it('hiver choisi à la main : neige d’ambiance au sol sans neige qui tombe ; une vraie neige peut couvrir davantage', () => {
+    expect(lyingTarget(0, false)).toBe(0);
+    expect(lyingTarget(0, true)).toBe(WINTER_SNOW);
+    expect(lyingTarget(1, true)).toBe(1);
+    expect(lyingTarget(0.2, true)).toBe(WINTER_SNOW);
   });
 });
