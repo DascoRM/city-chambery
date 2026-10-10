@@ -1,5 +1,18 @@
 # Journal des itérations
 
+## Itération 97 — 10/10/2026 (branches `feat/EP009-US009-vent`, `feat/EP009-US008-orage`, `feat/EP009-US010-nuages`, epic EP009)
+
+**Demande de Dasco :** « tu peux faire orage, vent et nuages ».
+
+**Changements :** d'après le plan de l'agent du front ([ep009-us008-us010-plan.md](../tasks/ep009-us008-us010-plan.md)), relu avant d'être appliqué (patchs reportés par l'agent sur la neige d'ambiance) :
+- **vent (US009)** : la météo fait varier l'objet vent partagé (fondu de 6 s) ; la fumée et les drapeaux suivent sa direction et sa force ; au-delà de 25 km/h, les arbres simples et modélisés se balancent (pleinement à 60 km/h), par un crochet de vertex shader posé au démarrage, inactif par beau temps ; pas en qualité basse ni en réduit-mouvement ;
+- **orage (US008)** : planificateur d'éclairs pur et testé (salves de 1 à 3, au plus 3 par seconde, 6 à 20 s entre deux salves) ; flash modéré de la maquette, du ciel et du fond ; trait d'éclair (1 appel pendant 150 ms, même programme que les anneaux des gemmes) ; ciel plus noir qu'une pluie, lumières de la ville à 35 % de jour ; aucun éclair avec « Effets réduits » ou le réglage du système ; ombres jamais recalculées ;
+- **nuages (US010)** : 6 ou 12 nuages instanciés (1 appel) autour du socle, jamais au-dessus de la ville, en nombre selon la couverture, qui dérivent avec le vent, effacés devant la caméra et dans le brouillard ; aucun en qualité basse.
+
+**Vérifié :** `npm run build` et `npm test` (**241 tests**) ; chunk principal + 0,31 Ko (88,49 Ko gzip, **+ 3,03 Ko depuis le début d'EP009** sur 3,5), module météo 12,9 Ko ; dans Chrome avec la puce graphique du Mac, en mouvement, de jour : vent à 60 km/h, orage, éclaircies puis beau temps, pire image 19 ms à chaque arrivée ; programmes +1 avec le ciel couvert (les nuages), +2 avec l'orage (la pluie, les halos des bars allumés de jour), 0 ensuite ; captures regardées (orage avec trait en rue, nuages en vue d'ensemble) ; par l'agent : sans météo, image, appels et programmes identiques ; au plus 2 éclairs observés par seconde ; aucun éclair en réduit-mouvement ; coût par image dans le bruit.
+
+**Non vérifié :** un vrai téléphone (les arbres font ≈ 80 % des triangles) ; Safari, Firefox ; un vrai orage ou un vrai grand vent venant de l'API ; la photosensibilité au-delà de la règle des 3 éclairs par seconde ; le rendu au goût de Dasco (lumières sous l'orage, éclair sur le fond, tramage des nuages qui apparaissent).
+
 ## Itération 96 — 10/10/2026 (branches `feat/EP009-US012-meteo-admin`, `feat/EP009-US007-neige-hiver`, epic EP009)
 
 **Retour / Demande de Dasco :** couleur de la neige la nuit « ok », « très visuel » ; « tu peux ajouter de la neige en mode hiver » ; rues sous la neige « bien comme ça » ; ville qui blanchit à l'ouverture « ok pour le moment » ; « tu peux faire le mode admin » ; « tu peux faire orage, vent et nuages ».

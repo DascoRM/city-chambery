@@ -6,6 +6,7 @@ import { fogColorFor, fogRange } from './fog';
 import { FULL_BUDGET, nextBudget, type RainBudget } from './budget';
 import { RAIN_COUNT, SNOW_COUNT, createRain, type PrecipKind, type Rain } from './rain';
 import { createBolt, createLightning } from './lightning';
+import { CLOUD_COUNT, cloudShare, createClouds, type Clouds } from './clouds';
 import type { SkyValues } from './sky';
 import { approach, windVisual, type WeatherLook } from './state';
 
@@ -22,6 +23,7 @@ import { approach, windVisual, type WeatherLook } from './state';
  *  - Neige (US007) : deux nappes de flocons (même système), neige au sol qui s'accumule et fond, même règle de dégradation.
  *  - Vent (US009) : l'objet partagé que lisent la fumée et les drapeaux suit la météo (fondu de 6 s) ; balancement des arbres.
  *  - Orage (US008) : éclairs (passe finale, lumière d'ambiance, ciel et fond de page) et trait d'éclair, aucun avec le réduit-mouvement.
+ *  - Nuages de maquette (US010) : autour du socle, en nombre selon la couverture, qui dérivent avec le vent (un programme, à leur arrivée).
  */
 export interface EffectsCtx {
   scene: THREE.Scene;
@@ -78,10 +80,10 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
   const edge: [number, number, number] = [1, 1, 1];
   let exposure = 1;
   const rgb = { r: 0, g: 0, b: 0 };
-  let fogOn = false, cover = false;
+  let fogOn = false, cover = false, unpremult = 0;
 
   // Halos des bars (lueur additive) : avec la correction des couleurs prémultipliées, leur alpha (qui n'est pas une couverture)
-  // les éteindrait au-dessus du fond de page ; pendant le brouillard, ils passent « par-dessus » (l'alpha devient une couverture).
+  // les éteindrait au-dessus du fond de page ; pendant la correction, ils passent « par-dessus » (l'alpha devient une couverture).
   // Le mélange est un état du pilote graphique, pas du programme : aucune recompilation.
   const haloMats: THREE.PointsMaterial[] = [];
   ctx.scene.getObjectByName('placeHalos')?.traverse((o) => {
@@ -108,6 +110,7 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
   // Orage : éclairs planifiés (au plus 3 par seconde), trait d'éclair créé au premier (pas en qualité basse)
   const lightning = createLightning();
   let bolt: ReturnType<typeof createBolt> | null = null;
+  let clouds: Clouds | null = null;
 
   return {
     /** Saison « Hiver » choisie à la main : la neige d'ambiance arrive ou part d'un coup, comme le feuillage des arbres */
@@ -147,8 +150,13 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
           const [cr, cg, cb] = fogColorFor(edge, exposure);
           fog.color.setRGB(cr, cg, cb, THREE.LinearSRGBColorSpace);
         }
-        const u = Math.min(1, k / UNPREMULT_FULL);
-        ctx.post({ unpremult: u, veil: FOG_VEIL * k, veilColor: edge });
+        ctx.post({ veil: FOG_VEIL * k, veilColor: edge });
+      }
+      // Correction des couleurs prémultipliées (bords sur le fond de page, sinon liseré clair) : brouillard, nuages (US010)
+      const u = Math.max(Math.min(1, k / UNPREMULT_FULL), clouds?.visible() ?? 0);
+      if (u !== unpremult) {
+        unpremult = u;
+        ctx.post({ unpremult: u });
         if (u > 0 !== cover) { cover = u > 0; halos(cover); }
       }
       // Pluie et neige : deux nappes chacune, autour du point regardé et sur tout le socle (ralenties avec le réduit-mouvement)
@@ -175,6 +183,13 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
       bolt?.update(dt);
       const sky = strike.flash * look.storm !== flash;
       if (sky) { flash = strike.flash * look.storm; ctx.post({ flash: FLASH.post * flash }); }
+      // Nuages de maquette : créés à la première couverture nuageuse (aucun en qualité basse), immobiles avec le réduit-mouvement
+      const share = cloudShare(look.cloud, look.fog, CLOUD_COUNT[ctx.quality]);
+      if (share > 0.01 || clouds?.visible()) {
+        const f = ctx.focus();
+        (clouds ??= createClouds(ctx.scene, CLOUD_COUNT[ctx.quality], ctx.bounds, f.y))
+          .update(dt, share, ctx.camera.position.distanceTo(f), { speed: look.windSpeed, towards: look.windTowards }, ctx.night(), Math.min(1, 1.5 * look.rain + look.snow + look.storm), reduced() ? 0 : 1);
+      }
       // Neige au sol : s'accumule en une minute environ, fond en quelques minutes
       const lyingTo = lyingTarget(look.snow, winter);
       if (lying !== lyingTo) {
