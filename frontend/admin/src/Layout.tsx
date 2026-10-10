@@ -6,6 +6,7 @@ import { useAuth } from './auth';
 const PAGES: { path: string; label: string }[] = [
   { path: '/', label: 'Tableau de bord' },
   { path: '/parkings', label: 'Parkings' },
+  { path: '/meteo', label: 'Météo' },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {

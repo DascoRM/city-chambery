@@ -8,6 +8,7 @@ import { Layout } from './Layout';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Parkings } from './pages/Parkings';
+import { Meteo } from './pages/Meteo';
 
 /**
  * Administration (EP010). Routage par « # » (`/admin/#/parkings`) : aucune réécriture d'adresse à régler côté serveur
@@ -45,6 +46,7 @@ function Shell() {
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/parkings" component={Parkings} />
+          <Route path="/meteo" component={Meteo} />
           <Route>
             <p className="card">Page introuvable. <Link href="/">Retour au tableau de bord</Link></p>
           </Route>
