@@ -46,6 +46,11 @@ export const WET = { perRain: 1.6, tauUp: 20, tauDown: 120 };
 export const WET_GLOW = 0.25;
 /** Neige au sol : cible selon la neige qui tombe, temps pour couvrir (s) et pour fondre */
 export const SNOW_COVER = { perSnow: 1.6, tauUp: 30, tauDown: 300 };
+/** Neige d'ambiance au sol, sans flocons, quand la saison « Hiver » est choisie à la main (la météo y est déjà simulée) */
+export const WINTER_SNOW = 0.8;
+
+/** Neige au sol visée : celle qui tombe, et au moins la neige d'ambiance en hiver choisi */
+export const lyingTarget = (snow: number, winter: boolean) => Math.max(winter ? WINTER_SNOW : 0, Math.min(1, snow * SNOW_COVER.perSnow));
 
 export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
   const fog = ctx.scene.fog as THREE.Fog | null; // posé inactif au démarrage (stage.ts)
@@ -79,9 +84,16 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
   const count = { rain: countOf('rain', RAIN_COUNT), snow: countOf('snow', SNOW_COUNT) };
   let budget: RainBudget = { ...FULL_BUDGET };
   ctx.onFpsSample((fps, atMin) => { if (precip.rain?.visible() || precip.snow?.visible()) budget = nextBudget(budget, fps, atMin); });
-  let wet = 0, glow = 1, lying = 0;
+  let wet = 0, glow = 1, lying = 0, winter = false;
 
   return {
+    /** Saison « Hiver » choisie à la main : la neige d'ambiance arrive ou part d'un coup, comme le feuillage des arbres */
+    setWinter(on: boolean) {
+      if (on === winter) return;
+      winter = on;
+      lying = on ? Math.max(lying, WINTER_SNOW) : 0;
+      weatherUniforms.uSnow.value = lying;
+    },
     /** Appelé par le modificateur du ciel (daynight.ts), une fois la météo appliquée : fond de page et exposition finals */
     readSky(bg: THREE.Color[], exp: number) {
       bg[1].getRGB(rgb, THREE.SRGBColorSpace);
@@ -119,10 +131,10 @@ export function createEffects(ctx: EffectsCtx, reduced: () => boolean) {
         } else if (p?.visible()) p.hide();
       }
       // Neige au sol : s'accumule en une minute environ, fond en quelques minutes
-      const lyingTarget = Math.min(1, look.snow * SNOW_COVER.perSnow);
-      if (lying !== lyingTarget) {
-        lying = approach(lying, lyingTarget, dt, lyingTarget > lying ? SNOW_COVER.tauUp : SNOW_COVER.tauDown);
-        if (Math.abs(lying - lyingTarget) < 1e-3) lying = lyingTarget;
+      const lyingTo = lyingTarget(look.snow, winter);
+      if (lying !== lyingTo) {
+        lying = approach(lying, lyingTo, dt, lyingTo > lying ? SNOW_COVER.tauUp : SNOW_COVER.tauDown);
+        if (Math.abs(lying - lyingTo) < 1e-3) lying = lyingTo;
         weatherUniforms.uSnow.value = lying;
       }
       // Sol mouillé : vite à l'humidification, lentement au séchage ; lueurs de nuit un peu plus fortes
