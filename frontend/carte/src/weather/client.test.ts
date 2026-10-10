@@ -67,6 +67,19 @@ describe('quand relire', () => {
   });
 });
 
+const forcedBody = (untilMs: number) => ({ ...body, source: 'admin', model: null, forced: true, forcedUntil: new Date(untilMs).toISOString(), temperatureC: null });
+const forcedOk = (untilMs: number): WeatherFetch => ({ ok: true, body: forcedBody(untilMs) as never, ms: 1 });
+
+describe('fin d’une météo forcée par l’administration (US012)', () => {
+  it('relue 5 s après sa fin, au plus 15 min après la lecture, jamais moins de 30 s après', () => {
+    expect(nextRefresh(forcedOk(NOW + 10 * 60_000), 0, true, 0, NOW)).toBe(10 * 60_000 + 5_000);
+    expect(nextRefresh(forcedOk(NOW + 3600_000), 0, true, 0, NOW)).toBe(15 * 60_000);
+    expect(nextRefresh(forcedOk(NOW - 60_000), 0, true, 0, NOW)).toBe(30_000); // horloge du visiteur en avance : pas d'emballement
+    expect(nextRefresh(forcedOk(NOW + 60_000), 0, false, 0, NOW)).toBeNull(); // onglet caché : rien
+    expect(nextRefresh(forcedOk(NOW + 60_000), 0, true, 31 * 60_000, NOW)).toBeNull(); // visiteur parti : rien
+  });
+});
+
 describe('relectures programmées (minuteries simulées)', () => {
   let visible = true;
   const results: WeatherFetch[] = [];
@@ -165,6 +178,21 @@ describe('relectures programmées (minuteries simulées)', () => {
     c.wake();
     await vi.advanceTimersByTimeAsync(0);
     expect(f).toHaveBeenCalledTimes(2);
+  });
+
+  it('météo forcée qui finit dans 3 min : relue 3 min 5 s après la lecture, la météo réelle revient', async () => {
+    let answer: unknown = forcedBody(NOW + 3 * 60_000);
+    const f = vi.fn(async () => new Response(JSON.stringify(answer), { status: 200 }));
+    const c = client(f as unknown as typeof fetch);
+    c.start();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(results[0]).toMatchObject({ ok: true, body: { forced: true } });
+    answer = body;
+    await vi.advanceTimersByTimeAsync(3 * 60_000 + 4_999);
+    expect(f).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(results.at(-1)).toMatchObject({ ok: true, body: { forced: false } });
   });
 
   it('lecture déjà partie pendant le chargement de la ville : réutilisée, pas de seconde requête', async () => {

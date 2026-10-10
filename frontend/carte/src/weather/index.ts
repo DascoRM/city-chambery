@@ -125,6 +125,9 @@ export function startWeather(ctx: WeatherCtx): WeatherModule {
     if (r && !r.forced) {
       const age = now - r.observedAtMs, next = age < OLD_AFTER_S * 1000 ? OLD_AFTER_S * 1000 : WEATHER_MAX_AGE_S * 1000 + 1;
       if (age < next) ageTimer = setTimeout(update, next - age);
+    } else if (r?.forced && r.forcedUntilMs !== null && r.forcedUntilMs >= now) {
+      // Météo forcée (US012) : la scène la quitte à sa fin, même sans relecture (visiteur inactif) ; client.ts relit 5 s après
+      ageTimer = setTimeout(update, r.forcedUntilMs - now + 1);
     }
   };
 

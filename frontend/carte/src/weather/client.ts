@@ -18,6 +18,13 @@ export const REFRESH_MS = 15 * 60_000;
 export const RETRY_MS = 60_000;
 /** Sans interaction depuis ce temps, on ne relit plus (un onglet oublié ne réveille ni la fonction ni la base) */
 export const IDLE_MS = 30 * 60_000;
+/**
+ * Fin d'une météo forcée par l'administration (US012) : relue 5 s après `forcedUntil` (le back ne la sert plus, et le CDN ne la
+ * garde jamais au-delà de sa fin : routes.ts du back), au lieu d'attendre la relecture suivante
+ */
+export const FORCED_END_MARGIN_MS = 5_000;
+/** … mais jamais plus d'une fois toutes les 30 s (horloge du visiteur en avance sur celle du serveur) */
+export const FORCED_MIN_MS = 30_000;
 
 export async function fetchWeather(f: typeof fetch = fetch, timeoutMs = FETCH_TIMEOUT_MS, now: () => number = Date.now): Promise<WeatherFetch> {
   const ctrl = new AbortController();
@@ -43,13 +50,18 @@ export async function fetchWeather(f: typeof fetch = fetch, timeoutMs = FETCH_TI
 }
 
 /**
- * Délai avant la prochaine lecture (ms), ou null pour ne pas relire : jamais sans API (404, carte du Pi) ; onglet caché ou
- * visiteur inactif depuis 30 min : on attend son retour ; 15 min après un succès ou une météo coupée ; après un échec,
- * 60 s puis 2, 4, 8 min, au plus 15 min.
+ * Délai avant la prochaine lecture (ms, compté depuis la dernière lecture `attemptAtMs`), ou null pour ne pas relire : jamais
+ * sans API (404, carte du Pi) ; onglet caché ou visiteur inactif depuis 30 min : on attend son retour ; météo forcée : 5 s
+ * après sa fin (au moins 30 s, au plus 15 min) ; 15 min après un succès ou une météo coupée ; après un échec, 60 s puis 2, 4,
+ * 8 min, au plus 15 min.
  */
-export function nextRefresh(last: WeatherFetch, failures: number, visible: boolean, idleMs: number): number | null {
+export function nextRefresh(last: WeatherFetch, failures: number, visible: boolean, idleMs: number, attemptAtMs = 0): number | null {
   if (!last.ok && last.reason === 'absente') return null;
   if (!visible || idleMs > IDLE_MS) return null;
+  if (last.ok && last.body.forced && last.body.forcedUntil) {
+    const end = Date.parse(last.body.forcedUntil) - attemptAtMs + FORCED_END_MARGIN_MS;
+    return Math.min(REFRESH_MS, Math.max(FORCED_MIN_MS, end));
+  }
   if (last.ok || last.reason === 'desactivee') return REFRESH_MS;
   return Math.min(REFRESH_MS, RETRY_MS * 2 ** Math.max(0, failures - 1));
 }
@@ -86,11 +98,11 @@ export function createWeatherClient(d: {
   const schedule = () => {
     clearTimeout(timer);
     if (!last || stopped || busy) return;
-    const delay = nextRefresh(last, failures, d.visible(), now() - lastInputAt);
+    const delay = nextRefresh(last, failures, d.visible(), now() - lastInputAt, lastAttemptAt);
     if (delay === null) return;
     timer = setTimeout(() => {
       // Revérifié au moment de relire : l'onglet a pu être caché, le visiteur a pu partir
-      if (last && nextRefresh(last, failures, d.visible(), now() - lastInputAt) !== null) void load();
+      if (last && nextRefresh(last, failures, d.visible(), now() - lastInputAt, lastAttemptAt) !== null) void load();
     }, Math.max(0, delay - (now() - lastAttemptAt)));
   };
 
