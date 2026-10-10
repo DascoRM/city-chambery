@@ -108,14 +108,14 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ Neige : les têtes des passants ont maintenant leur propre programme (+1 au démarrage, 45 → 46) ; les crocheter avec `{ wet: 0, snow: 0 }` l'éviterait (≈ 40 o) — *petit, si le démarrage sur téléphone le justifie*
 - ✅ *itération 97* Orage (US008), vent (US009), nuages (US010), d'après le plan de l'agent du front
 - ⬜ Juger orage, vent et nuages (`?weather=thunder`, `?weather=cloudy&wind=60`, `?weather=partly`, de jour et de nuit, dans les quatre vues) : lumières de la ville à 35 % sous l'orage de jour, éclair sur le fond de page, nuages tramés pendant qu'ils apparaissent, fumée en chapelet par grand vent, drapeaux qui claquent 1,4 fois plus vite avec tout relevé — *Dasco*
-- ❓ Orage forcé (adresse, admin) avec un vent fort par défaut (50 km/h d'ouest) pour que les arbres bougent en démo ? Valeurs types du contrat, carte, back, tests — *Dasco*
+- ✅ *10/10* Orage : lumières de la ville à 35 % de jour, éclair modéré qui éclaire aussi le fond de page, orage forcé sans vent fort par défaut : gardés tels quels (Dasco)
 - ⬜ Vent : feuilles qui volent en automne (US009, facultatif, ≈ 0,5 j) — non fait
 - ⬜ Chunk principal : + 3,03 Ko sur 3,5 depuis le début d'EP009 ; module météo 12,9 Ko (règle 12 estimait 8 à 10 Ko, chargé à la demande)
 - ⬜ US011 (finitions) : à engager ou non — *Dasco*
 - ✅ *itération 96* US012 : la météo dans l'administration (écran, forçage pour les démos, coupure ; fin d'un forçage relue 5 s après par la carte)
 - ⬜ Essayer le forçage sur la prévisualisation (`/admin/#/meteo` : forcer la neige 15 min, couper, revenir au réel ; téléphone) — *Dasco*
 - ❓ Une carte déjà ouverte voit un forçage à sa relecture suivante (jusqu'à 17 min) ; la relire toutes les 2 min pendant les démos (C4 du plan US012, une constante) ? — *Dasco*
-- ⬜ Prévenir EP008 : garder `app_meta`, recopier les lignes météo d'`edit_log` vers `audit_log` comme `app_meta / meteo.forcage` (et non comme des retouches de parkings), basculer `journal()` de `meteo/override-store.ts` ([plan US012](../../tasks/ep009-us012-plan.md) § 3.3) — *qui relaie : Dasco*
+- ⬜ Prévenir EP008 : garder `app_meta`, recopier les lignes météo d'`edit_log` vers `audit_log` comme `app_meta / meteo.forcage` (et non comme des retouches de parkings), basculer `journal()` de `meteo/override-store.ts` ([plan US012](../../tasks/ep009-us012-plan.md) § 3.3) — *à voir plus tard (Dasco, 10/10) ; à faire avant la migration d'EP008*
 - ✅ *itération 96* Neige d'ambiance quand la saison « Hiver » est choisie à la main (Dasco, 10/10) ; rues sous la neige gardées à moitié dégagées ; ville qui blanchit sous les yeux à l'ouverture gardée ; teinte de la neige la nuit validée
 - ✅ *09/10* Épaisseur du brouillard type : 0,6 (Dasco ; 0,8 noyait la ville de jour)
 - ✅ *09/10* Halos des bars dans le brouillard la nuit : « c'est ok » (Dasco)
