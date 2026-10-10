@@ -106,7 +106,13 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ❓ Neige : ville déjà blanche à l'ouverture de la page quand il neige (aujourd'hui elle blanchit en ≈ 1 min devant le visiteur) ? — *Dasco*
 - ⬜ Neige : la carte ne connaît que la neige qui tombe ; la hauteur de neige au sol d'Open-Meteo (`snow_depth`, non vérifiée pour ICON à Chambéry) demanderait un champ de plus au contrat et au back — non étudié
 - ⬜ Neige : les têtes des passants ont maintenant leur propre programme (+1 au démarrage, 45 → 46) ; les crocheter avec `{ wet: 0, snow: 0 }` l'éviterait (≈ 40 o) — *petit, si le démarrage sur téléphone le justifie*
-- ⬜ Reste du lot Complet d'EP009 (orage US008, vent US009, nuages US010, finitions US011) : à engager ou non — *Dasco*
+- 🔄 *10/10* Orage (US008), vent (US009), nuages (US010) : engagés par Dasco, en planification
+- ⬜ US011 (finitions) : à engager ou non — *Dasco*
+- ✅ *itération 96* US012 : la météo dans l'administration (écran, forçage pour les démos, coupure ; fin d'un forçage relue 5 s après par la carte)
+- ⬜ Essayer le forçage sur la prévisualisation (`/admin/#/meteo` : forcer la neige 15 min, couper, revenir au réel ; téléphone) — *Dasco*
+- ❓ Une carte déjà ouverte voit un forçage à sa relecture suivante (jusqu'à 17 min) ; la relire toutes les 2 min pendant les démos (C4 du plan US012, une constante) ? — *Dasco*
+- ⬜ Prévenir EP008 : garder `app_meta`, recopier les lignes météo d'`edit_log` vers `audit_log` comme `app_meta / meteo.forcage` (et non comme des retouches de parkings), basculer `journal()` de `meteo/override-store.ts` ([plan US012](../../tasks/ep009-us012-plan.md) § 3.3) — *qui relaie : Dasco*
+- ✅ *itération 96* Neige d'ambiance quand la saison « Hiver » est choisie à la main (Dasco, 10/10) ; rues sous la neige gardées à moitié dégagées ; ville qui blanchit sous les yeux à l'ouverture gardée ; teinte de la neige la nuit validée
 - ✅ *09/10* Épaisseur du brouillard type : 0,6 (Dasco ; 0,8 noyait la ville de jour)
 - ✅ *09/10* Halos des bars dans le brouillard la nuit : « c'est ok » (Dasco)
 - ✅ *itération 92* Relecture du code de la carte (US001, US002, US004) : 2 défauts importants et 7 mineurs corrigés
@@ -120,7 +126,6 @@ Préparent « la ville vit » (P2 ci-dessous). Ordre conseillé : EN-01 → EN-0
 - ⬜ Avant US005 : le chunk principal aura pris + 2,1 Ko sur 2,5 après US004 ; relever le plafond ou alléger (la date ISO du contrat coûte 0,43 Ko à la carte)
 - ⬜ Idée (relecture d'US003, V4) : limiter le débit des routes publiques de l'API dans le pare-feu de Vercel (une chaîne de requête aléatoire contourne le cache du CDN, chaque appel coûte une invocation ; vrai aussi pour `/api/health`) — non étudié
 - ⬜ Vérifier dans Vercel que Fluid compute est actif (sinon, des visiteurs simultanés peuvent démarrer plusieurs instances, donc plusieurs appels à la source) — *Dasco*
-- Lien : EP008 doit garder la table `app_meta` (forçage de la météo, US012) et prévoir les lignes météo du journal dans `audit_log`
 
 ## P2 — Fluidité mobile
 Détail dans [PERF-AUDIT.md](../../architecture/PERF-AUDIT.md).
@@ -158,7 +163,7 @@ Avant l'itération 25 : ≈ 4 800 appels de rendu et ≈ 4,7 M triangles par ima
 - ✅ Gestion des saisons - en fonction des dates du navigateur (itération 31 : variantes automne et branches nues du pack ; le pack n'a pas de version enneigée des feuillus utilisés)
 - ✅ Option « heure réelle » (suivre l'heure de Chambéry) et saisons (lever/coucher du soleil réels) (itération 31 : bouton Direct, puce saison)
 - ✅ Nuit : n'allumer que les lieux ouverts à l'heure choisie (lecture du tag OSM `opening_hours`) (itération 31 : 104 horaires sur 106 lus ; les 2 textes libres restent allumés)
-- 🟡 Hiver : reprendre les arbres — de la neige plutôt que les branches nues / arbres morts (brun) actuels (demande de Dasco, à traiter plus tard) ; neige aussi au sol et sur les toits. **Quand il neige : fait** (*itération 95*, EP009-US007 : arbres, sol et toits blanchissent). **Reste** : des arbres enneigés sans neige qui tombe ; poser une neige d'ambiance (sol, toits, arbres, sans flocons) seulement quand la saison « Hiver » est choisie à la main (la météo y est déjà « simulée ») ; en direct, ce serait inventer un temps qu'il ne fait pas — ❓ *Dasco*
+- ✅ Hiver : reprendre les arbres — de la neige plutôt que les branches nues / arbres morts (brun) actuels (demande de Dasco, à traiter plus tard) ; neige aussi au sol et sur les toits. **Quand il neige : fait** (*itération 95*, EP009-US007 : arbres, sol et toits blanchissent). **Saison « Hiver » choisie à la main : fait** (*itération 96*, neige d'ambiance sans flocons ; en Direct, rien : ce serait inventer un temps qu'il ne fait pas)
 - ⬜ Simplifier l'heure : prendre l'heure de l'appareil du visiteur au lieu de forcer le fuseau Europe/Paris (demande de Dasco, pour simplifier le code). Précision : « heure de Chambéry » dans le code est déjà l'heure de France (fuseau Europe/Paris) ; la simplification consiste à supprimer la conversion de fuseau (`src/time/chambery.ts` : `chamberyClock`, `chamberyInstant`, ≈ 25 lignes). Conséquence : un visiteur hors de France verrait la carte à son heure locale. La position du soleil garde la latitude et la longitude de Chambéry.
 - ❓ Double toucher (zoom) : sans effet dans le navigateur de test, sur `main` comme après EN-02 (itération 40) — à vérifier sur un vrai téléphone
 - ⬜ Cadence : curseur d'heure tiré à la main encore à 30 images/s (TI-02, itération 42) — à passer en pleine vitesse si c'est gênant

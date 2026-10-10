@@ -1,5 +1,22 @@
 # Journal des itérations
 
+## Itération 96 — 10/10/2026 (branches `feat/EP009-US012-meteo-admin`, `feat/EP009-US007-neige-hiver`, epic EP009)
+
+**Retour / Demande de Dasco :** couleur de la neige la nuit « ok », « très visuel » ; « tu peux ajouter de la neige en mode hiver » ; rues sous la neige « bien comme ça » ; ville qui blanchit à l'ouverture « ok pour le moment » ; « tu peux faire le mode admin » ; « tu peux faire orage, vent et nuages ».
+
+**Changements :**
+- **la météo dans l'administration (US012)**, d'après le plan de l'agent ([ep009-us012-plan.md](../tasks/ep009-us012-plan.md)), relu avant d'être appliqué :
+  - back : forçage ou coupure de la météo pour tous, de 5 min à 6 h, rangé dans `app_meta` ; lecture bornée par instance (30 min, 2 min pendant un forçage, 1,5 s d'attente au plus) ; une météo forcée n'est jamais gardée par le CDN au-delà de sa fin ; routes `GET /api/admin/weather`, `PUT` et `DELETE /api/admin/weather/override` ; journal dans `edit_log`, hors du journal des parkings ;
+  - admin : page « Météo » (ce que voient les visiteurs, relevé brut, compteurs de l'instance, forcer ou couper, revenir au réel, aperçu sur la carte) ;
+  - carte : la fin d'un forçage est relue 5 s après, sans « Indisponible » entre les deux ; la relecture toutes les 2 min (C4) n'est pas appliquée, en attendant Dasco ;
+  - un conflit de tests avec la relecture de la carte (itération 92) résolu en gardant les deux ;
+- **neige d'ambiance de l'hiver** : en saison « Hiver » choisie à la main, sol, toits et arbres blanchis (0,8), sans flocons, d'un coup comme le feuillage ; jamais en Direct ;
+- **orage, vent, nuages (US008 à US010)** : planification confiée à l'agent du front.
+
+**Vérifié :** `npm run build` et `npm test` (**225 tests**) ; chunk principal inchangé (88,18 Ko gzip) ; dans Chrome avec la puce graphique du Mac : saison Hiver, Printemps, Hiver, Auto en mouvement, **aucun programme nouveau** (46 → 46), pire image 18 ms ; captures regardées (rue et château de jour, ensemble de nuit) ; **prévisualisation** (`3c49068`) : base « ok », `/api/weather` réelle (pluie) servie puis gardée par le CDN (`MISS` puis `HIT`), routes admin refusées sans session (401) et d'une autre origine (403), page `/admin/` servie.
+
+**Non vérifié :** le forçage sur la prévisualisation (connexion avec le jeton de Dasco : forcer, couper, revenir au réel, fin derrière le CDN, plusieurs instances) ; la neige forcée sur un téléphone ; la consommation réelle de Neon ; la neige d'ambiance sur un téléphone, Safari, Firefox.
+
 ## Itération 95 — 10/10/2026 (branche `feat/EP009-US007-neige`, epic EP009)
 
 **Demande de Dasco :** « tu peux faire la neige oui » ; « la nuit c'est ok avec le brouillard pour les bars et bâtiments ».

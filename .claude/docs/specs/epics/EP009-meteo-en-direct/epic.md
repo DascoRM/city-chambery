@@ -1,6 +1,6 @@
 # Epic EP009 - La météo en direct sur le diorama
 
-**Statut (10/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé ; US003 (contrat et route `/api/weather`) livrée et vérifiée sur la prévisualisation ; US001 livrée, sauf la mesure sur iPhone (Dasco) ; US002 (socle : couvert, puce, `?weather=`) et US004 (la vraie météo sur la carte) US006 (brouillard) et US005 (pluie) livrées : **lot MVP terminé** (reste la validation de Dasco) ; plan prêt pour US012 (admin), en attente de ses réponses ; **US007 (neige) livrée** (10/10, rendu à juger par Dasco) ; orage, vent, nuages : lot Complet.** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
+**Statut (10/10/2026) : spec v2 validée par Dasco (« Ok, tu peux attaquer les travaux ») ; lot MVP engagé ; US003 (contrat et route `/api/weather`) livrée et vérifiée sur la prévisualisation ; US001 livrée, sauf la mesure sur iPhone (Dasco) ; US002 (socle : couvert, puce, `?weather=`) et US004 (la vraie météo sur la carte) US006 (brouillard) et US005 (pluie) livrées : **lot MVP terminé** (reste la validation de Dasco) ; **US012 (admin) livrée** (10/10, forçage à essayer par Dasco sur la prévisualisation) ; **US007 (neige) livrée** (10/10), avec la neige d'ambiance en saison « Hiver » choisie à la main ; **orage, vent, nuages (US008 à US010) engagés par Dasco** (10/10, en planification) ; US011 non engagée.** Réécrite après EP010 à partir de deux plans : [back, contrat et admin](../../../tasks/ep009-back-plan-v2.md) (appels réels à Open-Meteo, route prototypée avec 19 tests) et [front 3D](../../../tasks/ep009-front-plan-v2.md) (pluie prototype mesurée sur la puce graphique du Mac). Les études du 08/10 ([front](../../../tasks/meteo-front-plan.md), [back](../../../tasks/meteo-back-plan.md)) sont remplacées.
 
 ## Résumé
 Afficher sur le diorama **la météo réelle de Chambéry** (soleil, couvert, pluie, brouillard, neige, orage, vent), rendue en 3D dans le style maquette.
@@ -58,11 +58,11 @@ frontend/admin   écran « Météo » : ce que voient les visiteurs, relevé bru
 | [US005](US005-pluie.md) | Pluie | Scène | 2,5 à 3 | MVP | ✅ Done (09/10) |
 | [US006](US006-brouillard.md) | Brouillard | Scène | 1,5 | Démo | ✅ Done (09/10) |
 | [US007](US007-neige.md) | Neige (flocons, sol, toits, arbres) | Scène | 3 à 4 | Complet | ✅ Done (10/10) |
-| [US008](US008-orage.md) | Orage | Scène | 2 | Complet | 🔲 Todo |
-| [US009](US009-vent.md) | Vent (fumées, drapeaux, arbres) | Scène | 2 à 2,5 | Complet | 🔲 Todo |
-| [US010](US010-nuages-de-maquette.md) | Nuages de maquette | Scène | 1,5 | Complet | 🔲 Todo |
+| [US008](US008-orage.md) | Orage | Scène | 2 | Complet | 🔄 In Progress (plan) |
+| [US009](US009-vent.md) | Vent (fumées, drapeaux, arbres) | Scène | 2 à 2,5 | Complet | 🔄 In Progress (plan) |
+| [US010](US010-nuages-de-maquette.md) | Nuages de maquette | Scène | 1,5 | Complet | 🔄 In Progress (plan) |
 | [US011](US011-finitions-suivi-et-doc.md) | Finitions, calibrage, documentation | Tous | 1,5 à 2 | Complet | 🔲 Todo |
-| [US012](US012-meteo-dans-l-admin.md) | Météo dans l'administration : écran, forçage pour les démos, coupure | API, admin | 1 à 1,25 | Admin | 🔲 Todo |
+| [US012](US012-meteo-dans-l-admin.md) | Météo dans l'administration : écran, forçage pour les démos, coupure | API, admin | 1 à 1,25 | Admin | ✅ Done (10/10) |
 | [US013](US013-previsions-heure-par-heure.md) | Prévisions heure par heure (facultative) | Contrat, API, carte | 1,5 | Plus tard | 🔲 Todo |
 
 Estimations à ± 30 %, développement + vérification navigateur ; **le test sur téléphone réel n'est pas compté**. US001 à US011 gardent leur numéro de la v1 ; le suivi dans l'admin quitte US011 pour US012.
